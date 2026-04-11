@@ -1,0 +1,401 @@
+{
+  "capital": {
+    "id": "capital",
+    "name": "Capital",
+    "type": "safe",
+    "travelable": true,
+    "description": "The heart of Lumora. Traders, healers, faction envoys, and hunters gather here before entering the wilds.",
+    "recommendedLevel": 1,
+    "recommendedAura": 0,
+    "suggestedGear": [],
+    "hazard": null,
+    "difficultyModes": {},
+    "spawnBias": {},
+    "corruptionSensitivity": 0,
+    "hidden": false
+  },
+  "wilderness": {
+    "id": "wilderness",
+    "name": "Wilderness",
+    "type": "neutral",
+    "travelable": true,
+    "description": "A broad untamed region where all Mora types may appear with roughly equal chance. The safest true hunting area for mixed exploration.",
+    "recommendedLevel": 1,
+    "recommendedAura": 5,
+    "suggestedGear": ["Whisperleaf Charm", "Tracking Lens"],
+    "hazard": "Unstable footing and roaming predators.",
+    "difficultyModes": {
+      "easy": {
+        "label": "Easy",
+        "moraLevelMin": 1,
+        "moraLevelMax": 4,
+        "statMultiplier": 1,
+        "energyCost": 8
+      },
+      "standard": {
+        "label": "Standard",
+        "moraLevelMin": 3,
+        "moraLevelMax": 7,
+        "statMultiplier": 1.1,
+        "energyCost": 10
+      },
+      "dangerous": {
+        "label": "Dangerous",
+        "moraLevelMin": 6,
+        "moraLevelMax": 11,
+        "statMultiplier": 1.22,
+        "energyCost": 13
+      },
+      "nightmare": {
+        "label": "Nightmare",
+        "moraLevelMin": 10,
+        "moraLevelMax": 16,
+        "statMultiplier": 1.4,
+        "energyCost": 17
+      }
+    },
+    "spawnBias": {
+      "all": 1
+    },
+    "corruptionSensitivity": 0.15,
+    "hidden": false
+  },
+  "verdant_wilds": {
+    "id": "verdant_wilds",
+    "name": "Verdant Wilds",
+    "type": "nature",
+    "travelable": true,
+    "description": "A living forest of roots, spores, and thick green aura. Nature Mora thrive here, but hunters can easily lose the path.",
+    "recommendedLevel": 3,
+    "recommendedAura": 10,
+    "suggestedGear": ["Whisperleaf Charm", "Deeproot Treads"],
+    "hazard": "Dense growth, root traps, and low visibility.",
+    "difficultyModes": {
+      "easy": {
+        "label": "Easy",
+        "moraLevelMin": 2,
+        "moraLevelMax": 5,
+        "statMultiplier": 1,
+        "energyCost": 8
+      },
+      "standard": {
+        "label": "Standard",
+        "moraLevelMin": 4,
+        "moraLevelMax": 8,
+        "statMultiplier": 1.12,
+        "energyCost": 10
+      },
+      "dangerous": {
+        "label": "Dangerous",
+        "moraLevelMin": 7,
+        "moraLevelMax": 12,
+        "statMultiplier": 1.25,
+        "energyCost": 13
+      },
+      "nightmare": {
+        "label": "Nightmare",
+        "moraLevelMin": 11,
+        "moraLevelMax": 17,
+        "statMultiplier": 1.45,
+        "energyCost": 17
+      }
+    },
+    "spawnBias": {
+      "Nature": 3,
+      "Terra": 1,
+      "Aqua": 1,
+      "Wind": 1
+    },
+    "corruptionSensitivity": 0.2,
+    "hidden": false
+  },
+  "volt_expanse": {
+    "id": "volt_expanse",
+    "name": "Volt Expanse",
+    "type": "volt",
+    "travelable": true,
+    "description": "A thunder-scarred open range where lightning lashes the ground and Volt Mora surge through the storm air.",
+    "recommendedLevel": 5,
+    "recommendedAura": 15,
+    "suggestedGear": ["Stormshroud", "Tempest Striders", "Tracking Lens"],
+    "hazard": "Electrical surges and storm shock.",
+    "difficultyModes": {
+      "easy": {
+        "label": "Easy",
+        "moraLevelMin": 4,
+        "moraLevelMax": 7,
+        "statMultiplier": 1,
+        "energyCost": 9
+      },
+      "standard": {
+        "label": "Standard",
+        "moraLevelMin": 6,
+        "moraLevelMax": 10,
+        "statMultiplier": 1.15,
+        "energyCost": 11
+      },
+      "dangerous": {
+        "label": "Dangerous",
+        "moraLevelMin": 9,
+        "moraLevelMax": 14,
+        "statMultiplier": 1.3,
+        "energyCost": 14
+      },
+      "nightmare": {
+        "label": "Nightmare",
+        "moraLevelMin": 13,
+        "moraLevelMax": 19,
+        "statMultiplier": 1.5,
+        "energyCost": 18
+      }
+    },
+    "spawnBias": {
+      "Volt": 3,
+      "Wind": 1,
+      "Terra": 1
+    },
+    "corruptionSensitivity": 0.28,
+    "hidden": false
+  },
+  "ashfall_basin": {
+    "id": "ashfall_basin",
+    "name": "Ashfall Basin",
+    "type": "flame",
+    "travelable": true,
+    "description": "A basin of burning vents and drifting ash where Flame Mora gather near heat fissures and unstable magma seams.",
+    "recommendedLevel": 6,
+    "recommendedAura": 18,
+    "suggestedGear": ["Ashen Veil", "Faultstride Boots"],
+    "hazard": "Heat damage, ash breath, and magma bursts.",
+    "difficultyModes": {
+      "easy": {
+        "label": "Easy",
+        "moraLevelMin": 5,
+        "moraLevelMax": 8,
+        "statMultiplier": 1,
+        "energyCost": 9
+      },
+      "standard": {
+        "label": "Standard",
+        "moraLevelMin": 7,
+        "moraLevelMax": 11,
+        "statMultiplier": 1.16,
+        "energyCost": 11
+      },
+      "dangerous": {
+        "label": "Dangerous",
+        "moraLevelMin": 10,
+        "moraLevelMax": 15,
+        "statMultiplier": 1.32,
+        "energyCost": 14
+      },
+      "nightmare": {
+        "label": "Nightmare",
+        "moraLevelMin": 14,
+        "moraLevelMax": 20,
+        "statMultiplier": 1.52,
+        "energyCost": 18
+      }
+    },
+    "spawnBias": {
+      "Flame": 3,
+      "Terra": 1,
+      "Volt": 1
+    },
+    "corruptionSensitivity": 0.3,
+    "hidden": false
+  },
+  "terra_shatterfields": {
+    "id": "terra_shatterfields",
+    "name": "Terra Shatterfields",
+    "type": "terra",
+    "travelable": true,
+    "description": "Broken plains and fractured rock where the ground shifts violently and Terra Mora emerge from deep fault lines.",
+    "recommendedLevel": 7,
+    "recommendedAura": 20,
+    "suggestedGear": ["Quakewalkers", "Deeproot Treads"],
+    "hazard": "Earthquakes, collapsing ledges, and dust shock.",
+    "difficultyModes": {
+      "easy": {
+        "label": "Easy",
+        "moraLevelMin": 6,
+        "moraLevelMax": 9,
+        "statMultiplier": 1,
+        "energyCost": 9
+      },
+      "standard": {
+        "label": "Standard",
+        "moraLevelMin": 8,
+        "moraLevelMax": 12,
+        "statMultiplier": 1.18,
+        "energyCost": 11
+      },
+      "dangerous": {
+        "label": "Dangerous",
+        "moraLevelMin": 11,
+        "moraLevelMax": 16,
+        "statMultiplier": 1.34,
+        "energyCost": 14
+      },
+      "nightmare": {
+        "label": "Nightmare",
+        "moraLevelMin": 15,
+        "moraLevelMax": 21,
+        "statMultiplier": 1.55,
+        "energyCost": 18
+      }
+    },
+    "spawnBias": {
+      "Terra": 3,
+      "Nature": 1,
+      "Volt": 1
+    },
+    "corruptionSensitivity": 0.24,
+    "hidden": false
+  },
+  "frostreach": {
+    "id": "frostreach",
+    "name": "Frostreach",
+    "type": "frost",
+    "travelable": true,
+    "description": "A wind-cut frozen frontier where Frost Mora prowl through ice haze and biting cold strips strength from the careless.",
+    "recommendedLevel": 8,
+    "recommendedAura": 22,
+    "suggestedGear": ["Frostmantle", "Tempest Striders"],
+    "hazard": "Freeze exposure and ice slip.",
+    "difficultyModes": {
+      "easy": {
+        "label": "Easy",
+        "moraLevelMin": 7,
+        "moraLevelMax": 10,
+        "statMultiplier": 1,
+        "energyCost": 10
+      },
+      "standard": {
+        "label": "Standard",
+        "moraLevelMin": 9,
+        "moraLevelMax": 13,
+        "statMultiplier": 1.18,
+        "energyCost": 12
+      },
+      "dangerous": {
+        "label": "Dangerous",
+        "moraLevelMin": 12,
+        "moraLevelMax": 17,
+        "statMultiplier": 1.36,
+        "energyCost": 15
+      },
+      "nightmare": {
+        "label": "Nightmare",
+        "moraLevelMin": 16,
+        "moraLevelMax": 22,
+        "statMultiplier": 1.58,
+        "energyCost": 19
+      }
+    },
+    "spawnBias": {
+      "Frost": 3,
+      "Wind": 1,
+      "Aqua": 1
+    },
+    "corruptionSensitivity": 0.26,
+    "hidden": false
+  },
+  "shadow_hollow": {
+    "id": "shadow_hollow",
+    "name": "Shadow Hollow",
+    "type": "shadow",
+    "travelable": true,
+    "description": "A dim wasteland where light thins, echoes warp, and Shadow Mora move through silence like a second skin.",
+    "recommendedLevel": 10,
+    "recommendedAura": 28,
+    "suggestedGear": ["Gloamwrap", "Riftwalk Greaves"],
+    "hazard": "Aura drain, false trails, and oppressive darkness.",
+    "difficultyModes": {
+      "easy": {
+        "label": "Easy",
+        "moraLevelMin": 8,
+        "moraLevelMax": 12,
+        "statMultiplier": 1.05,
+        "energyCost": 11
+      },
+      "standard": {
+        "label": "Standard",
+        "moraLevelMin": 11,
+        "moraLevelMax": 15,
+        "statMultiplier": 1.22,
+        "energyCost": 13
+      },
+      "dangerous": {
+        "label": "Dangerous",
+        "moraLevelMin": 14,
+        "moraLevelMax": 19,
+        "statMultiplier": 1.4,
+        "energyCost": 16
+      },
+      "nightmare": {
+        "label": "Nightmare",
+        "moraLevelMin": 18,
+        "moraLevelMax": 24,
+        "statMultiplier": 1.62,
+        "energyCost": 20
+      }
+    },
+    "spawnBias": {
+      "Shadow": 3,
+      "Frost": 1,
+      "Volt": 1
+    },
+    "corruptionSensitivity": 0.4,
+    "hidden": false
+  },
+  "rift_scar": {
+    "id": "rift_scar",
+    "name": "Rift Scar",
+    "type": "rift",
+    "travelable": true,
+    "description": "A wound in the world where raw Primordial instability gathers. Corrupted sightings are common and survival is never guaranteed.",
+    "recommendedLevel": 14,
+    "recommendedAura": 35,
+    "suggestedGear": ["Riftwalk Greaves", "Rift Stabilizer Core", "Aura Lantern Charm"],
+    "hazard": "Corruption pulses, unstable ground, and Rift rupture backlash.",
+    "difficultyModes": {
+      "easy": {
+        "label": "Easy",
+        "moraLevelMin": 12,
+        "moraLevelMax": 16,
+        "statMultiplier": 1.12,
+        "energyCost": 12
+      },
+      "standard": {
+        "label": "Standard",
+        "moraLevelMin": 15,
+        "moraLevelMax": 19,
+        "statMultiplier": 1.3,
+        "energyCost": 14
+      },
+      "dangerous": {
+        "label": "Dangerous",
+        "moraLevelMin": 18,
+        "moraLevelMax": 23,
+        "statMultiplier": 1.5,
+        "energyCost": 17
+      },
+      "nightmare": {
+        "label": "Nightmare",
+        "moraLevelMin": 22,
+        "moraLevelMax": 28,
+        "statMultiplier": 1.75,
+        "energyCost": 22
+      }
+    },
+    "spawnBias": {
+      "Shadow": 2,
+      "Volt": 1,
+      "Flame": 1,
+      "Frost": 1
+    },
+    "corruptionSensitivity": 0.75,
+    "hidden": false
+  }
+}

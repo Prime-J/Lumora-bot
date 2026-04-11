@@ -1,0 +1,1140 @@
+{
+  "GER_001": {
+    "id": "GER_001",
+    "name": "Rift Stabilizer Core",
+    "category": "gear",
+    "slot": "core",
+    "rarity": "Rare",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 280,
+    "stock": 2,
+    "storageCost": 0,
+    "effect": "-15% Primordial Energy gain, +5 energy regeneration",
+    "desc": "A crystalline regulator forged from Rift fragments. It steadies wild Mora energy and slows dangerous buildup.",
+    "effects": {
+      "primordialGain": -15,
+      "energyRegen": 5
+    }
+  },
+  "GER_002": {
+    "id": "GER_002",
+    "name": "Harmony Pulse Core",
+    "category": "gear",
+    "slot": "core",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 170,
+    "stock": 3,
+    "storageCost": 0,
+    "effect": "+5% Mora bonding success",
+    "desc": "A calm-core regulator favored by Harmony Lumorians. Its pulse helps steady the link between Lumorian and Mora.",
+    "effects": {
+      "bondSuccess": 5
+    }
+  },
+  "GER_003": {
+    "id": "GER_003",
+    "name": "Dominion Core",
+    "category": "gear",
+    "slot": "core",
+    "rarity": "Epic",
+    "marketType": "faction",
+    "faction": "purity",
+    "rotates": true,
+    "price": 850,
+    "stock": 1,
+    "storageCost": 0,
+    "effect": "+10% battle control chance",
+    "desc": "A severe command core used by the Purity Order to impose sharper control over Mora in conflict.",
+    "effects": {
+      "battleControl": 10
+    }
+  },
+  "GER_004": {
+    "id": "GER_004",
+    "name": "Aegis Node Core",
+    "category": "gear",
+    "slot": "core",
+    "rarity": "Rare",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 320,
+    "stock": 2,
+    "storageCost": 0,
+    "effect": "+15 player max HP",
+    "desc": "A dense protective node that reinforces the wearer's vitality against harsh conditions.",
+    "effects": {
+      "maxHp": 15
+    }
+  },
+  "GER_005": {
+    "id": "GER_005",
+    "name": "Riftbite Core",
+    "category": "gear",
+    "slot": "core",
+    "rarity": "Legendary",
+    "marketType": "black",
+    "rotates": true,
+    "price": 2400,
+    "stock": 1,
+    "storageCost": 0,
+    "effect": "+20% Mora battle damage, +15% corruption gain",
+    "desc": "A dangerous core that amplifies power while feeding on instability. Coveted by reckless Rift Seekers.",
+    "effects": {
+      "battleDamage": 20,
+      "corruptionGain": 15
+    }
+  },
+  "GER_010": {
+    "id": "GER_010",
+    "name": "Whisperleaf Charm",
+    "category": "gear",
+    "slot": "charm",
+    "rarity": "Common",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 70,
+    "stock": 5,
+    "storageCost": 0,
+    "effect": "+5% catch success",
+    "desc": "A leaf-bound charm said to soften the hearts of wandering Mora.",
+    "effects": {
+      "catchChance": 5
+    }
+  },
+  "GER_011": {
+    "id": "GER_011",
+    "name": "Hunter's Sigil",
+    "category": "gear",
+    "slot": "charm",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 180,
+    "stock": 2,
+    "storageCost": 0,
+    "effect": "+10% rare Mora spawn chance",
+    "desc": "A respected hunter mark that seems to draw stronger creatures closer.",
+    "effects": {
+      "rareSpawn": 10
+    }
+  },
+  "GER_012": {
+    "id": "GER_012",
+    "name": "Aura Lantern Charm",
+    "category": "gear",
+    "slot": "charm",
+    "rarity": "Rare",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 260,
+    "stock": 2,
+    "storageCost": 0,
+    "effect": "-10% aura loss when fainting",
+    "desc": "A glowing charm that preserves fragments of aura when disaster strikes.",
+    "effects": {
+      "auraLossReduction": 10
+    }
+  },
+  "GER_013": {
+    "id": "GER_013",
+    "name": "Gloam Thread Charm",
+    "category": "gear",
+    "slot": "charm",
+    "rarity": "Rare",
+    "marketType": "black",
+    "rotates": true,
+    "price": 650,
+    "stock": 1,
+    "storageCost": 0,
+    "effect": "+15% chance to encounter unstable Mora",
+    "desc": "A shadow-laced charm that hums in the presence of forbidden energy.",
+    "effects": {
+      "unstableEncounter": 15
+    }
+  },
+  "GER_014": {
+    "id": "GER_014",
+    "name": "Mercantile Whisper",
+    "category": "gear",
+    "slot": "charm",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 160,
+    "stock": 2,
+    "storageCost": 0,
+    "effect": "+10% sell value on market items",
+    "desc": "A charm carried by traders who always seem to strike the better deal.",
+    "effects": {
+      "sellBoost": 10
+    }
+  },
+  "GER_020": {
+    "id": "GER_020",
+    "name": "Mora Scanner",
+    "category": "gear",
+    "slot": "tool",
+    "rarity": "Common",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 90,
+    "stock": 4,
+    "storageCost": 0,
+    "effect": "Reveals Mora rarity before catching",
+    "desc": "A compact scanning device that reads the signature of nearby Mora.",
+    "effects": {
+      "scanRarity": true
+    }
+  },
+  "GER_021": {
+    "id": "GER_021",
+    "name": "Rift Compass",
+    "category": "gear",
+    "slot": "tool",
+    "rarity": "Rare",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 310,
+    "stock": 2,
+    "storageCost": 0,
+    "effect": "+10% chance to encounter unstable Mora",
+    "desc": "This compass never points north. It points where the Rift feels closest.",
+    "effects": {
+      "unstableEncounter": 10
+    }
+  },
+  "GER_022": {
+    "id": "GER_022",
+    "name": "Tracking Lens",
+    "category": "gear",
+    "slot": "tool",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 150,
+    "stock": 3,
+    "storageCost": 0,
+    "effect": "+10% hunting efficiency",
+    "desc": "A crystal lens that sharpens signs, trails, and subtle traces of Mora movement.",
+    "effects": {
+      "huntEfficiency": 10
+    }
+  },
+  "GER_023": {
+    "id": "GER_023",
+    "name": "Echo Drill",
+    "category": "gear",
+    "slot": "tool",
+    "rarity": "Epic",
+    "marketType": "black",
+    "rotates": true,
+    "price": 980,
+    "stock": 1,
+    "storageCost": 0,
+    "effect": "Reveals hidden hunting anomalies",
+    "desc": "A forbidden survey tool used to uncover concealed energy nests and unstable pockets.",
+    "effects": {
+      "revealAnomalies": true
+    }
+  },
+  "GER_024": {
+    "id": "GER_024",
+    "name": "Field Siphon",
+    "category": "gear",
+    "slot": "tool",
+    "rarity": "Rare",
+    "marketType": "black",
+    "rotates": true,
+    "price": 720,
+    "stock": 1,
+    "storageCost": 0,
+    "effect": "+5 energy after successful catches",
+    "desc": "A risky device that siphons field energy back into the user's reserves.",
+    "effects": {
+      "onCatchEnergy": 5
+    }
+  },
+  "GER_030": {
+    "id": "GER_030",
+    "name": "Ashen Veil",
+    "category": "gear",
+    "slot": "cloak",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 190,
+    "stock": 2,
+    "storageCost": 0,
+    "effect": "Protects from volcanic heat damage",
+    "desc": "A soot-threaded cloak worn by hunters who cross burning lands.",
+    "effects": {
+      "heatResist": true
+    }
+  },
+  "GER_031": {
+    "id": "GER_031",
+    "name": "Stormshroud",
+    "category": "gear",
+    "slot": "cloak",
+    "rarity": "Rare",
+    "marketType": "black",
+    "rotates": true,
+    "price": 820,
+    "stock": 1,
+    "storageCost": 0,
+    "effect": "Prevents lightning storm damage in Volt grounds",
+    "desc": "A charged mantle woven with conductive silver threads that disperse violent surges.",
+    "effects": {
+      "lightningImmunity": true
+    }
+  },
+  "GER_032": {
+    "id": "GER_032",
+    "name": "Frostmantle",
+    "category": "gear",
+    "slot": "cloak",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 210,
+    "stock": 2,
+    "storageCost": 0,
+    "effect": "Protects from freezing wind damage",
+    "desc": "A thick mantle crafted for hunters who move through merciless cold.",
+    "effects": {
+      "coldResist": true
+    }
+  },
+  "GER_033": {
+    "id": "GER_033",
+    "name": "Gloamwrap",
+    "category": "gear",
+    "slot": "cloak",
+    "rarity": "Epic",
+    "marketType": "black",
+    "rotates": true,
+    "price": 1150,
+    "stock": 1,
+    "storageCost": 0,
+    "effect": "-20% aura drain in Shadow grounds",
+    "desc": "A dim veil that dulls the pressure of suffocating darkness.",
+    "effects": {
+      "auraDrainReduction": 20
+    }
+  },
+  "GER_034": {
+    "id": "GER_034",
+    "name": "Emberthread",
+    "category": "gear",
+    "slot": "cloak",
+    "rarity": "Rare",
+    "marketType": "black",
+    "rotates": true,
+    "price": 760,
+    "stock": 1,
+    "storageCost": 0,
+    "effect": "+10% Mora spawn chance in Flame grounds",
+    "desc": "A heat-fed cloak that not only protects, but draws fire-aligned Mora nearer.",
+    "effects": {
+      "flameSpawnBoost": 10
+    }
+  },
+  "GER_040": {
+    "id": "GER_040",
+    "name": "Quakewalkers",
+    "category": "gear",
+    "slot": "boots",
+    "rarity": "Rare",
+    "marketType": "black",
+    "rotates": true,
+    "price": 840,
+    "stock": 1,
+    "storageCost": 0,
+    "effect": "Prevents earthquake knockdowns in Terra grounds",
+    "desc": "Heavy boots made to keep a hunter steady when the earth itself rebels.",
+    "effects": {
+      "quakeImmunity": true
+    }
+  },
+  "GER_041": {
+    "id": "GER_041",
+    "name": "Riftwalk Greaves",
+    "category": "gear",
+    "slot": "boots",
+    "rarity": "Epic",
+    "marketType": "black",
+    "rotates": true,
+    "price": 1200,
+    "stock": 1,
+    "storageCost": 0,
+    "effect": "-20% corruption buildup in Rift zones",
+    "desc": "Ancient greaves rumored to have walked through places no sane Lumorian would enter.",
+    "effects": {
+      "corruptionReduction": 20
+    }
+  },
+  "GER_042": {
+    "id": "GER_042",
+    "name": "Deeproot Treads",
+    "category": "gear",
+    "slot": "boots",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 170,
+    "stock": 2,
+    "storageCost": 0,
+    "effect": "Prevents terrain instability penalties",
+    "desc": "Boots that grip the ground like roots in restless soil.",
+    "effects": {
+      "terrainImmunity": true
+    }
+  },
+  "GER_043": {
+    "id": "GER_043",
+    "name": "Tempest Striders",
+    "category": "gear",
+    "slot": "boots",
+    "rarity": "Epic",
+    "marketType": "black",
+    "rotates": true,
+    "price": 1180,
+    "stock": 1,
+    "storageCost": 0,
+    "effect": "Immune to storm knockback, +10% hunt movement efficiency",
+    "desc": "Sky-forged boots for hunters who refuse to bow to the weather.",
+    "effects": {
+      "stormImmunity": true,
+      "movementEfficiency": 10
+    }
+  },
+  "GER_044": {
+    "id": "GER_044",
+    "name": "Faultstride Boots",
+    "category": "gear",
+    "slot": "boots",
+    "rarity": "Rare",
+    "marketType": "black",
+    "rotates": true,
+    "price": 760,
+    "stock": 1,
+    "storageCost": 0,
+    "effect": "-10 HP loss from ground hazards",
+    "desc": "Measured, reinforced boots built for fractured paths and unstable terrain.",
+    "effects": {
+      "groundDamageReduction": 10
+    }
+  },
+  "GER_050": {
+    "id": "GER_050",
+    "name": "Harmony Crest",
+    "category": "gear",
+    "slot": "badge",
+    "rarity": "Uncommon",
+    "marketType": "faction",
+    "faction": "harmony",
+    "rotates": false,
+    "price": 220,
+    "stock": 5,
+    "storageCost": 0,
+    "effect": "-10% corruption gain",
+    "desc": "A faction crest carried by Harmony Lumorians who walk the path of cleansing and balance.",
+    "effects": {
+      "corruptionReduction": 10
+    }
+  },
+  "GER_051": {
+    "id": "GER_051",
+    "name": "Purity Seal",
+    "category": "gear",
+    "slot": "badge",
+    "rarity": "Uncommon",
+    "marketType": "faction",
+    "faction": "purity",
+    "rotates": false,
+    "price": 220,
+    "stock": 5,
+    "storageCost": 0,
+    "effect": "+5% battle accuracy",
+    "desc": "A disciplined seal of the Purity Order, symbolizing command and restraint.",
+    "effects": {
+      "accuracy": 5
+    }
+  },
+  "GER_052": {
+    "id": "GER_052",
+    "name": "Rift Mark",
+    "category": "gear",
+    "slot": "badge",
+    "rarity": "Uncommon",
+    "marketType": "faction",
+    "faction": "rift",
+    "rotates": false,
+    "price": 220,
+    "stock": 5,
+    "storageCost": 0,
+    "effect": "+10% unstable Mora encounter chance",
+    "desc": "A mark worn by those who willingly step closer to the Rift's danger.",
+    "effects": {
+      "unstableEncounter": 10
+    }
+  },
+  "REL_001": {
+    "id": "REL_001",
+    "name": "Primordial Fragment",
+    "category": "gear",
+    "slot": "relic",
+    "rarity": "Epic",
+    "marketType": "black",
+    "rotates": true,
+    "price": 1600,
+    "stock": 1,
+    "storageCost": 0,
+    "effect": "+10% Mora XP gain",
+    "desc": "A fragment tied to the first disturbance that birthed Lumora's greatest mysteries.",
+    "effects": {
+      "xpBoost": 10
+    }
+  },
+  "REL_002": {
+    "id": "REL_002",
+    "name": "Vitality Relic",
+    "category": "gear",
+    "slot": "relic",
+    "rarity": "Epic",
+    "marketType": "black",
+    "rotates": true,
+    "price": 1700,
+    "stock": 1,
+    "storageCost": 0,
+    "effect": "+50 player max HP",
+    "desc": "A relic dense with preserved life-force, prized by hunters who survive on the edge.",
+    "effects": {
+      "maxHp": 50
+    }
+  },
+  "REL_003": {
+    "id": "REL_003",
+    "name": "Echo Relic",
+    "category": "gear",
+    "slot": "relic",
+    "rarity": "Legendary",
+    "marketType": "black",
+    "rotates": true,
+    "price": 2800,
+    "stock": 1,
+    "storageCost": 0,
+    "effect": "+15% rare Mora spawn chance, +10% hunting efficiency",
+    "desc": "An ancient relic that seems to resonate with faint traces of every Mora that passes nearby.",
+    "effects": {
+      "rareSpawn": 15,
+      "huntEfficiency": 10
+    }
+  },
+  "ITM_001": {
+    "id": "ITM_001",
+    "name": "Minor Healing Capsule",
+    "category": "consumable",
+    "rarity": "Common",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 35,
+    "stock": 10,
+    "storageCost": 1,
+    "effect": "heal",
+    "value": 30,
+    "desc": "A small capsule filled with condensed vitality energy.",
+    "effects": {
+      "heal": 30
+    }
+  },
+  "ITM_002": {
+    "id": "ITM_002",
+    "name": "Major Healing Capsule",
+    "category": "consumable",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 90,
+    "stock": 6,
+    "storageCost": 1,
+    "effect": "heal",
+    "value": 70,
+    "desc": "A stronger high value healing capsule used before dangerous hunts.",
+    "effects": {
+      "heal": 70
+    }
+  },
+  "ITM_016": {
+    "id": "ITM_016",
+    "name": "Energy Capsule",
+    "category": "consumable",
+    "rarity": "Common",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 40,
+    "stock": 10,
+    "storageCost": 1,
+    "effect": "energy",
+    "value": 25,
+    "desc": "A capsule filled with concentrated energy to quickly restore your vitality.",
+    "effects": {
+      "energy": 25
+    }
+  },
+  "ITM_003": {
+    "id": "ITM_003",
+    "name": "Aura Stabilizer",
+    "category": "consumable",
+    "rarity": "Rare",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 210,
+    "stock": 3,
+    "storageCost": 1,
+    "effect": "Restores 15 aura after fainting",
+    "desc": "A delicate vial that helps recover scattered aura.",
+    "effects": {
+      "auraRestoreOnFaint": 15
+    }
+  },
+  "ITM_005": {
+    "id": "ITM_005",
+    "name": "Stabilizer",
+    "category": "consumable",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 120,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "-20 Primordial Energy, reduces flee risk",
+    "desc": "A trusted field item used to calm dangerous Mora instability.",
+    "effects": {
+      "primordialReduce": 20,
+      "fleeReduction": 20
+    }
+  },
+  "ITM_006": {
+    "id": "ITM_006",
+    "name": "Cleanse Shard",
+    "category": "consumable",
+    "rarity": "Rare",
+    "marketType": "faction",
+    "faction": "harmony",
+    "rotates": true,
+    "price": 260,
+    "stock": 2,
+    "storageCost": 1,
+    "effect": "Removes corrupted status from one Mora",
+    "desc": "A polished shard infused with cleansing energy by Harmony artisans.",
+    "effects": {
+      "removeCorruption": true
+    }
+  },
+  "ITM_007": {
+    "id": "ITM_007",
+    "name": "Lure Beacon",
+    "category": "hunting",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 130,
+    "stock": 4,
+    "storageCost": 1,
+    "effect": "+15% Mora spawn rate for one hunt",
+    "desc": "A pulse beacon that attracts wandering Mora from the surrounding area.",
+    "effects": {
+      "spawnRate": 15,
+      "duration": "hunt"
+    }
+  },
+  "ITM_008": {
+    "id": "ITM_008",
+    "name": "Forbidden Mora Lure",
+    "category": "hunting",
+    "rarity": "Epic",
+    "marketType": "black",
+    "rotates": true,
+    "price": 950,
+    "stock": 1,
+    "storageCost": 1,
+    "effect": "Forces an immediate Mora spawn in hunting zones",
+    "desc": "A banned lure that emits an aggressive signal too tempting for nearby Mora to ignore.",
+    "effects": {
+      "forceSpawn": true
+    }
+  },
+  "ITM_009": {
+    "id": "ITM_009",
+    "name": "Vital Core Crystal",
+    "category": "special",
+    "rarity": "Rare",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 420,
+    "stock": 2,
+    "storageCost": 1,
+    "effect": "+20 player max HP",
+    "desc": "A condensed life crystal that permanently strengthens vitality.",
+    "effects": {
+      "maxHp": 20
+    }
+  },
+  "ITM_010": {
+    "id": "ITM_010",
+    "name": "Traveler's Satchel",
+    "category": "special",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 240,
+    "stock": 2,
+    "storageCost": 1,
+    "effect": "+10 inventory storage capacity",
+    "desc": "A reinforced satchel used by hunters who travel farther than most.",
+    "effects": {
+      "storage": 10
+    }
+  },
+  "ITM_011": {
+    "id": "ITM_011",
+    "name": "Expedition Pack",
+    "category": "special",
+    "rarity": "Rare",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 520,
+    "stock": 1,
+    "storageCost": 1,
+    "effect": "+20 inventory storage capacity",
+    "desc": "A large expedition pack built for dangerous and extended journeys.",
+    "effects": {
+      "storage": 20
+    }
+  },
+  "ITM_012": {
+    "id": "ITM_012",
+    "name": "Dimensional Pouch",
+    "category": "special",
+    "rarity": "Epic",
+    "marketType": "black",
+    "rotates": true,
+    "price": 1400,
+    "stock": 1,
+    "storageCost": 1,
+    "effect": "+40 inventory storage capacity",
+    "desc": "A strange pouch rumored to contain compressed space inside.",
+    "effects": {
+      "storage": 40
+    }
+  },
+  "ITM_013": {
+    "id": "ITM_013",
+    "name": "Shadow Permit",
+    "category": "access",
+    "rarity": "Rare",
+    "marketType": "black",
+    "rotates": true,
+    "price": 600,
+    "stock": 1,
+    "storageCost": 1,
+    "effect": "Grants temporary access to restricted black market stock",
+    "desc": "A discreet permit exchanged in quiet corners by merchants who trust almost no one.",
+    "effects": {
+      "blackMarketAccess": true
+    }
+  },
+  "ITM_014": {
+    "id": "ITM_014",
+    "name": "Capture Net",
+    "category": "hunting",
+    "rarity": "Common",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 60,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "+5% catch success for one attempt",
+    "desc": "A reinforced capture tool used by beginners and veterans alike.",
+    "effects": {
+      "catchChance": 5,
+      "duration": "once"
+    }
+  },
+  "ITM_015": {
+    "id": "ITM_015",
+    "name": "Pulse Tonic",
+    "category": "consumable",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 95,
+    "stock": 4,
+    "storageCost": 1,
+    "effect": "Reduces environmental HP loss for one hunt",
+    "desc": "A bitter tonic that helps the body endure harsh field conditions a little longer.",
+    "effects": {
+      "envDamageReduction": 20,
+      "duration": "hunt"
+    }
+  },
+  "MAT_001": {
+    "id": "MAT_001",
+    "name": "Rift Dust",
+    "category": "material",
+    "rarity": "Common",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 25,
+    "stock": 8,
+    "storageCost": 1,
+    "effect": "Crafting material",
+    "desc": "Fine residue gathered from unstable zones and Rift-touched surfaces."
+  },
+  "MAT_002": {
+    "id": "MAT_002",
+    "name": "Aura Crystal",
+    "category": "material",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 70,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "Crafting material",
+    "desc": "A crystal that stores lingering aura and is prized by artificers."
+  },
+  "MAT_003": {
+    "id": "MAT_003",
+    "name": "Mora Fang",
+    "category": "material",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 65,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "Crafting material",
+    "desc": "A trophy part used in advanced gear work and black market trades."
+  },
+  "MAT_004": {
+    "id": "MAT_004",
+    "name": "Purity Ash",
+    "category": "material",
+    "rarity": "Rare",
+    "marketType": "faction",
+    "faction": "purity",
+    "rotates": true,
+    "price": 140,
+    "stock": 3,
+    "storageCost": 1,
+    "effect": "Faction crafting material",
+    "desc": "Refined ash used by the Purity Order in seals, marks, and strict rites."
+  },
+  "MAT_005": {
+    "id": "MAT_005",
+    "name": "Shadow Resin",
+    "category": "material",
+    "rarity": "Rare",
+    "marketType": "black",
+    "rotates": true,
+    "price": 210,
+    "stock": 2,
+    "storageCost": 1,
+    "effect": "Rare crafting material",
+    "desc": "A dark substance used in black market tailoring and unstable bindings."
+  },
+  "ACC_001": {
+    "id": "ACC_001",
+    "name": "Black Market Pass",
+    "category": "access",
+    "rarity": "Rare",
+    "marketType": "black",
+    "rotates": true,
+    "price": 700,
+    "stock": 1,
+    "storageCost": 1,
+    "effect": "Allows access to the Black Market",
+    "desc": "A discreet pass traded among underground merchants and smugglers."
+  },
+  "ACC_002": {
+    "id": "ACC_002",
+    "name": "Vault Key",
+    "category": "access",
+    "rarity": "Legendary",
+    "marketType": "black",
+    "rotates": true,
+    "price": 2600,
+    "stock": 1,
+    "storageCost": 1,
+    "effect": "Unlocks hidden black market inventory",
+    "desc": "A key whispered about in hidden circles, said to open deeper layers of forbidden trade."
+  },
+  "SCR_001": {
+    "id": "SCR_001",
+    "name": "Scroll of Purification",
+    "category": "scroll",
+    "rarity": "Rare",
+    "marketType": "faction",
+    "faction": "harmony",
+    "rotates": false,
+    "price": 180,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "Purifies one corrupted Mora or corruption event",
+    "desc": "A sacred Harmony scroll that releases stabilizing light to cleanse corruption."
+  },
+  "SCR_002": {
+    "id": "SCR_002",
+    "name": "Scroll of Tranquility",
+    "category": "scroll",
+    "rarity": "Uncommon",
+    "marketType": "faction",
+    "faction": "harmony",
+    "rotates": false,
+    "price": 140,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "-20% incoming damage for one battle",
+    "desc": "A calming script that tempers violence and steadies the flow of conflict."
+  },
+  "SCR_003": {
+    "id": "SCR_003",
+    "name": "Scroll of Renewal",
+    "category": "scroll",
+    "rarity": "Rare",
+    "marketType": "faction",
+    "faction": "harmony",
+    "rotates": false,
+    "price": 170,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "Restores 50 player HP and 30 active Mora HP",
+    "desc": "A restorative Harmony text used after dangerous encounters."
+  },
+  "SCR_004": {
+    "id": "SCR_004",
+    "name": "Scroll of Spirit Bond",
+    "category": "scroll",
+    "rarity": "Uncommon",
+    "marketType": "faction",
+    "faction": "harmony",
+    "rotates": false,
+    "price": 130,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "+15% catch success for next Mora",
+    "desc": "A bonding scroll used by Harmony Lumorians to strengthen trust before capture."
+  },
+  "SCR_005": {
+    "id": "SCR_005",
+    "name": "Scroll of Aura Shield",
+    "category": "scroll",
+    "rarity": "Rare",
+    "marketType": "faction",
+    "faction": "harmony",
+    "rotates": false,
+    "price": 190,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "Prevents aura loss from one faint",
+    "desc": "A protective script that cushions the spirit when the body collapses."
+  },
+  "SCR_006": {
+    "id": "SCR_006",
+    "name": "Scroll of Dominion",
+    "category": "scroll",
+    "rarity": "Rare",
+    "marketType": "faction",
+    "faction": "purity",
+    "rotates": false,
+    "price": 180,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "Temporarily controls unstable Mora during battle",
+    "desc": "A rigid command scroll used by the Purity Order to force obedience through will."
+  },
+  "SCR_007": {
+    "id": "SCR_007",
+    "name": "Scroll of Precision",
+    "category": "scroll",
+    "rarity": "Uncommon",
+    "marketType": "faction",
+    "faction": "purity",
+    "rotates": false,
+    "price": 130,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "+20% move accuracy for one battle",
+    "desc": "A sharp tactical script that refines execution and punishes carelessness."
+  },
+  "SCR_008": {
+    "id": "SCR_008",
+    "name": "Scroll of Command",
+    "category": "scroll",
+    "rarity": "Rare",
+    "marketType": "faction",
+    "faction": "purity",
+    "rotates": false,
+    "price": 170,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "Forces Mora obedience while unstable for a short period",
+    "desc": "A stern Purity script written to reinforce order when chaos starts breaking through."
+  },
+  "SCR_009": {
+    "id": "SCR_009",
+    "name": "Scroll of War Focus",
+    "category": "scroll",
+    "rarity": "Rare",
+    "marketType": "faction",
+    "faction": "purity",
+    "rotates": false,
+    "price": 175,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "+15% Mora attack for one battle",
+    "desc": "A battle-script that sharpens aggression and funnels intent into clean offense."
+  },
+  "SCR_010": {
+    "id": "SCR_010",
+    "name": "Scroll of Tactical Insight",
+    "category": "scroll",
+    "rarity": "Uncommon",
+    "marketType": "faction",
+    "faction": "purity",
+    "rotates": false,
+    "price": 125,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "Reveals enemy Mora stats during battle",
+    "desc": "A practical field scroll used by disciplined fighters who prefer knowledge over guesswork."
+  },
+  "SCR_011": {
+    "id": "SCR_011",
+    "name": "Scroll of Rift Surge",
+    "category": "scroll",
+    "rarity": "Rare",
+    "marketType": "faction",
+    "faction": "rift",
+    "rotates": false,
+    "price": 190,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "+30% Mora attack for next battle",
+    "desc": "A dangerous Rift text that pulls violent power closer at a cost."
+  },
+  "SCR_012": {
+    "id": "SCR_012",
+    "name": "Scroll of Corruption Pulse",
+    "category": "scroll",
+    "rarity": "Rare",
+    "marketType": "faction",
+    "faction": "rift",
+    "rotates": false,
+    "price": 170,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "+20% corrupted Mora spawn chance for one hunt",
+    "desc": "A pulse-script that agitates corrupted energy and draws unstable lifeforms nearer."
+  },
+  "SCR_013": {
+    "id": "SCR_013",
+    "name": "Scroll of Abyss Echo",
+    "category": "scroll",
+    "rarity": "Uncommon",
+    "marketType": "faction",
+    "faction": "rift",
+    "rotates": false,
+    "price": 135,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "Reveals hidden unstable Mora nearby",
+    "desc": "A dark resonance scroll that makes the unseen answer back."
+  },
+  "SCR_014": {
+    "id": "SCR_014",
+    "name": "Scroll of Rift Step",
+    "category": "scroll",
+    "rarity": "Rare",
+    "marketType": "faction",
+    "faction": "rift",
+    "rotates": false,
+    "price": 165,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "Avoids environmental damage for one hunt",
+    "desc": "A movement script used by those reckless enough to dance through danger."
+  },
+  "SCR_015": {
+    "id": "SCR_015",
+    "name": "Scroll of Void Channel",
+    "category": "scroll",
+    "rarity": "Epic",
+    "marketType": "faction",
+    "faction": "rift",
+    "rotates": false,
+    "price": 260,
+    "stock": 5,
+    "storageCost": 1,
+    "effect": "+10 Primordial Energy instantly",
+    "desc": "A forbidden Rift scroll that pours raw unstable force into the user or Mora."
+  },
+  "PURIFY_ORB": {
+    "id": "PURIFY_ORB",
+    "name": "Orb of Purification",
+    "category": "tool",
+    "rarity": "Rare",
+    "marketType": "faction",
+    "faction": "harmony",
+    "rotates": false,
+    "price": 0,
+    "stock": 0,
+    "storageCost": 0,
+    "effect": "Allows purification of corrupted Mora during wild battles. Base success ~40%.",
+    "desc": "A sacred orb carried by every Harmony Lumorian. Its light wavers but never dies — the instrument of purification since the first Rift tear."
+  },
+  "MUT_001": {
+    "id": "MUT_001",
+    "name": "Mutation Shard",
+    "category": "consumable",
+    "rarity": "Rare",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 600,
+    "stock": 3,
+    "storageCost": 0,
+    "effect": "Triggers a temporary mutation on a non-companion Mora. Lasts 1-2 battles.",
+    "desc": "A crystallized fragment of unstable Rift energy. When applied to a Mora, it triggers a brief but powerful transformation."
+  },
+  "MUT_002": {
+    "id": "MUT_002",
+    "name": "Primal Catalyst",
+    "category": "consumable",
+    "rarity": "Epic",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 1200,
+    "stock": 1,
+    "storageCost": 0,
+    "effect": "Triggers a stronger mutation on a non-companion Mora. Lasts 2-3 battles.",
+    "desc": "A volatile catalyst forged from deep Rift fissures. Triggers a more potent and longer-lasting mutation."
+  },
+  "MUT_003": {
+    "id": "MUT_003",
+    "name": "Bond Amplifier",
+    "category": "consumable",
+    "rarity": "Epic",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 800,
+    "stock": 2,
+    "storageCost": 0,
+    "effect": "+50 companion bond points instantly.",
+    "desc": "A resonance crystal that amplifies the bond between a Lumorian and their companion Mora."
+  }
+}

@@ -1,0 +1,441 @@
+{
+  "267581311156378@lid": {
+    "ownerJid": "267581311156378@lid",
+    "code": "3785269",
+    "totalUses": 3,
+    "usedBy": [
+      "83258645692651@lid",
+      "67620669808702@lid",
+      "144500265619658@lid"
+    ],
+    "pendingRewards": [
+      {
+        "triggeredAt": 1775464263054,
+        "newPlayer": "83258645692651@lid",
+        "lucons": 500,
+        "moraRarities": [
+          "Uncommon",
+          "Uncommon",
+          "Rare"
+        ],
+        "uses": 1,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775469245434,
+        "newPlayer": "67620669808702@lid",
+        "lucons": 500,
+        "moraRarities": [
+          "Uncommon",
+          "Uncommon",
+          "Rare"
+        ],
+        "uses": 2,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775479275775,
+        "newPlayer": "144500265619658@lid",
+        "lucons": 1200,
+        "moraRarities": [
+          "Uncommon",
+          "Rare",
+          "Rare"
+        ],
+        "uses": 3,
+        "claimed": true
+      }
+    ],
+    "activePick": null
+  },
+  "61495627001872@lid": {
+    "ownerJid": "61495627001872@lid",
+    "code": "8723825",
+    "totalUses": 1,
+    "usedBy": [
+      "28686824767575@lid"
+    ],
+    "pendingRewards": [
+      {
+        "triggeredAt": 1775726262570,
+        "newPlayer": "28686824767575@lid",
+        "lucons": 500,
+        "moraRarities": [
+          "Uncommon",
+          "Uncommon",
+          "Rare"
+        ],
+        "uses": 1,
+        "claimed": true
+      }
+    ],
+    "activePick": null
+  },
+  "259983665004558@lid": {
+    "ownerJid": "259983665004558@lid",
+    "code": "5588994",
+    "totalUses": 4,
+    "usedBy": [
+      "167882319249647@lid",
+      "275488446673069@lid",
+      "30142751609030@lid",
+      "114238194479172@lid"
+    ],
+    "pendingRewards": [
+      {
+        "triggeredAt": 1775469290728,
+        "newPlayer": "167882319249647@lid",
+        "lucons": 500,
+        "moraRarities": [
+          "Uncommon",
+          "Uncommon",
+          "Rare"
+        ],
+        "uses": 1,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775736262258,
+        "newPlayer": "275488446673069@lid",
+        "lucons": 500,
+        "moraRarities": [
+          "Uncommon",
+          "Uncommon",
+          "Rare"
+        ],
+        "uses": 2,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775821025442,
+        "newPlayer": "30142751609030@lid",
+        "lucons": 1200,
+        "moraRarities": [
+          "Uncommon",
+          "Rare",
+          "Rare"
+        ],
+        "uses": 3,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775824494990,
+        "newPlayer": "114238194479172@lid",
+        "lucons": 1200,
+        "moraRarities": [
+          "Uncommon",
+          "Rare",
+          "Rare"
+        ],
+        "uses": 4,
+        "claimed": true
+      }
+    ],
+    "activePick": null
+  },
+  "85376064581854@lid": {
+    "ownerJid": "85376064581854@lid",
+    "code": "8549049",
+    "totalUses": 8,
+    "usedBy": [
+      "49452891009053@lid",
+      "74939277271210@lid",
+      "182867493671012@lid",
+      "180299086434375@lid",
+      "137851941421235@lid",
+      "53039155146794@lid",
+      "210338037407779@lid",
+      "200824785490015@lid"
+    ],
+    "pendingRewards": [
+      {
+        "triggeredAt": 1775505939324,
+        "newPlayer": "49452891009053@lid",
+        "lucons": 500,
+        "moraRarities": [
+          "Uncommon",
+          "Uncommon",
+          "Rare"
+        ],
+        "uses": 1,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775516311632,
+        "newPlayer": "74939277271210@lid",
+        "lucons": 500,
+        "moraRarities": [
+          "Uncommon",
+          "Uncommon",
+          "Rare"
+        ],
+        "uses": 2,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775516603266,
+        "newPlayer": "182867493671012@lid",
+        "lucons": 1200,
+        "moraRarities": [
+          "Uncommon",
+          "Rare",
+          "Rare"
+        ],
+        "uses": 3,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775516653894,
+        "newPlayer": "180299086434375@lid",
+        "lucons": 1200,
+        "moraRarities": [
+          "Uncommon",
+          "Rare",
+          "Rare"
+        ],
+        "uses": 4,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775546285181,
+        "newPlayer": "137851941421235@lid",
+        "lucons": 2000,
+        "moraRarities": [
+          "Rare",
+          "Rare",
+          "Epic"
+        ],
+        "uses": 5,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775564951659,
+        "newPlayer": "53039155146794@lid",
+        "lucons": 2000,
+        "moraRarities": [
+          "Rare",
+          "Rare",
+          "Epic"
+        ],
+        "uses": 6,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775680952677,
+        "newPlayer": "210338037407779@lid",
+        "lucons": 2000,
+        "moraRarities": [
+          "Rare",
+          "Rare",
+          "Epic"
+        ],
+        "uses": 7,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775733179038,
+        "newPlayer": "200824785490015@lid",
+        "lucons": 2000,
+        "moraRarities": [
+          "Rare",
+          "Rare",
+          "Epic"
+        ],
+        "uses": 8,
+        "claimed": true
+      }
+    ],
+    "activePick": null
+  },
+  "132951115317490@lid": {
+    "ownerJid": "132951115317490@lid",
+    "code": "4904781",
+    "totalUses": 7,
+    "usedBy": [
+      "57484446331084@lid",
+      "79328800960685@lid",
+      "172645454766234@lid",
+      "112958059347992@lid",
+      "9680940191824@lid",
+      "229802292330685@lid",
+      "116986705092794@lid"
+    ],
+    "pendingRewards": [
+      {
+        "triggeredAt": 1775481133358,
+        "newPlayer": "57484446331084@lid",
+        "lucons": 500,
+        "moraRarities": [
+          "Uncommon",
+          "Uncommon",
+          "Rare"
+        ],
+        "uses": 1,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775481491891,
+        "newPlayer": "79328800960685@lid",
+        "lucons": 500,
+        "moraRarities": [
+          "Uncommon",
+          "Uncommon",
+          "Rare"
+        ],
+        "uses": 2,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775485521040,
+        "newPlayer": "172645454766234@lid",
+        "lucons": 1200,
+        "moraRarities": [
+          "Uncommon",
+          "Rare",
+          "Rare"
+        ],
+        "uses": 3,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775487637283,
+        "newPlayer": "112958059347992@lid",
+        "lucons": 1200,
+        "moraRarities": [
+          "Uncommon",
+          "Rare",
+          "Rare"
+        ],
+        "uses": 4,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775498870863,
+        "newPlayer": "9680940191824@lid",
+        "lucons": 2000,
+        "moraRarities": [
+          "Rare",
+          "Rare",
+          "Epic"
+        ],
+        "uses": 5,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775504142227,
+        "newPlayer": "229802292330685@lid",
+        "lucons": 2000,
+        "moraRarities": [
+          "Rare",
+          "Rare",
+          "Epic"
+        ],
+        "uses": 6,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775504681978,
+        "newPlayer": "116986705092794@lid",
+        "lucons": 2000,
+        "moraRarities": [
+          "Rare",
+          "Rare",
+          "Epic"
+        ],
+        "uses": 7,
+        "claimed": true
+      }
+    ],
+    "activePick": null
+  },
+  "243443360096505@lid": {
+    "ownerJid": "243443360096505@lid",
+    "code": "5059622",
+    "totalUses": 4,
+    "usedBy": [
+      "142060959076603@lid",
+      "14483200184549@lid",
+      "100695709581380@lid",
+      "126065896869969@lid"
+    ],
+    "pendingRewards": [
+      {
+        "triggeredAt": 1775539911205,
+        "newPlayer": "142060959076603@lid",
+        "lucons": 500,
+        "moraRarities": [
+          "Uncommon",
+          "Uncommon",
+          "Rare"
+        ],
+        "uses": 1,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775562568563,
+        "newPlayer": "14483200184549@lid",
+        "lucons": 500,
+        "moraRarities": [
+          "Uncommon",
+          "Uncommon",
+          "Rare"
+        ],
+        "uses": 2,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775731843108,
+        "newPlayer": "100695709581380@lid",
+        "lucons": 1200,
+        "moraRarities": [
+          "Uncommon",
+          "Rare",
+          "Rare"
+        ],
+        "uses": 3,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1775732175492,
+        "newPlayer": "126065896869969@lid",
+        "lucons": 1200,
+        "moraRarities": [
+          "Uncommon",
+          "Rare",
+          "Rare"
+        ],
+        "uses": 4,
+        "claimed": true
+      }
+    ],
+    "activePick": null
+  },
+  "208474038341639@lid": {
+    "ownerJid": "208474038341639@lid",
+    "code": "6396495",
+    "totalUses": 0,
+    "usedBy": [],
+    "pendingRewards": []
+  },
+  "142060959076603@lid": {
+    "ownerJid": "142060959076603@lid",
+    "code": "6038195",
+    "totalUses": 0,
+    "usedBy": [],
+    "pendingRewards": []
+  },
+  "231009564000341@lid": {
+    "ownerJid": "231009564000341@lid",
+    "code": "3419170",
+    "totalUses": 0,
+    "usedBy": [],
+    "pendingRewards": []
+  },
+  "200824785490015@lid": {
+    "ownerJid": "200824785490015@lid",
+    "code": "0157573",
+    "totalUses": 0,
+    "usedBy": [],
+    "pendingRewards": []
+  }
+}

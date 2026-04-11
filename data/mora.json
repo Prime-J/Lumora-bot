@@ -1,0 +1,2125 @@
+[
+  {
+    "id": 1,
+    "name": "Nylon",
+    "type": "Aqua",
+    "rarity": "common",
+    "description": "A disciplined river guardian Mora. Nylon flows like water but strikes with calculated precision.",
+    "baseStats": { "hp": 65, "atk": 48, "def": 50, "spd": 52, "energy": 40 },
+    "moves": {
+      "Aqua Jab": { "power": 35, "accuracy": 95, "category": "Physical", "desc": "A quick water-infused strike." },
+      "Bubble Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces damage from the next hit." },
+      "Tidal Snap": { "power": 55, "accuracy": 92, "category": "Physical", "desc": "A heavy water bite attack." },
+      "Cleanse Flow": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Heals slightly and clears minor negative effects." },
+      "Riptide Rush": { "power": 70, "accuracy": 88, "category": "Special", "desc": "A rushing wave that may lower Speed." },
+      "Mist Screen": { "power": 0, "accuracy": 95, "category": "Status", "desc": "Lowers enemy Accuracy with watery mist." },
+      "Pressure Jet": { "power": 62, "accuracy": 92, "category": "Special", "desc": "A pressurized jet that may lower Defense." }
+    },
+    "learnset": {
+      "3": ["Aqua Jab", "Bubble Veil"],
+      "6": ["Tidal Snap"],
+      "10": ["Cleanse Flow"],
+      "14": ["Mist Screen"],
+      "18": ["Riptide Rush"],
+      "22": ["Pressure Jet"]
+    }
+  },
+
+  {
+    "id": 2,
+    "name": "Thornel",
+    "type": "Nature",
+    "rarity": "common",
+    "description": "A razor-leaf predator clad in living armor. Its twin blade-arms slice with surgical precision.",
+    "baseStats": { "hp": 58, "atk": 62, "def": 50, "spd": 46, "energy": 34 },
+    "moves": {
+      "Razorleaf Rend": { "power": 45, "accuracy": 95, "category": "Physical", "desc": "Twin leaf blades slash the enemy." },
+      "Verdant Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense with hardened leaf armor." },
+      "Thorn Snare": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Binds target and lowers Speed." },
+      "Sap Strike": { "power": 50, "accuracy": 95, "category": "Physical", "desc": "Drains a bit of HP from the opponent." },
+      "Poison Pollen": { "power": 0, "accuracy": 85, "category": "Status", "desc": "May poison the enemy." },
+      "Emerald Blitz": { "power": 65, "accuracy": 90, "category": "Physical", "desc": "Fast dash slash with increased crit chance." },
+      "Bramble Lash": { "power": 58, "accuracy": 92, "category": "Physical", "desc": "A whip strike that may lower Defense." }
+    },
+    "learnset": {
+      "3": ["Razorleaf Rend", "Verdant Guard"],
+      "6": ["Thorn Snare"],
+      "10": ["Sap Strike"],
+      "14": ["Poison Pollen"],
+      "18": ["Emerald Blitz"],
+      "22": ["Bramble Lash"]
+    }
+  },
+
+  {
+    "id": 3,
+    "name": "Terron",
+    "type": "Terra",
+    "rarity": "common",
+    "description": "A stone-armored defender that endures heavy blows and retaliates with crushing force.",
+    "baseStats": { "hp": 70, "atk": 55, "def": 60, "spd": 30, "energy": 42 },
+    "moves": {
+      "Stone Knuckle": { "power": 40, "accuracy": 95, "category": "Physical", "desc": "Rock-powered punch." },
+      "Dustwall": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense with a dust barrier." },
+      "Quake Step": { "power": 55, "accuracy": 92, "category": "Physical", "desc": "Ground stomp that may flinch." },
+      "Iron Soil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Heals slightly and raises Defense a bit." },
+      "Boulder Break": { "power": 78, "accuracy": 85, "category": "Physical", "desc": "Crushing heavy strike." },
+      "Pebble Spray": { "power": 50, "accuracy": 95, "category": "Special", "desc": "Shoots sharp pebbles that may lower Accuracy." },
+      "Seismic Brace": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces damage from the next 2 hits slightly." }
+    },
+    "learnset": {
+      "3": ["Stone Knuckle", "Dustwall"],
+      "7": ["Quake Step"],
+      "12": ["Pebble Spray"],
+      "16": ["Iron Soil"],
+      "20": ["Seismic Brace"],
+      "24": ["Boulder Break"]
+    }
+  },
+
+  {
+    "id": 4,
+    "name": "Sparko",
+    "type": "Volt",
+    "rarity": "common",
+    "description": "A lightning-fast predator that overwhelms enemies with speed and electric bursts.",
+    "baseStats": { "hp": 48, "atk": 60, "def": 38, "spd": 75, "energy": 32 },
+    "moves": {
+      "Spark Tap": { "power": 35, "accuracy": 95, "category": "Physical", "desc": "Quick electric hit." },
+      "Charge Up": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Boosts the next Volt move." },
+      "Thunder Pounce": { "power": 60, "accuracy": 90, "category": "Physical", "desc": "Jumping lightning strike." },
+      "Static Field": { "power": 0, "accuracy": 90, "category": "Status", "desc": "May paralyze the target." },
+      "Volt Surge": { "power": 75, "accuracy": 85, "category": "Special", "desc": "High voltage blast." },
+      "Arc Feint": { "power": 45, "accuracy": 95, "category": "Physical", "desc": "A tricky strike that may raise Speed." },
+      "Overcharge Snap": { "power": 70, "accuracy": 88, "category": "Special", "desc": "A sharp bolt that may lower Defense." }
+    },
+    "learnset": {
+      "3": ["Spark Tap", "Charge Up"],
+      "6": ["Arc Feint"],
+      "10": ["Thunder Pounce"],
+      "14": ["Static Field"],
+      "18": ["Overcharge Snap"],
+      "22": ["Volt Surge"]
+    }
+  },
+
+  {
+    "id": 5,
+    "name": "Emberu",
+    "type": "Flame",
+    "rarity": "common",
+    "description": "A blazing warrior Mora that grows stronger as battle intensity rises.",
+    "baseStats": { "hp": 52, "atk": 63, "def": 40, "spd": 55, "energy": 34 },
+    "moves": {
+      "Cinder Tap": { "power": 40, "accuracy": 95, "category": "Physical", "desc": "Quick burning strike." },
+      "Heat Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Attack slightly." },
+      "Flare Claw": { "power": 55, "accuracy": 90, "category": "Physical", "desc": "Fiery claw attack." },
+      "Smoke Screen": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Lowers enemy Accuracy." },
+      "Blaze Dash": { "power": 75, "accuracy": 85, "category": "Physical", "desc": "Fast high-damage flame dash." },
+      "Searing Nudge": { "power": 50, "accuracy": 95, "category": "Special", "desc": "A small flame burst that may burn." },
+      "Kindle Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces damage from next hit and raises Attack slightly." }
+    },
+    "learnset": {
+      "3": ["Cinder Tap", "Heat Veil"],
+      "6": ["Flare Claw"],
+      "10": ["Smoke Screen"],
+      "14": ["Searing Nudge"],
+      "18": ["Kindle Guard"],
+      "22": ["Blaze Dash"]
+    }
+  },
+
+  {
+    "id": 6,
+    "name": "Glacyn",
+    "type": "Frost",
+    "rarity": "Uncommon",
+    "description": "A silent frost hunter that slows enemies before delivering fatal precision.",
+    "baseStats": { "hp": 58, "atk": 50, "def": 55, "spd": 40, "energy": 38 },
+    "moves": {
+      "Ice Fang": { "power": 50, "accuracy": 95, "category": "Physical", "desc": "Freezing bite attack." },
+      "Frost Armor": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense." },
+      "Glacier Slam": { "power": 75, "accuracy": 85, "category": "Physical", "desc": "Heavy ice impact." },
+      "Hail Storm": { "power": 90, "accuracy": 90, "category": "Special", "desc": "Summons a hail storm that may lower Speed." },
+      "Chill Pulse": { "power": 60, "accuracy": 92, "category": "Special", "desc": "A cold wave that may lower Attack." },
+      "Snow Blind": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Lowers the target’s Accuracy with icy mist." }
+    },
+    "learnset": {
+      "3": ["Ice Fang", "Frost Armor"],
+      "7": ["Chill Pulse"],
+      "12": ["Snow Blind"],
+      "16": ["Glacier Slam"],
+      "20": ["Hail Storm"]
+    }
+  },
+
+  {
+    "id": 7,
+    "name": "Umbrake",
+    "type": "Shadow",
+    "rarity": "Uncommon",
+    "description": "A lurking shadow Mora that weakens enemies before striking from darkness.",
+    "baseStats": { "hp": 50, "atk": 65, "def": 42, "spd": 60, "energy": 34 },
+    "moves": {
+      "Shadow Claw": { "power": 55, "accuracy": 95, "category": "Physical", "desc": "Dark slicing attack." },
+      "Night Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy Accuracy." },
+      "Phantom Rush": { "power": 70, "accuracy": 88, "category": "Special", "desc": "Dark energy burst." },
+      "Dread Pin": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Traps target and lowers Speed." },
+      "Shadow Drain": { "power": 55, "accuracy": 92, "category": "Special", "desc": "Drains a small amount of HP." },
+      "Eclipse Pierce": { "power": 78, "accuracy": 85, "category": "Physical", "desc": "A heavy strike with increased crit chance." }
+    },
+    "learnset": {
+      "3": ["Shadow Claw", "Night Veil"],
+      "7": ["Dread Pin"],
+      "12": ["Shadow Drain"],
+      "18": ["Phantom Rush"],
+      "24": ["Eclipse Pierce"]
+    }
+  },
+
+  {
+    "id": 8,
+    "name": "Torrivine",
+    "type": "Nature",
+    "rarity": "Uncommon",
+    "description": "A jungle brute that traps foes before overwhelming them.",
+    "baseStats": { "hp": 60, "atk": 58, "def": 52, "spd": 35, "energy": 40 },
+    "moves": {
+      "Vine Crush": { "power": 60, "accuracy": 90, "category": "Physical", "desc": "Crushing vine attack." },
+      "Root Trap": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Traps the enemy and lowers Speed." },
+      "Bark Skin": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense." },
+      "Sap Squeeze": { "power": 50, "accuracy": 95, "category": "Physical", "desc": "Drains HP from opponent." },
+      "Canopy Slam": { "power": 75, "accuracy": 85, "category": "Physical", "desc": "A heavy slam that may lower Defense." }
+    },
+    "learnset": {
+      "3": ["Vine Crush", "Bark Skin"],
+      "7": ["Root Trap"],
+      "12": ["Sap Squeeze"],
+      "18": ["Canopy Slam"]
+    }
+  },
+
+  {
+    "id": 9,
+    "name": "Pyrraptor",
+    "type": "Flame",
+    "rarity": "Uncommon",
+    "description": "A feral fire beast that attacks in rapid bursts.",
+    "baseStats": { "hp": 50, "atk": 70, "def": 38, "spd": 65, "energy": 32 },
+    "moves": {
+      "Inferno Bite": { "power": 65, "accuracy": 90, "category": "Physical", "desc": "Fiery bite." },
+      "Fire Burst": { "power": 75, "accuracy": 85, "category": "Special", "desc": "Explosive flame attack." },
+      "Flame Feint": { "power": 45, "accuracy": 95, "category": "Physical", "desc": "A quick strike that may raise Speed." },
+      "Soot Screen": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Lowers enemy Accuracy." },
+      "Heat Frenzy": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Attack but lowers Defense slightly." }
+    },
+    "learnset": {
+      "3": ["Flame Feint", "Inferno Bite"],
+      "8": ["Soot Screen"],
+      "14": ["Heat Frenzy"],
+      "20": ["Fire Burst"]
+    }
+  },
+
+  {
+    "id": 10,
+    "name": "Zephyra",
+    "type": "Wind",
+    "rarity": "Uncommon",
+    "description": "A swift aerial Mora that controls the battlefield with wind currents.",
+    "baseStats": { "hp": 48, "atk": 55, "def": 42, "spd": 80, "energy": 30 },
+    "moves": {
+      "Wind Slice": { "power": 50, "accuracy": 95, "category": "Physical", "desc": "Sharp wind blade." },
+      "Gale Push": { "power": 60, "accuracy": 90, "category": "Special", "desc": "Strong wind blast." },
+      "Feather Step": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Speed." },
+      "Updraft Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces damage from next hit." },
+      "Cyclone Spear": { "power": 75, "accuracy": 85, "category": "Special", "desc": "A piercing wind spiral that may lower Defense." }
+    },
+    "learnset": {
+      "3": ["Wind Slice", "Feather Step"],
+      "7": ["Updraft Guard"],
+      "12": ["Gale Push"],
+      "18": ["Cyclone Spear"]
+    }
+  },
+
+  {
+    "id": 11,
+    "name": "Brinlock",
+    "type": "Aqua",
+    "rarity": "Common",
+    "description": "A calm shoreline Mora that fights with steady rhythm. Brinlock wins by wearing foes down like waves on stone.",
+    "baseStats": { "hp": 56, "atk": 46, "def": 54, "spd": 50, "energy": 55 },
+    "moves": {
+      "Shore Splash": { "power": 45, "accuracy": 100, "category": "Special", "desc": "A splash burst that chips the target." },
+      "Salt Screen": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense by coating the body in salt-crystal film." },
+      "Current Tug": { "power": 50, "accuracy": 95, "category": "Physical", "desc": "A pulling strike that may lower the target's Speed." },
+      "Pearl Mend": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Heals slightly and clears minor negative effects." },
+      "Breaker Wave": { "power": 65, "accuracy": 90, "category": "Special", "desc": "A heavy wave crash that may lower Defense." },
+      "Tide Anchor": { "power": 0, "accuracy": 95, "category": "Status", "desc": "Traps the target briefly and lowers Speed." }
+    },
+    "learnset": {
+      "3": ["Shore Splash", "Salt Screen"],
+      "7": ["Current Tug"],
+      "12": ["Pearl Mend"],
+      "18": ["Breaker Wave"],
+      "22": ["Tide Anchor"]
+    }
+  },
+
+  {
+    "id": 12,
+    "name": "Kindrel",
+    "type": "Flame",
+    "rarity": "Common",
+    "description": "A small ember spirit Mora that brightens when challenged. Kindrel fights with quick sparks and playful feints.",
+    "baseStats": { "hp": 50, "atk": 55, "def": 40, "spd": 62, "energy": 33 },
+    "moves": {
+      "Spark Flick": { "power": 35, "accuracy": 95, "category": "Physical", "desc": "A quick flicking hit with a chance to flinch." },
+      "Warm Up": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Attack slightly." },
+      "Coal Kick": { "power": 50, "accuracy": 95, "category": "Physical", "desc": "A sharp kick with burning grit." },
+      "Soot Haze": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Lowers the target’s Accuracy." },
+      "Blazing Hop": { "power": 65, "accuracy": 90, "category": "Physical", "desc": "A fiery leap strike that may raise Speed." },
+      "Cinder Coil": { "power": 58, "accuracy": 92, "category": "Special", "desc": "A curling flame burst that may burn." }
+    },
+    "learnset": {
+      "3": ["Spark Flick", "Warm Up"],
+      "7": ["Coal Kick"],
+      "12": ["Soot Haze"],
+      "18": ["Blazing Hop"],
+      "22": ["Cinder Coil"]
+    }
+  },
+
+  {
+    "id": 13,
+    "name": "Pebbrum",
+    "type": "Terra",
+    "rarity": "Common",
+    "description": "A sturdy pebble-backed Mora that never rushes. Pebbrum builds momentum and hits like a rolling stone.",
+    "baseStats": { "hp": 60, "atk": 50, "def": 58, "spd": 30, "energy": 44 },
+    "moves": {
+      "Gravel Jab": { "power": 40, "accuracy": 95, "category": "Physical", "desc": "A rock-studded jab." },
+      "Stone Set": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense with a grounded stance." },
+      "Roll Pressure": { "power": 55, "accuracy": 90, "category": "Physical", "desc": "A rolling slam that may lower the target’s Defense." },
+      "Dust Patch": { "power": 0, "accuracy": 95, "category": "Status", "desc": "Reduces damage from the next hit." },
+      "Crag Crush": { "power": 70, "accuracy": 85, "category": "Physical", "desc": "A heavy crush attack." },
+      "Rock Steady": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense and lowers Speed slightly." }
+    },
+    "learnset": {
+      "3": ["Gravel Jab", "Stone Set"],
+      "7": ["Roll Pressure"],
+      "12": ["Dust Patch"],
+      "18": ["Rock Steady"],
+      "22": ["Crag Crush"]
+    }
+  },
+
+  {
+    "id": 14,
+    "name": "Gustling",
+    "type": "Wind",
+    "rarity": "Common",
+    "description": "A breezy scout Mora that dances through gaps in defense. Gustling fights with sharp gusts and sudden turns.",
+    "baseStats": { "hp": 48, "atk": 50, "def": 42, "spd": 72, "energy": 31 },
+    "moves": {
+      "Breeze Cut": { "power": 40, "accuracy": 95, "category": "Physical", "desc": "A thin wind blade slice." },
+      "Tailwind Step": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Speed." },
+      "Air Pop": { "power": 55, "accuracy": 90, "category": "Special", "desc": "A compressed air burst." },
+      "Feather Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense slightly." },
+      "Cyclone Jolt": { "power": 70, "accuracy": 85, "category": "Special", "desc": "A swirling blast that may lower Accuracy." },
+      "Gust Hook": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Traps the target in wind pressure and lowers Speed." }
+    },
+    "learnset": {
+      "3": ["Breeze Cut", "Tailwind Step"],
+      "7": ["Air Pop"],
+      "12": ["Feather Guard"],
+      "18": ["Gust Hook"],
+      "22": ["Cyclone Jolt"]
+    }
+  },
+
+  {
+    "id": 15,
+    "name": "Noctik",
+    "type": "Shadow",
+    "rarity": "Common",
+    "description": "A dusk-stalker Mora that prefers misdirection over brute force. Noctik weakens targets before finishing cleanly.",
+    "baseStats": { "hp": 52, "atk": 56, "def": 42, "spd": 58, "energy": 35 },
+    "moves": {
+      "Shade Swipe": { "power": 45, "accuracy": 95, "category": "Physical", "desc": "A quick shadowy swipe." },
+      "Dim Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers the target’s Accuracy." },
+      "Gloom Pin": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Traps the target and lowers Speed." },
+      "Night Drain": { "power": 50, "accuracy": 95, "category": "Special", "desc": "Drains a bit of HP from the opponent." },
+      "Eclipse Cut": { "power": 65, "accuracy": 90, "category": "Physical", "desc": "A clean cut with increased crit chance." },
+      "Shadow Focus": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Attack slightly and lowers Defense slightly." }
+    },
+    "learnset": {
+      "3": ["Shade Swipe", "Dim Veil"],
+      "7": ["Gloom Pin"],
+      "12": ["Night Drain"],
+      "18": ["Shadow Focus"],
+      "22": ["Eclipse Cut"]
+    }
+  },
+
+  {
+    "id": 16,
+    "name": "Voltrix",
+    "type": "Volt",
+    "rarity": "Uncommon",
+    "description": "A sharp-minded Volt Mora that stores charge in its core plates. Voltrix strikes fast, then punishes mistakes.",
+    "baseStats": { "hp": 52, "atk": 66, "def": 44, "spd": 70, "energy": 33 },
+    "moves": {
+      "Arc Slash": { "power": 45, "accuracy": 95, "category": "Physical", "desc": "A charged slash that may paralyze." },
+      "Charge Coil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Boosts the next Volt move." },
+      "Magnet Clamp": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Traps the target and lowers Speed." },
+      "Thunder Pike": { "power": 70, "accuracy": 90, "category": "Special", "desc": "A piercing bolt that may lower Defense." },
+      "Overload Burst": { "power": 80, "accuracy": 95, "category": "Special", "desc": "A heavy discharge that may lower own Defense slightly." },
+      "Static Cut": { "power": 58, "accuracy": 92, "category": "Physical", "desc": "A sharp hit that may lower Accuracy." }
+    },
+    "learnset": {
+      "3": ["Arc Slash", "Charge Coil"],
+      "7": ["Magnet Clamp"],
+      "12": ["Static Cut"],
+      "18": ["Thunder Pike"],
+      "24": ["Overload Burst"]
+    }
+  },
+
+  {
+    "id": 17,
+    "name": "Frosten",
+    "type": "Frost",
+    "rarity": "Uncommon",
+    "description": "A disciplined frost sentinel Mora. Frosten slows enemies with cold pressure, then locks them down with clean hits.",
+    "baseStats": { "hp": 60, "atk": 54, "def": 60, "spd": 40, "energy": 41 },
+    "moves": {
+      "Chill Bite": { "power": 50, "accuracy": 95, "category": "Physical", "desc": "A freezing bite that may lower Speed." },
+      "Ice Plating": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense with hardened ice." },
+      "Frost Hook": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Traps the target in icy chains." },
+      "Snowmelt Sip": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Heals slightly and clears minor negative effects." },
+      "Glacial Break": { "power": 80, "accuracy": 85, "category": "Physical", "desc": "A heavy ice smash that may lower Defense." },
+      "Cold Pulse": { "power": 62, "accuracy": 92, "category": "Special", "desc": "A cold wave that may lower Attack." }
+    },
+    "learnset": {
+      "3": ["Chill Bite", "Ice Plating"],
+      "8": ["Frost Hook"],
+      "14": ["Cold Pulse"],
+      "18": ["Snowmelt Sip"],
+      "24": ["Glacial Break"]
+    }
+  },
+
+  {
+    "id": 18,
+    "name": "Briarhorn",
+    "type": "Nature",
+    "rarity": "Uncommon",
+    "description": "A forest charger Mora that turns defense into offense. Briarhorn grows tougher each time it’s challenged.",
+    "baseStats": { "hp": 62, "atk": 64, "def": 58, "spd": 38, "energy": 40 },
+    "moves": {
+      "Thicket Ram": { "power": 55, "accuracy": 95, "category": "Physical", "desc": "A horn-first rush wrapped in vines." },
+      "Bark Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense." },
+      "Spore Prick": { "power": 0, "accuracy": 85, "category": "Status", "desc": "May poison the target." },
+      "Sap Pull": { "power": 50, "accuracy": 95, "category": "Physical", "desc": "Drains HP from the opponent." },
+      "Emerald Stampede": { "power": 80, "accuracy": 85, "category": "Physical", "desc": "A heavy stampede that may flinch." },
+      "Vine Brace": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces damage from next hit and raises Defense slightly." }
+    },
+    "learnset": {
+      "3": ["Thicket Ram", "Bark Guard"],
+      "7": ["Spore Prick"],
+      "12": ["Sap Pull"],
+      "18": ["Vine Brace"],
+      "24": ["Emerald Stampede"]
+    }
+  },
+
+  {
+    "id": 19,
+    "name": "Cindrake",
+    "type": "Flame",
+    "rarity": "Uncommon",
+    "description": "A young drake Mora that fights with controlled heat. Cindrake is relentless once it smells weakness.",
+    "baseStats": { "hp": 58, "atk": 68, "def": 46, "spd": 52, "energy": 35 },
+    "moves": {
+      "Ember Fang": { "power": 55, "accuracy": 95, "category": "Physical", "desc": "A fiery bite that may burn." },
+      "Heat Focus": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Attack and lowers Defense slightly." },
+      "Flame Sweep": { "power": 65, "accuracy": 90, "category": "Physical", "desc": "A wide flame arc that may lower Accuracy." },
+      "Smoke Lure": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Lowers the target’s Accuracy." },
+      "Inferno Lunge": { "power": 85, "accuracy": 85, "category": "Physical", "desc": "A brutal lunge that may lower own Speed slightly." },
+      "Searing Breath": { "power": 70, "accuracy": 88, "category": "Special", "desc": "A hot breath blast that may lower Defense." }
+    },
+    "learnset": {
+      "3": ["Ember Fang", "Heat Focus"],
+      "8": ["Flame Sweep"],
+      "14": ["Smoke Lure"],
+      "20": ["Searing Breath"],
+      "25": ["Inferno Lunge"]
+    }
+  },
+
+  {
+    "id": 20,
+    "name": "Dunebral",
+    "type": "Terra",
+    "rarity": "Uncommon",
+    "description": "A desert-wanderer Mora with stone plates and sharp instincts. Dunebral controls the fight by slowing and breaking defenses.",
+    "baseStats": { "hp": 66, "atk": 60, "def": 64, "spd": 32, "energy": 45 },
+    "moves": {
+      "Sand Knuckle": { "power": 45, "accuracy": 95, "category": "Physical", "desc": "A grit-packed punch." },
+      "Stone Mantle": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense and reduces damage from the next hit slightly." },
+      "Quicksand Hold": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Traps the target and lowers Speed." },
+      "Ridge Breaker": { "power": 70, "accuracy": 90, "category": "Physical", "desc": "A heavy strike that may lower Defense." },
+      "Desert Collapse": { "power": 85, "accuracy": 85, "category": "Physical", "desc": "A crushing slam that may flinch." },
+      "Stone Shrapnel": { "power": 60, "accuracy": 92, "category": "Special", "desc": "Sharp debris burst that may lower Accuracy." }
+    },
+    "learnset": {
+      "3": ["Sand Knuckle", "Stone Mantle"],
+      "9": ["Quicksand Hold"],
+      "16": ["Stone Shrapnel"],
+      "20": ["Ridge Breaker"],
+      "26": ["Desert Collapse"]
+    }
+  }
+  ,
+{
+  "id": 21,
+  "name": "Flarion",
+  "type": "Flame",
+  "rarity": "Rare",
+  "description": "A blazing flame fox Mora that grows fiercer as battle intensifies.",
+  "baseStats": { "hp": 62, "atk": 74, "def": 50, "spd": 68, "energy": 55 },
+  "moves": {
+    "Flame Claw": { "power": 55, "accuracy": 95, "category": "Physical", "desc": "A sharp burning slash." },
+    "Blaze Fang": { "power": 60, "accuracy": 90, "category": "Physical", "desc": "A fiery bite that may burn." },
+    "Heat Rush": { "power": 65, "accuracy": 90, "category": "Special", "desc": "A fast burst of flames." },
+    "Inferno Swipe": { "power": 80, "accuracy": 85, "category": "Physical", "desc": "A heavy flame slash." },
+    "Ember Burst": { "power": 70, "accuracy": 90, "category": "Special", "desc": "A spreading explosion of fire." },
+    "Scorch Dash": { "power": 75, "accuracy": 85, "category": "Physical", "desc": "A blazing forward charge." },
+    "Fire Spin": { "power": 50, "accuracy": 95, "category": "Special", "desc": "Traps enemy in swirling fire." },
+    "Burning Aura": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Boosts attack temporarily." },
+    "Heat Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces next incoming damage." },
+    "Crimson Howl": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises speed sharply." }
+  },
+  "learnset": {
+    "3": ["Blaze Fang"],
+    "6": ["Heat Rush"],
+    "10": ["Inferno Swipe"],
+    "15": ["Ember Burst"],
+    "20": ["Scorch Dash"],
+    "25": ["Crimson Howl"]
+  }
+},
+{
+  "id": 22,
+  "name": "Terravex",
+  "type": "Terra",
+  "rarity": "Rare",
+  "description": "A rock gorilla Mora that smashes through defenses.",
+  "baseStats": { "hp": 78, "atk": 72, "def": 74, "spd": 38, "energy": 60 },
+  "moves": {
+    "Stone Punch": { "power": 60, "accuracy": 95, "category": "Physical", "desc": "Heavy rock fist strike." },
+    "Earthquake Slam": { "power": 85, "accuracy": 85, "category": "Physical", "desc": "Ground-shaking smash." },
+    "Crush Grip": { "power": 75, "accuracy": 90, "category": "Physical", "desc": "Powerful squeezing attack." },
+    "Rock Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises defense greatly." },
+    "Dust Wave": { "power": 65, "accuracy": 90, "category": "Special", "desc": "Wave of sharp debris." },
+    "Ground Break": { "power": 80, "accuracy": 85, "category": "Physical", "desc": "Splits the battlefield." },
+    "Iron Stance": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Boosts defense and HP regen." },
+    "Sandstorm Roar": { "power": 70, "accuracy": 90, "category": "Special", "desc": "Sandstorm attack." },
+    "Boulder Toss": { "power": 55, "accuracy": 95, "category": "Physical", "desc": "Throws a massive rock." },
+    "Titan Smash": { "power": 95, "accuracy": 80, "category": "Physical", "desc": "Massive crushing blow." }
+  },
+  "learnset": {
+    "3": ["Crush Grip"],
+    "8": ["Dust Wave"],
+    "12": ["Ground Break"],
+    "18": ["Iron Stance"],
+    "24": ["Titan Smash"]
+  }
+},
+{
+  "id": 23,
+  "name": "Aquarion",
+  "type": "Aqua",
+  "rarity": "Rare",
+  "description": "A sleek water serpent Mora that overwhelms with tides.",
+  "baseStats": { "hp": 70, "atk": 68, "def": 60, "spd": 72, "energy": 60 },
+  "moves": {
+    "Wave Crash": { "power": 70, "accuracy": 90, "category": "Special", "desc": "Powerful crashing wave." },
+    "Aqua Slash": { "power": 60, "accuracy": 95, "category": "Physical", "desc": "Water blade attack." },
+    "Tidal Bite": { "power": 65, "accuracy": 95, "category": "Physical", "desc": "Biting water strike." },
+    "Rising Tide": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Boosts attack and speed." },
+    "Deep Surge": { "power": 80, "accuracy": 85, "category": "Special", "desc": "Heavy pressure wave." },
+    "Water Pulse": { "power": 55, "accuracy": 95, "category": "Special", "desc": "Pulsing water blast." },
+    "Ocean Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces incoming damage." },
+    "Flood Spin": { "power": 75, "accuracy": 85, "category": "Physical", "desc": "Spinning tidal attack." },
+    "Mist Screen": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy accuracy." },
+    "Tsunami Rush": { "power": 95, "accuracy": 80, "category": "Special", "desc": "Devastating tidal blast." }
+  },
+  "learnset": {
+    "3": ["Aqua Slash"],
+    "7": ["Rising Tide"],
+    "12": ["Deep Surge"],
+    "18": ["Flood Spin"],
+    "25": ["Tsunami Rush"]
+  }
+}
+,
+{
+  "id": 24,
+  "name": "Thornex",
+  "type": "Nature",
+  "rarity": "Rare",
+  "description": "A towering plant lizard Mora that dominates with overwhelming vines.",
+  "baseStats": { "hp": 74, "atk": 78, "def": 68, "spd": 50, "energy": 58 },
+  "moves": {
+    "Vine Crush": { "power": 70, "accuracy": 90, "category": "Physical", "desc": "Massive vine slam." },
+    "Nature Slam": { "power": 75, "accuracy": 90, "category": "Physical", "desc": "Brutal nature-powered strike." },
+    "Root Trap": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Traps enemy and lowers speed." },
+    "Spore Burst": { "power": 65, "accuracy": 90, "category": "Special", "desc": "Spreads damaging spores." },
+    "Leaf Storm": { "power": 85, "accuracy": 85, "category": "Special", "desc": "A violent leaf tornado." },
+    "Sap Drain": { "power": 60, "accuracy": 95, "category": "Physical", "desc": "Drains HP." },
+    "Bark Shield": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises defense." },
+    "Thorn Barrage": { "power": 55, "accuracy": 95, "category": "Physical", "desc": "Multiple thorn strikes." },
+    "Verdant Roar": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Boosts attack." },
+    "Forest Collapse": { "power": 95, "accuracy": 80, "category": "Physical", "desc": "Devastating nature crush." }
+  },
+  "learnset": {
+    "3": ["Nature Slam"],
+    "7": ["Spore Burst"],
+    "12": ["Leaf Storm"],
+    "18": ["Sap Drain"],
+    "25": ["Forest Collapse"]
+  }
+},
+{
+  "id": 25,
+  "name": "Umbrix",
+  "type": "Shadow",
+  "rarity": "Rare",
+  "description": "A shadow beast Mora that weakens foes before striking lethally.",
+  "baseStats": { "hp": 66, "atk": 82, "def": 58, "spd": 70, "energy": 60 },
+  "moves": {
+    "Dark Pulse": { "power": 75, "accuracy": 90, "category": "Special", "desc": "Shadow energy blast." },
+    "Shadow Claw": { "power": 65, "accuracy": 95, "category": "Physical", "desc": "Sharp dark slash." },
+    "Void Tap": { "power": 50, "accuracy": 100, "category": "Special", "desc": "Quick shadow hit." },
+    "Night Howl": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises attack." },
+    "Fade Step": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises speed." },
+    "Shadow Fang": { "power": 70, "accuracy": 90, "category": "Physical", "desc": "Biting dark strike." },
+    "Gloom Strike": { "power": 80, "accuracy": 85, "category": "Physical", "desc": "Heavy shadow blow." },
+    "Night Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy accuracy." },
+    "Phantom Dive": { "power": 85, "accuracy": 85, "category": "Physical", "desc": "High-speed shadow dive." },
+    "Abyss Slash": { "power": 95, "accuracy": 80, "category": "Physical", "desc": "Deep void strike." }
+  },
+  "learnset": {
+    "3": ["Shadow Fang"],
+    "8": ["Fade Step"],
+    "12": ["Gloom Strike"],
+    "18": ["Phantom Dive"],
+    "25": ["Abyss Slash"]
+  }
+},
+{
+  "id": 26,
+  "name": "Ignix",
+  "type": "Flame",
+  "rarity": "Rare",
+  "description": "A fierce fire lizard Mora that fights with burning precision.",
+  "baseStats": { "hp": 68, "atk": 76, "def": 56, "spd": 64, "energy": 58 },
+  "moves": {
+    "Fire Bite": { "power": 60, "accuracy": 95, "category": "Physical", "desc": "Burning bite." },
+    "Heat Wave": { "power": 80, "accuracy": 85, "category": "Special", "desc": "Wide fire blast." },
+    "Flame Claw": { "power": 65, "accuracy": 95, "category": "Physical", "desc": "Flaming slash." },
+    "Ember Spin": { "power": 55, "accuracy": 95, "category": "Special", "desc": "Spinning flame attack." },
+    "Inferno Dash": { "power": 75, "accuracy": 90, "category": "Physical", "desc": "Blazing charge." },
+    "Scorch Fang": { "power": 70, "accuracy": 90, "category": "Physical", "desc": "May burn target." },
+    "Flare Burst": { "power": 85, "accuracy": 85, "category": "Special", "desc": "Explosive fire strike." },
+    "Burn Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces damage." },
+    "Blazing Roar": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises attack sharply." },
+    "Inferno Strike": { "power": 95, "accuracy": 80, "category": "Physical", "desc": "Massive flame attack." }
+  },
+  "learnset": {
+    "3": ["Flame Claw"],
+    "7": ["Inferno Dash"],
+    "12": ["Flare Burst"],
+    "18": ["Blazing Roar"],
+    "25": ["Inferno Strike"]
+  }
+},
+
+{
+  "id": 27,
+  "name": "Frostel",
+  "type": "Frost",
+  "rarity": "Rare",
+  "description": "An ice fox Mora that freezes momentum and finishes with clean precision.",
+  "baseStats": { "hp": 66, "atk": 72, "def": 62, "spd": 66, "energy": 60 },
+  "moves": {
+    "Frost Slash": { "power": 65, "accuracy": 95, "category": "Physical", "desc": "A sharp icy cut that may lower Speed." },
+    "Ice Pulse": { "power": 70, "accuracy": 90, "category": "Special", "desc": "Cold pulse blast that chills the target." },
+    "Freeze Bite": { "power": 60, "accuracy": 95, "category": "Physical", "desc": "Icy bite with a chance to slow." },
+    "Snow Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy accuracy with swirling snow." },
+    "Glacier Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense with ice plating." },
+    "Chill Step": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Speed by skating on frost." },
+    "Hail Shards": { "power": 55, "accuracy": 95, "category": "Special", "desc": "Sprays hail shards; may flinch." },
+    "Crystal Fang": { "power": 80, "accuracy": 85, "category": "Physical", "desc": "Heavy ice fang strike." },
+    "Permafrost Lock": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Traps the target in ice and lowers Speed." },
+    "Arctic Break": { "power": 95, "accuracy": 80, "category": "Physical", "desc": "A brutal freezing finisher." }
+  },
+  "learnset": {
+    "3": ["Ice Pulse"],
+    "7": ["Snow Veil"],
+    "12": ["Hail Shards"],
+    "18": ["Crystal Fang"],
+    "25": ["Arctic Break"]
+  }
+},
+{
+  "id": 28,
+  "name": "Stormix",
+  "type": "Wind",
+  "rarity": "Rare",
+  "description": "A storm-bird Mora that mixes wind pressure with crackling static.",
+  "baseStats": { "hp": 62, "atk": 70, "def": 56, "spd": 78, "energy": 62 },
+  "moves": {
+    "Thunder Dive": { "power": 75, "accuracy": 90, "category": "Physical", "desc": "A diving strike charged with storm energy." },
+    "Storm Pulse": { "power": 70, "accuracy": 90, "category": "Special", "desc": "A pulsing storm blast that may lower Accuracy." },
+    "Lightning Wing": { "power": 65, "accuracy": 95, "category": "Physical", "desc": "Wing slash with sparks; may paralyze." },
+    "Gale Cut": { "power": 60, "accuracy": 95, "category": "Physical", "desc": "A fast wind blade slice." },
+    "Tailwind Surge": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Speed sharply." },
+    "Static Field": { "power": 0, "accuracy": 90, "category": "Status", "desc": "May paralyze the enemy." },
+    "Cyclone Crash": { "power": 85, "accuracy": 85, "category": "Physical", "desc": "A spiraling crash that may flinch." },
+    "Sky Pressure": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Attack slightly and lowers enemy Speed slightly." },
+    "Thunder Screech": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy Defense with a piercing cry." },
+    "Tempest Break": { "power": 95, "accuracy": 80, "category": "Special", "desc": "A massive tempest blast." }
+  },
+  "learnset": {
+    "3": ["Gale Cut"],
+    "7": ["Static Field"],
+    "12": ["Cyclone Crash"],
+    "18": ["Storm Pulse"],
+    "25": ["Tempest Break"]
+  }
+},
+{
+  "id": 29,
+  "name": "Drakonis",
+  "type": "Dragon",
+  "rarity": "Epic",
+  "description": "A winged dragon Mora with glowing scales, feared for raw dominance.",
+  "baseStats": { "hp": 82, "atk": 88, "def": 76, "spd": 64, "energy": 70 },
+  "moves": {
+    "Dragon Bite": { "power": 75, "accuracy": 95, "category": "Physical", "desc": "Ferocious dragon bite." },
+    "Wing Slash": { "power": 70, "accuracy": 95, "category": "Physical", "desc": "Razor wing strike." },
+    "Roar Burst": { "power": 80, "accuracy": 90, "category": "Special", "desc": "Dragon roar shockwave." },
+    "Scale Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense with hardened scales." },
+    "Drake Rush": { "power": 85, "accuracy": 85, "category": "Physical", "desc": "A heavy rushing slam." },
+    "Sky Lunge": { "power": 75, "accuracy": 90, "category": "Physical", "desc": "Leaps from above to strike." },
+    "Flame Breath": { "power": 85, "accuracy": 85, "category": "Special", "desc": "A scorching breath (draconic heat)." },
+    "Crush Tail": { "power": 70, "accuracy": 90, "category": "Physical", "desc": "Tail smash that may lower Defense." },
+    "Fear Aura": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy Attack." },
+    "Dragon Break": { "power": 100, "accuracy": 80, "category": "Physical", "desc": "A brutal dragon finisher." }
+  },
+  "learnset": {
+    "3": ["Wing Slash"],
+    "7": ["Scale Guard"],
+    "12": ["Roar Burst"],
+    "18": ["Drake Rush"],
+    "25": ["Dragon Break"]
+  }
+},
+{
+  "id": 30,
+  "name": "Pyrix",
+  "type": "Flame",
+  "rarity": "Epic",
+  "description": "A fire lion Mora that grows more dangerous the longer the battle lasts.",
+  "baseStats": { "hp": 78, "atk": 90, "def": 64, "spd": 62, "energy": 68 },
+  "moves": {
+    "Inferno Claw": { "power": 75, "accuracy": 95, "category": "Physical", "desc": "Fiery claw combo." },
+    "Flame Charge": { "power": 70, "accuracy": 95, "category": "Physical", "desc": "Charging flame tackle that may raise Speed." },
+    "Fire Roar": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Attack and intimidates (lowers enemy Attack slightly)." },
+    "Heat Wave": { "power": 85, "accuracy": 85, "category": "Special", "desc": "Wide flame blast." },
+    "Cinder Maul": { "power": 80, "accuracy": 90, "category": "Physical", "desc": "Heavy burning hit." },
+    "Blaze Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces damage from the next hit." },
+    "Flare Spin": { "power": 65, "accuracy": 95, "category": "Special", "desc": "Spinning flare strike." },
+    "Scorch Pounce": { "power": 75, "accuracy": 90, "category": "Physical", "desc": "Leaping flame pounce; may flinch." },
+    "Molten Fang": { "power": 85, "accuracy": 85, "category": "Physical", "desc": "A savage bite that may burn." },
+    "Inferno Crown": { "power": 105, "accuracy": 80, "category": "Special", "desc": "Massive inferno blast." }
+  },
+  "learnset": {
+    "3": ["Flame Charge"],
+    "7": ["Fire Roar"],
+    "12": ["Heat Wave"],
+    "18": ["Molten Fang"],
+    "25": ["Inferno Crown"]
+  }
+},
+{
+  "id": 31,
+  "name": "Cryovex",
+  "type": "Frost",
+  "rarity": "Epic",
+  "description": "An ice dragon Mora that crushes rhythm and locks enemies in cold control.",
+  "baseStats": { "hp": 80, "atk": 84, "def": 80, "spd": 56, "energy": 70 },
+  "moves": {
+    "Ice Breath": { "power": 85, "accuracy": 85, "category": "Special", "desc": "Freezing breath blast." },
+    "Frost Slam": { "power": 80, "accuracy": 90, "category": "Physical", "desc": "A heavy ice impact." },
+    "Freeze Strike": { "power": 75, "accuracy": 95, "category": "Physical", "desc": "Clean ice slash that may lower Speed." },
+    "Glacier Armor": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense strongly." },
+    "Hail Cannon": { "power": 90, "accuracy": 80, "category": "Special", "desc": "A dense hail shot." },
+    "Icy Chains": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Traps enemy and lowers Speed." },
+    "Snowmelt Mend": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Heals slightly and clears minor debuffs." },
+    "Crystal Tail": { "power": 70, "accuracy": 90, "category": "Physical", "desc": "Tail smash that may lower Defense." },
+    "Cold Pressure": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy Attack." },
+    "Absolute Zero": { "power": 110, "accuracy": 75, "category": "Special", "desc": "Devastating freezing blast." }
+  },
+  "learnset": {
+    "3": ["Frost Slam"],
+    "7": ["Glacier Armor"],
+    "12": ["Icy Chains"],
+    "18": ["Hail Cannon"],
+    "25": ["Absolute Zero"]
+  }
+},
+{
+  "id": 32,
+  "name": "Voltaris",
+  "type": "Volt",
+  "rarity": "Epic",
+  "description": "A lightning dragon Mora that punishes slow reactions with brutal surges.",
+  "baseStats": { "hp": 76, "atk": 86, "def": 66, "spd": 74, "energy": 72 },
+  "moves": {
+    "Thunder Breath": { "power": 85, "accuracy": 85, "category": "Special", "desc": "Lightning breath blast." },
+    "Volt Slam": { "power": 80, "accuracy": 90, "category": "Physical", "desc": "Charged slam impact." },
+    "Surge Claw": { "power": 75, "accuracy": 95, "category": "Physical", "desc": "Electric claw strike; may paralyze." },
+    "Charge Mantle": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Boosts the next Volt move." },
+    "Static Cage": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Traps enemy in electricity; lowers Speed." },
+    "Arc Burst": { "power": 90, "accuracy": 80, "category": "Special", "desc": "Explosive arc blast." },
+    "Thunder Pike": { "power": 75, "accuracy": 90, "category": "Special", "desc": "Piercing bolt that may lower Defense." },
+    "Overload Roar": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy Defense with a crackling roar." },
+    "Lightning Dive": { "power": 85, "accuracy": 85, "category": "Physical", "desc": "High-speed lightning dive." },
+    "Storm Judgment": { "power": 110, "accuracy": 75, "category": "Special", "desc": "Massive storm discharge." }
+  },
+  "learnset": {
+    "3": ["Volt Slam"],
+    "7": ["Charge Mantle"],
+    "12": ["Static Cage"],
+    "18": ["Arc Burst"],
+    "25": ["Storm Judgment"]
+  }
+},
+{
+  "id": 33,
+  "name": "Floravex",
+  "type": "Nature",
+  "rarity": "Epic",
+  "description": "A giant tree beast Mora that crushes opponents under living wood and roots.",
+  "baseStats": { "hp": 86, "atk": 84, "def": 82, "spd": 44, "energy": 70 },
+  "moves": {
+    "Root Slam": { "power": 80, "accuracy": 90, "category": "Physical", "desc": "Massive root smash." },
+    "Nature Crush": { "power": 85, "accuracy": 85, "category": "Physical", "desc": "Overwhelming nature-powered crush." },
+    "Vine Trap": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Traps enemy and lowers Speed." },
+    "Bark Fortress": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense strongly." },
+    "Spore Cloud": { "power": 70, "accuracy": 90, "category": "Special", "desc": "Spore cloud attack that weakens focus." },
+    "Sap Feast": { "power": 65, "accuracy": 95, "category": "Physical", "desc": "Drains HP heavily." },
+    "Thorn Wall": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces damage from next hit." },
+    "Leafstorm Fury": { "power": 90, "accuracy": 80, "category": "Special", "desc": "Violent leaf storm." },
+    "Verdant Roar": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Attack." },
+    "Ancient Wrath": { "power": 110, "accuracy": 75, "category": "Physical", "desc": "A crushing ancient nature finisher." }
+  },
+  "learnset": {
+    "3": ["Vine Trap"],
+    "7": ["Bark Fortress"],
+    "12": ["Spore Cloud"],
+    "18": ["Leafstorm Fury"],
+    "25": ["Ancient Wrath"]
+  }
+},
+{
+  "id": 34,
+  "name": "Terragon",
+  "type": "Terra",
+  "rarity": "Epic",
+  "description": "A rock dragon Mora that turns the ground itself into a weapon.",
+  "baseStats": { "hp": 88, "atk": 86, "def": 88, "spd": 38, "energy": 72 },
+  "moves": {
+    "Earthquake": { "power": 90, "accuracy": 85, "category": "Physical", "desc": "A ground-shaking quake." },
+    "Stone Crash": { "power": 80, "accuracy": 90, "category": "Physical", "desc": "Crashing stone strike." },
+    "Crush Bite": { "power": 75, "accuracy": 95, "category": "Physical", "desc": "Heavy bite that may lower Defense." },
+    "Granite Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense strongly." },
+    "Duststorm": { "power": 70, "accuracy": 90, "category": "Special", "desc": "Sand and dust blast that may lower Accuracy." },
+    "Quicksand Hold": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Traps enemy and lowers Speed." },
+    "Ridge Breaker": { "power": 75, "accuracy": 90, "category": "Physical", "desc": "Breaks defenses; may lower Defense." },
+    "Iron Soil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Fortifies and heals slightly." },
+    "Titan Slam": { "power": 95, "accuracy": 80, "category": "Physical", "desc": "A massive crushing slam." },
+    "World Split": { "power": 115, "accuracy": 75, "category": "Physical", "desc": "A devastating earth finisher." }
+  },
+  "learnset": {
+    "3": ["Stone Crash"],
+    "7": ["Granite Guard"],
+    "12": ["Duststorm"],
+    "18": ["Titan Slam"],
+    "25": ["World Split"]
+  }
+},
+{
+  "id": 35,
+  "name": "Luxar",
+  "type": "Light",
+  "rarity": "Epic",
+  "description": "A winged light guardian Mora that overwhelms foes with radiant pressure.",
+  "baseStats": { "hp": 74, "atk": 82, "def": 70, "spd": 72, "energy": 74 },
+  "moves": {
+    "Radiant Slash": { "power": 75, "accuracy": 95, "category": "Physical", "desc": "A bright cutting strike." },
+    "Solar Strike": { "power": 85, "accuracy": 90, "category": "Special", "desc": "A concentrated solar beam hit." },
+    "Shine Storm": { "power": 90, "accuracy": 80, "category": "Special", "desc": "Radiant storm that may lower Accuracy." },
+    "Light Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces damage from next hit." },
+    "Glow Mend": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Heals slightly and clears minor debuffs." },
+    "Flash Step": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Speed sharply." },
+    "Radiant Tap": { "power": 55, "accuracy": 100, "category": "Special", "desc": "Quick light poke blast." },
+    "Prism Burst": { "power": 80, "accuracy": 85, "category": "Special", "desc": "Prismatic explosion." },
+    "Judgment Beam": { "power": 95, "accuracy": 80, "category": "Special", "desc": "A heavy beam that may lower Defense." },
+    "Divine Break": { "power": 115, "accuracy": 75, "category": "Special", "desc": "A devastating holy finisher." }
+  },
+  "learnset": {
+    "3": ["Solar Strike"],
+    "7": ["Light Veil"],
+    "12": ["Prism Burst"],
+    "18": ["Judgment Beam"],
+    "25": ["Divine Break"]
+  }
+}
+,
+{
+  "id": 36,
+  "name": "Nocturn",
+  "type": "Shadow",
+  "rarity": "Epic",
+  "description": "A dark-winged Mora that strikes from above and vanishes into void mist.",
+  "baseStats": { "hp": 78, "atk": 88, "def": 70, "spd": 74, "energy": 75 },
+  "moves": {
+    "Void Slash": { "power": 85, "accuracy": 90, "category": "Physical", "desc": "A slicing void attack." },
+    "Dark Storm": { "power": 95, "accuracy": 80, "category": "Special", "desc": "A swirling storm of shadow energy." },
+    "Shadow Dive": { "power": 80, "accuracy": 90, "category": "Physical", "desc": "High-speed aerial strike." },
+    "Night Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy accuracy." },
+    "Abyss Howl": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy attack." },
+    "Phantom Rush": { "power": 75, "accuracy": 95, "category": "Physical", "desc": "Rapid dark assault." },
+    "Gloom Barrier": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces next damage." },
+    "Shade Burst": { "power": 70, "accuracy": 90, "category": "Special", "desc": "Shadow explosion." },
+    "Void Fang": { "power": 85, "accuracy": 85, "category": "Physical", "desc": "Savage void bite." },
+    "Nightfall Break": { "power": 115, "accuracy": 75, "category": "Special", "desc": "Devastating darkness blast." }
+  },
+  "learnset": {
+    "3": ["Phantom Rush"],
+    "8": ["Shade Burst"],
+    "14": ["Void Fang"],
+    "20": ["Dark Storm"],
+    "28": ["Nightfall Break"]
+  }
+},
+{
+  "id": 37,
+  "name": "Aquavex",
+  "type": "Aqua",
+  "rarity": "Epic",
+  "description": "A colossal ocean serpent Mora that commands crushing tidal force.",
+  "baseStats": { "hp": 90, "atk": 84, "def": 78, "spd": 58, "energy": 80 },
+  "moves": {
+    "Tidal Crash": { "power": 95, "accuracy": 85, "category": "Special", "desc": "Massive tidal wave." },
+    "Aqua Slam": { "power": 80, "accuracy": 90, "category": "Physical", "desc": "Heavy water slam." },
+    "Wave Destroy": { "power": 110, "accuracy": 75, "category": "Special", "desc": "Devastating ocean blast." },
+    "Deep Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises defense greatly." },
+    "Mist Cloak": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy accuracy." },
+    "Riptide Fang": { "power": 85, "accuracy": 85, "category": "Physical", "desc": "Crushing water bite." },
+    "Ocean Pulse": { "power": 75, "accuracy": 90, "category": "Special", "desc": "Pressure pulse blast." },
+    "Current Bind": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Traps enemy in currents." },
+    "Flood Breaker": { "power": 90, "accuracy": 80, "category": "Physical", "desc": "Powerful tidal strike." },
+    "Abyssal Wave": { "power": 120, "accuracy": 70, "category": "Special", "desc": "Ultimate ocean annihilation." }
+  },
+  "learnset": {
+    "3": ["Ocean Pulse"],
+    "8": ["Riptide Fang"],
+    "14": ["Flood Breaker"],
+    "22": ["Tidal Crash"],
+    "30": ["Abyssal Wave"]
+  }
+}
+,
+{
+  "id": 38,
+  "name": "Infernos",
+  "type": "Flame",
+  "rarity": "Epic",
+  "description": "A lava titan Mora that turns the battlefield into molten ruin.",
+  "baseStats": { "hp": 92, "atk": 90, "def": 82, "spd": 40, "energy": 85 },
+  "moves": {
+    "Lava Strike": { "power": 85, "accuracy": 90, "category": "Physical", "desc": "A molten punch that may burn." },
+    "Inferno Burst": { "power": 95, "accuracy": 85, "category": "Special", "desc": "Explosive flame eruption." },
+    "Flame Slam": { "power": 90, "accuracy": 85, "category": "Physical", "desc": "A heavy slam wrapped in fire." },
+    "Heat Armor": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense by hardening into magma." },
+    "Blazing Aura": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Attack and lowers Speed slightly." },
+    "Cinder Quake": { "power": 80, "accuracy": 90, "category": "Physical", "desc": "A fiery stomp that may flinch." },
+    "Soot Haze": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Lowers enemy accuracy." },
+    "Melt Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces damage from the next hit." },
+    "Scorch Fang": { "power": 85, "accuracy": 85, "category": "Physical", "desc": "A savage bite with burning heat." },
+    "Molten Cataclysm": { "power": 125, "accuracy": 70, "category": "Special", "desc": "Catastrophic lava blast." }
+  },
+  "learnset": {
+    "3": ["Cinder Quake"],
+    "8": ["Soot Haze"],
+    "14": ["Scorch Fang"],
+    "22": ["Inferno Burst"],
+    "32": ["Molten Cataclysm"]
+  }
+},
+{
+  "id": 39,
+  "name": "Abyssor",
+  "type": "Shadow",
+  "rarity": "Legendary",
+  "description": "A giant void Mora with crimson eyes that devours light and hope.",
+  "baseStats": { "hp": 95, "atk": 96, "def": 86, "spd": 62, "energy": 90 },
+  "moves": {
+    "Abyss Strike": { "power": 90, "accuracy": 90, "category": "Physical", "desc": "A crushing void hit that may lower Defense." },
+    "Void Destroy": { "power": 110, "accuracy": 80, "category": "Special", "desc": "A brutal void beam." },
+    "Dark Devour": { "power": 95, "accuracy": 85, "category": "Physical", "desc": "Drains HP from the opponent." },
+    "Night Dominion": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Attack and Defense slightly." },
+    "Void Chains": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Traps the target and lowers Speed." },
+    "Eclipse Tear": { "power": 85, "accuracy": 90, "category": "Special", "desc": "Shadow burst that may lower Accuracy." },
+    "Phantom Maw": { "power": 80, "accuracy": 95, "category": "Physical", "desc": "Rapid void bites." },
+    "Gloom Barrier": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces damage from the next hit." },
+    "Abyss Howl": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy attack." },
+    "Void Annihilation": { "power": 130, "accuracy": 70, "category": "Special", "desc": "Ultimate void obliteration." }
+  },
+  "learnset": {
+    "3": ["Phantom Maw"],
+    "10": ["Void Chains"],
+    "18": ["Eclipse Tear"],
+    "26": ["Void Destroy"],
+    "36": ["Void Annihilation"]
+  }
+},
+{
+  "id": 40,
+  "name": "Celestion",
+  "type": "Cosmic",
+  "rarity": "Legendary",
+  "description": "A star-powered Mora with a galaxy body. Reality bends around its orbit.",
+  "baseStats": { "hp": 88, "atk": 92, "def": 84, "spd": 74, "energy": 95 },
+  "moves": {
+    "Cosmic Beam": { "power": 95, "accuracy": 90, "category": "Special", "desc": "A concentrated beam of starlight." },
+    "Star Strike": { "power": 85, "accuracy": 95, "category": "Physical", "desc": "A meteoric impact hit." },
+    "Void Pulse": { "power": 80, "accuracy": 90, "category": "Special", "desc": "A strange pulse that may lower Speed." },
+    "Astral Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense with cosmic shielding." },
+    "Nebula Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy accuracy." },
+    "Gravity Lock": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Traps the target and lowers Speed." },
+    "Comet Rush": { "power": 90, "accuracy": 85, "category": "Physical", "desc": "A blazing comet charge." },
+    "Stellar Burst": { "power": 100, "accuracy": 80, "category": "Special", "desc": "Star explosion that may lower Defense." },
+    "Orbit Break": { "power": 85, "accuracy": 90, "category": "Physical", "desc": "A crushing gravity swing." },
+    "Supernova End": { "power": 135, "accuracy": 100, "category": "Special", "desc": "A supernova blast that shakes the field." }
+  },
+  "learnset": {
+    "3": ["Void Pulse"],
+    "10": ["Astral Guard"],
+    "18": ["Comet Rush"],
+    "28": ["Stellar Burst"],
+    "38": ["Supernova End"]
+  }
+}
+,
+{
+  "id": 41,
+  "name": "Ignivar",
+  "type": "Flame",
+  "rarity": "Legendary",
+  "description": "A massive fire dragon Mora whose wings scorch the sky itself.",
+  "baseStats": { "hp": 96, "atk": 102, "def": 84, "spd": 72, "energy": 95 },
+  "moves": {
+    "Inferno Storm": { "power": 105, "accuracy": 85, "category": "Special", "desc": "A raging firestorm engulfs the battlefield." },
+    "Fire Devour": { "power": 95, "accuracy": 90, "category": "Physical", "desc": "A devastating bite that drains energy." },
+    "Flame Burst": { "power": 85, "accuracy": 90, "category": "Special", "desc": "Explosive flame detonation." },
+    "Blaze Crown": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Attack sharply." },
+    "Heat Dominion": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy Defense." },
+    "Cinder Slash": { "power": 80, "accuracy": 95, "category": "Physical", "desc": "A blazing claw strike." },
+    "Molten Wing": { "power": 90, "accuracy": 85, "category": "Physical", "desc": "A fiery aerial strike." },
+    "Scorch Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces damage from next hit." },
+    "Solar Fang": { "power": 100, "accuracy": 80, "category": "Physical", "desc": "Superheated fang attack." },
+    "Worldfire End": { "power": 140, "accuracy": 70, "category": "Special", "desc": "Ultimate world-burning inferno." }
+  },
+  "learnset": {
+    "3": ["Cinder Slash"],
+    "12": ["Molten Wing"],
+    "20": ["Inferno Storm"],
+    "30": ["Solar Fang"],
+    "40": ["Worldfire End"]
+  }
+},
+{
+  "id": 42,
+  "name": "Terralord",
+  "type": "Terra",
+  "rarity": "Legendary",
+  "description": "A giant stone titan Mora that commands tectonic destruction.",
+  "baseStats": { "hp": 110, "atk": 98, "def": 105, "spd": 40, "energy": 100 },
+  "moves": {
+    "Earth Destroy": { "power": 110, "accuracy": 80, "category": "Physical", "desc": "A devastating earth-crushing strike." },
+    "Titan Slam": { "power": 95, "accuracy": 85, "category": "Physical", "desc": "Massive titan slam." },
+    "Crush Storm": { "power": 105, "accuracy": 80, "category": "Physical", "desc": "A barrage of stone devastation." },
+    "Granite Wall": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense greatly." },
+    "Quake Pulse": { "power": 90, "accuracy": 85, "category": "Special", "desc": "Shockwave from the ground." },
+    "Stone Reign": { "power": 95, "accuracy": 80, "category": "Special", "desc": "Falling stone rain." },
+    "Dust Suppress": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy Accuracy." },
+    "Iron Mantle": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Boosts Defense and HP slightly." },
+    "Ridge Breaker": { "power": 100, "accuracy": 80, "category": "Physical", "desc": "A crushing tectonic strike." },
+    "Worldsplit Hammer": { "power": 145, "accuracy": 70, "category": "Physical", "desc": "Ultimate titan earthbreaker." }
+  },
+  "learnset": {
+    "3": ["Quake Pulse"],
+    "15": ["Titan Slam"],
+    "25": ["Earth Destroy"],
+    "35": ["Ridge Breaker"],
+    "45": ["Worldsplit Hammer"]
+  }
+},
+{
+  "id": 43,
+  "name": "Voltaris Prime",
+  "type": "Volt",
+  "rarity": "Legendary",
+  "description": "The pure lightning ascension of Voltaris, condensed into raw voltage form.",
+  "baseStats": { "hp": 88, "atk": 104, "def": 82, "spd": 98, "energy": 105 },
+  "moves": {
+    "Thunder Storm": { "power": 110, "accuracy": 80, "category": "Special", "desc": "Massive lightning storm." },
+    "Volt Destroy": { "power": 105, "accuracy": 85, "category": "Physical", "desc": "Brutal electric charge." },
+    "Surge Burst": { "power": 95, "accuracy": 85, "category": "Special", "desc": "Explosive voltage burst." },
+    "Static Field": { "power": 0, "accuracy": 90, "category": "Status", "desc": "May paralyze the enemy." },
+    "Arc Shield": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces damage from next hit." },
+    "Lightning Rush": { "power": 90, "accuracy": 90, "category": "Physical", "desc": "High-speed lightning dash." },
+    "Charge Ascend": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Speed sharply." },
+    "Overload Fang": { "power": 100, "accuracy": 80, "category": "Physical", "desc": "Heavy electric bite." },
+    "Plasma Roar": { "power": 95, "accuracy": 85, "category": "Special", "desc": "Roar that lowers enemy Defense." },
+    "Judgment Spark": { "power": 145, "accuracy": 70, "category": "Special", "desc": "Ultimate lightning annihilation." }
+  },
+  "learnset": {
+    "3": ["Lightning Rush"],
+    "15": ["Volt Destroy"],
+    "25": ["Thunder Storm"],
+    "35": ["Overload Fang"],
+    "45": ["Judgment Spark"]
+  }
+},
+{
+  "id": 44,
+  "name": "Luminary",
+  "type": "Light",
+  "rarity": "Legendary",
+  "description": "An angelic Mora with radiant wings that blinds enemies with divine brilliance.",
+  "baseStats": { "hp": 90, "atk": 98, "def": 88, "spd": 86, "energy": 130},
+  "moves": {
+    "Divine Beam": { "power": 110, "accuracy": 85, "category": "Special", "desc": "Holy radiant beam." },
+    "Radiant Storm": { "power": 100, "accuracy": 85, "category": "Special", "desc": "Storm of blinding light." },
+    "Shine Destroy": { "power": 105, "accuracy": 80, "category": "Physical", "desc": "Light-charged crushing strike." },
+    "Holy Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense and heals slightly." },
+    "Blessing Pulse": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Heals moderately." },
+    "Flash Strike": { "power": 90, "accuracy": 95, "category": "Physical", "desc": "Fast radiant slash." },
+    "Solar Wave": { "power": 95, "accuracy": 85, "category": "Special", "desc": "Powerful light wave." },
+    "Purify Roar": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Removes enemy buffs." },
+    "Radiant Fang": { "power": 100, "accuracy": 80, "category": "Physical", "desc": "Divine fang attack." },
+    "Celestial End": { "power": 145, "accuracy": 70, "category": "Special", "desc": "Ultimate holy devastation." }
+  },
+  "learnset": {
+    "3": ["Flash Strike"],
+    "15": ["Solar Wave"],
+    "25": ["Divine Beam"],
+    "35": ["Radiant Fang"],
+    "45": ["Celestial End"]
+  }
+},
+{
+  "id": 45,
+  "name": "Noctyra",
+  "type": "Shadow",
+  "rarity": "Legendary",
+  "description": "The Queen of Shadows, ruler of the deepest void dominion.",
+  "baseStats": { "hp": 94, "atk": 102, "def": 90, "spd": 82, "energy": 110 },
+  "moves": {
+    "Void Queen Strike": { "power": 110, "accuracy": 85, "category": "Physical", "desc": "Royal void slash." },
+    "Dark Storm": { "power": 105, "accuracy": 80, "category": "Special", "desc": "Massive shadow tempest." },
+    "Shadow Destroy": { "power": 115, "accuracy": 100, "category": "Physical", "desc": "Conjures shadows that phase through opponent." },
+    "Abyss Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy accuracy sharply." },
+    "Night Dominion": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Attack and Defense." },
+    "Gloom Fang": { "power": 95, "accuracy": 85, "category": "Physical", "desc": "Heavy shadow bite." },
+    "Phantom Pulse": { "power": 90, "accuracy": 100, "category": "Special", "desc": "Pulse of void energy." },
+    "Oblivion Cry": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy Attack." },
+    "Dark Collapse": { "power": 100, "accuracy": 80, "category": "Special", "desc": "Shadow implosion." },
+    "Eternal Abyss": { "power": 150, "accuracy": 95, "category": "Special", "desc": "Ultimate void execution." }
+  },
+  "learnset": {
+    "3": ["Gloom Fang"],
+    "15": ["Phantom Pulse"],
+    "25": ["Void Queen Strike"],
+    "35": ["Dark Collapse"],
+    "45": ["Eternal Abyss"]
+  }
+}
+,
+{
+  "id": 46,
+  "name": "Aquatyr",
+  "type": "Aqua",
+  "rarity": "Legendary",
+  "description": "A colossal ocean titan Mora that commands crushing tidal authority.",
+  "baseStats": { "hp": 108, "atk": 96, "def": 100, "spd": 55, "energy": 105 },
+  "moves": {
+    "Ocean Destroy": { "power": 115, "accuracy": 80, "category": "Special", "desc": "A devastating tidal beam." },
+    "Tidal Storm": { "power": 105, "accuracy": 85, "category": "Special", "desc": "Massive spiraling water storm." },
+    "Aqua Devour": { "power": 95, "accuracy": 95, "category": "Physical", "desc": "A crushing bite that drains HP." },
+    "Deep Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense greatly." },
+    "Current Break": { "power": 95, "accuracy": 85, "category": "Physical", "desc": "Heavy water-laced strike." },
+    "Wave Collapse": { "power": 100, "accuracy": 80, "category": "Special", "desc": "A collapsing tidal crash." },
+    "Salt Dominion": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy Defense." },
+    "Pressure Grip": { "power": 90, "accuracy": 100, "category": "Physical", "desc": "Crushing ocean-pressure slam." },
+    "Flood Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces damage from next hit." },
+    "Leviathan End": { "power": 150, "accuracy": 95, "category": "Special", "desc": "Ultimate ocean annihilation." }
+  },
+  "learnset": {
+    "3": ["Pressure Grip"],
+    "15": ["Tidal Storm"],
+    "25": ["Ocean Destroy"],
+    "35": ["Wave Collapse"],
+    "45": ["Leviathan End"]
+  }
+},
+{
+  "id": 47,
+  "name": "Drakoryx",
+  "type": "Dragon",
+  "rarity": "Legendary",
+  "description": "The Dragon King Mora whose roar bends the battlefield to its will.",
+  "baseStats": { "hp": 100, "atk": 108, "def": 95, "spd": 85, "energy": 110 },
+  "moves": {
+    "King Bite": { "power": 105, "accuracy": 90, "category": "Physical", "desc": "A royal dragon bite." },
+    "Dragon Storm": { "power": 115, "accuracy": 80, "category": "Special", "desc": "A violent draconic tempest." },
+    "Royal Destroy": { "power": 120, "accuracy": 85, "category": "Physical", "desc": "Crushing kingly strike." },
+    "Drake Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense and Attack slightly." },
+    "Wing Dominion": { "power": 95, "accuracy": 100, "category": "Physical", "desc": "Massive wing slam." },
+    "Flame Breath": { "power": 100, "accuracy": 95, "category": "Special", "desc": "Dragon flame blast." },
+    "Scale Harden": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Greatly raises Defense." },
+    "Sky Pierce": { "power": 100, "accuracy": 85, "category": "Physical", "desc": "A piercing aerial strike." },
+    "Dragon Roar": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy Attack." },
+    "Imperial Cataclysm": { "power": 155, "accuracy": 70, "category": "Special", "desc": "Ultimate dragon king devastation." }
+  },
+  "learnset": {
+    "3": ["Wing Dominion"],
+    "15": ["Dragon Storm"],
+    "25": ["King Bite"],
+    "35": ["Sky Pierce"],
+    "45": ["Imperial Cataclysm"]
+  }
+},
+{
+  "id": 48,
+  "name": "Eternyx",
+  "type": "Cosmic",
+  "rarity": "Legendary",
+  "description": "A Mora formed from time energy itself. Eternyx distorts reality with every move.",
+  "baseStats": { "hp": 95, "atk": 100, "def": 90, "spd": 95, "energy": 115 },
+  "moves": {
+    "Time Break": { "power": 110, "accuracy": 85, "category": "Special", "desc": "A temporal rupture strike." },
+    "Cosmic Destroy": { "power": 115, "accuracy": 80, "category": "Special", "desc": "Explosive cosmic blast." },
+    "Eternal Strike": { "power": 105, "accuracy": 90, "category": "Physical", "desc": "A time-warped physical strike." },
+    "Chrono Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces damage from next hit." },
+    "Time Snare": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Lowers enemy Speed drastically." },
+    "Galaxy Pulse": { "power": 100, "accuracy": 85, "category": "Special", "desc": "A pulse of cosmic distortion." },
+    "Void Step": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Speed sharply." },
+    "Starfall Edge": { "power": 100, "accuracy": 85, "category": "Physical", "desc": "A descending star strike." },
+    "Eon Collapse": { "power": 120, "accuracy": 100, "category": "Special", "desc": "A collapse of time energy." },
+    "Infinite Horizon": { "power": 155, "accuracy": 90, "category": "Special", "desc": "Ultimate temporal annihilation." }
+  },
+  "learnset": {
+    "3": ["Galaxy Pulse"],
+    "15": ["Time Break"],
+    "25": ["Eternal Strike"],
+    "35": ["Eon Collapse"],
+    "45": ["Infinite Horizon"]
+  }
+},
+{
+  "id": 49,
+  "name": "Omnaris",
+  "type": "Omni",
+  "rarity": "Legendary",
+  "description": "A Mora containing all elemental forces in unstable balance.",
+  "baseStats": { "hp": 100, "atk": 105, "def": 100, "spd": 90, "energy": 120 },
+  "moves": {
+    "Omni Strike": { "power": 110, "accuracy": 90, "category": "Physical", "desc": "A strike infused with all elements." },
+    "Element Storm": { "power": 120, "accuracy": 80, "category": "Special", "desc": "A storm of mixed elements." },
+    "Ultimate Destroy": { "power": 130, "accuracy": 75, "category": "Physical", "desc": "Overwhelming elemental execution." },
+    "Balance Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense and Speed." },
+    "Prism Pulse": { "power": 100, "accuracy": 85, "category": "Special", "desc": "Multi-element pulse." },
+    "Elemental Fang": { "power": 105, "accuracy": 85, "category": "Physical", "desc": "Element-charged bite." },
+    "Spectrum Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces damage from next hit." },
+    "Chaos Howl": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy Attack and Defense." },
+    "Fusion Break": { "power": 115, "accuracy": 80, "category": "Special", "desc": "A fusion-element blast." },
+    "Absolute Cataclysm": { "power": 160, "accuracy": 65, "category": "Special", "desc": "Ultimate omni-element destruction." }
+  },
+  "learnset": {
+    "3": ["Prism Pulse"],
+    "15": ["Omni Strike"],
+    "25": ["Element Storm"],
+    "35": ["Fusion Break"],
+    "45": ["Absolute Cataclysm"]
+  }
+},
+
+{
+  "id": 50,
+  "name": "Aetherion",
+  "type": "Light",
+  "rarity": "Legendary",
+  "description": "A radiant supreme guardian Mora that channels celestial harmony.",
+  "baseStats": { "hp": 102, "atk": 100, "def": 102, "spd": 85, "energy": 115 },
+  "moves": {
+    "Celestial Beam": { "power": 115, "accuracy": 85, "category": "Special", "desc": "A beam of celestial radiance, with energy from the celestial world." },
+    "Harmony Strike": { "power": 105, "accuracy": 90, "category": "Physical", "desc": "Balanced radiant strike." },
+    "Divine Collapse": { "power": 120, "accuracy": 80, "category": "Special", "desc": "Heavenly burst of destruction." },
+    "Radiant Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense and heals slightly." },
+    "Solar Judgment": { "power": 110, "accuracy": 85, "category": "Special", "desc": "A punishing light blast." },
+    "Angelic Slash": { "power": 100, "accuracy": 90, "category": "Physical", "desc": "A swift radiant blade strike." },
+    "Heaven's Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reduces damage from next hit." },
+    "Light Pulse": { "power": 95, "accuracy": 100, "category": "Special", "desc": "Radiant shockwave." },
+    "Blessed Roar": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy Attack." },
+    "Final Ascension": { "power": 155, "accuracy": 70, "category": "Special", "desc": "Ultimate celestial annihilation." }
+  },
+  "learnset": {
+    "3": ["Light Pulse"],
+    "15": ["Harmony Strike"],
+    "25": ["Celestial Beam"],
+    "35": ["Solar Judgment"],
+    "45": ["Final Ascension"]
+  }
+},
+{
+    "id": 51,
+    "name": "Bup",
+    "type": "Aqua",
+    "rarity": "Common",
+    "description": "A bubbly amphibious Mora. It inflates its cheeks to absorb impacts before spitting water back.",
+    "baseStats": { "hp": 55, "atk": 42, "def": 58, "spd": 45, "energy": 35 },
+    "moves": {
+      "Bubble Spit": { "power": 35, "accuracy": 95, "category": "Special", "desc": "Spits a quick bubble." },
+      "Moisture Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense slightly." },
+      "Water Slap": { "power": 45, "accuracy": 95, "category": "Physical", "desc": "A wet, resounding slap." },
+      "Slippery Step": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Speed." },
+      "Stream Rush": { "power": 60, "accuracy": 90, "category": "Physical", "desc": "A fast rushing tackle." }
+    },
+    "learnset": { "3": ["Bubble Spit", "Moisture Guard"], "8": ["Water Slap"], "14": ["Slippery Step"], "20": ["Stream Rush"] }
+  },
+  {
+    "id": 52,
+    "name": "Sproutlet",
+    "type": "Nature",
+    "rarity": "Common",
+    "description": "A walking seedling Mora that thrives in sunlight. Its roots are surprisingly strong.",
+    "baseStats": { "hp": 60, "atk": 40, "def": 50, "spd": 35, "energy": 38 },
+    "moves": {
+      "Leaf Smack": { "power": 35, "accuracy": 100, "category": "Physical", "desc": "A basic leaf strike." },
+      "Root Dig": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Heals slightly." },
+      "Seed Shot": { "power": 45, "accuracy": 95, "category": "Special", "desc": "Fires a hard seed." },
+      "Tangle Vine": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Lowers enemy Speed." },
+      "Branch Bash": { "power": 65, "accuracy": 90, "category": "Physical", "desc": "A heavy wooden strike." }
+    },
+    "learnset": { "3": ["Leaf Smack", "Root Dig"], "8": ["Seed Shot"], "14": ["Tangle Vine"], "20": ["Branch Bash"] }
+  },
+  {
+    "id": 53,
+    "name": "Dustmite",
+    "type": "Terra",
+    "rarity": "Common",
+    "description": "A tiny, rock-covered scavenger Mora. It easily blends into rocky terrain to ambush prey.",
+    "baseStats": { "hp": 50, "atk": 55, "def": 65, "spd": 30, "energy": 32 },
+    "moves": {
+      "Pebble Toss": { "power": 35, "accuracy": 95, "category": "Physical", "desc": "Throws a sharp rock." },
+      "Harden": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense." },
+      "Sand Kick": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Lowers enemy Accuracy." },
+      "Rock Bash": { "power": 50, "accuracy": 95, "category": "Physical", "desc": "A solid bashing attack." },
+      "Tremor": { "power": 60, "accuracy": 90, "category": "Special", "desc": "A small localized earthquake." }
+    },
+    "learnset": { "3": ["Pebble Toss", "Harden"], "8": ["Sand Kick"], "14": ["Rock Bash"], "20": ["Tremor"] }
+  },
+  {
+    "id": 54,
+    "name": "Staticbug",
+    "type": "Volt",
+    "rarity": "Common",
+    "description": "A sparking insectoid Mora. It rubs its legs together to generate tiny but painful shocks.",
+    "baseStats": { "hp": 40, "atk": 45, "def": 35, "spd": 75, "energy": 30 },
+    "moves": {
+      "Zap": { "power": 35, "accuracy": 100, "category": "Special", "desc": "A minor electrical shock." },
+      "Jitter": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Speed." },
+      "Spark Dash": { "power": 45, "accuracy": 95, "category": "Physical", "desc": "A quick, electrified tackle." },
+      "Static Cling": { "power": 0, "accuracy": 90, "category": "Status", "desc": "May paralyze the enemy." },
+      "Volt Bite": { "power": 60, "accuracy": 90, "category": "Physical", "desc": "A sharp, shocking bite." }
+    },
+    "learnset": { "3": ["Zap", "Jitter"], "8": ["Spark Dash"], "14": ["Static Cling"], "20": ["Volt Bite"] }
+  },
+  {
+    "id": 55,
+    "name": "Ashling",
+    "type": "Flame",
+    "rarity": "Common",
+    "description": "A crawling coal Mora that leaves a trail of soot. Its body temperature spikes when threatened.",
+    "baseStats": { "hp": 48, "atk": 58, "def": 42, "spd": 45, "energy": 34 },
+    "moves": {
+      "Ember Spit": { "power": 40, "accuracy": 95, "category": "Special", "desc": "Spits a small fireball." },
+      "Soot Cloud": { "power": 0, "accuracy": 95, "category": "Status", "desc": "Lowers enemy Accuracy." },
+      "Hot Coal": { "power": 50, "accuracy": 90, "category": "Physical", "desc": "Rams with a burning body." },
+      "Kindle": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Attack." },
+      "Burnout": { "power": 70, "accuracy": 85, "category": "Special", "desc": "A risky, high-damage flare." }
+    },
+    "learnset": { "3": ["Ember Spit", "Soot Cloud"], "8": ["Hot Coal"], "14": ["Kindle"], "20": ["Burnout"] }
+  },
+  {
+    "id": 56,
+    "name": "Flurrybat",
+    "type": "Frost",
+    "rarity": "Common",
+    "description": "A snowy bat Mora that freezes the moisture in the air to create icy projectiles.",
+    "baseStats": { "hp": 45, "atk": 50, "def": 40, "spd": 70, "energy": 36 },
+    "moves": {
+      "Icy Wind": { "power": 40, "accuracy": 95, "category": "Special", "desc": "A cold gust that may lower Speed." },
+      "Wing Flap": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Speed." },
+      "Frost Nip": { "power": 45, "accuracy": 95, "category": "Physical", "desc": "A quick, freezing bite." },
+      "Snow Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense slightly." },
+      "Icicle Drop": { "power": 65, "accuracy": 90, "category": "Physical", "desc": "Drops a sharp icicle from above." }
+    },
+    "learnset": { "3": ["Icy Wind", "Wing Flap"], "8": ["Frost Nip"], "14": ["Snow Veil"], "20": ["Icicle Drop"] }
+  },
+  {
+    "id": 57,
+    "name": "Gloomtail",
+    "type": "Shadow",
+    "rarity": "Common",
+    "description": "A shadowy rat Mora. It hides in the darkest corners and steals energy from unsuspecting prey.",
+    "baseStats": { "hp": 42, "atk": 60, "def": 35, "spd": 65, "energy": 32 },
+    "moves": {
+      "Dark Scratch": { "power": 40, "accuracy": 100, "category": "Physical", "desc": "A quick scratch." },
+      "Hide": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Evasion/Speed." },
+      "Bite": { "power": 50, "accuracy": 95, "category": "Physical", "desc": "A sharp bite." },
+      "Shadow Sneak": { "power": 55, "accuracy": 100, "category": "Physical", "desc": "A fast shadowy strike." },
+      "Leech Void": { "power": 60, "accuracy": 90, "category": "Special", "desc": "Drains HP from the target." }
+    },
+    "learnset": { "3": ["Dark Scratch", "Hide"], "8": ["Bite"], "14": ["Shadow Sneak"], "20": ["Leech Void"] }
+  },
+  {
+    "id": 58,
+    "name": "Breezefluff",
+    "type": "Wind",
+    "rarity": "Common",
+    "description": "A floating dandelion-like Mora. It rides the wind to escape predators.",
+    "baseStats": { "hp": 50, "atk": 35, "def": 45, "spd": 60, "energy": 30 },
+    "moves": {
+      "Gust": { "power": 35, "accuracy": 100, "category": "Special", "desc": "A small puff of wind." },
+      "Float": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Speed." },
+      "Air Slash": { "power": 45, "accuracy": 95, "category": "Special", "desc": "A sharp blade of wind." },
+      "Spore Scatter": { "power": 0, "accuracy": 85, "category": "Status", "desc": "Lowers enemy Accuracy." },
+      "Tornado Spin": { "power": 60, "accuracy": 90, "category": "Physical", "desc": "A spinning tackle." }
+    },
+    "learnset": { "3": ["Gust", "Float"], "8": ["Air Slash"], "14": ["Spore Scatter"], "20": ["Tornado Spin"] }
+  },
+  {
+    "id": 59,
+    "name": "Puddlekin",
+    "type": "Aqua",
+    "rarity": "Common",
+    "description": "A living droplet Mora. It is very hard to grasp and slips out of danger easily.",
+    "baseStats": { "hp": 65, "atk": 30, "def": 55, "spd": 50, "energy": 40 },
+    "moves": {
+      "Splash": { "power": 30, "accuracy": 100, "category": "Physical", "desc": "A harmless-looking splash." },
+      "Liquid Body": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense." },
+      "Water Gun": { "power": 45, "accuracy": 100, "category": "Special", "desc": "Shoots a stream of water." },
+      "Aqua Ring": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Heals slightly over time." },
+      "Wave Crash": { "power": 65, "accuracy": 85, "category": "Physical", "desc": "A heavy water slam." }
+    },
+    "learnset": { "3": ["Splash", "Liquid Body"], "8": ["Water Gun"], "14": ["Aqua Ring"], "20": ["Wave Crash"] }
+  },
+  {
+    "id": 60,
+    "name": "Twiggy",
+    "type": "Nature",
+    "rarity": "Common",
+    "description": "A stick-insect Mora. It perfectly mimics a dry branch until it strikes.",
+    "baseStats": { "hp": 45, "atk": 65, "def": 40, "spd": 55, "energy": 35 },
+    "moves": {
+      "Poke": { "power": 35, "accuracy": 100, "category": "Physical", "desc": "A sharp poke with a twig." },
+      "Camouflage": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense and Speed slightly." },
+      "Branch Snap": { "power": 55, "accuracy": 95, "category": "Physical", "desc": "A surprisingly hard hit." },
+      "Sap Stick": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Lowers enemy Speed." },
+      "Woodpecker": { "power": 70, "accuracy": 90, "category": "Physical", "desc": "A rapid series of sharp strikes." }
+    },
+    "learnset": { "3": ["Poke", "Camouflage"], "8": ["Branch Snap"], "14": ["Sap Stick"], "20": ["Woodpecker"] }
+  },
+  {
+    "id": 61,
+    "name": "Gravelback",
+    "type": "Terra",
+    "rarity": "Uncommon",
+    "description": "A sturdy badger-like Mora with a rocky carapace. It charges headfirst into danger.",
+    "baseStats": { "hp": 65, "atk": 62, "def": 70, "spd": 45, "energy": 45 },
+    "moves": {
+      "Rock Smash": { "power": 50, "accuracy": 95, "category": "Physical", "desc": "A heavy punch that breaks rocks." },
+      "Iron Defense": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Defense sharply." },
+      "Mud Slap": { "power": 45, "accuracy": 100, "category": "Special", "desc": "Throws mud to lower Accuracy." },
+      "Bulldoze": { "power": 60, "accuracy": 95, "category": "Physical", "desc": "A charging attack that lowers Speed." },
+      "Stone Edge": { "power": 80, "accuracy": 80, "category": "Physical", "desc": "A high-critical rock strike." }
+    },
+    "learnset": { "3": ["Rock Smash", "Mud Slap"], "9": ["Iron Defense"], "15": ["Bulldoze"], "22": ["Stone Edge"] }
+  },
+  {
+    "id": 62,
+    "name": "Joltwing",
+    "type": "Volt",
+    "rarity": "Uncommon",
+    "description": "A charged bird Mora. The friction of its feathers creates thunderclaps.",
+    "baseStats": { "hp": 55, "atk": 65, "def": 45, "spd": 85, "energy": 42 },
+    "moves": {
+      "Peck": { "power": 45, "accuracy": 100, "category": "Physical", "desc": "A sharp beak strike." },
+      "Spark Flap": { "power": 55, "accuracy": 95, "category": "Special", "desc": "Flaps charged wings." },
+      "Agility": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Speed sharply." },
+      "Thunder Wave": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Paralyzes the target." },
+      "Volt Tackle": { "power": 85, "accuracy": 90, "category": "Physical", "desc": "A high-voltage diving tackle." }
+    },
+    "learnset": { "3": ["Peck", "Spark Flap"], "9": ["Agility"], "15": ["Thunder Wave"], "22": ["Volt Tackle"] }
+  },
+  {
+    "id": 63,
+    "name": "Scorchmane",
+    "type": "Flame",
+    "rarity": "Uncommon",
+    "description": "A fiery hyena Mora that travels in packs. Its laughter sounds like crackling flames.",
+    "baseStats": { "hp": 60, "atk": 70, "def": 50, "spd": 65, "energy": 40 },
+    "moves": {
+      "Bite": { "power": 50, "accuracy": 100, "category": "Physical", "desc": "A dark, sharp bite." },
+      "Fire Fang": { "power": 65, "accuracy": 95, "category": "Physical", "desc": "A flaming bite that may burn." },
+      "Howl": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Attack." },
+      "Ember Toss": { "power": 55, "accuracy": 95, "category": "Special", "desc": "Throws a chunk of burning coal." },
+      "Flare Blitz": { "power": 85, "accuracy": 90, "category": "Physical", "desc": "A reckless, burning charge." }
+    },
+    "learnset": { "3": ["Bite", "Howl"], "9": ["Ember Toss"], "15": ["Fire Fang"], "22": ["Flare Blitz"] }
+  },
+  {
+    "id": 64,
+    "name": "Frostfang",
+    "type": "Frost",
+    "rarity": "Uncommon",
+    "description": "An icy wolf Mora. It hunts relentlessly across frozen tundras.",
+    "baseStats": { "hp": 62, "atk": 68, "def": 55, "spd": 72, "energy": 44 },
+    "moves": {
+      "Ice Shard": { "power": 45, "accuracy": 100, "category": "Special", "desc": "A fast, priority ice attack." },
+      "Bite": { "power": 50, "accuracy": 100, "category": "Physical", "desc": "A standard bite." },
+      "Chilling Howl": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy Attack." },
+      "Ice Fang": { "power": 65, "accuracy": 95, "category": "Physical", "desc": "A freezing bite that may flinch." },
+      "Avalanche": { "power": 80, "accuracy": 90, "category": "Physical", "desc": "A heavy snow crash." }
+    },
+    "learnset": { "3": ["Ice Shard", "Bite"], "9": ["Chilling Howl"], "15": ["Ice Fang"], "22": ["Avalanche"] }
+  },
+  {
+    "id": 65,
+    "name": "Duskprowl",
+    "type": "Shadow",
+    "rarity": "Uncommon",
+    "description": "A shadowy panther Mora that is virtually invisible at night.",
+    "baseStats": { "hp": 58, "atk": 75, "def": 48, "spd": 80, "energy": 42 },
+    "moves": {
+      "Scratch": { "power": 45, "accuracy": 100, "category": "Physical", "desc": "A sharp claw attack." },
+      "Night Shade": { "power": 60, "accuracy": 100, "category": "Special", "desc": "A blast of dark energy." },
+      "Sharpen": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Attack." },
+      "Ambush": { "power": 70, "accuracy": 95, "category": "Physical", "desc": "A surprise attack from the shadows." },
+      "Shadow Rend": { "power": 85, "accuracy": 90, "category": "Physical", "desc": "A brutal, tearing dark strike." }
+    },
+    "learnset": { "3": ["Scratch", "Sharpen"], "9": ["Night Shade"], "15": ["Ambush"], "22": ["Shadow Rend"] }
+  },
+{
+    "id": 66,
+    "name": "Obsidihorn",
+    "type": "Terra",
+    "rarity": "Rare",
+    "description": "A massive beetle-like Mora with a horn made of volcanic glass. It is nearly impervious to physical strikes.",
+    "baseStats": { "hp": 85, "atk": 75, "def": 110, "spd": 35, "energy": 55 },
+    "moves": {
+      "Obsidian Bash": { "power": 75, "accuracy": 95, "category": "Physical", "desc": "A heavy horn strike that may lower enemy Defense." },
+      "Glass Armor": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Sharply raises Defense but lowers Speed." },
+      "Earthquake": { "power": 90, "accuracy": 100, "category": "Physical", "desc": "A powerful ground-shaking tremor." },
+      "Sharp Fragment": { "power": 60, "accuracy": 90, "category": "Special", "desc": "Shoots glass shards that cause bleeding." }
+    },
+    "learnset": { "5": ["Obsidian Bash"], "12": ["Glass Armor"], "20": ["Sharp Fragment"], "30": ["Earthquake"] }
+  },
+  {
+    "id": 67,
+    "name": "Valtopher",
+    "type": "Volt",
+    "rarity": "Rare",
+    "description": "A sleek, electric feline that moves like a bolt of lightning. It leaves ozone-scented air in its wake.",
+    "baseStats": { "hp": 65, "atk": 90, "def": 55, "spd": 115, "energy": 50 },
+    "moves": {
+      "Thunder Slash": { "power": 70, "accuracy": 100, "category": "Physical", "desc": "A quick electrified claw strike." },
+      "Overload": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Massively boosts Speed for 3 turns." },
+      "Plasma Bolt": { "power": 85, "accuracy": 95, "category": "Special", "desc": "Fires a concentrated ball of electricity." },
+      "Storm Step": { "power": 60, "accuracy": 100, "category": "Physical", "desc": "A dash attack that avoids the next hit." }
+    },
+    "learnset": { "5": ["Thunder Slash"], "12": ["Overload"], "20": ["Storm Step"], "30": ["Plasma Bolt"] }
+  },
+  {
+    "id": 68,
+    "name": "Florageist",
+    "type": "Nature",
+    "rarity": "Rare",
+    "description": "A mystical deer Mora draped in bioluminescent moss. It can vanish into thin air by mimicking shadows.",
+    "baseStats": { "hp": 80, "atk": 65, "def": 75, "spd": 85, "energy": 65 },
+    "moves": {
+      "Spirit Bloom": { "power": 65, "accuracy": 100, "category": "Special", "desc": "Drains HP from the target to heal itself." },
+      "Nature's Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Evasion and clears status effects." },
+      "Thorny Overgrowth": { "power": 80, "accuracy": 90, "category": "Physical", "desc": "Summons vines to crush the opponent." },
+      "Pollen Sleep": { "power": 0, "accuracy": 75, "category": "Status", "desc": "Puts the enemy into a deep slumber." }
+    },
+    "learnset": { "5": ["Spirit Bloom"], "12": ["Nature's Veil"], "20": ["Pollen Sleep"], "30": ["Thorny Overgrowth"] }
+  },
+  {
+    "id": 69,
+    "name": "Pyre-Griffin",
+    "type": "Flame",
+    "rarity": "Rare",
+    "description": "A majestic winged beast whose feathers burn with a blue flame. It rules the volcanic peaks.",
+    "baseStats": { "hp": 75, "atk": 95, "def": 65, "spd": 100, "energy": 60 },
+    "moves": {
+      "Inferno Wing": { "power": 75, "accuracy": 95, "category": "Physical", "desc": "A flaming wing buffet." },
+      "Heat Wave": { "power": 85, "accuracy": 90, "category": "Special", "desc": "A blast of hot air that may burn the foe." },
+      "Sky Dive": { "power": 90, "accuracy": 85, "category": "Physical", "desc": "A high-speed dive from the clouds." },
+      "Roar of Embers": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy Attack and Defense." }
+    },
+    "learnset": { "5": ["Inferno Wing"], "12": ["Roar of Embers"], "20": ["Heat Wave"], "30": ["Sky Dive"] }
+  },
+  {
+    "id": 70,
+    "name": "Abyss-Lurk",
+    "type": "Shadow",
+    "rarity": "Rare",
+    "description": "A multi-eyed serpent that lives in the deepest rifts. It feeds on the fear of its prey.",
+    "baseStats": { "hp": 90, "atk": 85, "def": 85, "spd": 60, "energy": 70 },
+    "moves": {
+      "Gaze of Terror": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Paralyzes the foe with pure fear." },
+      "Shadow Maw": { "power": 80, "accuracy": 95, "category": "Physical", "desc": "A bite that drains the target's energy." },
+      "Dark Pulse": { "power": 85, "accuracy": 100, "category": "Special", "desc": "A release of concentrated dark energy." },
+      "Nightmare Bind": { "power": 70, "accuracy": 90, "category": "Special", "desc": "Traps the foe in shadow for 2 turns." }
+    },
+    "learnset": { "5": ["Shadow Maw"], "12": ["Gaze of Terror"], "20": ["Dark Pulse"], "30": ["Nightmare Bind"] }
+  },
+  {
+    "id": 71,
+    "name": "Glacier-Rex",
+    "type": "Frost",
+    "rarity": "Rare",
+    "description": "An ancient reptilian Mora frozen in ice for eons. Its breath can turn a forest into a tundra.",
+    "baseStats": { "hp": 100, "atk": 105, "def": 90, "spd": 45, "energy": 55 },
+    "moves": {
+      "Frozen Bite": { "power": 75, "accuracy": 95, "category": "Physical", "desc": "A bite that has a high freeze chance." },
+      "Blizzard": { "power": 110, "accuracy": 75, "category": "Special", "desc": "A massive snowstorm attack." },
+      "Hail Shield": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Creates a shield of ice that heals HP." },
+      "Ice Crusher": { "power": 90, "accuracy": 90, "category": "Physical", "desc": "Slams the foe with an icy tail." }
+    },
+    "learnset": { "5": ["Frozen Bite"], "12": ["Hail Shield"], "20": ["Ice Crusher"], "30": ["Blizzard"] }
+  },
+  {
+    "id": 72,
+    "name": "Tidal-Serpent",
+    "type": "Aqua",
+    "rarity": "Rare",
+    "description": "A long, graceful sea serpent that controls the tides. Sailors believe seeing one brings storms.",
+    "baseStats": { "hp": 85, "atk": 70, "def": 80, "spd": 90, "energy": 75 },
+    "moves": {
+      "Hydro Pump": { "power": 100, "accuracy": 85, "category": "Special", "desc": "A high-pressure blast of water." },
+      "Whirlpool": { "power": 60, "accuracy": 95, "category": "Special", "desc": "Traps the enemy in a vortex." },
+      "Tail Wave": { "power": 75, "accuracy": 100, "category": "Physical", "desc": "A slapping attack using a massive wave." },
+      "Ocean's Grace": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Restores 25% HP and cures burns." }
+    },
+    "learnset": { "5": ["Tail Wave"], "12": ["Whirlpool"], "20": ["Ocean's Grace"], "30": ["Hydro Pump"] }
+  },
+  {
+    "id": 73,
+    "name": "Aero-Drakon",
+    "type": "Wind",
+    "rarity": "Rare",
+    "description": "A dragon-like Mora that lacks scales, covered instead in streamlined feathers.",
+    "baseStats": { "hp": 70, "atk": 100, "def": 60, "spd": 120, "energy": 50 },
+    "moves": {
+      "Sonic Boom": { "power": 80, "accuracy": 100, "category": "Special", "desc": "A shockwave that never misses." },
+      "Talon Rake": { "power": 70, "accuracy": 100, "category": "Physical", "desc": "Sharp claws that ignore Defense buffs." },
+      "Hurricane": { "power": 110, "accuracy": 75, "category": "Special", "desc": "A devastating wind storm." },
+      "Tail Wind": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Doubles Speed for the team." }
+    },
+    "learnset": { "5": ["Talon Rake"], "12": ["Tail Wind"], "20": ["Sonic Boom"], "30": ["Hurricane"] }
+  },
+  {
+    "id": 74,
+    "name": "Iron-Sentinel",
+    "type": "Terra",
+    "rarity": "Rare",
+    "description": "A Mora that looks like a living statue. It was built by ancient civilizations to guard temples.",
+    "baseStats": { "hp": 90, "atk": 80, "def": 120, "spd": 25, "energy": 45 },
+    "moves": {
+      "Guardian Strike": { "power": 80, "accuracy": 100, "category": "Physical", "desc": "A punch that scales with Defense." },
+      "Fortify": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Maxes out Defense but prevents moving next turn." },
+      "Stone Rain": { "power": 75, "accuracy": 90, "category": "Special", "desc": "Rocks fall from the sky on the foe." },
+      "Ancient Beam": { "power": 95, "accuracy": 90, "category": "Special", "desc": "A beam of light from its singular eye." }
+    },
+    "learnset": { "5": ["Guardian Strike"], "12": ["Fortify"], "20": ["Stone Rain"], "30": ["Ancient Beam"] }
+  },
+  {
+    "id": 75,
+    "name": "Nebula-Wisp",
+    "type": "Void",
+    "rarity": "Rare",
+    "description": "A floating orb of starlight. It doesn't seem to belong to this world.",
+    "baseStats": { "hp": 60, "atk": 50, "def": 50, "spd": 100, "energy": 120 },
+    "moves": {
+      "Star Pulse": { "power": 70, "accuracy": 100, "category": "Special", "desc": "A cosmic energy blast." },
+      "Gravity Well": { "power": 0, "accuracy": 95, "category": "Status", "desc": "Resets all enemy stat boosts." },
+      "Void Rift": { "power": 90, "accuracy": 85, "category": "Special", "desc": "Opens a small hole in space-time." },
+      "Cosmic Heal": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Heals based on remaining Energy." }
+    },
+    "learnset": { "5": ["Star Pulse"], "12": ["Gravity Well"], "20": ["Cosmic Heal"], "30": ["Void Rift"] }
+  },
+  {
+    "id": 76,
+    "name": "Magma-Tortoise",
+    "type": "Flame",
+    "rarity": "Rare",
+    "description": "Its shell is a miniature volcano. It moves slowly but can erupt at any moment.",
+    "baseStats": { "hp": 110, "atk": 70, "def": 100, "spd": 20, "energy": 80 },
+    "moves": {
+      "Lava Spit": { "power": 65, "accuracy": 100, "category": "Special", "desc": "Deals damage and burns the foe." },
+      "Eruption": { "power": 120, "accuracy": 80, "category": "Special", "desc": "Deals more damage if HP is high." },
+      "Shell Bash": { "power": 70, "accuracy": 95, "category": "Physical", "desc": "A heavy slam with the shell." },
+      "Steam Cover": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy Accuracy." }
+    },
+    "learnset": { "5": ["Shell Bash"], "12": ["Steam Cover"], "20": ["Lava Spit"], "30": ["Eruption"] }
+  },
+  {
+    "id": 77,
+    "name": "Crag-Goat",
+    "type": "Terra",
+    "rarity": "Rare",
+    "description": "A nimble climber that can stand on near-vertical cliffs. Its head is harder than diamonds.",
+    "baseStats": { "hp": 75, "atk": 115, "def": 85, "spd": 80, "energy": 50 },
+    "moves": {
+      "Headbutt": { "power": 70, "accuracy": 100, "category": "Physical", "desc": "A solid strike with the forehead." },
+      "Rock Climb": { "power": 80, "accuracy": 95, "category": "Physical", "desc": "A jumping attack from high ground." },
+      "Focus Charge": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Guarantees the next hit is a Critical." },
+      "Mountain Slam": { "power": 100, "accuracy": 85, "category": "Physical", "desc": "A devastating downhill tackle." }
+    },
+    "learnset": { "5": ["Headbutt"], "12": ["Focus Charge"], "20": ["Rock Climb"], "30": ["Mountain Slam"] }
+  },
+  {
+    "id": 78,
+    "name": "Spectral-Raven",
+    "type": "Shadow",
+    "rarity": "Rare",
+    "description": "A messenger of the abyss. Its caw is said to be an omen of bad luck.",
+    "baseStats": { "hp": 65, "atk": 85, "def": 60, "spd": 110, "energy": 70 },
+    "moves": {
+      "Cursed Caw": { "power": 60, "accuracy": 95, "category": "Special", "desc": "Confuses the enemy." },
+      "Night Wing": { "power": 75, "accuracy": 100, "category": "Physical", "desc": "A shadowy wing strike." },
+      "Omen": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Halves the enemy's next heal." },
+      "Shadow Storm": { "power": 95, "accuracy": 85, "category": "Special", "desc": "Summons dark feathers to strike." }
+    },
+    "learnset": { "5": ["Night Wing"], "12": ["Cursed Caw"], "20": ["Omen"], "30": ["Shadow Storm"] }
+  },
+  {
+    "id": 79,
+    "name": "Venom-Spire",
+    "type": "Nature",
+    "rarity": "Rare",
+    "description": "A predatory plant Mora that lures insects with a sweet scent before injecting neurotoxins.",
+    "baseStats": { "hp": 85, "atk": 90, "def": 70, "spd": 65, "energy": 60 },
+    "moves": {
+      "Acid Sting": { "power": 60, "accuracy": 100, "category": "Special", "desc": "Poisons the target." },
+      "Vine Lash": { "power": 75, "accuracy": 95, "category": "Physical", "desc": "A whip-like vine attack." },
+      "Sweet Scent": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy Evasion." },
+      "Fatal Bloom": { "power": 100, "accuracy": 80, "category": "Special", "desc": "A massive release of toxic energy." }
+    },
+    "learnset": { "5": ["Vine Lash"], "12": ["Sweet Scent"], "20": ["Acid Sting"], "30": ["Fatal Bloom"] }
+  },
+  {
+    "id": 80,
+    "name": "Spark-Core",
+    "type": "Volt",
+    "rarity": "Rare",
+    "description": "A floating mechanical Mora that seems to be powered by an infinite battery.",
+    "baseStats": { "hp": 70, "atk": 80, "def": 90, "spd": 70, "energy": 90 },
+    "moves": {
+      "Static Blast": { "power": 75, "accuracy": 100, "category": "Special", "desc": "A beam of pure electricity." },
+      "Recharge": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Restores 50 Energy." },
+      "Magnet Pull": { "power": 0, "accuracy": 95, "category": "Status", "desc": "Prevents the enemy from fleeing." },
+      "Discharge": { "power": 95, "accuracy": 90, "category": "Special", "desc": "A massive area-of-effect shock." }
+    },
+    "learnset": { "5": ["Static Blast"], "12": ["Magnet Pull"], "20": ["Recharge"], "30": ["Discharge"] }
+  },
+  {
+    "id": 81,
+    "name": "Crag-Titan",
+    "type": "Terra",
+    "rarity": "Rare",
+    "description": "A walking mountain. Its steps cause tremors that can be felt for miles.",
+    "baseStats": { "hp": 115, "atk": 95, "def": 110, "spd": 30, "energy": 60 },
+    "moves": {
+      "Rock Slide": { "power": 75, "accuracy": 90, "category": "Physical", "desc": "Large boulders fall on the foe." },
+      "Earth Wall": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Massively raises Defense." },
+      "Heavy Slam": { "power": 85, "accuracy": 100, "category": "Physical", "desc": "Uses weight to crush the enemy." },
+      "Dust Storm": { "power": 0, "accuracy": 95, "category": "Status", "desc": "Lowers enemy Accuracy for 3 turns." },
+      "Mountain Core": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Heals 30% HP and cures status." },
+      "Fissure": { "power": 120, "accuracy": 30, "category": "Physical", "desc": "A one-hit KO move (Rarely hits)." }
+    },
+    "learnset": { "5": ["Rock Slide"], "12": ["Earth Wall"], "18": ["Heavy Slam"], "25": ["Dust Storm"], "32": ["Mountain Core"], "40": ["Fissure"] }
+  },
+  {
+    "id": 82,
+    "name": "Storm-Herald",
+    "type": "Volt",
+    "rarity": "Rare",
+    "description": "A bird-like Mora that lives within lightning clouds. It only descends during the fiercest storms.",
+    "baseStats": { "hp": 75, "atk": 85, "def": 65, "spd": 115, "energy": 80 },
+    "moves": {
+      "Thunderbolt": { "power": 90, "accuracy": 100, "category": "Special", "desc": "A classic high-voltage strike." },
+      "Volt Switch": { "power": 70, "accuracy": 100, "category": "Special", "desc": "Attacks and then switches place." },
+      "Sky Charge": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Next Volt move deals 2x damage." },
+      "Static Wind": { "power": 60, "accuracy": 95, "category": "Special", "desc": "Wind that has a 30% chance to paralyze." },
+      "Thunder Wave": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Paralyzes the target." },
+      "Shock Dive": { "power": 95, "accuracy": 90, "category": "Physical", "desc": "A diving physical electric strike." }
+    },
+    "learnset": { "5": ["Static Wind"], "12": ["Thunder Wave"], "18": ["Sky Charge"], "25": ["Thunderbolt"], "32": ["Volt Switch"], "40": ["Shock Dive"] }
+  },
+  {
+    "id": 83,
+    "name": "Blight-Bloom",
+    "type": "Nature",
+    "rarity": "Rare",
+    "description": "A beautiful flower with a deadly secret. Its pollen causes vivid hallucinations.",
+    "baseStats": { "hp": 90, "atk": 70, "def": 85, "spd": 60, "energy": 100 },
+    "moves": {
+      "Toxic Spore": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Severely poisons the target." },
+      "Giga Drain": { "power": 75, "accuracy": 100, "category": "Special", "desc": "Drains HP from the target." },
+      "Solar Flare": { "power": 110, "accuracy": 85, "category": "Special", "desc": "Charges for 1 turn, then fires." },
+      "Confuse Ray": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Confuses the enemy." },
+      "Petal Dance": { "power": 90, "accuracy": 100, "category": "Special", "desc": "Attacks for 3 turns then confuses self." },
+      "Life Dew": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Heals user and ally slightly." }
+    },
+    "learnset": { "5": ["Confuse Ray"], "12": ["Life Dew"], "18": ["Toxic Spore"], "25": ["Giga Drain"], "32": ["Petal Dance"], "40": ["Solar Flare"] }
+  },
+  {
+    "id": 84,
+    "name": "Cinder-Drake",
+    "type": "Flame",
+    "rarity": "Rare",
+    "description": "A wingless dragon that swims in magma. Its scales are harder than steel.",
+    "baseStats": { "hp": 95, "atk": 110, "def": 95, "spd": 55, "energy": 65 },
+    "moves": {
+      "Fire Blast": { "power": 110, "accuracy": 85, "category": "Special", "desc": "A massive burst of fire." },
+      "Dragon Tail": { "power": 60, "accuracy": 90, "category": "Physical", "desc": "Knocks the enemy back." },
+      "Heat Crash": { "power": 85, "accuracy": 100, "category": "Physical", "desc": "The heavier the user, the more damage." },
+      "Will-O-Wisp": { "power": 0, "accuracy": 85, "category": "Status", "desc": "Burns the target." },
+      "Magma Armor": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Def and prevents freezing." },
+      "Incinerate": { "power": 65, "accuracy": 100, "category": "Special", "desc": "Destroys enemy's held item." }
+    },
+    "learnset": { "5": ["Incinerate"], "12": ["Dragon Tail"], "18": ["Will-O-Wisp"], "25": ["Magma Armor"], "32": ["Heat Crash"], "40": ["Fire Blast"] }
+  },
+  {
+    "id": 85,
+    "name": "Phantom-Stalker",
+    "type": "Shadow",
+    "rarity": "Rare",
+    "description": "A lean, ghostly canine that tracks its prey through their dreams.",
+    "baseStats": { "hp": 70, "atk": 105, "def": 60, "spd": 110, "energy": 70 },
+    "moves": {
+      "Night Slash": { "power": 70, "accuracy": 100, "category": "Physical", "desc": "High critical hit ratio." },
+      "Shadow Ball": { "power": 80, "accuracy": 100, "category": "Special", "desc": "A blob of dark energy." },
+      "Curse": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Trades HP to damage foe every turn." },
+      "Mean Look": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Prevents enemy from fleeing." },
+      "Spectral Fang": { "power": 85, "accuracy": 95, "category": "Physical", "desc": "Bite that ignores shields." },
+      "Darkness Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Increases Evasion." }
+    },
+    "learnset": { "5": ["Night Slash"], "12": ["Mean Look"], "18": ["Darkness Veil"], "25": ["Shadow Ball"], "32": ["Curse"], "40": ["Spectral Fang"] }
+  },
+  {
+    "id": 86,
+    "name": "Frost-Warden",
+    "type": "Frost",
+    "rarity": "Rare",
+    "description": "A humanoid Mora made of permafrost. It guards the gates of the Ice Kingdom.",
+    "baseStats": { "hp": 100, "atk": 85, "def": 105, "spd": 50, "energy": 80 },
+    "moves": {
+      "Ice Beam": { "power": 90, "accuracy": 100, "category": "Special", "desc": "Freezes with a cold beam." },
+      "Freeze-Dry": { "power": 70, "accuracy": 100, "category": "Special", "desc": "Super effective against Aqua types." },
+      "Avalanche": { "power": 60, "accuracy": 100, "category": "Physical", "desc": "Damage doubles if hit first." },
+      "Mist": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Prevents stat reduction." },
+      "Ice Shard": { "power": 40, "accuracy": 100, "category": "Physical", "desc": "Always strikes first." },
+      "Glacial Wall": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Reflects special attacks." }
+    },
+    "learnset": { "5": ["Ice Shard"], "12": ["Mist"], "18": ["Freeze-Dry"], "25": ["Ice Beam"], "32": ["Glacial Wall"], "40": ["Avalanche"] }
+  },
+  {
+    "id": 87,
+    "name": "Vortex-Manta",
+    "type": "Aqua",
+    "rarity": "Rare",
+    "description": "A floating ray that creates whirlpools in the sky to trap its avian prey.",
+    "baseStats": { "hp": 85, "atk": 65, "def": 95, "spd": 95, "energy": 90 },
+    "moves": {
+      "Scald": { "power": 80, "accuracy": 100, "category": "Special", "desc": "Hot water that may burn." },
+      "Aqua Ring": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Regenerates HP every turn." },
+      "Rain Dance": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Boosts Aqua moves for 5 turns." },
+      "Brine": { "power": 65, "accuracy": 100, "category": "Special", "desc": "Damage doubles if foe HP is < 50%." },
+      "Dive": { "power": 80, "accuracy": 100, "category": "Physical", "desc": "Hides underwater for 1 turn." },
+      "Tidal Wave": { "power": 95, "accuracy": 90, "category": "Special", "desc": "A massive wave that hits everyone." }
+    },
+    "learnset": { "5": ["Aqua Ring"], "12": ["Brine"], "18": ["Rain Dance"], "25": ["Scald"], "32": ["Dive"], "40": ["Tidal Wave"] }
+  },
+  {
+    "id": 88,
+    "name": "Cloud-Whale",
+    "type": "Wind",
+    "rarity": "Rare",
+    "description": "A colossal Mora that drifts through the stratosphere. It is often mistaken for a storm cloud.",
+    "baseStats": { "hp": 150, "atk": 70, "def": 80, "spd": 40, "energy": 100 },
+    "moves": {
+      "Air Slash": { "power": 75, "accuracy": 95, "category": "Special", "desc": "May cause flinching." },
+      "Roost": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Heals 50% HP." },
+      "Whirlwind": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Forces the enemy to flee." },
+      "Sky Drop": { "power": 60, "accuracy": 100, "category": "Physical", "desc": "Takes foe into sky for 1 turn." },
+      "Tailwind": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Boosts Speed for the team." },
+      "Hurricane": { "power": 110, "accuracy": 70, "category": "Special", "desc": "Devastating wind attack." }
+    },
+    "learnset": { "5": ["Roost"], "12": ["Tailwind"], "18": ["Air Slash"], "25": ["Whirlwind"], "32": ["Sky Drop"], "40": ["Hurricane"] }
+  },
+  {
+    "id": 89,
+    "name": "Cyber-Byte",
+    "type": "Volt",
+    "rarity": "Rare",
+    "description": "A Mora that exists half in the digital world. It can manipulate data to its advantage.",
+    "baseStats": { "hp": 70, "atk": 80, "def": 80, "spd": 100, "energy": 120 },
+    "moves": {
+      "Download": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Copies the enemy's highest stat." },
+      "Signal Jam": { "power": 65, "accuracy": 95, "category": "Special", "desc": "Confuses the target." },
+      "Tri-Attack": { "power": 80, "accuracy": 100, "category": "Special", "desc": "Chance to burn, freeze or paralyze." },
+      "Recover": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Heals 50% HP." },
+      "Zap Cannon": { "power": 120, "accuracy": 50, "category": "Special", "desc": "Always paralyzes if it hits." },
+      "Lock-On": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Guarantees next move hits." }
+    },
+    "learnset": { "5": ["Signal Jam"], "12": ["Download"], "18": ["Recover"], "25": ["Tri-Attack"], "32": ["Lock-On"], "40": ["Zap Cannon"] }
+  },
+  {
+    "id": 90,
+    "name": "Gem-Tortoise",
+    "type": "Terra",
+    "rarity": "Rare",
+    "description": "Its shell is encrusted with rare diamonds. It is highly valued by treasure hunters.",
+    "baseStats": { "hp": 100, "atk": 70, "def": 130, "spd": 20, "energy": 70 },
+    "moves": {
+      "Power Gem": { "power": 80, "accuracy": 100, "category": "Special", "desc": "Attacks with sparkling light." },
+      "Iron Defense": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Sharply raises Defense." },
+      "Stealth Rock": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Damages enemies on entry." },
+      "Rapid Spin": { "power": 50, "accuracy": 100, "category": "Physical", "desc": "Removes trap effects." },
+      "Flash": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers enemy Accuracy." },
+      "Diamond Blast": { "power": 100, "accuracy": 90, "category": "Special", "desc": "A burst of diamond shards." }
+    },
+    "learnset": { "5": ["Rapid Spin"], "12": ["Flash"], "18": ["Stealth Rock"], "25": ["Iron Defense"], "32": ["Power Gem"], "40": ["Diamond Blast"] }
+  },
+  {
+    "id": 91,
+    "name": "Infernal-Centaur",
+    "type": "Flame",
+    "rarity": "Epic",
+    "description": "A warrior Mora that leaves a trail of burning hoofprints. It carries a lance forged in the planet's core.",
+    "baseStats": { "hp": 105, "atk": 135, "def": 95, "spd": 105, "energy": 85 },
+    "moves": {
+      "Blazing Lance": { "power": 90, "accuracy": 100, "category": "Physical", "desc": "Signature: A burning strike that pierces all defenses." },
+      "Flare Blitz": { "power": 120, "accuracy": 100, "category": "Physical", "desc": "A desperate fiery charge that damages user." },
+      "Heat Wave": { "power": 95, "accuracy": 90, "category": "Special", "desc": "A blast of hot air." },
+      "War Cry": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Boosts Atk and Spd for 3 turns." },
+      "Overheat": { "power": 130, "accuracy": 90, "category": "Special", "desc": "Powerful, but sharply lowers Special Atk." },
+      "Stomp": { "power": 65, "accuracy": 100, "category": "Physical", "desc": "May cause flinching." },
+      "Sun's Blessing": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Heals user and boosts Flame moves." }
+    },
+    "learnset": { "5": ["Stomp"], "12": ["Heat Wave"], "20": ["War Cry"], "28": ["Blazing Lance"], "35": ["Sun's Blessing"], "42": ["Flare Blitz"], "50": ["Overheat"] }
+  },
+  {
+    "id": 92,
+    "name": "Abyssal-Hydra",
+    "type": "Shadow",
+    "rarity": "Epic",
+    "description": "Each of its three heads has a different personality and a different way of killing.",
+    "baseStats": { "hp": 120, "atk": 110, "def": 110, "spd": 80, "energy": 100 },
+    "moves": {
+      "Triple Bite": { "power": 35, "accuracy": 90, "category": "Physical", "desc": "Signature: Hits 3 times in one turn." },
+      "Dark Pulse": { "power": 85, "accuracy": 100, "category": "Special", "desc": "Releases a horrible aura." },
+      "Regenerate": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Heals 40% HP and grows a head back." },
+      "Venom Fang": { "power": 65, "accuracy": 95, "category": "Physical", "desc": "May poison the target." },
+      "Shadow Storm": { "power": 110, "accuracy": 85, "category": "Special", "desc": "A tornado of dark energy." },
+      "Scary Face": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Sharply lowers enemy Speed." },
+      "Abyssal Maw": { "power": 100, "accuracy": 95, "category": "Physical", "desc": "A bite that heals for 50% damage dealt." }
+    },
+    "learnset": { "5": ["Scary Face"], "12": ["Venom Fang"], "20": ["Regenerate"], "28": ["Triple Bite"], "35": ["Dark Pulse"], "42": ["Shadow Storm"], "50": ["Abyssal Maw"] }
+  },
+  {
+    "id": 93,
+    "name": "Sky-Leviathan",
+    "type": "Wind",
+    "rarity": "Epic",
+    "description": "A massive serpent that swims through the air. Its presence changes the weather instantly.",
+    "baseStats": { "hp": 130, "atk": 100, "def": 100, "spd": 110, "energy": 90 },
+    "moves": {
+      "Sky Rupture": { "power": 100, "accuracy": 90, "category": "Special", "desc": "Signature: Tears a hole in the sky to strike." },
+      "Hurricane": { "power": 110, "accuracy": 70, "category": "Special", "desc": "Devastating winds." },
+      "Dragon Dance": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Boosts Atk and Spd." },
+      "Aero Blast": { "power": 100, "accuracy": 95, "category": "Special", "desc": "A focused blast of air." },
+      "Twister": { "power": 60, "accuracy": 100, "category": "Special", "desc": "Hits airborne enemies for 2x." },
+      "Fog Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers Accuracy of all enemies." },
+      "Cyclone Slam": { "power": 95, "accuracy": 90, "category": "Physical", "desc": "Slamming the foe with wind pressure." }
+    },
+    "learnset": { "5": ["Twister"], "12": ["Fog Veil"], "20": ["Dragon Dance"], "28": ["Sky Rupture"], "35": ["Aero Blast"], "42": ["Cyclone Slam"], "50": ["Hurricane"] }
+  },
+  {
+    "id": 94,
+    "name": "Primal-Golem",
+    "type": "Terra",
+    "rarity": "Epic",
+    "description": "The first Mora ever created from the earth. It contains the raw energy of the planet.",
+    "baseStats": { "hp": 140, "atk": 140, "def": 140, "spd": 20, "energy": 50 },
+    "moves": {
+      "Primal Fist": { "power": 100, "accuracy": 100, "category": "Physical", "desc": "Signature: A punch that never misses and ignores Def." },
+      "Earthquake": { "power": 100, "accuracy": 100, "category": "Physical", "desc": "Hits everyone on the ground." },
+      "Stone Edge": { "power": 100, "accuracy": 80, "category": "Physical", "desc": "High crit ratio." },
+      "Amnesia": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Sharply raises Special Defense." },
+      "Curse": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Boosts Atk/Def but lowers Spd." },
+      "Hammer Arm": { "power": 100, "accuracy": 90, "category": "Physical", "desc": "High damage, but lowers own Speed." },
+      "Gaia's Wrath": { "power": 130, "accuracy": 85, "category": "Physical", "desc": "The ultimate earth move." }
+    },
+    "learnset": { "5": ["Amnesia"], "12": ["Curse"], "20": ["Stone Edge"], "28": ["Primal Fist"], "35": ["Earthquake"], "42": ["Hammer Arm"], "50": ["Gaia's Wrath"] }
+  },
+  {
+    "id": 95,
+    "name": "Tesla-Dragon",
+    "type": "Volt",
+    "rarity": "Epic",
+    "description": "A mechanical dragon powered by a miniature sun. It generates a magnetic field that disrupts electronics.",
+    "baseStats": { "hp": 100, "atk": 120, "def": 110, "spd": 110, "energy": 80 },
+    "moves": {
+      "Tesla Coil": { "power": 95, "accuracy": 100, "category": "Special", "desc": "Signature: Chains damage to multiple enemies." },
+      "Thunder": { "power": 110, "accuracy": 70, "category": "Special", "desc": "Devastating electric strike." },
+      "Magnetic Flux": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises Def and SpDef." },
+      "Flash Cannon": { "power": 80, "accuracy": 100, "category": "Special", "desc": "A beam of light." },
+      "Dragon Pulse": { "power": 85, "accuracy": 100, "category": "Special", "desc": "Shockwave from the dragon's maw." },
+      "Charge": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Boosts next electric move damage." },
+      "Supernova": { "power": 150, "accuracy": 90, "category": "Special", "desc": "User faints after use." }
+    },
+    "learnset": { "5": ["Charge"], "12": ["Magnetic Flux"], "20": ["Dragon Pulse"], "28": ["Tesla Coil"], "35": ["Flash Cannon"], "42": ["Thunder"], "50": ["Supernova"] }
+  },
+  {
+    "id": 96,
+    "name": "Zovax",
+    "type": "Void",
+    "rarity": "Legendary",
+    "description": "The First Crag. It is said Zovax was the very first entity to step through the Primordial Rift. Its body is made of shifting star-matter.",
+    "baseStats": { "hp": 150, "atk": 120, "def": 120, "spd": 90, "energy": 150 },
+    "moves": {
+      "Rift Fracture": { "power": 110, "accuracy": 95, "category": "Special", "desc": "Signature: Cracks the reality around the foe, dealing massive damage." },
+      "Vovo Beam": { "power": 90, "accuracy": 100, "category": "Special", "desc": "A pulsing C-V-C-V energy blast." },
+      "Void Eater": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Heals HP by consuming the enemy's last used move's energy." },
+      "Nebula Cloak": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Makes the user untargetable for 1 turn." },
+      "Cosmic Crush": { "power": 120, "accuracy": 85, "category": "Physical", "desc": "Slams the foe with the weight of a dying star." },
+      "Singularity": { "power": 150, "accuracy": 80, "category": "Special", "desc": "A black hole that pulls all enemies in. Massive damage." },
+      "Star Pulse": { "power": 80, "accuracy": 100, "category": "Special", "desc": "A quick wave of light." },
+      "Eternal Rest": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Cures all status and maxes Energy, but user sleeps for 2 turns." }
+    },
+    "learnset": { "1": ["Vovo Beam"], "10": ["Star Pulse"], "20": ["Nebula Cloak"], "30": ["Rift Fracture"], "40": ["Void Eater"], "50": ["Cosmic Crush"], "60": ["Eternal Rest"], "70": ["Singularity"] }
+  },
+  {
+    "id": 97,
+    "name": "Ruvon",
+    "type": "Flame",
+    "rarity": "Legendary",
+    "description": "The Core Burner. Ruvon lives in the deepest layer of Lumora's core, keeping the planet's heat stable with its Rift-fire feathers.",
+    "baseStats": { "hp": 110, "atk": 160, "def": 90, "spd": 130, "energy": 100 },
+    "moves": {
+      "Pyro Nova": { "power": 130, "accuracy": 90, "category": "Special", "desc": "Signature: An explosion of blue fire that burns everything." },
+      "Mumu Strike": { "power": 85, "accuracy": 100, "category": "Physical", "desc": "A rapid-fire series of flaming punches." },
+      "Lava Surge": { "power": 95, "accuracy": 95, "category": "Special", "desc": "A wave of molten rock." },
+      "Fire Dance": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Sharply raises Atk and Spd." },
+      "Blazing Wing": { "power": 90, "accuracy": 100, "category": "Physical", "desc": "A physical strike with wings of fire." },
+      "Solar Beam": { "power": 120, "accuracy": 100, "category": "Special", "desc": "Requires 1 turn of sunlight to charge." },
+      "Heat Sink": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Absorbs all incoming Flame damage to heal." },
+      "Final Flare": { "power": 200, "accuracy": 100, "category": "Special", "desc": "User faints, but deals astronomical damage." }
+    },
+    "learnset": { "1": ["Mumu Strike"], "10": ["Blazing Wing"], "20": ["Fire Dance"], "30": ["Lava Surge"], "40": ["Heat Sink"], "50": ["Pyro Nova"], "60": ["Solar Beam"], "70": ["Final Flare"] }
+  },
+  {
+    "id": 98,
+    "name": "Belo",
+    "type": "Nature",
+    "rarity": "Legendary",
+    "description": "The World Root. Belo's antlers are actually the branches of a tree that existed before the sky cracked. It heals the land wherever it walks.",
+    "baseStats": { "hp": 200, "atk": 90, "def": 150, "spd": 60, "energy": 110 },
+    "moves": {
+      "Eden's Gaze": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Signature: All enemies lose 15% HP per turn while Belo is active." },
+      "Lolo Whip": { "power": 80, "accuracy": 100, "category": "Physical", "desc": "A rhythmic vine strike." },
+      "Nature Power": { "power": 90, "accuracy": 100, "category": "Special", "desc": "Damage type changes based on terrain." },
+      "Forest Guard": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Creates a shield that absorbs 50% of damage for the team." },
+      "Root Bind": { "power": 70, "accuracy": 95, "category": "Physical", "desc": "Traps the foe and prevents switching." },
+      "Solar Heal": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Fully restores HP during daytime." },
+      "Leaf Storm": { "power": 130, "accuracy": 90, "category": "Special", "desc": "A hurricane of sharp leaves." },
+      "World Bloom": { "power": 110, "accuracy": 100, "category": "Special", "desc": "Heals the user for 100% of damage dealt." }
+    },
+    "learnset": { "1": ["Lolo Whip"], "10": ["Root Bind"], "20": ["Forest Guard"], "30": ["Nature Power"], "40": ["Solar Heal"], "50": ["Eden's Gaze"], "60": ["Leaf Storm"], "70": ["World Bloom"] }
+  },
+  {
+    "id": 99,
+    "name": "Kaza",
+    "type": "Wind",
+    "rarity": "Legendary",
+    "description": "The Sky Splitter. Kaza was born from the wind that rushed out of the crack in the sky. It moves so fast it appears to be in two places at once.",
+    "baseStats": { "hp": 100, "atk": 130, "def": 90, "spd": 180, "energy": 100 },
+    "moves": {
+      "Sonic Ripper": { "power": 95, "accuracy": 100, "category": "Physical", "desc": "Signature: Always moves first. Ignores Evasion." },
+      "Zaza Gust": { "power": 80, "accuracy": 100, "category": "Special", "desc": "A fast, C-V-C-V patterned wind blast." },
+      "Tailwind": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Triples the speed of the entire party." },
+      "Air Pressure": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Prevents the enemy from using any Status moves." },
+      "Cyclone": { "power": 110, "accuracy": 85, "category": "Special", "desc": "A massive vortex that can confuse the foe." },
+      "Sky Uppercut": { "power": 90, "accuracy": 95, "category": "Physical", "desc": "Hits enemies even if they are 'flying' or 'diving'." },
+      "Mirror Image": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Creates a decoy that takes 1 hit." },
+      "Gale Force": { "power": 140, "accuracy": 90, "category": "Special", "desc": "The strongest wind move; requires a turn to recharge." }
+    },
+    "learnset": { "1": ["Zaza Gust"], "10": ["Air Pressure"], "20": ["Tailwind"], "30": ["Sonic Ripper"], "40": ["Mirror Image"], "50": ["Sky Uppercut"], "60": ["Cyclone"], "70": ["Gale Force"] }
+  },
+  {
+    "id": 100,
+    "name": "Nira",
+    "type": "Aqua",
+    "rarity": "Legendary",
+    "description": "The Ocean Mind. Nira's body is composed of Primordial Water. It is said to contain the memories of everyone who has ever lived in Lumora.",
+    "baseStats": { "hp": 130, "atk": 110, "def": 130, "spd": 100, "energy": 120 },
+    "moves": {
+      "Memory Flood": { "power": 105, "accuracy": 100, "category": "Special", "desc": "Signature: Deals damage based on how many moves the enemy has used." },
+      "Nana Wave": { "power": 85, "accuracy": 100, "category": "Special", "desc": "A soothing but powerful wave." },
+      "Pressure Sink": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Sharply lowers the enemy's Attack and Speed." },
+      "Hydro Cannon": { "power": 150, "accuracy": 90, "category": "Special", "desc": "A devastating blast of water." },
+      "Mist Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Protects the party from all status effects." },
+      "Aqua Jet": { "power": 40, "accuracy": 100, "category": "Physical", "desc": "Always strikes first." },
+      "Deep Meditation": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Restores 50% HP and 50% Energy." },
+      "Tsunami": { "power": 120, "accuracy": 85, "category": "Special", "desc": "A world-ending wave that hits all opponents." }
+    },
+    "learnset": { "1": ["Nana Wave"], "10": ["Aqua Jet"], "20": ["Mist Veil"], "30": ["Memory Flood"], "40": ["Pressure Sink"], "50": ["Deep Meditation"], "60": ["Hydro Cannon"], "70": ["Tsunami"] }
+  }
+]
+

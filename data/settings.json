@@ -1,0 +1,36 @@
+{
+  "botName": "Lumora",
+  "eraName": "Lumora: Awakening",
+  "prefix": ".",
+  "linkDescription": "JOIN THE WORLD OF MORA AND HAVE FUN",
+  "currencyName": "LUCONS",
+  "ownerNumbers": [
+    "267581311156378"
+  ],
+  "media": {
+    "helpImagePath": "./assets/lumora_logo.jpg"
+  },
+  "features": {
+    "factionsEnabled": true,
+    "groupSpawnsEnabled": true
+  },
+  "huntingGroups": {
+    "enabled": true,
+    "allowed": [
+      "120363408860967993@g.us"
+    ]
+  },
+  "marketGroups": {
+    "enabled": true,
+    "allowed": [
+      "120363424245590124@g.us",
+      "120363408325172828@g.us"
+    ]
+  },
+  "arenaGroups": {
+    "enabled": true,
+    "allowed": [
+      "120363425214613922@g.us"
+    ]
+  }
+}

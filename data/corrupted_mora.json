@@ -1,0 +1,1015 @@
+{
+  "enabled": true,
+  "version": 1,
+  "publicCorruptedSpawns": {
+    "enabled": true,
+    "announceToGroup": true,
+    "announceTextPool": [
+      "☠ Rift disturbance detected... a Corrupted Mora has spawned.",
+      "🩸 The air twists with hostile aura... a Corrupted Mora has appeared.",
+      "⚠ Primordial instability rising... a Corrupted Mora has emerged.",
+      "🌑 A baby Rift has ruptured nearby... a Corrupted Mora now roams free."
+      
+    ],
+    "despawnSeconds": 300
+  },
+  "huntCorruption": {
+    "baseChance": 0.03,
+    "terrainBonusMultiplier": 1.0,
+    "riftStateBonus": {
+      "calm": 0,
+      "disturbed": 0.02,
+      "agitated": 0.05,
+      "fractured": 0.09,
+      "overflowing": 0.15
+    }
+  },
+  "pvpCorruption": {
+    "enabled": true,
+    "baseChance": 0.01,
+    "triggerNotes": [
+      "Later can be increased by Rift items, cursed relics, or faction effects."
+    ],
+    "statMultiplier": {
+      "hp": 1.18,
+      "atk": 1.35,
+      "def": 1.12,
+      "spd": 1.15,
+      "energy": 1.2
+    },
+    "controlLossChance": 0.22,
+    "ownerAttackChance": 0.18,
+    "randomTargetChance": 0.3,
+    "backlashTextPool": [
+      "☠ Corruption takes hold — the Mora lashes out wildly!",
+      "🩸 The Mora rejects control and turns on its surroundings!",
+      "⚠ Rift corruption spikes — the Mora ignores its tamer!"
+    ]
+  },
+  "partyCorruption": {
+    "enabled": true,
+    "ownerAttackChancePerCheck": 0.12,
+    "protectiveItemsReduceChanceBy": 0.08,
+    "protectiveItems": [
+      "Aura Lantern Charm",
+      "Rift Stabilizer Core",
+      "Sanctum Sigil",
+      "Purity Ward",
+      "Harmony Seal"
+    ],
+    "durabilityLossPerBlockedHit": 1,
+    "ownerAttackTextPool": [
+      "☠ The corrupted Mora lashes out at its own tamer!",
+      "🩸 Corruption surges through the party — the Mora attacks its owner!",
+      "⚠ The Mora's mind fractures and it strikes the one who raised it!"
+    ]
+  },
+  "purification": {
+    "enabled": true,
+    "purifiableNaturalCorrupted": true,
+    "requiredItemTags": [
+      "purify",
+      "harmony_scroll",
+      "purity_scroll"
+    ],
+    "baseSuccessChance": 0.22,
+    "weakenedBonus": 0.18,
+    "harmonyFactionBonus": 0.15,
+    "capitalPurifyBonus": 0.1
+  },
+  "genericVariantRules": {
+    "common": {
+      "statMultiplier": {
+        "hp": 1.12,
+        "atk": 1.22,
+        "def": 1.08,
+        "spd": 1.08,
+        "energy": 1.12
+      }
+    },
+    "uncommon": {
+      "statMultiplier": {
+        "hp": 1.14,
+        "atk": 1.24,
+        "def": 1.1,
+        "spd": 1.1,
+        "energy": 1.14
+      }
+    },
+    "rare": {
+      "statMultiplier": {
+        "hp": 1.16,
+        "atk": 1.28,
+        "def": 1.12,
+        "spd": 1.12,
+        "energy": 1.16
+      }
+    },
+    "epic": {
+      "statMultiplier": {
+        "hp": 1.2,
+        "atk": 1.32,
+        "def": 1.15,
+        "spd": 1.14,
+        "energy": 1.18
+      }
+    },
+    "legendary": {
+      "statMultiplier": {
+        "hp": 1.24,
+        "atk": 1.38,
+        "def": 1.18,
+        "spd": 1.16,
+        "energy": 1.22
+      }
+    }
+  },
+  "explicitVariants": [
+    {
+      "baseId": 1,
+      "corruptedName": "Abyss Nylon",
+      "corruptedTitle": "The Black Current",
+      "moveSet": [
+        "Rift Jab",
+        "Black Veil",
+        "Abyss Snap",
+        "Rotting Flow",
+        "Undertow Rupture"
+      ],
+      "moves": {
+        "Rift Jab": {
+          "power": 48,
+          "accuracy": 95,
+          "category": "Physical",
+          "desc": "A corrupted water jab that tears at aura."
+        },
+        "Black Veil": {
+          "power": 0,
+          "accuracy": 100,
+          "category": "Status",
+          "desc": "Shrouds the user in abyss mist and lowers enemy Accuracy."
+        },
+        "Abyss Snap": {
+          "power": 68,
+          "accuracy": 90,
+          "category": "Physical",
+          "desc": "A violent bite wrapped in black water."
+        },
+        "Rotting Flow": {
+          "power": 0,
+          "accuracy": 100,
+          "category": "Status",
+          "desc": "Corrupts the field and weakens recovery."
+        },
+        "Undertow Rupture": {
+          "power": 88,
+          "accuracy": 82,
+          "category": "Special",
+          "desc": "A surging Rift current that may lower Defense."
+        }
+      }
+    },
+    {
+      "baseId": 2,
+      "corruptedName": "Blight Thornel",
+      "corruptedTitle": "The Wilt Fang",
+      "moveSet": [
+        "Blight Rend",
+        "Rot Armor",
+        "Thorn Rot Bind",
+        "Decay Strike",
+        "Bramble Funeral"
+      ],
+      "moves": {
+        "Blight Rend": {
+          "power": 58,
+          "accuracy": 95,
+          "category": "Physical",
+          "desc": "Corrupted leaf blades tear with diseased force."
+        },
+        "Rot Armor": {
+          "power": 0,
+          "accuracy": 100,
+          "category": "Status",
+          "desc": "Raises Defense with hardened rot bark."
+        },
+        "Thorn Rot Bind": {
+          "power": 0,
+          "accuracy": 88,
+          "category": "Status",
+          "desc": "Binds and lowers Speed while corrupting the target."
+        },
+        "Decay Strike": {
+          "power": 68,
+          "accuracy": 92,
+          "category": "Physical",
+          "desc": "A draining slash infused with blight."
+        },
+        "Bramble Funeral": {
+          "power": 92,
+          "accuracy": 80,
+          "category": "Physical",
+          "desc": "A brutal coffin of thorns that may lower Defense."
+        }
+      }
+    },
+    {
+      "baseId": 3,
+      "corruptedName": "Grave Terron",
+      "corruptedTitle": "The Fault Maw",
+      "moveSet": [
+        "Grave Knuckle",
+        "Dust Coffin",
+        "Fault Step",
+        "Burial Soil",
+        "Catacomb Break"
+      ],
+      "moves": {
+        "Grave Knuckle": {
+          "power": 50,
+          "accuracy": 95,
+          "category": "Physical",
+          "desc": "A deadweight stone punch."
+        },
+        "Dust Coffin": {
+          "power": 0,
+          "accuracy": 100,
+          "category": "Status",
+          "desc": "Raises Defense and cloaks the field in choking dust."
+        },
+        "Fault Step": {
+          "power": 68,
+          "accuracy": 90,
+          "category": "Physical",
+          "desc": "A Rift-cracked stomp that may flinch."
+        },
+        "Burial Soil": {
+          "power": 0,
+          "accuracy": 100,
+          "category": "Status",
+          "desc": "Heals slightly and fortifies corrupted armor."
+        },
+        "Catacomb Break": {
+          "power": 94,
+          "accuracy": 80,
+          "category": "Physical",
+          "desc": "A devastating underground collapse."
+        }
+      }
+    },
+    {
+      "baseId": 4,
+      "corruptedName": "Rift Sparko",
+      "corruptedTitle": "The Black Arc",
+      "moveSet": [
+        "Rift Spark",
+        "Overcoil",
+        "Black Pounce",
+        "Static Ruin",
+        "Void Surge"
+      ],
+      "moves": {
+        "Rift Spark": {
+          "power": 46,
+          "accuracy": 96,
+          "category": "Physical",
+          "desc": "A warped electric strike."
+        },
+        "Overcoil": {
+          "power": 0,
+          "accuracy": 100,
+          "category": "Status",
+          "desc": "Boosts the next corrupted Volt move sharply."
+        },
+        "Black Pounce": {
+          "power": 70,
+          "accuracy": 90,
+          "category": "Physical",
+          "desc": "A savage leap coated in Rift charge."
+        },
+        "Static Ruin": {
+          "power": 0,
+          "accuracy": 88,
+          "category": "Status",
+          "desc": "May paralyze and lower Defense."
+        },
+        "Void Surge": {
+          "power": 90,
+          "accuracy": 82,
+          "category": "Special",
+          "desc": "A violent corruption discharge."
+        }
+      }
+    },
+    {
+      "baseId": 5,
+      "corruptedName": "Ashborn Emberu",
+      "corruptedTitle": "The Burn Maw",
+      "moveSet": [
+        "Ash Claw",
+        "Black Heat",
+        "Cinder Rot",
+        "Smoke Grave",
+        "Hell Dash"
+      ],
+      "moves": {
+        "Ash Claw": {
+          "power": 52,
+          "accuracy": 95,
+          "category": "Physical",
+          "desc": "A claw attack dripping with corrupted ash."
+        },
+        "Black Heat": {
+          "power": 0,
+          "accuracy": 100,
+          "category": "Status",
+          "desc": "Raises Attack sharply but strains control."
+        },
+        "Cinder Rot": {
+          "power": 68,
+          "accuracy": 90,
+          "category": "Special",
+          "desc": "A burning rot burst that may burn."
+        },
+        "Smoke Grave": {
+          "power": 0,
+          "accuracy": 90,
+          "category": "Status",
+          "desc": "Lowers enemy Accuracy under dead smoke."
+        },
+        "Hell Dash": {
+          "power": 96,
+          "accuracy": 80,
+          "category": "Physical",
+          "desc": "A wild infernal rush."
+        }
+      }
+    },
+    {
+      "baseId": 21,
+      "corruptedName": "Ruin Flarion",
+      "corruptedTitle": "The Crimson Collapse",
+      "moveSet": [
+        "Crimson Rend",
+        "Bloodfire Fang",
+        "Ruin Rush",
+        "Pyre Veil",
+        "Scarlet Cataclysm"
+      ],
+      "moves": {
+        "Crimson Rend": {
+          "power": 72,
+          "accuracy": 95,
+          "category": "Physical",
+          "desc": "A savage burning slash."
+        },
+        "Bloodfire Fang": {
+          "power": 80,
+          "accuracy": 90,
+          "category": "Physical",
+          "desc": "A biting strike that may burn."
+        },
+        "Ruin Rush": {
+          "power": 78,
+          "accuracy": 90,
+          "category": "Special",
+          "desc": "A fast ruin-flame burst."
+        },
+        "Pyre Veil": {
+          "power": 0,
+          "accuracy": 100,
+          "category": "Status",
+          "desc": "Shields the user in cursed flame."
+        },
+        "Scarlet Cataclysm": {
+          "power": 112,
+          "accuracy": 76,
+          "category": "Special",
+          "desc": "A catastrophic corruption blaze."
+        }
+      }
+    },
+    {
+      "baseId": 24,
+      "corruptedName": "Blight Thornex",
+      "corruptedTitle": "The Rot Tyrant",
+      "moveSet": [
+        "Rotvine Crush",
+        "Necro Root",
+        "Blight Storm",
+        "Decay Feast",
+        "Jungle Funeral"
+      ],
+      "moves": {
+        "Rotvine Crush": {
+          "power": 82,
+          "accuracy": 90,
+          "category": "Physical",
+          "desc": "Massive blighted vines crush the target."
+        },
+        "Necro Root": {
+          "power": 0,
+          "accuracy": 88,
+          "category": "Status",
+          "desc": "Traps the target and drains vitality."
+        },
+        "Blight Storm": {
+          "power": 86,
+          "accuracy": 84,
+          "category": "Special",
+          "desc": "A storm of rotten leaves and spores."
+        },
+        "Decay Feast": {
+          "power": 68,
+          "accuracy": 95,
+          "category": "Physical",
+          "desc": "A vicious drain attack."
+        },
+        "Jungle Funeral": {
+          "power": 118,
+          "accuracy": 74,
+          "category": "Physical",
+          "desc": "A crushing corrupted nature finisher."
+        }
+      }
+    },
+    {
+      "baseId": 25,
+      "corruptedName": "Abyss Umbrix",
+      "corruptedTitle": "The Hollow Vein",
+      "moveSet": [
+        "Void Pulse+",
+        "Hollow Claw",
+        "Night Collapse",
+        "Black Veil",
+        "Abyss Rend"
+      ],
+      "moves": {
+        "Void Pulse+": {
+          "power": 84,
+          "accuracy": 90,
+          "category": "Special",
+          "desc": "An intensified shadow pulse."
+        },
+        "Hollow Claw": {
+          "power": 74,
+          "accuracy": 95,
+          "category": "Physical",
+          "desc": "A slash that tears at aura."
+        },
+        "Night Collapse": {
+          "power": 92,
+          "accuracy": 84,
+          "category": "Physical",
+          "desc": "A crushing collapse of shadow force."
+        },
+        "Black Veil": {
+          "power": 0,
+          "accuracy": 100,
+          "category": "Status",
+          "desc": "Shrouds the field and lowers Accuracy."
+        },
+        "Abyss Rend": {
+          "power": 116,
+          "accuracy": 76,
+          "category": "Physical",
+          "desc": "A brutal void execution cut."
+        }
+      }
+    },
+    {
+      "baseId": 29,
+      "corruptedName": "Rift Drakonis",
+      "corruptedTitle": "The Maw King",
+      "moveSet": [
+        "Rift Bite",
+        "Void Wing",
+        "Black Roar",
+        "Scale Corruption",
+        "King's Ruin"
+      ],
+      "moves": {
+        "Rift Bite": {
+          "power": 88,
+          "accuracy": 92,
+          "category": "Physical",
+          "desc": "A draconic bite empowered by the Rift."
+        },
+        "Void Wing": {
+          "power": 82,
+          "accuracy": 92,
+          "category": "Physical",
+          "desc": "Razor wings carve the air with corruption."
+        },
+        "Black Roar": {
+          "power": 96,
+          "accuracy": 86,
+          "category": "Special",
+          "desc": "A roar shockwave that may lower Attack."
+        },
+        "Scale Corruption": {
+          "power": 0,
+          "accuracy": 100,
+          "category": "Status",
+          "desc": "Raises Defense while destabilizing control."
+        },
+        "King's Ruin": {
+          "power": 128,
+          "accuracy": 72,
+          "category": "Physical",
+          "desc": "A tyrannical corrupted dragon finisher."
+        }
+      }
+    },
+    {
+      "baseId": 39,
+      "corruptedName": "Abyssor Unbound",
+      "corruptedTitle": "The Devouring Rift",
+      "moveSet": [
+        "Rift Maw",
+        "Void Reign",
+        "Oblivion Pulse",
+        "Night Dominion+",
+        "Devourer's End"
+      ],
+      "moves": {
+        "Rift Maw": {
+          "power": 102,
+          "accuracy": 90,
+          "category": "Physical",
+          "desc": "A devouring void bite."
+        },
+        "Void Reign": {
+          "power": 112,
+          "accuracy": 82,
+          "category": "Special",
+          "desc": "A violent beam of abyss force."
+        },
+        "Oblivion Pulse": {
+          "power": 98,
+          "accuracy": 88,
+          "category": "Special",
+          "desc": "A pulse that tears through morale."
+        },
+        "Night Dominion+": {
+          "power": 0,
+          "accuracy": 100,
+          "category": "Status",
+          "desc": "Raises Attack and Defense more sharply."
+        },
+        "Devourer's End": {
+          "power": 145,
+          "accuracy": 95,
+          "category": "Special",
+          "desc": "A catastrophic void execution."
+        }
+      }
+    },
+    {
+      "baseId": 40,
+      "corruptedName": "Broken Celestion",
+      "corruptedTitle": "The Fallen Star",
+      "moveSet": [
+        "Fractured Beam",
+        "Star Rupture",
+        "Gravity Tear",
+        "Nebula Rot",
+        "Supernova Wound"
+      ],
+      "moves": {
+        "Fractured Beam": {
+          "power": 104,
+          "accuracy": 88,
+          "category": "Special",
+          "desc": "A fractured star beam."
+        },
+        "Star Rupture": {
+          "power": 110,
+          "accuracy": 82,
+          "category": "Physical",
+          "desc": "A meteoric rupture strike."
+        },
+        "Gravity Tear": {
+          "power": 96,
+          "accuracy": 86,
+          "category": "Special",
+          "desc": "Twists the field with collapsing weight."
+        },
+        "Nebula Rot": {
+          "power": 0,
+          "accuracy": 100,
+          "category": "Status",
+          "desc": "Corrupts healing and weakens order."
+        },
+        "Supernova Wound": {
+          "power": 148,
+          "accuracy": 66,
+          "category": "Special",
+          "desc": "A wounded-star detonation."
+        }
+      }
+    }
+  ],
+  "naturalCorruptedSpecies": [
+    {
+      "id": "NC_001",
+      "name": "Rift Maw",
+      "type": "Shadow",
+      "rarity": "legendary",
+      "purifiable": true,
+      "description": "A naturally corrupted beast born fully from Rift pressure.",
+      "baseStats": { "hp": 102, "atk": 108, "def": 86, "spd": 74, "energy": 92 },
+      "moves": ["Maw Rend", "Void Snap", "Rift Hunger", "Black Howl", "Devour Core"]
+    },
+    {
+      "id": "NC_002",
+      "name": "Blight Colossus",
+      "type": "Nature",
+      "rarity": "legendary",
+      "purifiable": true,
+      "description": "A towering rot-born entity wrapped in dead forest mass.",
+      "baseStats": { "hp": 116, "atk": 98, "def": 104, "spd": 38, "energy": 88 },
+      "moves": ["Rot Slam", "Necro Root", "Spoil Cloud", "Decay Wall", "Forest Funeral"]
+    },
+    {
+      "id": "NC_003",
+      "name": "Storm Revenant",
+      "type": "Volt",
+      "rarity": "epic",
+      "purifiable": true,
+      "description": "A revenant of broken lightning that exists as rage and voltage.",
+      "baseStats": { "hp": 88, "atk": 102, "def": 74, "spd": 96, "energy": 94 },
+      "moves": ["Black Arc", "Rift Thunder", "Static Grave", "Overcoil", "Judgment Surge"]
+    },
+    {
+      "id": "NC_004",
+      "name": "Ash Revenant",
+      "type": "Flame",
+      "rarity": "epic",
+      "purifiable": true,
+      "description": "A corpse-fire predator formed in collapsed vents.",
+      "baseStats": { "hp": 94, "atk": 106, "def": 78, "spd": 68, "energy": 90 },
+      "moves": ["Ash Fang", "Pyre Burst", "Smoke Grave", "Cinder Frenzy", "Hellfall"]
+    },
+    {
+      "id": "NC_005",
+      "name": "Frost Wraith",
+      "type": "Frost",
+      "rarity": "epic",
+      "purifiable": true,
+      "description": "A gliding ice spirit that freezes movement and thought.",
+      "baseStats": { "hp": 90, "atk": 94, "def": 86, "spd": 82, "energy": 92 },
+      "moves": ["Wraith Ice", "Dead Chill", "Permafrost Lock", "Snow Veil", "Zero Collapse"]
+    },
+    {
+      "id": "NC_006",
+      "name": "Fault Tyrant",
+      "type": "Terra",
+      "rarity": "epic",
+      "purifiable": true,
+      "description": "A Rift-born breaker with a body of fractured stone plates.",
+      "baseStats": { "hp": 112, "atk": 102, "def": 110, "spd": 34, "energy": 90 },
+      "moves": ["Fault Break", "Dust Coffin", "Titan Soil", "Quake Maw", "World Scar"]
+    },
+    {
+      "id": "NC_007",
+      "name": "Gloom Seraph",
+      "type": "Shadow",
+      "rarity": "legendary",
+      "purifiable": true,
+      "description": "A fallen radiant form twisted into a silent executioner.",
+      "baseStats": { "hp": 98, "atk": 104, "def": 92, "spd": 84, "energy": 98 },
+      "moves": ["Gloom Wing", "Hollow Halo", "Black Chorus", "Fallen Grace", "Seraph Ruin"]
+    },
+    {
+      "id": "NC_008",
+      "name": "Void Leviathan",
+      "type": "Aqua",
+      "rarity": "legendary",
+      "purifiable": true,
+      "description": "A sea horror born where deep current meets Rift tear.",
+      "baseStats": { "hp": 122, "atk": 106, "def": 98, "spd": 52, "energy": 102 },
+      "moves": ["Void Wave", "Leviathan Jaw", "Abyss Undertow", "Salt Ruin", "Tide Eclipse"]
+    },
+    {
+      "id": "NC_009",
+      "name": "Rift Phoenix",
+      "type": "Flame",
+      "rarity": "legendary",
+      "purifiable": true,
+      "description": "A bird of rebirth corrupted into endless collapse-fire.",
+      "baseStats": { "hp": 92, "atk": 108, "def": 80, "spd": 96, "energy": 104 },
+      "moves": ["Blackflare", "Ash Rebirth", "Crown of Cinders", "Ruin Wing", "Phoenix Collapse"]
+    },
+    {
+      "id": "NC_010",
+      "name": "Null Hydra",
+      "type": "Shadow",
+      "rarity": "legendary",
+      "purifiable": true,
+      "description": "A many-headed corruption feeder that multiplies pressure.",
+      "baseStats": { "hp": 118, "atk": 110, "def": 92, "spd": 66, "energy": 100 },
+      "moves": ["Null Bite", "Hydra Pressure", "Void Split", "Head Rush", "Endless Maw"]
+    },
+    {
+      "id": "NC_011",
+      "name": "Rotshade Wolf",
+      "type": "Nature",
+      "rarity": "rare",
+      "purifiable": true,
+      "description": "A corrupted hunter that stalks by scent and blight.",
+      "baseStats": { "hp": 82, "atk": 90, "def": 62, "spd": 88, "energy": 72 },
+      "moves": ["Rot Fang", "Shade Sprint", "Hunt Blight", "Pounce Rot", "Pack Funeral"]
+    },
+    {
+      "id": "NC_012",
+      "name": "Thunder Revenant",
+      "type": "Volt",
+      "rarity": "rare",
+      "purifiable": true,
+      "description": "A screaming storm ghost of failed charge.",
+      "baseStats": { "hp": 80, "atk": 92, "def": 60, "spd": 94, "energy": 78 },
+      "moves": ["Ruin Bolt", "Volt Scream", "Arc Lash", "Storm Lash", "Black Charge"]
+    },
+    {
+      "id": "NC_013",
+      "name": "Wraith Bloom",
+      "type": "Nature",
+      "rarity": "epic",
+      "purifiable": true,
+      "description": "A floating death-flower that feeds on vitality.",
+      "baseStats": { "hp": 88, "atk": 86, "def": 78, "spd": 76, "energy": 82 },
+      "moves": ["Bloom Rot", "Petal Curse", "Drain Pollens", "Wilt Veil", "Floral Eclipse"]
+    },
+    {
+      "id": "NC_014",
+      "name": "Shard Tyrant",
+      "type": "Frost",
+      "rarity": "epic",
+      "purifiable": true,
+      "description": "A ruler of jagged ice that impales under pressure.",
+      "baseStats": { "hp": 100, "atk": 96, "def": 96, "spd": 58, "energy": 86 },
+      "moves": ["Shard Spear", "Frost Coffin", "Break Ice", "Dead Hail", "Cold Tyranny"]
+    },
+    {
+      "id": "NC_015",
+      "name": "Rift Ravager",
+      "type": "Dragon",
+      "rarity": "legendary",
+      "purifiable": true,
+      "description": "A dragon warped by raw Primordial hunger.",
+      "baseStats": { "hp": 108, "atk": 116, "def": 96, "spd": 76, "energy": 108 },
+      "moves": ["Rift Bite", "Dragon Ruin", "Wing Fracture", "Maw Roar", "Primordial Tear"]
+    },
+    {
+      "id": "NC_016",
+      "name": "Cinder Phantom",
+      "type": "Flame",
+      "rarity": "rare",
+      "purifiable": true,
+      "description": "A flickering fire-spirit that burns and disappears.",
+      "baseStats": { "hp": 76, "atk": 88, "def": 58, "spd": 92, "energy": 76 },
+      "moves": ["Phantom Ember", "Ash Blink", "Heat Knife", "Soot Fade", "Cinder Ambush"]
+    },
+    {
+      "id": "NC_017",
+      "name": "Gore Current",
+      "type": "Aqua",
+      "rarity": "rare",
+      "purifiable": true,
+      "description": "A razor-water corruption that tears instead of flows.",
+      "baseStats": { "hp": 84, "atk": 86, "def": 68, "spd": 84, "energy": 78 },
+      "moves": ["Razor Tide", "Current Tear", "Mist Rot", "Jet Grave", "Undertow Fang"]
+    },
+    {
+      "id": "NC_018",
+      "name": "Obsidian Warden",
+      "type": "Terra",
+      "rarity": "legendary",
+      "purifiable": true,
+      "description": "A black stone sentinel guarding fractured Rift ruins.",
+      "baseStats": { "hp": 124, "atk": 102, "def": 118, "spd": 28, "energy": 94 },
+      "moves": ["Obsidian Crush", "Rift Guard", "Dust Prison", "Stone Dominion", "Warden's Fall"]
+    },
+    {
+      "id": "NC_019",
+      "name": "Night Mantid",
+      "type": "Shadow",
+      "rarity": "rare",
+      "purifiable": true,
+      "description": "A razor-limbed predator that cuts before being seen.",
+      "baseStats": { "hp": 78, "atk": 94, "def": 62, "spd": 96, "energy": 74 },
+      "moves": ["Mantid Cut", "Night Hook", "Shadow Flicker", "Blade Veil", "Dark Carve"]
+    },
+    {
+      "id": "NC_020",
+      "name": "Rift Devourer",
+      "type": "Omni",
+      "rarity": "legendary",
+      "purifiable": true,
+      "description": "An unstable thing that consumes mixed energy fields.",
+      "baseStats": { "hp": 112, "atk": 114, "def": 104, "spd": 82, "energy": 116 },
+      "moves": ["Devour Pulse", "Chaos Bite", "Prism Ruin", "Element Rot", "Absolute Hunger"]
+    },
+    {
+      "id": "NC_021",
+      "name": "Blight Roc",
+      "type": "Wind",
+      "rarity": "epic",
+      "purifiable": true,
+      "description": "A giant carrion storm-bird that spreads toxic air.",
+      "baseStats": { "hp": 94, "atk": 92, "def": 74, "spd": 90, "energy": 84 },
+      "moves": ["Rot Gale", "Wing Grave", "Storm Peck", "Poison Draft", "Skydrop Blight"]
+    },
+    {
+      "id": "NC_022",
+      "name": "Aether Husk",
+      "type": "Light",
+      "rarity": "legendary",
+      "purifiable": true,
+      "description": "A broken radiant shell overtaken by corruption.",
+      "baseStats": { "hp": 98, "atk": 108, "def": 96, "spd": 80, "energy": 110 },
+      "moves": ["Broken Light", "Husk Beam", "Halo Fracture", "Sanctum Ruin", "Fallen Dawn"]
+    },
+    {
+      "id": "NC_023",
+      "name": "Void Basilisk",
+      "type": "Shadow",
+      "rarity": "epic",
+      "purifiable": true,
+      "description": "A gaze predator that collapses nerve and motion.",
+      "baseStats": { "hp": 92, "atk": 98, "def": 84, "spd": 70, "energy": 86 },
+      "moves": ["Basilisk Gaze", "Void Fang", "Spine Crush", "Shadow Coil", "Petrify Ruin"]
+    },
+    {
+      "id": "NC_024",
+      "name": "Rupture Elk",
+      "type": "Nature",
+      "rarity": "epic",
+      "purifiable": true,
+      "description": "A towering antlered force that charges with Rift fractures.",
+      "baseStats": { "hp": 104, "atk": 100, "def": 88, "spd": 72, "energy": 82 },
+      "moves": ["Antler Break", "Rift Charge", "Stampede Rot", "Forest Rupture", "Wild Collapse"]
+    },
+    {
+      "id": "NC_025",
+      "name": "Primordrax",
+      "type": "Cosmic",
+      "rarity": "mythic",
+      "purifiable": true,
+      "description": "A primordial corruption dragon born at the edge of the Rift itself.",
+      "baseStats": { "hp": 130, "atk": 128, "def": 118, "spd": 92, "energy": 130 },
+      "moves": ["Primordial Fang", "Rift Star", "Horizon Break", "Cosmic Ruin", "Genesis Collapse"]
+    },
+    {
+      "id": "NC_026",
+      "name": "Abyssal Leviathan",
+      "type": "Aqua",
+      "rarity": "Mythic",
+      "isPremium": true,
+      "purifiable": false,
+      "description": "A gargantuan horror from the deepest Rift oceans. Only a marked tamer can withstand its crushing presence.",
+      "baseStats": { "hp": 140, "atk": 115, "def": 135, "spd": 80, "energy": 120 },
+      "moves": {
+        "Crush Depth": { "power": 110, "accuracy": 95, "category": "Physical", "desc": "Crushes the enemy under immense water pressure." },
+        "Rift Tsunami": { "power": 130, "accuracy": 85, "category": "Special", "desc": "A corrupted wave that sweeps the field." }
+      },
+      "learnset": { "1": ["Crush Depth"], "10": ["Rift Tsunami"] }
+    },
+    {
+      "id": "NC_027",
+      "name": "Calamity Rex",
+      "type": "Dragon",
+      "rarity": "Mythic",
+      "isPremium": true,
+      "purifiable": false,
+      "description": "An apex predator warped by the Primordial energy. Its scales repel normal attacks.",
+      "baseStats": { "hp": 120, "atk": 145, "def": 110, "spd": 105, "energy": 110 },
+      "moves": {
+        "Tyrant Jaw": { "power": 120, "accuracy": 90, "category": "Physical", "desc": "A devastating bite that ignores armor." },
+        "Dragon Ruin": { "power": 140, "accuracy": 80, "category": "Special", "desc": "Unleashes pure draconic corruption." }
+      },
+      "learnset": { "1": ["Tyrant Jaw"], "10": ["Dragon Ruin"] }
+    },
+    {
+      "id": "NC_028",
+      "name": "Eclipse Seraph",
+      "type": "Light",
+      "rarity": "Mythic",
+      "isPremium": true,
+      "purifiable": false,
+      "description": "A fallen being of light, now radiating dark photons. It blinds those without the Mark.",
+      "baseStats": { "hp": 100, "atk": 135, "def": 90, "spd": 140, "energy": 130 },
+      "moves": {
+        "Dark Photon": { "power": 100, "accuracy": 100, "category": "Special", "desc": "Fires a beam of corrupted light." },
+        "Eclipse Flash": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Blinds the opponent, dropping accuracy sharply." }
+      },
+      "learnset": { "1": ["Dark Photon"], "10": ["Eclipse Flash"] }
+    },
+    {
+      "id": "NC_029",
+      "name": "Hellfire Behemoth",
+      "type": "Flame",
+      "rarity": "Legendary",
+      "isPremium": true,
+      "purifiable": false,
+      "description": "Walking volcanic rage. The heat melts standard capture nets instantly.",
+      "baseStats": { "hp": 130, "atk": 125, "def": 120, "spd": 70, "energy": 100 },
+      "moves": {
+        "Magma Stomp": { "power": 115, "accuracy": 95, "category": "Physical", "desc": "Smashes the ground, erupting lava." },
+        "Ashen Lung": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Chokes the enemy, draining stamina." }
+      },
+      "learnset": { "1": ["Magma Stomp"], "10": ["Ashen Lung"] }
+    },
+    {
+      "id": "NC_030",
+      "name": "Chronos Weaver",
+      "type": "Cosmic",
+      "rarity": "Mythic",
+      "isPremium": true,
+      "purifiable": false,
+      "description": "A spider that spins webs out of fractured time. Extremely difficult to track.",
+      "baseStats": { "hp": 90, "atk": 110, "def": 85, "spd": 150, "energy": 140 },
+      "moves": {
+        "Time Bite": { "power": 90, "accuracy": 100, "category": "Physical", "desc": "A bite that ages the target's cells." },
+        "Paradox Web": { "power": 0, "accuracy": 90, "category": "Status", "desc": "Traps the enemy in a time loop, pausing their turn." }
+      },
+      "learnset": { "1": ["Time Bite"], "10": ["Paradox Web"] }
+    },
+    {
+      "id": "NC_031",
+      "name": "Plague Warden",
+      "type": "Nature",
+      "rarity": "Legendary",
+      "isPremium": true,
+      "purifiable": false,
+      "description": "A massive ent that breeds toxic spores. Its roots stretch into the Rift.",
+      "baseStats": { "hp": 150, "atk": 90, "def": 140, "spd": 40, "energy": 110 },
+      "moves": {
+        "Rot Root": { "power": 80, "accuracy": 100, "category": "Physical", "desc": "Drains HP from the target." },
+        "Spore Cataclysm": { "power": 120, "accuracy": 85, "category": "Special", "desc": "A massive explosion of deadly spores." }
+      },
+      "learnset": { "1": ["Rot Root"], "10": ["Spore Cataclysm"] }
+    },
+    {
+      "id": "NC_032",
+      "name": "Void Stalker",
+      "type": "Shadow",
+      "rarity": "Legendary",
+      "isPremium": true,
+      "purifiable": false,
+      "description": "It hunts from the shadows of other dimensions. Only the Mark can reveal it.",
+      "baseStats": { "hp": 85, "atk": 140, "def": 75, "spd": 135, "energy": 100 },
+      "moves": {
+        "Shadow Rend": { "power": 110, "accuracy": 95, "category": "Physical", "desc": "Tears the enemy's shadow, causing true damage." },
+        "Fade Strike": { "power": 90, "accuracy": 100, "category": "Physical", "desc": "Strikes and vanishes, boosting evasion." }
+      },
+      "learnset": { "1": ["Shadow Rend"], "10": ["Fade Strike"] }
+    },
+    {
+      "id": "NC_033",
+      "name": "Static Overlord",
+      "type": "Volt",
+      "rarity": "Legendary",
+      "isPremium": true,
+      "purifiable": false,
+      "description": "A being of pure, unstable electricity. It overloads standard hunter equipment.",
+      "baseStats": { "hp": 95, "atk": 130, "def": 85, "spd": 125, "energy": 130 },
+      "moves": {
+        "Rift Thunder": { "power": 125, "accuracy": 85, "category": "Special", "desc": "A massive bolt of corrupted lightning." },
+        "Overload Core": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Maxes out energy but takes slight recoil damage." }
+      },
+      "learnset": { "1": ["Rift Thunder"], "10": ["Overload Core"] }
+    },
+    {
+      "id": "NC_034",
+      "name": "Glacial Titan",
+      "type": "Frost",
+      "rarity": "Legendary",
+      "isPremium": true,
+      "purifiable": false,
+      "description": "A behemoth of absolute zero ice. It freezes the very aura of its opponents.",
+      "baseStats": { "hp": 135, "atk": 110, "def": 125, "spd": 60, "energy": 100 },
+      "moves": {
+        "Zero Smash": { "power": 115, "accuracy": 95, "category": "Physical", "desc": "A crushing blow of indestructible ice." },
+        "Flash Freeze": { "power": 0, "accuracy": 85, "category": "Status", "desc": "Freezes the enemy solid." }
+      },
+      "learnset": { "1": ["Zero Smash"], "10": ["Flash Freeze"] }
+    },
+    {
+      "id": "NC_035",
+      "name": "Aetherion",
+      "type": "Cosmic",
+      "rarity": "Mythic",
+      "isPremium": true,
+      "purifiable": false,
+      "description": "The cosmic embodiment of the Rift itself. Taming it is a badge of ultimate power.",
+      "baseStats": { "hp": 130, "atk": 130, "def": 120, "spd": 110, "energy": 150 },
+      "moves": {
+        "Aether Beam": { "power": 130, "accuracy": 100, "category": "Special", "desc": "A concentrated beam of pure universe energy." },
+        "Rift Collapse": { "power": 150, "accuracy": 80, "category": "Special", "desc": "Collapses the space around the enemy." }
+      },
+      "learnset": { "1": ["Aether Beam"], "10": ["Rift Collapse"] }
+    }
+  ]
+}

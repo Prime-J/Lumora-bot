@@ -1,0 +1,228 @@
+{
+  "_comment": "Lumora rotating market state. Edit safely. Do not remove keys unless you know what you are doing.",
+  "_notes": {
+    "rotationIntervalMinutes": "How often the market refreshes.",
+    "announceOnRotate": "If true, bot sends a rotation message.",
+    "showRareBanner": "If true, market UI can show 🌟 RARE ITEM AVAILABLE 🌟 above rare/epic/legendary items.",
+    "rotationPoolSizes": "How many items to pull from each pool when rotating.",
+    "limitedStockRule": "Rare items should stay scarce. Common items can be plentiful.",
+    "marketSpeechMode": "random means choose one speech from rotationSpeeches each refresh."
+  },
+  "enabled": true,
+  "marketName": "Lumora Market",
+  "rotationIntervalMinutes": 60,
+  "announceOnRotate": true,
+  "showRareBanner": true,
+  "marketSpeechMode": "random",
+  "lastRotationAt": 1775842800081,
+  "nextRotationAt": 1775846400081,
+  "rotationPoolSizes": {
+    "_comment": "Semi-random market size. Total visible items should feel lively but not crowded.",
+    "minVisibleItems": 5,
+    "maxVisibleItems": 8,
+    "normalGearMin": 1,
+    "normalGearMax": 3,
+    "normalItemsMin": 2,
+    "normalItemsMax": 4,
+    "materialMin": 0,
+    "materialMax": 2,
+    "specialMin": 0,
+    "specialMax": 2,
+    "blackMarketMin": 0,
+    "blackMarketMax": 2,
+    "rareHighlightMinRarity": "Rare"
+  },
+  "rotationSpeeches": [
+    "🏪 MARKET ROTATION\n\nThe merchant caravans of Lumora have refreshed their wares.\nNew curiosities now rest upon the stalls.\nSome items are limited.\n\nUse .market to see what is available.",
+    "🏪 MARKET ROTATION\n\nThe market bells ring once more across Lumora.\nFresh stock has arrived from wandering traders and hidden routes.\nA few prized items may not last long.\n\nUse .market to inspect today's wares.",
+    "🏪 MARKET ROTATION\n\nCanvas tents rise, crates unlock, and the traders of Lumora begin again.\nNew goods are now circulating through the market.\nLimited stock items may vanish quickly.\n\nUse .market to browse the stalls.",
+    "🏪 MARKET ROTATION\n\nDust settles as another wave of merchants enters Lumora.\nThe stalls have changed, and rare goods may be hidden among the ordinary.\n\nUse .market to view the new stock.",
+    "🏪 MARKET ROTATION\n\nFresh wares have replaced the old stock in Lumora's busy stalls.\nThose who arrive first may claim the best finds.\n\nUse .market to see what appeared."
+  ],
+  "blackMarketSpeeches": [
+    "⚫ BLACK MARKET WHISPERS\n\nShadows move through the alleys of Lumora tonight.\nForbidden traders have changed their stock again.\nSome rare goods exist in very small numbers.\n\nUse .market to investigate.",
+    "⚫ BLACK MARKET WHISPERS\n\nBehind locked shutters and low voices, hidden merchants have refreshed their vaults.\nDangerous wares may already be changing hands.\n\nUse .market to see what surfaced.",
+    "⚫ BLACK MARKET WHISPERS\n\nA quiet signal spreads among smugglers and collectors.\nThe underground stock has shifted once more.\nThe rarest items may disappear without warning.\n\nUse .market to inspect the changes."
+  ],
+  "stockRules": {
+    "_comment": "Used when generating rotation stock if item stock is not manually overridden.",
+    "Common": {
+      "min": 4,
+      "max": 10
+    },
+    "Uncommon": {
+      "min": 2,
+      "max": 6
+    },
+    "Rare": {
+      "min": 1,
+      "max": 3
+    },
+    "Epic": {
+      "min": 1,
+      "max": 1
+    },
+    "Legendary": {
+      "min": 1,
+      "max": 1
+    }
+  },
+  "priceModifiers": {
+    "_comment": "Lets you rebalance economy without editing every item in items.json.",
+    "normalMultiplier": 1,
+    "blackMarketMultiplier": 1.15,
+    "limitedStockBonusMultiplier": 1.1,
+    "rareItemBonusMultiplier": 1.05
+  },
+  "subscriptions": {
+    "_comment": "Bot can later mirror this into subscribers.json if you want. For now this section documents intent.",
+    "allowOptIn": true,
+    "commandName": ".subscribe-market",
+    "unsubscribeCommandName": ".unsubscribe-market",
+    "notifyGroupsOnly": true
+  },
+  "currentRotation": {
+    "rotationId": 128,
+    "speechUsed": "🏪 MARKET ROTATION\n\nCanvas tents rise, crates unlock, and the traders of Lumora begin again.\nNew goods are now circulating through the market.\nLimited stock items may vanish quickly.\n\nUse .market to browse the stalls.",
+    "hasRareHighlight": true,
+    "items": [
+      {
+        "itemId": "GER_001",
+        "price": 323,
+        "stock": 1,
+        "limited": true,
+        "sold": 0
+      },
+      {
+        "itemId": "GER_030",
+        "price": 190,
+        "stock": 5,
+        "limited": false,
+        "sold": 0
+      },
+      {
+        "itemId": "GER_002",
+        "price": 170,
+        "stock": 4,
+        "limited": false,
+        "sold": 0
+      },
+      {
+        "itemId": "ITM_014",
+        "price": 60,
+        "stock": 7,
+        "limited": false,
+        "sold": 0
+      },
+      {
+        "itemId": "ITM_002",
+        "price": 90,
+        "stock": 4,
+        "limited": false,
+        "sold": 0
+      },
+      {
+        "itemId": "ITM_005",
+        "price": 120,
+        "stock": 6,
+        "limited": false,
+        "sold": 6
+      },
+      {
+        "itemId": "ITM_009",
+        "price": 485,
+        "stock": 2,
+        "limited": true,
+        "sold": 0
+      },
+      {
+        "itemId": "REL_002",
+        "price": 2258,
+        "stock": 1,
+        "limited": true,
+        "sold": 0
+      }
+    ]
+  },
+  "forcedRotationPools": {
+    "_comment": "Optional helper pools. Keep these if you want more control over what can show up.",
+    "normal": [
+      "ITM_001",
+      "ITM_002",
+      "ITM_004",
+      "ITM_005",
+      "ITM_007",
+      "ITM_009",
+      "ITM_010",
+      "ITM_011",
+      "ITM_014",
+      "ITM_015",
+      "MAT_001",
+      "MAT_002",
+      "MAT_003",
+      "GER_001",
+      "GER_002",
+      "GER_004",
+      "GER_010",
+      "GER_011",
+      "GER_012",
+      "GER_014",
+      "GER_020",
+      "GER_021",
+      "GER_022",
+      "GER_030",
+      "GER_032",
+      "GER_042"
+    ],
+    "black": [
+      "ACC_001",
+      "ACC_002",
+      "GER_005",
+      "GER_013",
+      "GER_023",
+      "GER_024",
+      "GER_031",
+      "GER_033",
+      "GER_034",
+      "GER_040",
+      "GER_041",
+      "GER_043",
+      "GER_044",
+      "ITM_008",
+      "ITM_012",
+      "ITM_013",
+      "MAT_005",
+      "REL_001",
+      "REL_002",
+      "REL_003"
+    ]
+  },
+  "marketUi": {
+    "_comment": "For display formatting.",
+    "header": "━━━━━━━━━━━━━━━━━━\n🏪 *LUMORA MARKET*\n━━━━━━━━━━━━━━━━━━",
+    "footer": "━━━━━━━━━━━━━━━━━━\n🛒 Use: `.buy <item name or id>`\n🔔 Use `.subscribe-market` to receive market rotation alerts",
+    "rarityIcons": {
+      "Common": "⚪",
+      "Uncommon": "🟢",
+      "Rare": "🔵",
+      "Epic": "🟣",
+      "Legendary": "🟡"
+    },
+    "rareBannerText": "🌟 *RARE ITEM AVAILABLE* 🌟"
+  },
+  "futureIdeas": {
+    "_comment": "Just notes for later so you remember where this file can grow.",
+    "marketEvents": [
+      "flash sale",
+      "double rare chance",
+      "merchant surcharge",
+      "black market surge"
+    ],
+    "possibleLaterFields": [
+      "perGroupRotation",
+      "sharedGlobalStock",
+      "sellerNpcName",
+      "specialHolidayRotation"
+    ]
+  }
+}

@@ -1,0 +1,298 @@
+
+{
+  "GER_001": {
+    "id": "GER_001",
+    "name": "Rift Stabilizer Core",
+    "category": "gear",
+    "slot": "core",
+    "rarity": "Rare",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 280,
+    "stock": 2,
+    "storageCost": 0,
+    "effect": "-15% Primordial Energy gain, +5 energy regeneration",
+    "effects": {
+      "primordialGain": -15,
+      "energyRegen": 5
+    },
+    "desc": "A crystalline regulator..."
+  },
+
+  "GER_002": {
+    "effects": {
+      "bondSuccess": 5
+    }
+  },
+
+  "GER_003": {
+    "effects": {
+      "battleControl": 10
+    }
+  },
+
+  "GER_004": {
+    "effects": {
+      "maxHp": 15
+    }
+  },
+
+  "GER_005": {
+    "effects": {
+      "battleDamage": 20,
+      "corruptionGain": 15
+    }
+  },
+
+  "GER_010": {
+    "effects": {
+      "catchChance": 5
+    }
+  },
+
+  "GER_011": {
+    "effects": {
+      "rareSpawn": 10
+    }
+  },
+
+  "GER_012": {
+    "effects": {
+      "auraLossReduction": 10
+    }
+  },
+
+  "GER_013": {
+    "effects": {
+      "unstableEncounter": 15
+    }
+  },
+
+  "GER_014": {
+    "effects": {
+      "sellBoost": 10
+    }
+  },
+
+  "GER_020": {
+    "effects": {
+      "scanRarity": true
+    }
+  },
+
+  "GER_021": {
+    "effects": {
+      "unstableEncounter": 10
+    }
+  },
+
+  "GER_022": {
+    "effects": {
+      "huntEfficiency": 10
+    }
+  },
+
+  "GER_023": {
+    "effects": {
+      "revealAnomalies": true
+    }
+  },
+
+  "GER_024": {
+    "effects": {
+      "onCatchEnergy": 5
+    }
+  },
+
+  "GER_030": {
+    "effects": {
+      "heatResist": true
+    }
+  },
+
+  "GER_031": {
+    "effects": {
+      "lightningImmunity": true
+    }
+  },
+
+  "GER_032": {
+    "effects": {
+      "coldResist": true
+    }
+  },
+
+  "GER_033": {
+    "effects": {
+      "auraDrainReduction": 20
+    }
+  },
+
+  "GER_034": {
+    "effects": {
+      "flameSpawnBoost": 10
+    }
+  },
+
+  "GER_040": {
+    "effects": {
+      "quakeImmunity": true
+    }
+  },
+
+  "GER_041": {
+    "effects": {
+      "corruptionReduction": 20
+    }
+  },
+
+  "GER_042": {
+    "effects": {
+      "terrainImmunity": true
+    }
+  },
+
+  "GER_043": {
+    "effects": {
+      "stormImmunity": true,
+      "movementEfficiency": 10
+    }
+  },
+
+  "GER_044": {
+    "effects": {
+      "groundDamageReduction": 10
+    }
+  },
+
+  "GER_050": {
+    "effects": {
+      "corruptionReduction": 10
+    }
+  },
+
+  "GER_051": {
+    "effects": {
+      "accuracy": 5
+    }
+  },
+
+  "GER_052": {
+    "effects": {
+      "unstableEncounter": 10
+    }
+  },
+
+  "REL_001": {
+    "effects": {
+      "xpBoost": 10
+    }
+  },
+
+  "REL_002": {
+    "effects": {
+      "maxHp": 50
+    }
+  },
+
+  "REL_003": {
+    "effects": {
+      "rareSpawn": 15,
+      "huntEfficiency": 10
+    }
+  },
+
+  "ITM_001": {
+    "effects": {
+      "heal": 30
+    }
+  },
+
+  "ITM_002": {
+    "effects": {
+      "heal": 70
+    }
+  },
+
+  "ITM_016": {
+    "effects": {
+      "energy": 25
+    }
+  },
+
+  "ITM_003": {
+    "effects": {
+      "auraRestoreOnFaint": 15
+    }
+  },
+
+  "ITM_005": {
+    "effects": {
+      "primordialReduce": 20,
+      "fleeReduction": 20
+    }
+  },
+
+  "ITM_006": {
+    "effects": {
+      "removeCorruption": true
+    }
+  },
+
+  "ITM_007": {
+    "effects": {
+      "spawnRate": 15,
+      "duration": "hunt"
+    }
+  },
+
+  "ITM_008": {
+    "effects": {
+      "forceSpawn": true
+    }
+  },
+
+  "ITM_009": {
+    "effects": {
+      "maxHp": 20
+    }
+  },
+
+  "ITM_010": {
+    "effects": {
+      "storage": 10
+    }
+  },
+
+  "ITM_011": {
+    "effects": {
+      "storage": 20
+    }
+  },
+
+  "ITM_012": {
+    "effects": {
+      "storage": 40
+    }
+  },
+
+  "ITM_013": {
+    "effects": {
+      "blackMarketAccess": true
+    }
+  },
+
+  "ITM_014": {
+    "effects": {
+      "catchChance": 5,
+      "duration": "once"
+    }
+  },
+
+  "ITM_015": {
+    "effects": {
+      "envDamageReduction": 20,
+      "duration": "hunt"
+    }
+  }
+}

@@ -1,0 +1,192 @@
+{
+  "harmony": [],
+  "purity": [],
+  "rift": [],
+  "243443360096505@lid": {
+    "HM_03": {
+      "progress": 3,
+      "completed": true,
+      "completedWeek": "2026-W15"
+    },
+    "HM_04": {
+      "progress": 5,
+      "completed": true,
+      "completedWeek": "2026-W15"
+    },
+    "HM_02": {
+      "progress": 2,
+      "completed": true,
+      "completedWeek": "2026-W15"
+    }
+  },
+  "85376064581854@lid": {
+    "HM_03": {
+      "progress": 3,
+      "completed": true,
+      "completedWeek": "2026-W15"
+    },
+    "HM_04": {
+      "progress": 5,
+      "completed": true,
+      "completedWeek": "2026-W15"
+    },
+    "HM_05": {
+      "progress": 2,
+      "completed": true,
+      "completedWeek": "2026-W15"
+    },
+    "HM_02": {
+      "progress": 2,
+      "completed": true,
+      "completedWeek": "2026-W15"
+    }
+  },
+  "252961443831924@lid": {
+    "RF_03": {
+      "progress": 1,
+      "completed": false,
+      "completedWeek": null
+    },
+    "RF_01": {
+      "progress": 3,
+      "completed": false,
+      "completedWeek": null
+    }
+  },
+  "61495627001872@lid": {
+    "HM_03": {
+      "progress": 3,
+      "completed": true,
+      "completedWeek": "2026-W15"
+    },
+    "HM_04": {
+      "progress": 5,
+      "completed": true,
+      "completedWeek": "2026-W15"
+    },
+    "HM_05": {
+      "progress": 2,
+      "completed": true,
+      "completedWeek": "2026-W15"
+    }
+  },
+  "259983665004558@lid": {
+    "RF_03": {
+      "progress": 1,
+      "completed": true,
+      "completedWeek": "2026-W15"
+    },
+    "RF_04": {
+      "progress": 2,
+      "completed": false,
+      "completedWeek": null
+    },
+    "RF_01": {
+      "progress": 1,
+      "completed": false,
+      "completedWeek": null
+    }
+  },
+  "112038919540887@lid": {},
+  "267581311156378@lid": {},
+  "67620669808702@lid": {},
+  "208474038341639@lid": {},
+  "132951115317490@lid": {
+    "RF_04": {
+      "progress": 5,
+      "completed": true,
+      "completedWeek": "2026-W15"
+    },
+    "RF_03": {
+      "progress": 1,
+      "completed": true,
+      "completedWeek": "2026-W15"
+    },
+    "RF_01": {
+      "progress": 3,
+      "completed": false,
+      "completedWeek": null
+    }
+  },
+  "231009564000341@lid": {
+    "HM_03": {
+      "progress": 3,
+      "completed": false,
+      "completedWeek": null
+    }
+  },
+  "170115601592429@lid": {
+    "HM_03": {
+      "progress": 3,
+      "completed": false,
+      "completedWeek": null
+    }
+  },
+  "144500265619658@lid": {
+    "HM_03": {
+      "progress": 3,
+      "completed": false,
+      "completedWeek": null
+    },
+    "HM_04": {
+      "progress": 1,
+      "completed": false,
+      "completedWeek": null
+    }
+  },
+  "54018575458536@lid": {
+    "RF_03": {
+      "progress": 1,
+      "completed": false,
+      "completedWeek": null
+    }
+  },
+  "98775909560494@lid": {},
+  "142060959076603@lid": {
+    "RF_01": {
+      "progress": 3,
+      "completed": false,
+      "completedWeek": null
+    },
+    "RF_03": {
+      "progress": 1,
+      "completed": false,
+      "completedWeek": null
+    }
+  },
+  "116986705092794@lid": {},
+  "14483200184549@lid": {},
+  "191092104364082@lid": {
+    "HM_03": {
+      "progress": 1,
+      "completed": false,
+      "completedWeek": null
+    }
+  },
+  "200824785490015@lid": {
+    "HM_03": {
+      "progress": 3,
+      "completed": false,
+      "completedWeek": null
+    },
+    "HM_04": {
+      "progress": 5,
+      "completed": false,
+      "completedWeek": null
+    }
+  },
+  "126065896869969@lid": {},
+  "30907222241448@lid": {
+    "HM_03": {
+      "progress": 1,
+      "completed": false,
+      "completedWeek": null
+    }
+  },
+  "108951072948295@lid": {},
+  "194592469209292@lid": {},
+  "172542392303736@lid": {},
+  "239926134194301@lid": {},
+  "30142751609030@lid": {},
+  "9680940191824@lid": {}
+}

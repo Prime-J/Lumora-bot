@@ -1,0 +1,178 @@
+[
+  {
+    "id": 1,
+    "reporter": "267581311156378@lid",
+    "reporterName": "goon master",
+    "description": "gay people",
+    "date": "2026-04-08",
+    "status": "fixed"
+  },
+  {
+    "id": 2,
+    "reporter": "267581311156378@lid",
+    "reporterName": "goon master",
+    "description": "ban not working",
+    "date": "2026-04-08",
+    "status": "open"
+  },
+  {
+    "id": 3,
+    "reporter": "267581311156378@lid",
+    "reporterName": "goon master",
+    "description": "So many gays",
+    "date": "2026-04-08",
+    "status": "open"
+  },
+  {
+    "id": 4,
+    "reporter": "85376064581854@lid",
+    "reporterName": "KING",
+    "description": "Faction Market",
+    "date": "2026-04-08",
+    "status": "open"
+  },
+  {
+    "id": 5,
+    "reporter": "267581311156378@lid",
+    "reporterName": "goon master",
+    "description": "after mission complete resonance must be given",
+    "date": "2026-04-08",
+    "status": "open"
+  },
+  {
+    "id": 6,
+    "reporter": "267581311156378@lid",
+    "reporterName": "goon master",
+    "description": "at the bottom of mission list for ecvery faction there is .complete HM INSTEAD of varying them to rf and hu for the respective factions",
+    "date": "2026-04-08",
+    "status": "open"
+  },
+  {
+    "id": 7,
+    "reporter": "267581311156378@lid",
+    "reporterName": "goon master",
+    "description": "no war history",
+    "date": "2026-04-08",
+    "status": "open"
+  },
+  {
+    "id": 8,
+    "reporter": "85376064581854@lid",
+    "reporterName": "KING",
+    "description": "Tame doesn't capture the mora",
+    "date": "2026-04-08",
+    "status": "open"
+  },
+  {
+    "id": 9,
+    "reporter": "132951115317490@lid",
+    "reporterName": "Marshmello",
+    "description": "Fbuy ain't working",
+    "date": "2026-04-09",
+    "status": "open"
+  },
+  {
+    "id": 10,
+    "reporter": "132951115317490@lid",
+    "reporterName": "Marshmello",
+    "description": "uptime command ain't working",
+    "date": "2026-04-09",
+    "status": "open"
+  },
+  {
+    "id": 11,
+    "reporter": "132951115317490@lid",
+    "reporterName": "Marshmello",
+    "description": "Reverse lucons ain't working (Transaction not found)",
+    "date": "2026-04-09",
+    "status": "open"
+  },
+  {
+    "id": 12,
+    "reporter": "132951115317490@lid",
+    "reporterName": "Marshmello",
+    "description": "Achievements need rewards",
+    "date": "2026-04-09",
+    "status": "open"
+  },
+  {
+    "id": 13,
+    "reporter": "132951115317490@lid",
+    "reporterName": "Marshmello",
+    "description": "Announcement command reply should also come with a mass tag",
+    "date": "2026-04-09",
+    "status": "open"
+  },
+  {
+    "id": 14,
+    "reporter": "132951115317490@lid",
+    "reporterName": "Marshmello",
+    "description": "Don't forget the sticker command",
+    "date": "2026-04-09",
+    "status": "open"
+  },
+  {
+    "id": 15,
+    "reporter": "132951115317490@lid",
+    "reporterName": "Marshmello",
+    "description": "and the q command too",
+    "date": "2026-04-09",
+    "status": "open"
+  },
+  {
+    "id": 16,
+    "reporter": "85376064581854@lid",
+    "reporterName": "KING",
+    "description": "We can't capture shit",
+    "date": "2026-04-09",
+    "status": "open"
+  },
+  {
+    "id": 17,
+    "reporter": "132951115317490@lid",
+    "reporterName": "Marshmello",
+    "description": "Add kick command",
+    "date": "2026-04-09",
+    "status": "open"
+  },
+  {
+    "id": 18,
+    "reporter": "132951115317490@lid",
+    "reporterName": "Marshmello",
+    "description": "Bug in hunt, can't attack, can't switch, can't run, can't track, can't return",
+    "date": "2026-04-10",
+    "status": "open"
+  },
+  {
+    "id": 19,
+    "reporter": "243443360096505@lid",
+    "reporterName": "Siuol",
+    "description": "missing Stormshroud",
+    "date": "2026-04-10",
+    "status": "open"
+  },
+  {
+    "id": 20,
+    "reporter": "61495627001872@lid",
+    "reporterName": "JJ Thompson",
+    "description": "boring",
+    "date": "2026-04-10",
+    "status": "open"
+  },
+  {
+    "id": 21,
+    "reporter": "85376064581854@lid",
+    "reporterName": "KING",
+    "description": "We can't capture",
+    "date": "2026-04-10",
+    "status": "open"
+  },
+  {
+    "id": 22,
+    "reporter": "252961443831924@lid",
+    "reporterName": "Tempest",
+    "description": "missing frostmantle twice and ashen veil",
+    "date": "2026-04-10",
+    "status": "open"
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "config": {
+    "dailyLimit": 4,
+    "arenaEnabled": false,
+    "baseAuraRequired": 10,
+    "crossFactionBonus": 0.25,
+    "diminishFloor": 0.2
+  },
+  "battles": {},
+  "dailyCounts": {
+    "85376064581854@lid": {
+      "date": "2026-04-09",
+      "count": 4
+    }
+  },
+  "defeatedNpcs": {
+    "85376064581854@lid": {
+      "Mira": 3
+    }
+  }
+}

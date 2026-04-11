@@ -1,0 +1,65 @@
+{
+  "_comment": "Stores market rotation alert subscribers. For launch, groups are the main target. Players can be added later.",
+  "_notes": {
+    "groups": "Group JIDs subscribed to market rotation alerts.",
+    "users": "Private user JIDs subscribed to market rotation alerts.",
+    "notifyGroupsOnly": "If true, only groups receive alerts even if users are listed.",
+    "commands": "These are reminder notes for the bot commands you plan to implement."
+  },
+  "enabled": true,
+  "notifyGroupsOnly": true,
+  "commands": {
+    "subscribe": ".subscribe-market",
+    "unsubscribe": ".unsubscribe-market"
+  },
+  "groups": {
+    "120363424245590124@g.us": {
+      "name": "Group",
+      "subscribedAt": 1773517318707,
+      "type": "group",
+      "mode": "market"
+    },
+    "120363408860967993@g.us": {
+      "name": "Group",
+      "subscribedAt": 1773436315299,
+      "type": "group",
+      "mode": "market"
+    },
+    "120363408325172828@g.us": {
+      "name": "Group",
+      "subscribedAt": 1775256060131,
+      "type": "group",
+      "mode": "market"
+    }
+  },
+  "users": {},
+  "examples": {
+    "_comment": "Examples only. The bot should overwrite/add real JIDs here later.",
+    "groupExample": {
+      "120363000000000000@g.us": {
+        "name": "Lumora Official",
+        "subscribedAt": 0,
+        "type": "group",
+        "mode": "market"
+      }
+    },
+    "userExample": {
+      "263700000000@s.whatsapp.net": {
+        "name": "Example User",
+        "subscribedAt": 0,
+        "type": "user",
+        "mode": "market"
+      }
+    }
+  },
+  "futureIdeas": {
+    "_comment": "Memory anchors for later.",
+    "possibleLaterFeatures": [
+      "rare-item-only alerts",
+      "black-market-only alerts",
+      "faction-market alerts",
+      "per-group alert preferences",
+      "cooldown to avoid repeated spam in the same group"
+    ]
+  }
+}

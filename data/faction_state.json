@@ -1,0 +1,16 @@
+{
+  "season": 1,
+  "status": "active",
+  "startTime": 1711880000000,
+  "endTime": 1714472000000,
+  "style": "dark",
+  "rewards": {
+    "lucons": 1000,
+    "xpBuff": true
+  },
+  "points": {
+    "harmony": 0,
+    "purity": 0,
+    "rift": 0
+  }
+}

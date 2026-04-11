@@ -1,0 +1,222 @@
+{
+  "_comment": "Faction-only market. Mainly scrolls and faction identity items. This market is based on the player's faction.",
+  "_notes": {
+    "rotationEnabled": "If false, faction stock stays fixed for now.",
+    "allowedFactions": "Valid factions that can access this market.",
+    "stockPolicy": "Faction scrolls are meant to be reliably available so factions can trade their identity items.",
+    "buyRule": "Only players from the matching faction can buy directly from this market."
+  },
+
+  "enabled": true,
+  "rotationEnabled": false,
+  "rotationIntervalMinutes": 360,
+  "lastRotationAt": 0,
+  "nextRotationAt": 0,
+
+  "allowedFactions": [
+    "harmony",
+    "purity",
+    "rift"
+  ],
+
+  "marketUi": {
+    "header": "━━━━━━━━━━━━━━━━━━\n⚔ *FACTION MARKET*\n━━━━━━━━━━━━━━━━━━",
+    "footer": "━━━━━━━━━━━━━━━━━━\n🛒 Use: `.buy <item name or id>`\n📜 This market only shows items available to your faction.",
+    "rarityIcons": {
+      "Common": "⚪",
+      "Uncommon": "🟢",
+      "Rare": "🔵",
+      "Epic": "🟣",
+      "Legendary": "🟡"
+    },
+    "sectionLabels": {
+      "scrolls": "📜 Scrolls",
+      "gear": "🛡 Faction Gear",
+      "materials": "🧪 Faction Materials"
+    }
+  },
+
+  "factions": {
+    "harmony": {
+      "name": "Harmony Lumorians",
+      "speech": "🌿 The archives of Harmony open quietly. Sacred scripts, cleansing tools, and balanced relics are available to those who walk this path.",
+      "items": [
+        {
+          "itemId": "SCR_001",
+          "price": 180,
+          "stock": 5,
+          "limited": false
+        },
+        {
+          "itemId": "SCR_002",
+          "price": 140,
+          "stock": 5,
+          "limited": false
+        },
+        {
+          "itemId": "SCR_003",
+          "price": 170,
+          "stock": 5,
+          "limited": false
+        },
+        {
+          "itemId": "SCR_004",
+          "price": 130,
+          "stock": 5,
+          "limited": false
+        },
+        {
+          "itemId": "SCR_005",
+          "price": 190,
+          "stock": 5,
+          "limited": false
+        },
+        {
+          "itemId": "GER_050",
+          "price": 220,
+          "stock": 3,
+          "limited": true
+        },
+        {
+          "itemId": "GER_002",
+          "price": 170,
+          "stock": 2,
+          "limited": true
+        },
+        {
+          "itemId": "ITM_006",
+          "price": 260,
+          "stock": 3,
+          "limited": true
+        }
+      ]
+    },
+
+    "purity": {
+      "name": "The Purity Order",
+      "speech": "⚔ The halls of Purity permit only discipline. Tactical scrolls, command seals, and war-forged tools are now ready for those who uphold order.",
+      "items": [
+        {
+          "itemId": "SCR_006",
+          "price": 180,
+          "stock": 5,
+          "limited": false
+        },
+        {
+          "itemId": "SCR_007",
+          "price": 130,
+          "stock": 5,
+          "limited": false
+        },
+        {
+          "itemId": "SCR_008",
+          "price": 170,
+          "stock": 5,
+          "limited": false
+        },
+        {
+          "itemId": "SCR_009",
+          "price": 175,
+          "stock": 5,
+          "limited": false
+        },
+        {
+          "itemId": "SCR_010",
+          "price": 125,
+          "stock": 5,
+          "limited": false
+        },
+        {
+          "itemId": "GER_051",
+          "price": 220,
+          "stock": 3,
+          "limited": true
+        },
+        {
+          "itemId": "GER_003",
+          "price": 850,
+          "stock": 1,
+          "limited": true
+        },
+        {
+          "itemId": "MAT_004",
+          "price": 140,
+          "stock": 4,
+          "limited": true
+        }
+      ]
+    },
+
+    "rift": {
+      "name": "Rift Seekers",
+      "speech": "🕶 The Rift answers those bold enough to bargain with it. Forbidden scrolls, unstable marks, and dangerous advantages now circulate in the shadows.",
+      "items": [
+        {
+          "itemId": "SCR_011",
+          "price": 190,
+          "stock": 5,
+          "limited": false
+        },
+        {
+          "itemId": "SCR_012",
+          "price": 170,
+          "stock": 5,
+          "limited": false
+        },
+        {
+          "itemId": "SCR_013",
+          "price": 135,
+          "stock": 5,
+          "limited": false
+        },
+        {
+          "itemId": "SCR_014",
+          "price": 165,
+          "stock": 5,
+          "limited": false
+        },
+        {
+          "itemId": "SCR_015",
+          "price": 260,
+          "stock": 5,
+          "limited": false
+        },
+        {
+          "itemId": "GER_052",
+          "price": 220,
+          "stock": 3,
+          "limited": true
+        },
+        {
+          "itemId": "GER_013",
+          "price": 650,
+          "stock": 1,
+          "limited": true
+        },
+        {
+          "itemId": "MAT_005",
+          "price": 210,
+          "stock": 2,
+          "limited": true
+        }
+      ]
+    }
+  },
+
+  "rotationSpeeches": [
+    "⚔ FACTION MARKET SHIFT\n\nNew faction stock has been prepared for those who remain loyal to their path.\nUse `.faction market` to inspect what your side can obtain.",
+    "⚔ FACTION MARKET SHIFT\n\nFaction keepers have refreshed their reserved stock.\nScrolls and faction goods are ready for those who belong.\nUse `.faction market` to view your faction inventory.",
+    "⚔ FACTION MARKET SHIFT\n\nThe restricted stock of the factions has changed once more.\nOnly members of each path may claim what is offered.\nUse `.faction market` to check your faction wares."
+  ],
+
+  "futureIdeas": {
+    "_comment": "Memory anchors for future expansion.",
+    "possibleLaterAdditions": [
+      "faction discounts based on reputation",
+      "special faction-only relics",
+      "daily faction stock changes",
+      "faction market rank requirements",
+      "exclusive seasonal faction items"
+    ]
+  }
+}
