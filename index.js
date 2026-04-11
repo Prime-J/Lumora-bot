@@ -4,7 +4,17 @@
 // Prefix/Currency/Owner now stored in data/settings.json
 // ✅ FIXED: Baileys is ESM-only -> dynamic import()
 // ============================
+const express = require('express');
+const app = express();
+const port = process.env.PORT || 10000;
 
+app.get('/', (req, res) => {
+  res.send('Lumora Bot is Pulsing! ⚡');
+});
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
 const fs = require("fs");
 const path = require("path");
 
