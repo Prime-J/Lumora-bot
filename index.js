@@ -1276,7 +1276,7 @@ async function startBot() {
       keys: makeCacheableSignalKeyStore(state.keys, logger),
     },
     browser: ["Lumora", "Chrome", "1.0.0"],
-    printQRInTerminal: true,
+    printQRInTerminal: false,
     syncFullHistory: false,
     markOnlineOnConnect: false,
     emitOwnEvents: false,
