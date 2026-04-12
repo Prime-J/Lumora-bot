@@ -1285,13 +1285,19 @@ async function startBot() {
 
   sock.ev.on("creds.update", saveCreds);
 if (!sock.authState.creds.registered) {
-    const phoneNumber = "YOUR_NUMBER_WITH_COUNTRY_CODE"; // e.g., "234..."
-    setTimeout(async () => {
-        let code = await sock.requestPairingCode(phoneNumber);
-        code = code?.match(/.{1,4}/g)?.join("-") || code;
-        console.log(`\n\n=== YOUR PAIRING CODE IS: ${code} ===\n\n`);
-    }, 3000);
-}
+      // 👇 PUT YOUR ACTUAL BOT NUMBER HERE, NO '+' SIGN, NO SPACES
+      const phoneNumber = "263774481318"; 
+      
+      setTimeout(async () => {
+          try {
+              let code = await sock.requestPairingCode(phoneNumber);
+              code = code?.match(/.{1,4}/g)?.join("-") || code;
+              console.log(`\n\n=== YOUR PAIRING CODE IS: ${code} ===\n\n`);
+          } catch (err) {
+              console.log(`\n⚠️ Couldn't get pairing code: ${err.message}\n`);
+          }
+      }, 3000);
+  }
   let spawnStarted = false;
 
   sock.ev.on("connection.update", (update) => {
