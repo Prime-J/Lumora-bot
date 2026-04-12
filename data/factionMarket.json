@@ -6,19 +6,16 @@
     "stockPolicy": "Faction scrolls are meant to be reliably available so factions can trade their identity items.",
     "buyRule": "Only players from the matching faction can buy directly from this market."
   },
-
   "enabled": true,
   "rotationEnabled": false,
   "rotationIntervalMinutes": 360,
   "lastRotationAt": 0,
   "nextRotationAt": 0,
-
   "allowedFactions": [
     "harmony",
     "purity",
     "rift"
   ],
-
   "marketUi": {
     "header": "━━━━━━━━━━━━━━━━━━\n⚔ *FACTION MARKET*\n━━━━━━━━━━━━━━━━━━",
     "footer": "━━━━━━━━━━━━━━━━━━\n🛒 Use: `.buy <item name or id>`\n📜 This market only shows items available to your faction.",
@@ -35,7 +32,6 @@
       "materials": "🧪 Faction Materials"
     }
   },
-
   "factions": {
     "harmony": {
       "name": "Harmony Lumorians",
@@ -44,7 +40,7 @@
         {
           "itemId": "SCR_001",
           "price": 180,
-          "stock": 5,
+          "stock": 0,
           "limited": false
         },
         {
@@ -86,12 +82,11 @@
         {
           "itemId": "ITM_006",
           "price": 260,
-          "stock": 3,
+          "stock": 0,
           "limited": true
         }
       ]
     },
-
     "purity": {
       "name": "The Purity Order",
       "speech": "⚔ The halls of Purity permit only discipline. Tactical scrolls, command seals, and war-forged tools are now ready for those who uphold order.",
@@ -146,7 +141,6 @@
         }
       ]
     },
-
     "rift": {
       "name": "Rift Seekers",
       "speech": "🕶 The Rift answers those bold enough to bargain with it. Forbidden scrolls, unstable marks, and dangerous advantages now circulate in the shadows.",
@@ -154,7 +148,7 @@
         {
           "itemId": "SCR_011",
           "price": 190,
-          "stock": 5,
+          "stock": 0,
           "limited": false
         },
         {
@@ -172,7 +166,7 @@
         {
           "itemId": "SCR_014",
           "price": 165,
-          "stock": 5,
+          "stock": 4,
           "limited": false
         },
         {
@@ -196,19 +190,17 @@
         {
           "itemId": "MAT_005",
           "price": 210,
-          "stock": 2,
+          "stock": 0,
           "limited": true
         }
       ]
     }
   },
-
   "rotationSpeeches": [
     "⚔ FACTION MARKET SHIFT\n\nNew faction stock has been prepared for those who remain loyal to their path.\nUse `.faction market` to inspect what your side can obtain.",
     "⚔ FACTION MARKET SHIFT\n\nFaction keepers have refreshed their reserved stock.\nScrolls and faction goods are ready for those who belong.\nUse `.faction market` to view your faction inventory.",
     "⚔ FACTION MARKET SHIFT\n\nThe restricted stock of the factions has changed once more.\nOnly members of each path may claim what is offered.\nUse `.faction market` to check your faction wares."
   ],
-
   "futureIdeas": {
     "_comment": "Memory anchors for future expansion.",
     "possibleLaterAdditions": [

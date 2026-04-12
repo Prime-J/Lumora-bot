@@ -4,13 +4,13 @@
   "rift": [],
   "243443360096505@lid": {
     "HM_03": {
-      "progress": 3,
-      "completed": true,
+      "progress": 1,
+      "completed": false,
       "completedWeek": "2026-W15"
     },
     "HM_04": {
-      "progress": 5,
-      "completed": true,
+      "progress": 1,
+      "completed": false,
       "completedWeek": "2026-W15"
     },
     "HM_02": {
@@ -21,13 +21,13 @@
   },
   "85376064581854@lid": {
     "HM_03": {
-      "progress": 3,
-      "completed": true,
+      "progress": 1,
+      "completed": false,
       "completedWeek": "2026-W15"
     },
     "HM_04": {
-      "progress": 5,
-      "completed": true,
+      "progress": 1,
+      "completed": false,
       "completedWeek": "2026-W15"
     },
     "HM_05": {
@@ -36,8 +36,8 @@
       "completedWeek": "2026-W15"
     },
     "HM_02": {
-      "progress": 2,
-      "completed": true,
+      "progress": 1,
+      "completed": false,
       "completedWeek": "2026-W15"
     }
   },
@@ -55,8 +55,8 @@
   },
   "61495627001872@lid": {
     "HM_03": {
-      "progress": 3,
-      "completed": true,
+      "progress": 1,
+      "completed": false,
       "completedWeek": "2026-W15"
     },
     "HM_04": {
@@ -73,7 +73,7 @@
   "259983665004558@lid": {
     "RF_03": {
       "progress": 1,
-      "completed": true,
+      "completed": false,
       "completedWeek": "2026-W15"
     },
     "RF_04": {
@@ -95,17 +95,17 @@
     "RF_04": {
       "progress": 5,
       "completed": true,
-      "completedWeek": "2026-W15"
+      "completedWeek": "2026-W16"
     },
     "RF_03": {
       "progress": 1,
       "completed": true,
-      "completedWeek": "2026-W15"
+      "completedWeek": "2026-W16"
     },
     "RF_01": {
       "progress": 3,
-      "completed": false,
-      "completedWeek": null
+      "completed": true,
+      "completedWeek": "2026-W16"
     }
   },
   "231009564000341@lid": {
@@ -186,7 +186,34 @@
   "108951072948295@lid": {},
   "194592469209292@lid": {},
   "172542392303736@lid": {},
-  "239926134194301@lid": {},
+  "239926134194301@lid": {
+    "RF_03": {
+      "progress": 1,
+      "completed": false,
+      "completedWeek": null
+    }
+  },
   "30142751609030@lid": {},
-  "9680940191824@lid": {}
+  "9680940191824@lid": {},
+  "65383008604360@lid": {
+    "HM_03": {
+      "progress": 3,
+      "completed": false,
+      "completedWeek": null
+    }
+  },
+  "65923771805758@lid": {
+    "HM_03": {
+      "progress": 1,
+      "completed": false,
+      "completedWeek": null
+    }
+  },
+  "241601154650114@lid": {
+    "HM_03": {
+      "progress": 3,
+      "completed": false,
+      "completedWeek": null
+    }
+  }
 }

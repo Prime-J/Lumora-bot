@@ -14,8 +14,8 @@
   "announceOnRotate": true,
   "showRareBanner": true,
   "marketSpeechMode": "random",
-  "lastRotationAt": 1775842800081,
-  "nextRotationAt": 1775846400081,
+  "lastRotationAt": 1776015191237,
+  "nextRotationAt": 1776018791237,
   "rotationPoolSizes": {
     "_comment": "Semi-random market size. Total visible items should feel lively but not crowded.",
     "minVisibleItems": 5,
@@ -82,63 +82,63 @@
     "notifyGroupsOnly": true
   },
   "currentRotation": {
-    "rotationId": 128,
-    "speechUsed": "🏪 MARKET ROTATION\n\nCanvas tents rise, crates unlock, and the traders of Lumora begin again.\nNew goods are now circulating through the market.\nLimited stock items may vanish quickly.\n\nUse .market to browse the stalls.",
+    "rotationId": 130,
+    "speechUsed": "⚫ BLACK MARKET WHISPERS\n\nShadows move through the alleys of Lumora tonight.\nForbidden traders have changed their stock again.\nSome rare goods exist in very small numbers.\n\nUse .market to investigate.",
     "hasRareHighlight": true,
     "items": [
       {
         "itemId": "GER_001",
         "price": 323,
-        "stock": 1,
+        "stock": 2,
+        "limited": true,
+        "sold": 1
+      },
+      {
+        "itemId": "GER_012",
+        "price": 300,
+        "stock": 3,
         "limited": true,
         "sold": 0
       },
       {
-        "itemId": "GER_030",
-        "price": 190,
-        "stock": 5,
-        "limited": false,
-        "sold": 0
-      },
-      {
-        "itemId": "GER_002",
-        "price": 170,
-        "stock": 4,
-        "limited": false,
-        "sold": 0
-      },
-      {
-        "itemId": "ITM_014",
-        "price": 60,
-        "stock": 7,
-        "limited": false,
-        "sold": 0
-      },
-      {
-        "itemId": "ITM_002",
-        "price": 90,
-        "stock": 4,
-        "limited": false,
+        "itemId": "ITM_007",
+        "price": 143,
+        "stock": 3,
+        "limited": true,
         "sold": 0
       },
       {
         "itemId": "ITM_005",
         "price": 120,
-        "stock": 6,
+        "stock": 4,
         "limited": false,
-        "sold": 6
+        "sold": 4
       },
       {
-        "itemId": "ITM_009",
-        "price": 485,
+        "itemId": "ITM_015",
+        "price": 95,
+        "stock": 5,
+        "limited": false,
+        "sold": 0
+      },
+      {
+        "itemId": "ITM_010",
+        "price": 264,
         "stock": 2,
         "limited": true,
         "sold": 0
       },
       {
-        "itemId": "REL_002",
-        "price": 2258,
+        "itemId": "GER_040",
+        "price": 1116,
         "stock": 1,
+        "limited": true,
+        "sold": 0
+      },
+      {
+        "itemId": "GER_031",
+        "price": 1089,
+        "stock": 3,
         "limited": true,
         "sold": 0
       }

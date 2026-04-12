@@ -1,30 +1,22 @@
 {
   "players": {
     "132951115317490@lid": {
-      "location": "capital",
-      "huntEnergy": 300,
+      "location": "wilderness",
+      "huntEnergy": 197,
       "huntEnergyMax": 300,
       "huntStreak": 0,
       "pendingTravel": null,
-      "activeEncounter": null,
+      "activeEncounter": {
+        "type": "wild",
+        "at": 1776020290755,
+        "terrainId": "wilderness"
+      },
       "activeTracks": null,
       "pendingItem": null,
-      "returnCooldownUntil": 1775820840434,
-      "lastHuntAt": 1775820522860,
-      "currentDifficulty": null,
+      "returnCooldownUntil": 1776016784220,
+      "lastHuntAt": 1776020290742,
+      "currentDifficulty": "nightmare",
       "terrainHistory": [
-        {
-          "terrainId": "wilderness",
-          "at": 1775683400598
-        },
-        {
-          "terrainId": "wilderness",
-          "at": 1775686096049
-        },
-        {
-          "terrainId": "wilderness",
-          "at": 1775687119354
-        },
         {
           "terrainId": "wilderness",
           "at": 1775689988182
@@ -52,41 +44,45 @@
         {
           "terrainId": "ashfall_basin",
           "at": 1775819836732
+        },
+        {
+          "terrainId": "ashfall_basin",
+          "at": 1776012906870
+        },
+        {
+          "terrainId": "shadow_hollow",
+          "at": 1776016098259
+        },
+        {
+          "terrainId": "wilderness",
+          "at": 1776020270458
         }
       ],
-      "totalHunts": 92,
+      "totalHunts": 98,
       "totalMoraCaught": 0,
       "relicFragments": 3,
-      "lastTerrainDamageAt": 1775820415868,
+      "lastTerrainDamageAt": 1776020290747,
       "bountyProgress": {},
-      "weatherExpiry": 1775825233169,
-      "currentWeather": "rift_surge"
+      "weatherExpiry": 1776027464412,
+      "currentWeather": "rain"
     },
     "243443360096505@lid": {
-      "location": "capital",
-      "huntEnergy": 109,
+      "location": "ashfall_basin",
+      "huntEnergy": 118,
       "huntEnergyMax": 200,
       "huntStreak": 0,
       "pendingTravel": null,
-      "activeEncounter": null,
+      "activeEncounter": {
+        "type": "corrupted",
+        "at": 1776018009009,
+        "terrainId": "ashfall_basin"
+      },
       "activeTracks": null,
       "pendingItem": null,
-      "returnCooldownUntil": 1775842923592,
-      "lastHuntAt": 1775842212997,
-      "currentDifficulty": null,
+      "returnCooldownUntil": 1776017246470,
+      "lastHuntAt": 1776018008997,
+      "currentDifficulty": "easy",
       "terrainHistory": [
-        {
-          "terrainId": "wilderness",
-          "at": 1775481465405
-        },
-        {
-          "terrainId": "frostreach",
-          "at": 1775498321740
-        },
-        {
-          "terrainId": "frostreach",
-          "at": 1775504256877
-        },
         {
           "terrainId": "frostreach",
           "at": 1775505970927
@@ -114,45 +110,41 @@
         {
           "terrainId": "verdant_wilds",
           "at": 1775839503826
+        },
+        {
+          "terrainId": "ashfall_basin",
+          "at": 1776012096585
+        },
+        {
+          "terrainId": "ashfall_basin",
+          "at": 1776014539492
+        },
+        {
+          "terrainId": "ashfall_basin",
+          "at": 1776017674930
         }
       ],
-      "totalHunts": 65,
+      "totalHunts": 74,
       "totalMoraCaught": 0,
-      "relicFragments": 2,
-      "lastTerrainDamageAt": 1775842212999,
+      "relicFragments": 3,
+      "lastTerrainDamageAt": 1776018009001,
       "bountyProgress": {},
-      "weatherExpiry": 1775846696046,
-      "currentWeather": "mist"
+      "weatherExpiry": 1776019288070,
+      "currentWeather": "storm"
     },
     "85376064581854@lid": {
       "location": "capital",
-      "huntEnergy": 0,
+      "huntEnergy": 36,
       "huntEnergyMax": 300,
       "huntStreak": 0,
       "pendingTravel": null,
       "activeEncounter": null,
       "activeTracks": null,
       "pendingItem": null,
-      "returnCooldownUntil": 1775842821400,
-      "lastHuntAt": 1775842395151,
+      "returnCooldownUntil": 1776016629391,
+      "lastHuntAt": 1776016246183,
       "currentDifficulty": null,
       "terrainHistory": [
-        {
-          "terrainId": "wilderness",
-          "at": 1775561819929
-        },
-        {
-          "terrainId": "wilderness",
-          "at": 1775565996033
-        },
-        {
-          "terrainId": "frostreach",
-          "at": 1775685890559
-        },
-        {
-          "terrainId": "wilderness",
-          "at": 1775686623643
-        },
         {
           "terrainId": "wilderness",
           "at": 1775686714985
@@ -176,15 +168,31 @@
         {
           "terrainId": "wilderness",
           "at": 1775840830508
+        },
+        {
+          "terrainId": "wilderness",
+          "at": 1776011783214
+        },
+        {
+          "terrainId": "ashfall_basin",
+          "at": 1776012346115
+        },
+        {
+          "terrainId": "verdant_wilds",
+          "at": 1776015260705
+        },
+        {
+          "terrainId": "wilderness",
+          "at": 1776015966164
         }
       ],
-      "totalHunts": 129,
+      "totalHunts": 155,
       "totalMoraCaught": 0,
       "relicFragments": 1,
-      "lastTerrainDamageAt": 1775842266806,
+      "lastTerrainDamageAt": 1776016199660,
       "bountyProgress": {},
-      "weatherExpiry": 1775844058149,
-      "currentWeather": "storm"
+      "weatherExpiry": 1776018949192,
+      "currentWeather": "rain"
     },
     "61495627001872@lid": {
       "location": "capital",
@@ -275,38 +283,22 @@
       "currentWeather": "rain"
     },
     "259983665004558@lid": {
-      "location": "volt_expanse",
-      "huntEnergy": 80,
+      "location": "wilderness",
+      "huntEnergy": 72,
       "huntEnergyMax": 200,
-      "huntStreak": 1,
+      "huntStreak": 0,
       "pendingTravel": null,
       "activeEncounter": {
-        "type": "corrupted",
-        "at": 1775843602231,
-        "terrainId": "volt_expanse"
+        "type": "wild",
+        "at": 1776020234219,
+        "terrainId": "wilderness"
       },
       "activeTracks": null,
       "pendingItem": null,
-      "returnCooldownUntil": 1775838292834,
-      "lastHuntAt": 1775843602217,
-      "currentDifficulty": "standard",
+      "returnCooldownUntil": 1776020489589,
+      "lastHuntAt": 1776020234210,
+      "currentDifficulty": "dangerous",
       "terrainHistory": [
-        {
-          "terrainId": "rift_scar",
-          "at": 1775542681756
-        },
-        {
-          "terrainId": "rift_scar",
-          "at": 1775542854267
-        },
-        {
-          "terrainId": "wilderness",
-          "at": 1775544170634
-        },
-        {
-          "terrainId": "wilderness",
-          "at": 1775545740443
-        },
         {
           "terrainId": "terra_shatterfields",
           "at": 1775552628380
@@ -330,15 +322,31 @@
         {
           "terrainId": "volt_expanse",
           "at": 1775843401321
+        },
+        {
+          "terrainId": "wilderness",
+          "at": 1776010899003
+        },
+        {
+          "terrainId": "wilderness",
+          "at": 1776017860774
+        },
+        {
+          "terrainId": "wilderness",
+          "at": 1776018013195
+        },
+        {
+          "terrainId": "wilderness",
+          "at": 1776020217250
         }
       ],
-      "totalHunts": 35,
+      "totalHunts": 46,
       "totalMoraCaught": 0,
       "relicFragments": 1,
-      "lastTerrainDamageAt": 1775843602220,
+      "lastTerrainDamageAt": 1776020223789,
       "bountyProgress": {},
-      "weatherExpiry": 1775844744699,
-      "currentWeather": "frost_snap"
+      "weatherExpiry": 1776025278395,
+      "currentWeather": "mist"
     },
     "54018575458536@lid": {
       "location": "ashfall_basin",

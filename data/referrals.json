@@ -351,12 +351,13 @@
   "243443360096505@lid": {
     "ownerJid": "243443360096505@lid",
     "code": "5059622",
-    "totalUses": 4,
+    "totalUses": 5,
     "usedBy": [
       "142060959076603@lid",
       "14483200184549@lid",
       "100695709581380@lid",
-      "126065896869969@lid"
+      "126065896869969@lid",
+      "241601154650114@lid"
     ],
     "pendingRewards": [
       {
@@ -405,6 +406,18 @@
           "Rare"
         ],
         "uses": 4,
+        "claimed": true
+      },
+      {
+        "triggeredAt": 1776011392784,
+        "newPlayer": "241601154650114@lid",
+        "lucons": 2000,
+        "moraRarities": [
+          "Rare",
+          "Rare",
+          "Epic"
+        ],
+        "uses": 5,
         "claimed": true
       }
     ],

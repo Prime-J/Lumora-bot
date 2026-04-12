@@ -77,7 +77,7 @@
     "reporterName": "Marshmello",
     "description": "uptime command ain't working",
     "date": "2026-04-09",
-    "status": "open"
+    "status": "fixed"
   },
   {
     "id": 11,
@@ -109,7 +109,7 @@
     "reporterName": "Marshmello",
     "description": "Don't forget the sticker command",
     "date": "2026-04-09",
-    "status": "open"
+    "status": "fixed"
   },
   {
     "id": 15,
@@ -117,7 +117,7 @@
     "reporterName": "Marshmello",
     "description": "and the q command too",
     "date": "2026-04-09",
-    "status": "open"
+    "status": "fixed"
   },
   {
     "id": 16,
@@ -125,7 +125,7 @@
     "reporterName": "KING",
     "description": "We can't capture shit",
     "date": "2026-04-09",
-    "status": "open"
+    "status": "fixed"
   },
   {
     "id": 17,
@@ -133,7 +133,7 @@
     "reporterName": "Marshmello",
     "description": "Add kick command",
     "date": "2026-04-09",
-    "status": "open"
+    "status": "fixed"
   },
   {
     "id": 18,
@@ -157,7 +157,7 @@
     "reporterName": "JJ Thompson",
     "description": "boring",
     "date": "2026-04-10",
-    "status": "open"
+    "status": "fixed"
   },
   {
     "id": 21,
@@ -165,7 +165,7 @@
     "reporterName": "KING",
     "description": "We can't capture",
     "date": "2026-04-10",
-    "status": "open"
+    "status": "fixed"
   },
   {
     "id": 22,
