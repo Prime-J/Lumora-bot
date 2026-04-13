@@ -1392,7 +1392,13 @@ async function startBot() {
       console.log("Connection closed. Reconnecting:", shouldReconnect, "code:", code, "reason:", reason);
 
       isStarting = false;
-      if (shouldReconnect) startBot();
+      if (shouldReconnect) {
+        // Code 440 = conflict (two instances running during redeploy). Wait before retrying
+        // so the old instance has time to die and release the session.
+        const delay = code === 440 ? 5000 : 0;
+        if (delay) setTimeout(() => startBot(), delay);
+        else startBot();
+      }
     }
   });
 // ── GROUP WELCOME / LEAVE (registered ONCE, outside messages.upsert) ──
