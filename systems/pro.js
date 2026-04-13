@@ -216,8 +216,8 @@ async function cmdProInfo(ctx, chatId, senderId, msg) {
     lines.push(`${t.label}  —  *$${t.priceUsd} USD*`);
     lines.push(SDIV);
     lines.push(`⏳ Duration: ${fmtMs(t.durationMs)}`);
-    lines.push(`💎 Welcome grant: *${t.crystalGrant} LCR*`);
-    lines.push(`☀️ .pro-daily: +${t.dailyLucons} Lucons + ${t.dailyLcrRange[0]}–${t.dailyLcrRange[1]} LCR`);
+    lines.push(`💎 Welcome grant: *${t.crystalGrant} LCR* _(one-time on activation)_`);
+    lines.push(`☀️ .pro-daily: +${t.dailyLucons} Lucons`);
     lines.push(`🪫 Hunt refill / 24h: ${Math.round(t.refillPercent * 100)}% of max`);
     lines.push(`🎯 Auto-catches: ${t.autocatchBudget}`);
     lines.push(`✨ Perks:`);

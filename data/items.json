@@ -1136,5 +1136,18 @@
     "storageCost": 0,
     "effect": "+50 companion bond points instantly.",
     "desc": "A resonance crystal that amplifies the bond between a Lumorian and their companion Mora."
+  },
+  "CREATION_POWDER": {
+    "id": "CREATION_POWDER",
+    "name": "Creation Powder",
+    "category": "consumable",
+    "rarity": "Mythic",
+    "marketType": "pro",
+    "rotates": false,
+    "price": 0,
+    "stock": 0,
+    "storageCost": 0,
+    "effect": "Required to submit a new Mora design at Lumora Labs (.create-mora). Requires 15+ Intelligence to use.",
+    "desc": "Glittering primordial dust — the raw material of creation itself. One pinch is enough to give form to a new Mora in the labs."
   }
 }

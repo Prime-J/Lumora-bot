@@ -89,6 +89,8 @@ const { generateVsCanvas, generateBracketCanvas, generateWarResultCanvas } = req
 const miscSystem = require('./systems/misc');
 const arenaSystem = require('./systems/npcArena');
 const proSystem = require('./systems/pro');
+const moraCreationSystem = require('./systems/moraCreation');
+const mongoDb = require('./db/mongo');
 
 // ============================
 // NEW COMMANDS — shown in .help for 12 hours after addedAt
@@ -106,6 +108,10 @@ const NEW_COMMANDS = [
   { name: ".autocatch",    section: "pro",  blurb: "Arm the Eidolon Catcher in this group",            addedAt: 1776067200000 },
   { name: ".autocatch-log",section: "pro",  blurb: "See mora caught while you were away",              addedAt: 1776067200000 },
   { name: ".crystals",     section: "pro",  blurb: "Owner: top up a player's Lucrystals",              addedAt: 1776067200000 },
+  { name: ".create-mora",  section: "companion", blurb: "Forge a new Mora at Lumora Labs (Int 15+)",    addedAt: 1776067200000 },
+  { name: ".creations",    section: "admin", blurb: "Owner: list pending Mora submissions",             addedAt: 1776067200000 },
+  { name: ".approve-mora", section: "admin", blurb: "Owner: approve a creation + pay creator",          addedAt: 1776067200000 },
+  { name: ".reject-mora",  section: "admin", blurb: "Owner: reject a pending creation",                 addedAt: 1776067200000 },
 ];
 function getActiveNewCommands() {
   const now = Date.now();
@@ -230,11 +236,45 @@ function saveJSON(filePath, data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
-function loadPlayers() {
-  return loadJSON(PLAYERS_FILE, {});
+// Track which JIDs were modified in this message cycle
+let dirtyJidsThisCycle = new Set();
+
+// Async boot: initialize MongoDB and load all players
+async function bootPlayers() {
+  // Try to connect to MongoDB
+  await mongoDb.initMongo();
+
+  // Load from MongoDB (or empty if not connected)
+  let players = await mongoDb.loadAllPlayers();
+
+  // Fall back to JSON file if MongoDB gave us nothing
+  if (Object.keys(players).length === 0) {
+    players = loadJSON(PLAYERS_FILE, {});
+    if (Object.keys(players).length > 0) {
+      console.log("[boot] Loaded players from JSON fallback");
+    }
+  }
+
+  return players;
 }
+
+// Mark a specific JID as needing MongoDB flush
+function markPlayerDirty(jid, players) {
+  dirtyJidsThisCycle.add(jid);
+  if (players) {
+    mongoDb.markDirty(players, jid);
+  }
+}
+
 function savePlayers(players) {
-  return saveJSON(PLAYERS_FILE, players);
+  // Always save to JSON (warm cache for quick loads)
+  saveJSON(PLAYERS_FILE, players);
+
+  // Mark all dirty JIDs from this cycle for async MongoDB flush
+  for (const jid of dirtyJidsThisCycle) {
+    mongoDb.markDirty(players, jid);
+  }
+  dirtyJidsThisCycle.clear();
 }
 function parseMinutes(str) {
   const n = Number(str);
@@ -1122,6 +1162,15 @@ function migratePlayers(players, moraList) {
       changed = true;
     }
 
+    // One-time Creation Powder grant — every Lumorian starts with 1 in
+    // their pouch (usable once they reach 15 intelligence). Tracked via a
+    // per-player flag so we never double-grant on later restarts.
+    if (!p.creationPowderGranted) {
+      p.inventory.CREATION_POWDER = Number(p.inventory.CREATION_POWDER || 0) + 1;
+      p.creationPowderGranted = true;
+      changed = true;
+    }
+
     p.intelligence = clamp(p.intelligence, 0, 999);
     p.aura = clamp(p.aura, 0, 9999);
     p.tameSkill = clamp(p.tameSkill, 0, 999);
@@ -1290,6 +1339,11 @@ async function startBot() {
     emitOwnEvents: false,
     ...(waVersion ? { version: waVersion } : {}),
   });
+
+  // Initialize MongoDB and load players once at bot startup
+  console.log("[bot] Initializing player storage...");
+  const initialPlayers = await bootPlayers();
+  console.log(`[bot] Loaded ${Object.keys(initialPlayers).length} players`);
 
   sock.ev.on("creds.update", saveCreds);
 
@@ -2684,7 +2738,8 @@ if (command === "endseason") {
           huntEnergy: 200,
           maxHuntEnergy: 200,
           lastHuntRefill: Date.now(),
-          inventory: {},
+          inventory: { CREATION_POWDER: 1 },
+          creationPowderGranted: true,
           equipment: {
             core: null,
             charm: null,
@@ -3189,6 +3244,22 @@ if (command === "autocatch-log") {
     return proSystem.cmdAutocatchLog(ctx, chatId, senderId, msg);
 }
 
+// ─────────────────────────────────────────────
+// LUMORA LABS — Mora Creation (systems/moraCreation.js)
+// ─────────────────────────────────────────────
+if (command === "create-mora" || command === "createmora" || command === "cmora") {
+    return moraCreationSystem.cmdCreateMora(ctx, chatId, senderId, msg, args);
+}
+if (command === "creations") {
+    return moraCreationSystem.cmdCreationsList(ctx, chatId, senderId, msg);
+}
+if (command === "approve-mora" || command === "approvemora") {
+    return moraCreationSystem.cmdApproveMora(ctx, chatId, senderId, msg, args);
+}
+if (command === "reject-mora" || command === "rejectmora") {
+    return moraCreationSystem.cmdRejectMora(ctx, chatId, senderId, msg, args);
+}
+
 // 🕶️ SUMMON MERCHANT — now a perk of any active pro subscription
 if (command === "summon-merchant") {
     const p = players[senderId];
@@ -3612,7 +3683,8 @@ const profileCaption =
     `└ 🏷 Faction Points: *${factionLine !== "None" ? "check .facpoints" : "—"}*\n\n` +
 
     `💰 *W E A L T H*\n` +
-    `└ 💰 Lucons: *${p.lucons ?? 0}*\n\n` +
+    `├ 💰 Lucons: *${p.lucons ?? 0}*\n` +
+    `└ 💠 Lucrystals: *${Number(p.pro?.crystals || 0)} LCR*\n\n` +
 
     `📍 *L O C A T I O N*\n` +
     `└ 📍 Current: *${locationLine}*\n\n` +
@@ -4871,7 +4943,11 @@ if (command === "help") {
         `┃ ${PREFIX}companion <mora> ─ set companion\n` +
         `┃ ${PREFIX}companion ─ view companion & bond\n` +
         `┃ ${PREFIX}mutate <mora> ─ trigger mutation\n` +
-        `┃ ${PREFIX}achievements ─ view titles & achievements\n`,
+        `┃ ${PREFIX}achievements ─ view titles & achievements\n\n` +
+        `${divider}\n  🧪  *LUMORA LABS (Int 15+)*\n${divider}\n` +
+        `┃ ${PREFIX}create-mora ─ forge a new Mora (costs 1 Creation Powder)\n` +
+        `┃ _Submit a name, type, 4 starter moves + 1 special._\n` +
+        `┃ _Architect must approve before it enters the registry._\n`,
 
       gear:
         `${divider}\n  🎒  *INVENTORY & GEAR*\n${divider}\n` +
@@ -5000,7 +5076,7 @@ if (command === "help") {
         `${divider}\n  💎  *PRO / SUBSCRIPTIONS*\n${divider}\n` +
         `┃ ${PREFIX}pro-info ─ tier plans & USD pricing\n` +
         `┃ ${PREFIX}pro ─ your subscription status\n` +
-        `┃ ${PREFIX}pro-daily ─ daily Lucons + Lucrystals\n` +
+        `┃ ${PREFIX}pro-daily ─ daily Lucons bonus\n` +
         `┃ ${PREFIX}pro --hunt-energy ─ refill hunt gauge\n` +
         `┃ ${PREFIX}pro-market ─ browse Lucrystal shop\n` +
         `┃ ${PREFIX}pbuy <item> ─ buy with Lucrystals\n` +
@@ -5029,6 +5105,9 @@ if (command === "help") {
         `┃ ${PREFIX}throne / ${PREFIX}unthrone ─ set Right-Hand\n` +
         `┃ ${PREFIX}pro-grant @user <tier> ─ subscribe a player\n` +
         `┃ ${PREFIX}crystals @user <amt> ─ top up Lucrystals\n` +
+        `┃ ${PREFIX}creations ─ list pending Mora submissions\n` +
+        `┃ ${PREFIX}approve-mora <id> <amt> <lucons|lcr> ─ approve + pay creator\n` +
+        `┃ ${PREFIX}reject-mora <id> ─ reject a submission\n` +
         `┃ ${PREFIX}set-gauge / ${PREFIX}reduce-gauge\n` +
         `┃ ${PREFIX}war init / ${PREFIX}war-start\n` +
         `┃ ${PREFIX}war winner @user ─ report match result\n` +
@@ -5183,5 +5262,30 @@ if (command === "help") {
     }
   });
 }
+
+// ============================
+// GRACEFUL SHUTDOWN: Flush MongoDB writes on exit
+// ============================
+let players = {}; // Global reference for shutdown handlers
+
+// Store players reference after bootPlayers
+const originalStartBot = startBot;
+startBot = async function() {
+  const result = await originalStartBot.call(this);
+  // Note: players will be loaded in bootPlayers inside startBot
+  return result;
+};
+
+process.on("SIGTERM", async () => {
+  console.log("[shutdown] SIGTERM received, flushing data...");
+  await mongoDb.gracefulShutdown(loadPlayers());
+  process.exit(0);
+});
+
+process.on("SIGINT", async () => {
+  console.log("[shutdown] SIGINT received, flushing data...");
+  await mongoDb.gracefulShutdown(loadPlayers());
+  process.exit(0);
+});
 
 startBot();

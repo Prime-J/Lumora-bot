@@ -100,68 +100,7 @@ the command surface without skimming a wall of text.
 
 ---
 
-## 3. Mora Creation System (Lumora Labs)
-
-**Status:** Pending — deferred until Pro system settles
-**Related files:** [systems/pro.js](systems/pro.js), [data/premium_mora.json](data/premium_mora.json), [data/items.json](data/items.json)
-
-Pro subscribers (and the owner) can forge entirely new Mora species through a
-multi-stage creation ritual at **Lumora Labs**. Regular players cannot create
-Mora — they can only tame what already exists.
-
-### Goal
-Let monetized players leave a real mark on the bot's living dex by designing
-custom Mora — name, type, lore, moves, stats — with sensible guardrails so the
-system doesn't turn into a "type your own god-mode pet" cheat.
-
-### Inputs / Resources
-- **Creation Powder** — a new rare consumable:
-  - Drops very rarely from hunts (≤1% on high-rarity catches).
-  - 1 free token awarded when a player first crosses **15 intelligence**.
-  - Pro subscribers are granted **3 Creation Powders** on first activation
-    of their tier.
-- **Lucrystals (LCR)** — each creation also costs LCR (scaled by rarity).
-- **Tame skill / Intelligence** — gates stat rolls (higher stats = tighter
-  ceiling for low-intel creators).
-
-### Creation Flow
-1. Player runs `.create-mora` inside a dedicated **Lumora Labs** group.
-2. Bot walks them through stages:
-   - **Name** (uniqueness check vs. `mora.json` + `premium_mora.json`)
-   - **Type** (must match their faction's affinity — see below)
-   - **Description / lore** (short)
-   - **Base stats** — rolled from a pool weighted by intelligence + tame
-     skill + LCR spent.
-   - **5 moves** — 3 of the chosen type, 2 free. Power/accuracy rolled.
-3. Owner receives a DM with the full submission.
-4. Owner replies `.approve <id>` or `.reject <id>`.
-5. On approval: Mora is appended to the main registry and becomes
-   tameable by everyone.
-
-### Faction Type Rules
-- **Harmony** → Nature-type only.
-- **Rift** → Shadow-type primarily (plus Void/Chaos variants).
-- **Purity** → Light, Psychic, Ice (disciplined types).
-- **Neutral** → any single type.
-
-### Bonus Mechanic — Corrupted Creation
-If a player burns an `Energy Burst` during the creation ritual, the result
-is a **Corrupted Mora** — higher stats but unstable moves (one is randomly
-disabled per battle).
-
-### Creator Rewards
-When any player tames a Mora created by someone, the creator earns a small
-Lucon kickback. This gives Pro players an ongoing passive income tied to
-their creative work.
-
-### Why this matters
-This converts Pro subscription from "consume perks" to "participate in the
-world," which is far stickier than pure content unlocks. It's also the
-single biggest monetization hook: creation powder in the Pro market.
-
----
-
-## 4. Item Codex / Database
+## 3. Item Codex / Database
 
 **Status:** Pending
 **Related file:** new — `systems/codex.js` (proposed)

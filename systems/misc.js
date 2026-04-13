@@ -6,9 +6,29 @@
 // - 8ball, coinflip, roll, ship, rate, roast
 // ============================
 
-const { createCanvas } = require("@napi-rs/canvas");
+const path = require("path");
+const fs = require("fs");
+const { createCanvas, GlobalFonts } = require("@napi-rs/canvas");
 let sharp = null;
 try { sharp = require("sharp"); } catch { sharp = null; }
+
+// Railway's Linux container doesn't ship with Segoe UI / Arial, so canvas
+// renders blank text unless we register a bundled TTF first. Drop
+// DejaVuSans.ttf + DejaVuSans-Bold.ttf into assets/fonts/ and this picks them
+// up automatically. Falls back silently if the files aren't present.
+try {
+  const fontDir = path.join(__dirname, "..", "assets", "fonts");
+  const candidates = [
+    ["DejaVuSans.ttf",      "LumoraSans"],
+    ["DejaVuSans-Bold.ttf", "LumoraSans"],
+  ];
+  for (const [file, family] of candidates) {
+    const p = path.join(fontDir, file);
+    if (fs.existsSync(p)) GlobalFonts.registerFromPath(p, family);
+  }
+} catch (e) {
+  console.log("Font registration failed:", e?.message || e);
+}
 
 // Convert any image buffer → 512x512 webp buffer (required by Baileys for stickers)
 async function toWebpSticker(inputBuffer) {
@@ -53,7 +73,20 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
+// Strip glyphs that the server-side canvas font can't render (emoji, astral
+// symbols, etc.) so they don't show up as tofu boxes in the quote image.
+function sanitizeForCanvas(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/[\uD800-\uDFFF]./g, "")
+    .replace(/[\u2600-\u27BF\u2B00-\u2BFF\u2300-\u23FF\uE000-\uF8FF\uFE00-\uFE0F\u200D]/g, "")
+    .replace(/[\u0300-\u036F\uFE20-\uFE2F]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function renderQuoteImage(text, username) {
+  username = sanitizeForCanvas(username) || "Lumorian";
   const fontSize = 22;
   const nameSize = 15;
   const lineHeight = 30;
@@ -70,7 +103,7 @@ function renderQuoteImage(text, username) {
   // Measure text lines
   const measure = createCanvas(512, 100);
   const mCtx = measure.getContext("2d");
-  mCtx.font = `${fontSize}px "Segoe UI", Arial, sans-serif`;
+  mCtx.font = `${fontSize}px LumoraSans, "Segoe UI", Arial, sans-serif`;
 
   const maxTextW = maxBubbleW - padX - contentLeft - padX;
   const words = text.split(/\s+/);
@@ -89,9 +122,9 @@ function renderQuoteImage(text, username) {
   if (!lines.length) lines.push(text || "...");
 
   // Measure actual widths to fit bubble
-  mCtx.font = `bold ${nameSize}px "Segoe UI", Arial, sans-serif`;
+  mCtx.font = `bold ${nameSize}px LumoraSans, "Segoe UI", Arial, sans-serif`;
   const nameW = mCtx.measureText(username).width;
-  mCtx.font = `${fontSize}px "Segoe UI", Arial, sans-serif`;
+  mCtx.font = `${fontSize}px LumoraSans, "Segoe UI", Arial, sans-serif`;
   let maxLineW = 0;
   for (const l of lines) {
     const lw = mCtx.measureText(l).width;
@@ -150,13 +183,13 @@ function renderQuoteImage(text, username) {
   ctx.fill();
 
   // Username
-  ctx.font = `bold ${nameSize}px "Segoe UI", Arial, sans-serif`;
+  ctx.font = `bold ${nameSize}px LumoraSans, "Segoe UI", Arial, sans-serif`;
   ctx.fillStyle = uColor;
   ctx.textAlign = "left";
   ctx.fillText(username, barX + contentLeft, by + padTop + nameSize);
 
   // Message text
-  ctx.font = `${fontSize}px "Segoe UI", Arial, sans-serif`;
+  ctx.font = `${fontSize}px LumoraSans, "Segoe UI", Arial, sans-serif`;
   ctx.fillStyle = "#111111";
   const textStartY = by + padTop + nameH + fontSize;
   for (let i = 0; i < lines.length; i++) {

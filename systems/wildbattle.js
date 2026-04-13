@@ -1200,18 +1200,55 @@ async function cmdWildTame(ctx, chatId, senderId, msg) {
   player.tameSkill = (player.tameSkill || 0) + tameGain;
 
   const moraName = state.purifiedMoraName || state.wildMora?.name || "the Mora";
+
+  // Every branch except Purity's conscript actually captures the Mora and
+  // credits rewards, so .tame is no longer a cosmetic no-op.
+  let rewardsBlock = "";
+  if (state.pendingDecision !== "purity") {
+    const rarity = String(
+      state.purifiedMoraRarity ||
+      state.wildSpecies?.rarity ||
+      state.wildMora?.rarity ||
+      "common"
+    ).toLowerCase();
+    const rewards = getRewards(rarity);
+    const gainLucons    = Math.max(10, Math.floor(rewards.sanctuary_lucons * 0.6));
+    const gainResonance = Math.max(1, Math.floor(rewards.sanctuary_resonance * 0.5));
+
+    player.lucons    = Number(player.lucons || 0) + gainLucons;
+    player.resonance = Number(player.resonance || 0) + gainResonance;
+
+    if (!Array.isArray(player.moraOwned)) player.moraOwned = [];
+    const capturedMora = {
+      ...state.wildMora,
+      isWild: false,
+      hp: state.wildMora?.maxHp || state.wildMora?.hp || 1,
+    };
+    player.moraOwned.push(capturedMora);
+
+    try { missionSystem.onMoraCaught(senderId, player.faction, capturedMora.type); } catch {}
+
+    rewardsBlock =
+      `\n💰 *+${gainLucons} Lucons* _(${rarity} rarity)_` +
+      `\n💠 *+${gainResonance} Resonance*` +
+      `\n🐾 *${moraName}* joins your collection!`;
+  }
+
   savePlayers(players);
   await finishWildBattle(chatId, senderId);
 
   const flavor = state.pendingDecision === "harmony_purify"
-    ? `The grateful Mora bonds with @${String(senderId).split("@")[0]}.\n_"A bond forged in light never breaks."_`
-    : `@${String(senderId).split("@")[0]} disciplines the fallen Mora into submission.\n_"Even the wild can learn obedience."_`;
+    ? `The grateful *${moraName}* bonds with @${String(senderId).split("@")[0]}.\n_"A bond forged in light never breaks."_`
+    : state.pendingDecision === "purity"
+      ? `@${String(senderId).split("@")[0]} disciplines *${moraName}* into submission.\n_"Even the wild can learn obedience."_`
+      : `@${String(senderId).split("@")[0]} earns the trust of *${moraName}*.\n_"Harmony is not conquest — it is communion."_`;
 
   return sock.sendMessage(chatId, {
     text:
       `🤝 *TAMED*\n\n` +
       `${flavor}\n\n` +
-      `🪢 *+${tameGain} Tame Skill*`,
+      `🪢 *+${tameGain} Tame Skill*` +
+      rewardsBlock,
     mentions: [senderId]
   }, { quoted: msg });
 }
