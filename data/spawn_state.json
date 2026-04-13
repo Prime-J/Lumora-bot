@@ -39,17 +39,18 @@
   },
   "120363402154118593@g.us": {
     "active": {
-      "moraId": 56,
-      "correctName": "Flurrybat",
+      "moraId": 9,
+      "correctName": "Pyrraptor",
       "options": [
-        "Flurrybat",
-        "Pyrraptor",
-        "Iron-Sentinel"
+        "Voltaris",
+        "Blight-Bloom",
+        "Pyrraptor"
       ],
-      "spawnedAt": 1776020322354
+      "spawnedAt": 1776109780305
     },
-    "lastSpawnAt": 1776020322354,
-    "wrongCd": {}
+    "lastSpawnAt": 1776109780305,
+    "wrongCd": {},
+    "premium": null
   },
   "120363425733631715@g.us": {
     "active": {
@@ -232,15 +233,24 @@
     "wrongCd": {}
   },
   "120363427706945701@g.us": {
-    "active": null,
-    "lastSpawnAt": 1776101981690,
+    "active": {
+      "moraId": 66,
+      "correctName": "Obsidihorn",
+      "options": [
+        "Obsidihorn",
+        "Cryovex",
+        "Kaza"
+      ],
+      "spawnedAt": 1776109673963
+    },
+    "lastSpawnAt": 1776109673963,
     "wrongCd": {
       "41700340814048@lid": 1773497552986,
       "132951115317490@lid": 1775732649681,
       "35253779460280@lid": 1773517090923,
       "132586194083851@lid": 1773531119600,
       "259983665004558@lid": 1776100090142,
-      "85376064581854@lid": 1776093006885,
+      "85376064581854@lid": 1776109726794,
       "191092104364082@lid": 1773611660791,
       "61495627001872@lid": 1775841340077,
       "208474038341639@lid": 1775552799904,
