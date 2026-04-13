@@ -1149,5 +1149,18 @@
     "storageCost": 0,
     "effect": "Required to submit a new Mora design at Lumora Labs (.create-mora). Requires 15+ Intelligence to use.",
     "desc": "Glittering primordial dust — the raw material of creation itself. One pinch is enough to give form to a new Mora in the labs."
+  },
+  "REOB": {
+    "id": "REOB",
+    "name": "Reob",
+    "category": "consumable",
+    "rarity": "Mythic",
+    "marketType": "pro",
+    "rotates": false,
+    "price": 0,
+    "stock": 0,
+    "storageCost": 0,
+    "effect": "Rift Seeker origin — use to forge a Mora at Lumora Labs (.create-mora). Grants +1% rarity boost per creation.",
+    "desc": "A volatile sphere born from the fractured void itself, harvested by Rift Seekers from the deepest rifts. When channeled through the Creation Array, it channels primordial chaos into pure potential—the raw stuff of life itself."
   }
 }

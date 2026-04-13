@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 
 // MongoDB connection settings
 const MONGODB_URI = process.env.MONGODB_URI || "";
+console.log("[mongo] MONGODB_URI env var:", process.env.MONGODB_URI);
+
 const FLUSH_INTERVAL = 3000; // 3 seconds, batched writes
 const FLUSH_TIMEOUT = 5000; // 5 second timeout for graceful shutdown
 

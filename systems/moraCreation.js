@@ -1,10 +1,14 @@
 // ╔═══════════════════════════════════════════════════════════════╗
-// ║  LUMORA LABS — MORA CREATION SYSTEM                            ║
+// ║  LUMORA LABS — MORA CREATION SYSTEM (STAGED FLOW)             ║
 // ║                                                                ║
-// ║  Players with 15+ Intelligence can forge a new Mora species    ║
-// ║  at Lumora Labs using a Creation Powder. Submissions are       ║
-// ║  queued for the Architect to approve via .creations /          ║
+// ║  Players with 25+ Intelligence can forge a new Mora species    ║
+// ║  at Lumora Labs using a Reob (Rift Seeker origin). Submissions ║
+// ║  are queued for the Architect to approve via .creations /      ║
 // ║  .approve-mora / .reject-mora.                                 ║
+// ║                                                                ║
+// ║  Creation is now staged: players proceed through a multi-step  ║
+// ║  conversation where they provide name, type, description,     ║
+// ║  and moves one at a time.                                     ║
 // ║                                                                ║
 // ║  Shape of data/mora_submissions.json:                          ║
 // ║    {                                                           ║
@@ -26,16 +30,20 @@ const itemsSystem = require("./items");
 // ============================
 // CONFIG
 // ============================
-const MIN_INTELLIGENCE = 15;        // Required to wield Creation Powder
-const POWDER_ID        = "CREATION_POWDER";
+const MIN_INTELLIGENCE = 25;        // Required to wield Reobs (from Rift Seekers)
+const ORB_ID           = "REOB";
 
-// Faction → allowed Mora types. Keep this aligned with FACTIONS.styles in
-// index.js so Harmony creators can't forge Shadow void beasts, etc.
-const FACTION_TYPES = {
-  harmony: ["Nature", "Aqua", "Wind", "Terra"],
-  purity:  ["Terra", "Frost", "Volt", "Psychic"],
-  rift:    ["Shadow", "Volt", "Flame", "Frost", "Void"],
-  neutral: ["Nature", "Aqua", "Wind", "Terra", "Frost", "Volt", "Shadow", "Flame"],
+// Valid Mora types (no faction restriction, but we hint at faction affinity in messages)
+const VALID_TYPES = ["Nature", "Aqua", "Wind", "Terra", "Frost", "Volt", "Shadow", "Flame", "Void", "Psychic"];
+
+// Rarity roll weights by intelligence bracket (25+ only)
+const RARITY_TABLES = {
+  // intel 25-34
+  "25-34": { common: 0.30, uncommon: 0.35, rare: 0.25, epic: 0.10, legendary: 0 },
+  // intel 35-49
+  "35-49": { common: 0.15, uncommon: 0.30, rare: 0.35, epic: 0.15, legendary: 0.05 },
+  // intel 50+
+  "50+":   { common: 0.05, uncommon: 0.15, rare: 0.30, epic: 0.35, legendary: 0.15 },
 };
 
 // ============================
@@ -43,6 +51,17 @@ const FACTION_TYPES = {
 // ============================
 const DIV  = "━━━━━━━━━━━━━━━━━━━━━━━━━";
 const SDIV = "──────────────────────";
+
+// ============================
+// PENDING CREATIONS STATE MACHINE
+// ============================
+const pendingCreations = new Map();
+// Format: {
+//   stage: 'name_type' | 'description' | 'moves' | 'special',
+//   chatId: string,
+//   createdAt: timestamp,
+//   draft: { name?, type?, desc?, moves?: [], special?: {...} }
+// }
 
 // ============================
 // FILE IO
@@ -86,10 +105,6 @@ function saveMoraFile(arr) {
 // ============================
 // STAT ROLLING
 // ============================
-// Base stats scale with creator intelligence + tame skill so a 15-int
-// player gets a starter-tier Mora while a 30+ int veteran can forge
-// something much stronger. Hard-capped so nothing can out-roll a
-// Mythical premium mora.
 function rollBaseStats(player) {
   const intel = Number(player.intelligence || 0);
   const tame  = Number(player.tameSkill   || 0);
@@ -105,79 +120,46 @@ function rollBaseStats(player) {
   };
 }
 
-// Rarity is derived from the player's investment, not chosen freely.
+// Rarity roll with weighted tables per intelligence bracket (25+)
 function rollRarity(player) {
   const intel = Number(player.intelligence || 0);
-  if (intel >= 60) return "legendary";
-  if (intel >= 40) return "epic";
-  if (intel >= 25) return "rare";
-  if (intel >= 18) return "uncommon";
-  return "common";
+  let table;
+  if (intel >= 50) table = RARITY_TABLES["50+"];
+  else if (intel >= 35) table = RARITY_TABLES["35-49"];
+  else table = RARITY_TABLES["25-34"];
+
+  const roll = Math.random();
+  let cumulative = 0;
+  for (const [rarity, weight] of Object.entries(table)) {
+    cumulative += weight;
+    if (roll <= cumulative) return rarity;
+  }
+  return "common"; // fallback
 }
 
 // ============================
-// INPUT PARSING
+// MOVE PARSING
 // ============================
-// Expected usage:
-// .create-mora <name> | <type> | <description> | <move1> | <move2> | <move3> | <move4> | <special>
-// Each move: name~power~accuracy    (accuracy optional, defaults to 90)
-// Special appears as a single learn-on-level move at level 18.
 function parseMove(raw, fallbackPower) {
   if (!raw) return null;
-  const [rawName, rawPower, rawAcc] = String(raw).split("~").map(s => s.trim());
+  const [rawName, rawPower, rawAcc, rawCategory] = String(raw).split("~").map(s => s.trim());
   const name = (rawName || "").slice(0, 32);
   if (!name) return null;
-  const power = Math.max(10, Math.min(150, Number(rawPower) || fallbackPower));
+  const power = Math.max(0, Math.min(150, Number(rawPower) || fallbackPower));
   const accuracy = Math.max(50, Math.min(100, Number(rawAcc) || 90));
+  const category = (rawCategory || "").toLowerCase();
+
+  let resolvedCategory = "Physical";
+  if (category === "special" || category === "psychic") resolvedCategory = "Special";
+  else if (category === "status" || power === 0) resolvedCategory = "Status";
+  else if (category === "physical") resolvedCategory = "Physical";
+
   return {
     name,
     power,
     accuracy,
-    category: power >= 70 ? "Special" : "Physical",
+    category: resolvedCategory,
     desc: "A move forged at Lumora Labs.",
-  };
-}
-
-function parseSubmission(rawArgs) {
-  const joined = rawArgs.join(" ").trim();
-  if (!joined) return { ok: false, reason: "empty" };
-  const parts = joined.split("|").map(s => s.trim());
-  if (parts.length < 8) {
-    return { ok: false, reason: "fields" };
-  }
-
-  const [
-    name,
-    type,
-    desc,
-    m1, m2, m3, m4,
-    special,
-  ] = parts;
-
-  if (!name || name.length < 3 || name.length > 24) {
-    return { ok: false, reason: "name" };
-  }
-
-  const moves = [
-    parseMove(m1, 40),
-    parseMove(m2, 50),
-    parseMove(m3, 60),
-    parseMove(m4, 70),
-  ];
-  if (moves.some(m => !m)) return { ok: false, reason: "moves" };
-
-  const specialMove = parseMove(special, 85);
-  if (!specialMove) return { ok: false, reason: "special" };
-
-  return {
-    ok: true,
-    draft: {
-      name,
-      type: titleCase(type),
-      description: desc.slice(0, 240),
-      starterMoves: moves,
-      specialMove,
-    },
   };
 }
 
@@ -189,12 +171,28 @@ function titleCase(str) {
 // COMMANDS
 // ============================
 
-// .create-mora — submit a new design
+// Check if mora creation is allowed in this chat
+function isMoraCreationAllowed(chatId, settings) {
+  const moraGroups = settings?.moraCreationGroups;
+  if (!moraGroups?.enabled) return false;
+  if (!moraGroups.allowed || moraGroups.allowed.length === 0) return true; // empty = all groups
+  return moraGroups.allowed.includes(chatId);
+}
+
+// .create-mora — initiate the flow
 async function cmdCreateMora(ctx, chatId, senderId, msg, args = []) {
-  const { sock, players, savePlayers } = ctx;
+  const { sock, players, savePlayers, settings, isOwner } = ctx;
   const player = players[senderId];
+
   if (!player) {
     return sock.sendMessage(chatId, { text: "❌ Register first using *.start*." }, { quoted: msg });
+  }
+
+  // Check if creation is allowed in this group
+  if (!isMoraCreationAllowed(chatId, settings)) {
+    return sock.sendMessage(chatId, {
+      text: `❌ *Mora creation is not available in this group.*\nCheck with the Architect or visit an allowed Lumora Labs location.`,
+    }, { quoted: msg });
   }
 
   // Intelligence gate
@@ -211,126 +209,227 @@ async function cmdCreateMora(ctx, chatId, senderId, msg, args = []) {
     }, { quoted: msg });
   }
 
-  // Creation Powder gate
-  itemsSystem.ensurePlayerItemData(player);
-  const powderQty = itemsSystem.getItemQuantity(player, POWDER_ID);
-  if (powderQty <= 0) {
-    return sock.sendMessage(chatId, {
-      text:
-        `${DIV}\n` +
-        `💨 *NO CREATION POWDER*\n` +
-        `${DIV}\n\n` +
-        `You need *1 Creation Powder* to forge a new Mora.\n` +
-        `_Drops rarely from high-tier hunts. Pro subscribers receive more on activation._`,
-    }, { quoted: msg });
+  // Reob gate (skip for owner)
+  if (!isOwner) {
+    itemsSystem.ensurePlayerItemData(player);
+    const orbQty = itemsSystem.getItemQuantity(player, ORB_ID);
+    if (orbQty <= 0) {
+      return sock.sendMessage(chatId, {
+        text:
+          `${DIV}\n` +
+          `💫 *REOB DEPLETED*\n` +
+          `${DIV}\n\n` +
+          `You need *1 Reob* to forge a new Mora.\n\n` +
+          `Reobs are spheres of pure rift energy, harvested by Rift Seekers. They grant you the power to create.\n\n` +
+          `_Contact the Architect for Reobs, or earn them through the Pro system._`,
+      }, { quoted: msg });
+    }
   }
 
-  // Usage check — no args
-  if (!args.length) {
-    return sock.sendMessage(chatId, {
-      text:
-        `${DIV}\n` +
-        `🧪 *LUMORA LABS — CREATE A MORA*\n` +
-        `${DIV}\n\n` +
-        `Submit all fields in ONE message, separated by *|*.\n\n` +
-        `*Format:*\n` +
-        `.create-mora <name> | <type> | <description> | <move1> | <move2> | <move3> | <move4> | <special>\n\n` +
-        `*Each move:*  \`Name~Power~Accuracy\`\n` +
-        `   • Power: 10–150\n` +
-        `   • Accuracy: 50–100 (optional, default 90)\n\n` +
-        `*Example:*\n` +
-        `.create-mora Sylviane | Nature | A moss-cloaked guardian of forgotten groves. | Thorn Jab~40~95 | Bramble Guard~0~100 | Verdant Lash~60~90 | Moss Veil~0~100 | Bloomstrike~95~85\n\n` +
-        `🧠 Intelligence req: *${MIN_INTELLIGENCE}*  (you have *${intel}*)\n` +
-        `💨 Creation Powder: *${powderQty}*\n\n` +
-        `⚠️ Submissions go to the Architect for approval. Powder is consumed on submission — *rejected designs do not refund*.`,
-    }, { quoted: msg });
-  }
+  // Set player into pending creation flow
+  pendingCreations.set(senderId, {
+    stage: "name_type",
+    chatId,
+    createdAt: Date.now(),
+    draft: {}
+  });
 
-  const parsed = parseSubmission(args);
-  if (!parsed.ok) {
-    const reasonMsg = {
-      empty:   "You must fill out every field.",
-      fields:  "Missing fields. Expected 8 segments separated by *|*.",
-      name:    "Name must be 3–24 characters.",
-      moves:   "One of the 4 starter moves is malformed. Use `Name~Power~Accuracy`.",
-      special: "Special move is malformed. Use `Name~Power~Accuracy`.",
-    }[parsed.reason] || "Invalid submission.";
-    return sock.sendMessage(chatId, { text: `❌ ${reasonMsg}\n\nRun *.create-mora* with no args to see the format.` }, { quoted: msg });
-  }
-
-  // Faction type rule
-  const faction = player.faction || "neutral";
-  const allowedTypes = FACTION_TYPES[faction] || FACTION_TYPES.neutral;
-  if (!allowedTypes.includes(parsed.draft.type)) {
-    return sock.sendMessage(chatId, {
-      text:
-        `❌ *Type Rejected*\n\n` +
-        `Your faction (*${faction}*) cannot forge Mora of type *${parsed.draft.type}*.\n\n` +
-        `Allowed: ${allowedTypes.map(t => `*${t}*`).join(", ")}`,
-    }, { quoted: msg });
-  }
-
-  // Uniqueness check vs mora.json
-  const existing = loadMoraFile();
-  const nameLower = parsed.draft.name.toLowerCase();
-  if (existing.some(m => String(m.name || "").toLowerCase() === nameLower)) {
-    return sock.sendMessage(chatId, { text: `❌ A Mora named *${parsed.draft.name}* already exists in the registry.` }, { quoted: msg });
-  }
-
-  // Consume powder (no refund on reject — that's the price of attempt)
-  const removed = itemsSystem.removeItem(player, POWDER_ID, 1);
-  if (!removed.ok) {
-    return sock.sendMessage(chatId, { text: `❌ Failed to consume Creation Powder.` }, { quoted: msg });
-  }
-
-  // Build the full submission payload
-  const subs = loadSubmissions();
-  const id = subs.nextId++;
-  const rarity    = rollRarity(player);
-  const baseStats = rollBaseStats(player);
-
-  const moves = {};
-  const learnset = { "1": [] };
-  for (const mv of parsed.draft.starterMoves) {
-    moves[mv.name] = { power: mv.power, accuracy: mv.accuracy, category: mv.category, desc: mv.desc };
-    learnset["1"].push(mv.name);
-  }
-  const sp = parsed.draft.specialMove;
-  moves[sp.name] = { power: sp.power, accuracy: sp.accuracy, category: "Special", desc: "A signature move, learned through bond." };
-  learnset["18"] = [sp.name];
-
-  subs.pending[String(id)] = {
-    id,
-    creatorJid: senderId,
-    creatorName: (player.username && String(player.username).trim()) || senderId.split("@")[0],
-    creatorFaction: faction,
-    submittedAt: new Date().toISOString(),
-    draft: {
-      name: parsed.draft.name,
-      type: parsed.draft.type,
-      rarity,
-      description: parsed.draft.description || "A Mora forged at Lumora Labs.",
-      baseStats,
-      moves,
-      learnset,
-    },
-  };
-  saveSubmissions(subs);
-  savePlayers(players);
-
+  // Send immersive intro
   return sock.sendMessage(chatId, {
     text:
       `${DIV}\n` +
-      `🧪 *SUBMISSION RECEIVED*\n` +
+      `⚗️  *LUMORA LABS — CREATION ARRAY ACTIVE*\n` +
       `${DIV}\n\n` +
-      `📝 Submission #${id}\n` +
-      `🐲 *${parsed.draft.name}* — ${parsed.draft.type} (${rarity})\n` +
-      `🧬 Stats: HP ${baseStats.hp} · ATK ${baseStats.atk} · DEF ${baseStats.def} · SPD ${baseStats.spd} · ENG ${baseStats.energy}\n\n` +
-      `💨 *1 Creation Powder consumed.*\n\n` +
-      `Your design now rests with the Architect for approval.\n` +
-      `_You will be tagged when the verdict arrives._`,
+      `_A Rift Seeker approaches, bearing a Reob that hums with infinite potential..._\n\n` +
+      `Your consciousness interfaces with the Creation Array. The Reob pulses—*ready to birth something new*.\n\n` +
+      `*What is the name and element of your creation?*\n\n` +
+      `Format: Name | Type\n\n` +
+      `Example: Sylviane | Nature\n\n` +
+      `Valid types: ${VALID_TYPES.map(t => '*' + t + '*').join(", ")}\n\n` +
+      `_Or type *.cancel-create* to abandon this vision._`,
     mentions: [senderId],
+  });
+}
+
+// .cancel-create — abort the flow
+async function cmdCancelCreate(ctx, chatId, senderId, msg) {
+  const { sock } = ctx;
+  if (!pendingCreations.has(senderId)) {
+    return sock.sendMessage(chatId, { text: "❌ You don't have an active creation in progress." }, { quoted: msg });
+  }
+  pendingCreations.delete(senderId);
+  return sock.sendMessage(chatId, {
+    text: `✨ *Creation abandoned.*\nThe Array fades... your vision dissolves back into the Rift.`,
   }, { quoted: msg });
+}
+
+// Handle pending creation messages
+async function handlePendingCreation(ctx, chatId, senderId, msg, text) {
+  const { sock, players, savePlayers, settings, isOwner } = ctx;
+  const pending = pendingCreations.get(senderId);
+
+  if (!pending) return; // safety check
+
+  const now = Date.now();
+  if (now - pending.createdAt > 15 * 60 * 1000) {
+    // 15 min timeout
+    pendingCreations.delete(senderId);
+    return sock.sendMessage(chatId, { text: "⏳ *Creation session expired.* The Array went dormant. Start over with *.create-mora*." }, { quoted: msg });
+  }
+
+  if (pending.stage === "name_type") {
+    const parts = text.split("|").map(s => s.trim());
+    if (parts.length < 2) {
+      return sock.sendMessage(chatId, { text: `❌ Expected format: \`Name | Type\`\n\nTry again:` }, { quoted: msg });
+    }
+    const [name, type] = parts;
+    if (!name || name.length < 3 || name.length > 24) {
+      return sock.sendMessage(chatId, { text: "❌ Name must be 3–24 characters." }, { quoted: msg });
+    }
+    const typeLower = titleCase(type);
+    if (!VALID_TYPES.includes(typeLower)) {
+      return sock.sendMessage(chatId, { text: `❌ Type must be one of: ${VALID_TYPES.map(t => '*' + t + '*').join(", ")}` }, { quoted: msg });
+    }
+    pending.draft.name = name;
+    pending.draft.type = typeLower;
+    pending.stage = "description";
+    return sock.sendMessage(chatId, {
+      text:
+        `✨ *${name}* the *${typeLower}* Mora...\n\n` +
+        `The Array hums deeper. It needs to understand your creation's form and spirit.\n\n` +
+        `*Describe your Mora.* Its appearance, its nature, what makes it unique:\n\n` +
+        `_(Max 240 characters)_\n\n` +
+        `_Or *.cancel-create* to abandon._`,
+      mentions: [senderId],
+    });
+  }
+
+  if (pending.stage === "description") {
+    const desc = text.slice(0, 240);
+    pending.draft.desc = desc;
+    pending.stage = "moves";
+    return sock.sendMessage(chatId, {
+      text:
+        `💎 *The Array integrates your vision.*\n\n` +
+        `Now, channel your intent into the Mora's combat form. You must inscribe *4 starter techniques*.\n\n` +
+        `*Format (separated by |):*\n\`MoveName~Power~Accuracy~Category | MoveName~Power~Accuracy~Category | ...\`\n\n` +
+        `*Power:* 0–150 (0 = status move, no damage)\n*Accuracy:* 50–100 (default 90)\n*Category:* physical, special, or status\n\n` +
+        `Example:\n\`Thorn Jab~40~95~physical | Bramble Guard~0~100~status | Verdant Lash~60~90~special | Moss Veil~0~100~status\`\n\n` +
+        `_Or *.cancel-create* to abandon._`,
+      mentions: [senderId],
+    });
+  }
+
+  if (pending.stage === "moves") {
+    const moveParts = text.split("|").map(s => s.trim());
+    if (moveParts.length !== 4) {
+      return sock.sendMessage(chatId, { text: `❌ Expected 4 moves separated by |. You provided ${moveParts.length}.` }, { quoted: msg });
+    }
+    const moves = [];
+    for (const mp of moveParts) {
+      const m = parseMove(mp, 50);
+      if (!m) {
+        return sock.sendMessage(chatId, { text: `❌ Malformed move: \`${mp}\`\n\nFormat: \`Name~Power~Accuracy~Category\`` }, { quoted: msg });
+      }
+      moves.push(m);
+    }
+    pending.draft.moves = moves;
+    pending.stage = "special";
+    return sock.sendMessage(chatId, {
+      text:
+        `⚡ *The foundation is set.*\n\n` +
+        `One final seal remains. Your Mora's *signature special move* — the technique it calls its own, learned when a true bond forms.\n\n` +
+        `*Format:*\n\`MoveName~Power~Accuracy~Category\`\n\n` +
+        `Example: \`Bloomstrike~95~85~special\`\n\n` +
+        `_Or *.cancel-create* to abandon._`,
+      mentions: [senderId],
+    });
+  }
+
+  if (pending.stage === "special") {
+    const special = parseMove(text, 85);
+    if (!special) {
+      return sock.sendMessage(chatId, { text: `❌ Malformed move: \`${text}\`\n\nFormat: \`Name~Power~Accuracy~Category\`` }, { quoted: msg });
+    }
+    pending.draft.special = special;
+
+    // ====== SUBMIT ======
+    const player = players[senderId];
+    const faction = player?.faction || "neutral";
+
+    // Consume orb (unless owner)
+    if (!isOwner) {
+      const removed = itemsSystem.removeItem(player, ORB_ID, 1);
+      if (!removed.ok) {
+        pendingCreations.delete(senderId);
+        return sock.sendMessage(chatId, { text: `❌ Failed to consume Reob.` }, { quoted: msg });
+      }
+    }
+
+    // Roll stats and rarity
+    const rarity = rollRarity(player);
+    const baseStats = rollBaseStats(player);
+
+    // Build move lists
+    const moves = {};
+    const learnset = { "1": [] };
+    for (const mv of pending.draft.moves) {
+      moves[mv.name] = { power: mv.power, accuracy: mv.accuracy, category: mv.category, desc: mv.desc };
+      learnset["1"].push(mv.name);
+    }
+    const sp = special;
+    moves[sp.name] = { power: sp.power, accuracy: sp.accuracy, category: sp.category, desc: "A signature move, learned through bond." };
+    learnset["18"] = [sp.name];
+
+    // Submit to submissions
+    const subs = loadSubmissions();
+    const id = subs.nextId++;
+    const username = (player?.username && String(player.username).trim()) || senderId.split("@")[0];
+
+    subs.pending[String(id)] = {
+      id,
+      creatorJid: senderId,
+      creatorName: username,
+      creatorFaction: faction,
+      submittedAt: new Date().toISOString(),
+      draft: {
+        name: pending.draft.name,
+        type: pending.draft.type,
+        rarity,
+        description: pending.draft.desc,
+        baseStats,
+        moves,
+        learnset,
+      },
+    };
+    saveSubmissions(subs);
+    savePlayers(players);
+
+    // Track creation and check achievements
+    player.totalCreations = (player.totalCreations || 0) + 1;
+    const rarityRank = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 }[rarity] || 1;
+    if (!player.topCreationRarity || rarityRank > player.topCreationRarity) {
+      player.topCreationRarity = rarityRank;
+    }
+    savePlayers(players);
+
+    // Clear pending
+    pendingCreations.delete(senderId);
+
+    // Send confirmation
+    await sock.sendMessage(chatId, {
+      text:
+        `${DIV}\n` +
+        `✨ *CREATION SEALED*\n` +
+        `${DIV}\n\n` +
+        `📝 Submission #${id}\n` +
+        `🐲 *${pending.draft.name}* — ${pending.draft.type} (${rarity})\n` +
+        `🧬 HP ${baseStats.hp} · ATK ${baseStats.atk} · DEF ${baseStats.def} · SPD ${baseStats.spd} · ENG ${baseStats.energy}\n\n` +
+        `The Array stabilizes your vision. Your Mora now rests with the Architect for judgment.\n\n` +
+        `_You will receive a message when the verdict arrives._`,
+      mentions: [senderId],
+    }, { quoted: msg });
+  }
 }
 
 // .creations — owner: list pending submissions
@@ -433,17 +532,26 @@ async function cmdApproveMora(ctx, chatId, senderId, msg, args = []) {
   saveSubmissions(subs);
   savePlayers(players);
 
-  return sock.sendMessage(chatId, {
-    text:
-      `${DIV}\n` +
-      `✨ *CREATION APPROVED*\n` +
-      `${DIV}\n\n` +
-      `@${s.creatorJid.split("@")[0]}, your design *${newMora.name}* has been accepted into the Lumora registry!\n\n` +
-      `🐲 Mora #${newMora.id} — ${newMora.type} (${newMora.rarity})\n` +
-      `${payLine}\n\n` +
-      `_It may now be encountered and tamed by others._`,
-    mentions: [s.creatorJid],
-  }, { quoted: msg });
+  // Group announcement
+  const groupMsg =
+    `${DIV}\n` +
+    `✨ *CREATION APPROVED*\n` +
+    `${DIV}\n\n` +
+    `@${s.creatorJid.split("@")[0]}, your design *${newMora.name}* has been accepted into the Lumora registry!\n\n` +
+    `🐲 Mora #${newMora.id} — ${newMora.type} (${newMora.rarity})\n` +
+    `${payLine}\n\n` +
+    `_It may now be encountered and tamed by others._`;
+
+  // DM to creator
+  const dmMsg = `${DIV}\n✨ *CREATION APPROVED*\n${DIV}\n\nYour Mora *${newMora.name}* has been approved by the Architect!\n\n${payLine}\n\n_Check the Lumora registry to see your creation._`;
+
+  try {
+    await sock.sendMessage(s.creatorJid, { text: dmMsg });
+  } catch (e) {
+    console.log("DM send failed:", e?.message || e);
+  }
+
+  return sock.sendMessage(chatId, { text: groupMsg, mentions: [s.creatorJid] }, { quoted: msg });
 }
 
 // .reject-mora <id>
@@ -467,21 +575,33 @@ async function cmdRejectMora(ctx, chatId, senderId, msg, args = []) {
   delete subs.pending[id];
   saveSubmissions(subs);
 
+  // Group announcement
   const mentions = players[s.creatorJid] ? [s.creatorJid] : [];
-  return sock.sendMessage(chatId, {
-    text:
-      `${DIV}\n` +
-      `❌ *CREATION REJECTED*\n` +
-      `${DIV}\n\n` +
-      `@${s.creatorJid.split("@")[0]}, your submission *${s.draft.name}* was rejected by the Architect.\n\n` +
-      `_The Creation Powder was consumed on submission and is not refunded._`,
-    mentions,
-  }, { quoted: msg });
+  const groupMsg =
+    `${DIV}\n` +
+    `❌ *CREATION REJECTED*\n` +
+    `${DIV}\n\n` +
+    `@${s.creatorJid.split("@")[0]}, your submission *${s.draft.name}* was rejected by the Architect.\n\n` +
+    `_The Reob was consumed on submission and is not refunded._`;
+
+  // DM to creator
+  const dmMsg = `${DIV}\n❌ *CREATION REJECTED*\n${DIV}\n\nYour Mora *${s.draft.name}* was not approved by the Architect.\n\n_The Reob was consumed on submission._`;
+
+  try {
+    await sock.sendMessage(s.creatorJid, { text: dmMsg });
+  } catch (e) {
+    console.log("DM send failed:", e?.message || e);
+  }
+
+  return sock.sendMessage(chatId, { text: groupMsg, mentions }, { quoted: msg });
 }
 
 module.exports = {
   cmdCreateMora,
+  cmdCancelCreate,
   cmdCreationsList,
   cmdApproveMora,
   cmdRejectMora,
+  hasPendingCreation: (jid) => pendingCreations.has(jid),
+  handlePendingCreation,
 };

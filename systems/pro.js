@@ -204,33 +204,36 @@ function appendAutocatchLog(playerJid, entry) {
 async function cmdProInfo(ctx, chatId, senderId, msg) {
   const { sock } = ctx;
   const lines = [];
-  lines.push(DIV);
-  lines.push(`💎 *LUMORA PRO — MARK SUBSCRIPTIONS*`);
-  lines.push(DIV);
+  lines.push(`═════════════════════════════════════`);
+  lines.push(`     💎 LUMORA PRO — LUMORAN MARKS 💎`);
+  lines.push(`═════════════════════════════════════`);
   lines.push(``);
-  lines.push(`_Wear the Lumoran Mark. The Rifts respect it._`);
-  lines.push(``);
+  lines.push(`_Ascend beyond the ordinary. Wear a Mark of power._\n`);
 
   for (const t of Object.values(TIERS)) {
-    lines.push(SDIV);
-    lines.push(`${t.label}  —  *$${t.priceUsd} USD*`);
-    lines.push(SDIV);
+    lines.push(`${"═".repeat(37)}`);
+    lines.push(`${t.label}          *$${t.priceUsd} USD*`);
+    lines.push(`${"─".repeat(37)}`);
     lines.push(`⏳ Duration: ${fmtMs(t.durationMs)}`);
-    lines.push(`💎 Welcome grant: *${t.crystalGrant} LCR* _(one-time on activation)_`);
-    lines.push(`☀️ .pro-daily: +${t.dailyLucons} Lucons`);
+    lines.push(`💠 Crystal grant: *${t.crystalGrant} LCR* (one-time welcome)`);
+    lines.push(`🪙 Daily Lucons: +${t.dailyLucons}`);
+    lines.push(`🔮 Daily Crystals: ${t.dailyLcrRange[0]}–${t.dailyLcrRange[1]} LCR`);
     lines.push(`🪫 Hunt refill / 24h: ${Math.round(t.refillPercent * 100)}% of max`);
     lines.push(`🎯 Auto-catches: ${t.autocatchBudget}`);
-    lines.push(`✨ Perks:`);
+    lines.push(``);
+    lines.push(`✨ *Exclusive Perks:*`);
     for (const p of t.perks) lines.push(`   • ${p}`);
     lines.push(``);
   }
 
-  lines.push(DIV);
-  lines.push(`📩 *To subscribe:* DM the Architect.`);
-  lines.push(`Payment is handled off-platform. After confirmation the`);
-  lines.push(`Architect runs *.pro-grant @you <tier>* and the Mark`);
-  lines.push(`lights up on your profile.`);
-  lines.push(DIV);
+  lines.push(`═════════════════════════════════════`);
+  lines.push(`         *HOW TO GET THE MARK*`);
+  lines.push(`═════════════════════════════════════\n`);
+  lines.push(`*Step 1:* DM the Architect to discuss your tier\n`);
+  lines.push(`*Step 2:* Confirm subscription & payment off-platform\n`);
+  lines.push(`*Step 3:* Architect runs *.pro-grant @you <tier>*\n`);
+  lines.push(`*Step 4:* Your Mark illuminates — enjoy perks!\n`);
+  lines.push(`═════════════════════════════════════`);
 
   return sock.sendMessage(chatId, { text: lines.join("\n") }, { quoted: msg });
 }

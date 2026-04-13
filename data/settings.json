@@ -32,5 +32,9 @@
     "allowed": [
       "120363425214613922@g.us"
     ]
+  },
+  "moraCreationGroups": {
+    "enabled": true,
+    "allowed": []
   }
 }
