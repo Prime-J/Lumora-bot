@@ -12,7 +12,7 @@ function titleCase(str = "") {
     .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
-function slotView(itemId, itemsDb) {
+function slotView(itemId, itemsDb, player, slot) {
   if (!itemId) {
     return `Nothing equipped`;
   }
@@ -22,7 +22,12 @@ function slotView(itemId, itemsDb) {
     return `Unknown item equipped`;
   }
 
-  return itemsSystem.formatGearDetails(item);
+  const lumen = player?.equipment?.[`${slot}Durability`];
+  const lumenMax =
+    item.durability ?? itemsSystem.BASE_DURABILITY_BY_RARITY[item.rarity] ?? 3;
+
+  const opts = typeof lumen === "number" ? { lumen, lumenMax } : {};
+  return itemsSystem.formatGearDetails(item, opts);
 }
 
 function buildGearText(player, displayName = "Lumorian") {
@@ -32,13 +37,13 @@ function buildGearText(player, displayName = "Lumorian") {
   const eq = player.equipment || {};
 
   const sections = [
-    `⚙ *Core*\n${slotView(eq.core, itemsDb)}`,
-    `🔮 *Charm*\n${slotView(eq.charm, itemsDb)}`,
-    `🧰 *Tool*\n${slotView(eq.tool, itemsDb)}`,
-    `🜂 *Relic*\n${slotView(eq.relic, itemsDb)}`,
-    `🜁 *Cloak*\n${slotView(eq.cloak, itemsDb)}`,
-    `👢 *Boots*\n${slotView(eq.boots, itemsDb)}`,
-    `🎖 *Badge*\n${slotView(eq.badge, itemsDb)}`,
+    `⚙ *Core*\n${slotView(eq.core, itemsDb, player, "core")}`,
+    `🔮 *Charm*\n${slotView(eq.charm, itemsDb, player, "charm")}`,
+    `🧰 *Tool*\n${slotView(eq.tool, itemsDb, player, "tool")}`,
+    `🜂 *Relic*\n${slotView(eq.relic, itemsDb, player, "relic")}`,
+    `🜁 *Cloak*\n${slotView(eq.cloak, itemsDb, player, "cloak")}`,
+    `👢 *Boots*\n${slotView(eq.boots, itemsDb, player, "boots")}`,
+    `🎖 *Badge*\n${slotView(eq.badge, itemsDb, player, "badge")}`,
   ];
 
   return (

@@ -5,15 +5,22 @@ const path = require("path");
 const factionMarketSystem = require("./factionMarket");
 const missionSystem       = require("./factionMissionSystem");
 
-const DATA_DIR = path.join(__dirname, "..", "data");
-const SPAWN_FILE = path.join(DATA_DIR, "spawn_state.json");
-const IMAGE_DIR = path.join(__dirname, "..", "assets", "mora");
+const DATA_DIR          = path.join(__dirname, "..", "data");
+const SPAWN_FILE        = path.join(DATA_DIR, "spawn_state.json");
+const PREMIUM_MORA_FILE = path.join(DATA_DIR, "premium_mora.json");
+const IMAGE_DIR         = path.join(__dirname, "..", "assets", "mora");
 
 const SPAWN_EVERY_MS = 10 * 60 * 1000;
 const WRONG_COOLDOWN_MS = 10 * 1000;
 
 // NEW: if a spawn sits too long (no one catches), it auto-clears
 const SPAWN_EXPIRE_MS = 6 * 60 * 1000; // 6 minutes (tweak if you want)
+
+// ── Premium mora spawn config ───────────────────────────────
+// Rate: ~2% chance per eligible spawn tick
+const PREMIUM_SPAWN_CHANCE    = 0.02;
+const PREMIUM_SPAWN_EXPIRE_MS = 15 * 60 * 1000; // 15 minutes for a premium window
+const PREMIUM_LOOP_INTERVAL_MS = 2 * 60 * 1000;  // re-announce every 2 min while active
 
 // --------------------
 // SAFETY: avoid crashing on Baileys group session noise
@@ -140,9 +147,37 @@ function saveState(state) {
 }
 
 function getGroupState(state, groupJid) {
-  if (!state[groupJid]) state[groupJid] = { active: null, lastSpawnAt: 0, wrongCd: {} };
+  if (!state[groupJid]) state[groupJid] = { active: null, lastSpawnAt: 0, wrongCd: {}, premium: null };
   if (!state[groupJid].wrongCd) state[groupJid].wrongCd = {};
+  if (!("premium" in state[groupJid])) state[groupJid].premium = null;
   return state[groupJid];
+}
+
+// ── Premium mora loader ────────────────────────────────────
+let _premiumCache = null;
+let _premiumCacheAt = 0;
+const PREMIUM_CACHE_TTL = 60 * 1000;
+function loadPremiumMora() {
+  const now = Date.now();
+  if (_premiumCache && now - _premiumCacheAt < PREMIUM_CACHE_TTL) return _premiumCache;
+  try {
+    if (!fs.existsSync(PREMIUM_MORA_FILE)) { _premiumCache = []; _premiumCacheAt = now; return _premiumCache; }
+    const raw = fs.readFileSync(PREMIUM_MORA_FILE, "utf8");
+    _premiumCache = raw ? JSON.parse(raw) : [];
+    _premiumCacheAt = now;
+    return _premiumCache;
+  } catch (e) {
+    if (!isSessionNoise(e)) console.log("loadPremiumMora error:", e?.message || e);
+    _premiumCache = [];
+    _premiumCacheAt = now;
+    return _premiumCache;
+  }
+}
+
+function pickPremiumMora() {
+  const list = loadPremiumMora();
+  if (!list.length) return null;
+  return list[Math.floor(Math.random() * list.length)];
 }
 
 function shuffle(arr) {
@@ -283,10 +318,25 @@ async function maybeSpawn(ctx, chatId) {
     const state = loadState();
     const gs = getGroupState(state, chatId);
 
-    // auto-expire stuck spawn
+    // auto-expire stuck spawns (normal and premium)
     if (gs.active?.spawnedAt && Date.now() - gs.active.spawnedAt > SPAWN_EXPIRE_MS) {
       gs.active = null;
       saveState(state);
+    }
+    if (gs.premium?.spawnedAt && Date.now() - gs.premium.spawnedAt > PREMIUM_SPAWN_EXPIRE_MS) {
+      gs.premium = null;
+      saveState(state);
+    }
+
+    // If a premium spawn is active, re-announce ("speech loop") at intervals
+    if (gs.premium && gs.premium.moraId) {
+      const sinceLoop = Date.now() - Number(gs.premium.lastLoopAt || gs.premium.spawnedAt || 0);
+      if (sinceLoop > PREMIUM_LOOP_INTERVAL_MS) {
+        await emitPremiumLoop(ctx, chatId, gs.premium);
+        gs.premium.lastLoopAt = Date.now();
+        saveState(state);
+      }
+      return; // don't spawn regular mora on top of a premium
     }
 
     if (gs.active) return;
@@ -294,6 +344,24 @@ async function maybeSpawn(ctx, chatId) {
     const now = Date.now();
     if (gs.lastSpawnAt && now - gs.lastSpawnAt < SPAWN_EVERY_MS) return;
 
+    // ── Roll for premium spawn first ─────────────────────
+    if (Math.random() < PREMIUM_SPAWN_CHANCE) {
+      const premium = pickPremiumMora();
+      if (premium) {
+        gs.premium = {
+          moraId: Number(premium.id),
+          name: premium.name,
+          spawnedAt: now,
+          lastLoopAt: now,
+        };
+        gs.lastSpawnAt = now;
+        saveState(state);
+        await emitPremiumSpawn(ctx, chatId, premium);
+        return;
+      }
+    }
+
+    // ── Normal spawn ─────────────────────────────────────
     const chosen = pickSpawnMora(moraList);
     if (!chosen) return;
 
@@ -320,24 +388,82 @@ async function maybeSpawn(ctx, chatId) {
 
     const imgPath = imagePathFor(chosen);
 
-    // ✅ IMPORTANT FIX:
-    // Use Buffer for local images instead of { url: "C:\\path" } which can fail in groups.
+    let sentMsg = null;
     if (imgPath && fs.existsSync(imgPath)) {
       try {
         const buf = fs.readFileSync(imgPath);
-        await safeSend(sock, chatId, { image: buf, caption }, caption);
+        sentMsg = await safeSend(sock, chatId, { image: buf, caption }, caption);
       } catch (e) {
         if (!isSessionNoise(e)) console.log("spawn image read/send error:", e?.message || e);
-        await safeSend(sock, chatId, { text: caption }, caption);
+        sentMsg = await safeSend(sock, chatId, { text: caption }, caption);
       }
     } else {
-      await safeSend(sock, chatId, { text: caption }, caption);
+      sentMsg = await safeSend(sock, chatId, { text: caption }, caption);
     }
+
+    // ── Pro auto-catch hook ──────────────────────────────
+    try {
+      const proSystem = require("./pro");
+      if (typeof proSystem.tryAutocatchOnSpawn === "function") {
+        proSystem.tryAutocatchOnSpawn(ctx, chatId, {
+          moraId: Number(chosen.id),
+          correctName: chosen.name,
+        }).catch(() => {});
+      }
+    } catch {}
   } catch (e) {
     // swallow everything so group replies never die because of spawn
     if (!isSessionNoise(e)) console.log("maybeSpawn ERROR:", e?.stack || e);
   } finally {
     groupLocks.delete(chatId);
+  }
+}
+
+// ── Premium spawn announcements ──────────────────────────────
+// Hidden mentions: the `mentions` field includes every participant so the
+// notification fires, but the message text does NOT contain @handles so the
+// tags stay invisible (clean UI, loud push).
+async function getGroupParticipantJids(sock, chatId) {
+  try {
+    const meta = await sock.groupMetadata(chatId);
+    return (meta?.participants || []).map(p => p.id).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+async function emitPremiumSpawn(ctx, chatId, premium) {
+  const { sock } = ctx;
+  const participants = await getGroupParticipantJids(sock, chatId);
+
+  const caption =
+    `═══════════════════════════\n` +
+    `⚡ *PREMIUM MORA HAS BEEN SPOTTED* ⚡\n` +
+    `═══════════════════════════\n\n` +
+    `A rift tears above the grove — _${premium.name}_ bares its fangs.\n\n` +
+    `📜 _${premium.description}_\n\n` +
+    `⚠️ Only bearers of the *Lumoran Mark* may bind this beast.\n` +
+    `🎯 Use *.catch ${premium.name}* — no guessing game, pure speed.\n\n` +
+    `⏳ It will linger for 15 minutes before vanishing.`;
+
+  const imgPath = imagePathFor(premium);
+  const payload = (imgPath && fs.existsSync(imgPath))
+    ? { image: fs.readFileSync(imgPath), caption, mentions: participants }
+    : { text: caption, mentions: participants };
+
+  await safeSend(sock, chatId, payload, caption);
+}
+
+async function emitPremiumLoop(ctx, chatId, premiumState) {
+  const { sock } = ctx;
+  const participants = await getGroupParticipantJids(sock, chatId);
+  const text =
+    `⚡ *${premiumState.name}* still prowls the grove.\n` +
+    `Only *Marked Lumorians* may bind it — *.catch ${premiumState.name}*`;
+  try {
+    await sock.sendMessage(chatId, { text, mentions: participants });
+  } catch (e) {
+    if (!isSessionNoise(e)) console.log("emitPremiumLoop error:", e?.message || e);
   }
 }
 
@@ -384,10 +510,77 @@ async function cmdCatch(ctx, chatId, senderId, args) {
   const state = loadState();
   const gs = getGroupState(state, chatId);
 
-  // auto-expire stuck spawn
+  // auto-expire stuck spawns
   if (gs.active?.spawnedAt && Date.now() - gs.active.spawnedAt > SPAWN_EXPIRE_MS) {
     gs.active = null;
     saveState(state);
+  }
+  if (gs.premium?.spawnedAt && Date.now() - gs.premium.spawnedAt > PREMIUM_SPAWN_EXPIRE_MS) {
+    gs.premium = null;
+    saveState(state);
+  }
+
+  // ── PREMIUM CATCH PATH (no guessing, pro-only) ────────
+  if (gs.premium && safeLower(guess) === safeLower(gs.premium.name)) {
+    const catcher = players[senderId];
+    let hasPro = false;
+    try { hasPro = require("./pro").hasActivePro(catcher); } catch { hasPro = false; }
+    if (!hasPro) {
+      return safeSend(sock, chatId, {
+        text: `⛔ *${gs.premium.name}* shrugs you off.\nOnly *Marked Lumorians* may bind Premium mora. See *.pro-info*.`,
+      });
+    }
+
+    const pList = loadPremiumMora();
+    const species = pList.find(m => Number(m.id) === Number(gs.premium.moraId)) || null;
+    if (!species) {
+      gs.premium = null;
+      saveState(state);
+      return safeSend(sock, chatId, { text: "⚠️ Premium mora data missing — spawn cleared." });
+    }
+
+    let owned;
+    if (typeof ctx.createOwnedMoraFromSpecies === "function") {
+      owned = ctx.createOwnedMoraFromSpecies(species);
+    } else {
+      owned = {
+        moraId: Number(species.id),
+        name: species.name,
+        type: species.type,
+        rarity: species.rarity,
+        level: 1, xp: 0,
+        hp: Number(species?.baseStats?.hp || 100),
+        maxHp: Number(species?.baseStats?.hp || 100),
+        moves: [],
+        stats: {
+          atk: Number(species?.baseStats?.atk || 30),
+          def: Number(species?.baseStats?.def || 30),
+          spd: Number(species?.baseStats?.spd || 30),
+          energy: Number(species?.baseStats?.energy || 60),
+        },
+        energy: Number(species?.baseStats?.energy || 60),
+        maxEnergy: Number(species?.baseStats?.energy || 60),
+      };
+    }
+
+    const pool = buildMovePool(species);
+    owned.moves = pickRandomMoves(pool);
+    owned.isPremium = true;
+
+    if (!Array.isArray(catcher.moraOwned)) catcher.moraOwned = [];
+    catcher.moraOwned.push(owned);
+
+    gs.premium = null;
+    saveState(state);
+    savePlayers(players);
+
+    return safeSend(sock, chatId, {
+      text:
+        `⚡ *PREMIUM BOND FORGED* ⚡\n\n` +
+        `@${senderId.split("@")[0]} has bound the mythic *${species.name}*!\n` +
+        `Moves acquired:\n• ${owned.moves.join("\n• ")}`,
+      mentions: [senderId],
+    });
   }
 
   if (!gs.active) {
@@ -495,4 +688,8 @@ module.exports = {
   maybeSpawn,
   cmdCatch,
   cmdSpawnRates,
+  // exposed for pro.js auto-catch
+  loadState,
+  saveState,
+  loadPremiumMora,
 };

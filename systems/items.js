@@ -567,15 +567,32 @@ function formatItemLine(item, options = {}) {
   );
 }
 
-function formatGearDetails(item) {
+function formatGearDetails(item, opts = {}) {
   if (!item) {
     return `Nothing equipped`;
   }
 
   const icon = getRarityIcon(item.rarity);
+
+  let lumenLine = "";
+  if (typeof opts.lumen === "number") {
+    const max = Number(
+      opts.lumenMax || item.durability || BASE_DURABILITY_BY_RARITY[item.rarity] || 3
+    );
+    const cur = Math.max(0, Math.min(max, Number(opts.lumen)));
+    const filled = Math.round((cur / max) * 8);
+    const bar = "▰".repeat(filled) + "▱".repeat(Math.max(0, 8 - filled));
+    const state =
+      cur <= 0 ? "Extinguished" :
+      cur / max <= 0.25 ? "Flickering" :
+      cur / max <= 0.5 ? "Dim" :
+      cur / max <= 0.85 ? "Steady" : "Radiant";
+    lumenLine = `\n💡 Lumen: ${cur}/${max}  ${bar}  (${state})`;
+  }
+
   return (
     `${icon} *${item.name}*\n` +
-    `💠 Rarity: ${item.rarity}\n` +
+    `💠 Rarity: ${item.rarity}${lumenLine}\n` +
     `⚡ Effect: ${item.effect || "None"}\n` +
     `📜 ${item.desc || "No description."}`
   );

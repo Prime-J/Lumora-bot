@@ -91,24 +91,38 @@ async function cmdDaily(ctx, chatId, senderId) {
   let baseReward = 100;
   const lines    = [];
 
+  // Pro subscribers bypass faction taxes entirely
+  let hasPro = false;
+  try {
+    hasPro = require("./pro").hasActivePro(p);
+  } catch (_) { hasPro = false; }
+
   // ── PURITY: Discipline Tax (-15 Aura if no PvP win in 7 days)
-  const disciplineTax = factionMarketSystem.checkPurityDisciplineTax(p);
-  if (disciplineTax) lines.push(disciplineTax.message);
+  if (!hasPro) {
+    const disciplineTax = factionMarketSystem.checkPurityDisciplineTax(p);
+    if (disciplineTax) lines.push(disciplineTax.message);
+  }
 
   // ── HARMONY: Healer's Tax (-50 from daily reward)
   let finalReward = baseReward;
-  const healersTax = factionMarketSystem.checkHarmonyHealersTax(p, baseReward);
-  if (healersTax.taxed) {
-    finalReward = healersTax.reward;
-    lines.push(healersTax.message);
+  if (!hasPro) {
+    const healersTax = factionMarketSystem.checkHarmonyHealersTax(p, baseReward);
+    if (healersTax.taxed) {
+      finalReward = healersTax.reward;
+      lines.push(healersTax.message);
+    }
   }
 
   // ── RIFT: -20% income reduction
-  const riftReward = factionMarketSystem.applyRiftDailyReduction(p, finalReward);
-  if (p.faction === "rift" && riftReward < finalReward) {
-    lines.push(`🔶 *Rift Tax*: Daily income reduced 20% (Rift Seekers live on the edge)\nNet: *${riftReward} Lucons*`);
+  if (!hasPro) {
+    const riftReward = factionMarketSystem.applyRiftDailyReduction(p, finalReward);
+    if (p.faction === "rift" && riftReward < finalReward) {
+      lines.push(`🔶 *Rift Tax*: Daily income reduced 20% (Rift Seekers live on the edge)\nNet: *${riftReward} Lucons*`);
+    }
+    finalReward = Math.max(1, p.faction === "rift" ? riftReward : finalReward);
+  } else {
+    lines.push(`✨ *Pro Mark shields you from faction taxes this cycle.*`);
   }
-  finalReward = Math.max(1, p.faction === "rift" ? riftReward : finalReward);
 
   // ── LOGIN STREAK ──────────────────────────────────────────
   const todayKey = new Date(now).toISOString().slice(0, 10);
@@ -174,18 +188,28 @@ async function cmdWeekly(ctx, chatId, senderId) {
   let reward = 250;
   const wLines = [];
 
+  let hasProW = false;
+  try {
+    hasProW = require("./pro").hasActivePro(p);
+  } catch (_) { hasProW = false; }
+
   // ── RIFT: -20% income reduction
-  const riftWeekly = factionMarketSystem.applyRiftDailyReduction(p, reward);
-  if (p.faction === "rift" && riftWeekly < reward) {
-    wLines.push(`🔶 *Rift Tax*: -20% reduction applied. Net: *${riftWeekly} Lucons*`);
+  if (!hasProW) {
+    const riftWeekly = factionMarketSystem.applyRiftDailyReduction(p, reward);
+    if (p.faction === "rift" && riftWeekly < reward) {
+      wLines.push(`🔶 *Rift Tax*: -20% reduction applied. Net: *${riftWeekly} Lucons*`);
+    }
+    reward = p.faction === "rift" ? riftWeekly : reward;
   }
-  reward = p.faction === "rift" ? riftWeekly : reward;
 
   // ── HARMONY: Healer's Tax on weekly (100 instead of 50)
-  if (p.faction === "harmony") {
-    const before = reward;
+  if (!hasProW && p.faction === "harmony") {
     reward = Math.max(1, reward - 100);
     wLines.push(`🌿 *Healer's Tax*: 100 Lucons donated to the community. Net: *${reward} Lucons*`);
+  }
+
+  if (hasProW) {
+    wLines.push(`✨ *Pro Mark shields you from faction taxes this cycle.*`);
   }
 
   reward = Math.max(1, reward);

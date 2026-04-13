@@ -88,6 +88,29 @@ const factionsData = JSON.parse(fs.readFileSync('./data/factions.json'));
 const { generateVsCanvas, generateBracketCanvas, generateWarResultCanvas } = require('./warCanvas');
 const miscSystem = require('./systems/misc');
 const arenaSystem = require('./systems/npcArena');
+const proSystem = require('./systems/pro');
+
+// ============================
+// NEW COMMANDS — shown in .help for 12 hours after addedAt
+// ============================
+// Add new entries here when you ship a command. They auto-expire after 12h.
+const NEW_COMMANDS_TTL_MS = 12 * 60 * 60 * 1000;
+const NEW_COMMANDS = [
+  { name: ".pro-info",     section: "pro",  blurb: "See subscription plans & USD pricing",            addedAt: 1776067200000 }, // 2026-04-13
+  { name: ".pro",          section: "pro",  blurb: "View your subscription status",                    addedAt: 1776067200000 },
+  { name: ".pro-grant",    section: "pro",  blurb: "Owner: grant a subscription tier",                 addedAt: 1776067200000 },
+  { name: ".pro-daily",    section: "pro",  blurb: "Pro: daily Lucons + Lucrystals claim",             addedAt: 1776067200000 },
+  { name: ".pro-market",   section: "pro",  blurb: "Browse the Lucrystal shop",                        addedAt: 1776067200000 },
+  { name: ".pbuy",         section: "pro",  blurb: "Buy an item with Lucrystals",                      addedAt: 1776067200000 },
+  { name: ".exchange",     section: "pro",  blurb: "Convert 1000 Lucons → 1 Lucrystal",                addedAt: 1776067200000 },
+  { name: ".autocatch",    section: "pro",  blurb: "Arm the Eidolon Catcher in this group",            addedAt: 1776067200000 },
+  { name: ".autocatch-log",section: "pro",  blurb: "See mora caught while you were away",              addedAt: 1776067200000 },
+  { name: ".crystals",     section: "pro",  blurb: "Owner: top up a player's Lucrystals",              addedAt: 1776067200000 },
+];
+function getActiveNewCommands() {
+  const now = Date.now();
+  return NEW_COMMANDS.filter(c => now - Number(c.addedAt || 0) < NEW_COMMANDS_TTL_MS);
+}
 // ============================
 // PRIMORDIAL ENERGY (CONFIG)
 // ============================
@@ -707,22 +730,7 @@ function denyArenaGroup(sock, chatId, msg) {
     text: "🏟️ The Arena is unavailable in this group.\nGo to the arena group or contact the Architect.",
   }, { quoted: msg });
 }
-function checkMarkExpirations(player) {
-    if (!player.markBadges || !player.markExpiries) return;
-
-    const now = Date.now();
-    player.markBadges.forEach(badge => {
-        const expiry = player.markExpiries[badge];
-        if (expiry && now > expiry) {
-            player.markBadges = player.markBadges.filter(b => b !== badge);
-            delete player.markExpiries[badge];
-            if (badge === 'base') {
-                player.maxHuntEnergy = 100;
-                player.huntEnergy = Math.min(player.huntEnergy, 100);
-            }
-        }
-    });
-}
+// (old mark/blessing expiration helper removed — replaced by pro.js tier system)
 
 const LoreSpeeches = {
     start: [
@@ -3126,110 +3134,66 @@ if (command === "reduce-gauge") {
     return sock.sendMessage(chatId, { text: `📉 Gauge reduced to ${amount} for @${target.split('@')[0]}.`, mentions: [target] });
 }
 
-// --- OWNER PRIMORDIAL MARK COMMANDS ---
-// 👑 1. GRANT THE MARK (Upgrades account to Pro & Shows Menu)
-if (command === "grant-mark") {
-    if (!isOwner) return;
-    const target = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
-
-    if (!target) {
-        return sock.sendMessage(chatId, { text: "❓ Usage: `.grant-mark @user`\nTag the user you want to Mark." }, { quoted: msg });
-    }
-
-    const p = players[target];
-    if (!p) return sock.sendMessage(chatId, { text: "❌ Player not found." });
-
-    // Upgrade them to Marked status and prepare their blessings inventory
-    p.isMarked = true;
-    if (!p.blessings) p.blessings = {};
-    savePlayers(players);
-
-    const blessMenu = `👑 *MARK BESTOWED ON @${target.split('@')[0]}*\n\n` +
-        `They are now a Marked Lumorian. You can now bestow specific Pro Blessings upon them using:\n` +
-        `👉 \`.bless @user <blessing_name> <days>\`\n\n` +
-        `📜 *PRO BLESSINGS YOU CAN SELECT:*\n` +
-        `*vigor* — Immune to Energy Burnout (keeps 200 Max Energy)\n` +
-        `*wealth* — Unlocks \`.marked-daily\` (5,000 Lucons/day)\n` +
-        `*void* — Unlocks \`.summon-merchant\` (Black Market)\n` +
-        `*tame* — Can catch Premium Corrupted Mora\n` +
-        `*xp* — +50% XP gain in all battles\n` +
-        `*luck* — +25% higher chance to spawn Corrupted/Mythic Mora\n\n` +
-        `_Example: .bless @user wealth 30_`;
-
-    return sock.sendMessage(chatId, { text: blessMenu, mentions: [target] }, { quoted: msg });
+// ─────────────────────────────────────────────
+// PRO SUBSCRIPTION SYSTEM (systems/pro.js)
+// ─────────────────────────────────────────────
+if (command === "pro-info") {
+    return proSystem.cmdProInfo(ctx, chatId, senderId, msg);
 }
-
-// ✨ 2. GRANT A SPECIFIC BLESSING
-if (command === "bless") {
-    if (!isOwner) return;
-    const target = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
-    const blessingName = args[1]?.toLowerCase();
-    const days = parseInt(args[2]);
-
-    if (!target || !blessingName || isNaN(days)) {
-        return sock.sendMessage(chatId, { text: "❓ Usage: `.bless @user <blessing_name> <days>`\nExample: `.bless @user vigor 7`" }, { quoted: msg });
+if (command === "pro") {
+    return proSystem.cmdProStatus(ctx, chatId, senderId, msg, args);
+}
+if (command === "pro-daily") {
+    return proSystem.cmdProDaily(ctx, chatId, senderId, msg);
+}
+if (command === "exchange") {
+    return proSystem.cmdExchange(ctx, chatId, senderId, msg, args);
+}
+if (command === "pro-market") {
+    return proSystem.cmdProMarket(ctx, chatId, senderId, msg);
+}
+if (command === "pbuy") {
+    return proSystem.cmdProBuy(ctx, chatId, senderId, msg, args);
+}
+if (command === "crystals") {
+    const p = players[senderId];
+    if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using .start" });
+    proSystem.ensureProState(p);
+    if (isOwner && (args[0] === "grant" || args[0] === "give")) {
+        return proSystem.cmdGrantCrystals(ctx, chatId, senderId, msg, args.slice(1));
     }
-
-    const p = players[target];
-    if (!p || !p.isMarked) {
-         return sock.sendMessage(chatId, { text: "❌ This player must be granted a Mark first using `.grant-mark @user`." }, { quoted: msg });
-    }
-
-    // List of valid Pro features
-    const validBlessings = ['vigor', 'wealth', 'void', 'tame', 'xp', 'luck'];
-    if (!validBlessings.includes(blessingName)) {
-        return sock.sendMessage(chatId, { text: `❌ Invalid blessing. Choose from:\n${validBlessings.join(', ')}` }, { quoted: msg });
-    }
-
-    // Apply the blessing and set the exact expiration date
-    p.blessings[blessingName] = Date.now() + (days * 24 * 60 * 60 * 1000);
-    savePlayers(players);
-
-    return sock.sendMessage(chatId, { 
-        text: `✨ *BLESSING GRANTED*\n\n@${target.split('@')[0]} has received the **${blessingName.toUpperCase()}** blessing for **${days} days**!`,
-        mentions: [target]
+    return sock.sendMessage(chatId, {
+        text:
+            `━━━━━━━━━━━━━━━━━━\n` +
+            `💎 *LUCRYSTAL BALANCE*\n` +
+            `━━━━━━━━━━━━━━━━━━\n\n` +
+            `🔷 ${Number(p.pro?.crystals || 0)} LCR\n\n` +
+            `• *.exchange <lucons>* — trade 1000 Lucons → 1 LCR\n` +
+            `• *.pro-market* — browse LCR items\n` +
+            `• *.pro-info* — subscription tiers`,
     }, { quoted: msg });
 }
-if (command === "revoke-mark") {
-    if (!isOwner) return;
-    const target = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
-    const badge = args[1]?.toLowerCase();
-    
-    if (!target || !badge) return sock.sendMessage(chatId, { text: "❓ Usage: *.revoke-mark @user <badge>*" });
-    if (players[target]?.markBadges) {
-        players[target].markBadges = players[target].markBadges.filter(b => b !== badge);
-        savePlayers(players);
-        return sock.sendMessage(chatId, { text: `❌ Seal '${badge}' revoked.`, mentions: [target] });
-    }
+if (command === "pro-grant") {
+    if (!isOwner) return sock.sendMessage(chatId, { text: "🛑 Owner only." });
+    return proSystem.cmdProGrant(ctx, chatId, senderId, msg, args, {
+        getMentionedJids: (m) => m?.message?.extendedTextMessage?.contextInfo?.mentionedJid || [],
+        getRepliedJid: (m) => m?.message?.extendedTextMessage?.contextInfo?.participant || null,
+        toUserJidFromArg: (a) => a && /^\d+$/.test(String(a)) ? `${a}@s.whatsapp.net` : null,
+        normJid: (x) => x,
+    });
+}
+if (command === "autocatch") {
+    return proSystem.cmdAutocatch(ctx, chatId, senderId, msg, args);
+}
+if (command === "autocatch-log") {
+    return proSystem.cmdAutocatchLog(ctx, chatId, senderId, msg);
 }
 
-// --- PREMIUM USER COMMANDS ---
-if (command === "marked-daily") {
-    const p = players[senderId];
-    if (!p || !p.markBadges?.includes('daily')) {
-        return sock.sendMessage(chatId, { text: "🔒 You lack the *Wealth Seal* required. (Premium)" });
-    }
-
-    const now = Date.now();
-    const cooldown = 24 * 60 * 60 * 1000;
-    if (now - (p.lastMarkedDaily || 0) < cooldown) return sock.sendMessage(chatId, { text: "⏳ The Architect's bounty is recharging." });
-
-    p.lucons = (p.lucons || 0) + 5000;
-    p.huntEnergy = Math.min(p.maxHuntEnergy || 100, (p.huntEnergy || 0) + 50); 
-    p.lastMarkedDaily = now;
-    savePlayers(players);
-
-    return sock.sendMessage(chatId, { text: "👑 *ARCHITECT'S BOUNTY CLAIMED*\n\n+5,000 Lucons\n+50 Bonus Energy" });
-}
-
-global.blackMarket = { active: false, type: null, expiry: 0 };
-// 🕶️ SUMMON MERCHANT
+// 🕶️ SUMMON MERCHANT — now a perk of any active pro subscription
 if (command === "summon-merchant") {
     const p = players[senderId];
-    const hasVoid = p.blessings && p.blessings.void && p.blessings.void > Date.now();
-    
-    if (!hasVoid) {
-        return sock.sendMessage(chatId, { text: "🔮 *The Rift is silent...*\nYou do not possess the *Void Blessing* to beckon the Merchant." }, { quoted: msg });
+    if (!proSystem.hasActivePro(p)) {
+        return sock.sendMessage(chatId, { text: "🔮 *The Rift is silent...*\nOnly bearers of an active *Lumoran Mark* may summon the Void Merchant. See *.pro-info*." }, { quoted: msg });
     }
 
     const mode = args[0]?.toLowerCase();
@@ -4875,12 +4839,12 @@ if (command === "f-lb") {
       // HELP
 if (command === "help") {
     const p = players[senderId];
-    const isMarked = p?.markBadges && p.markBadges.length > 0;
+    const hasPro = proSystem.hasActivePro(p);
     const pFaction = p?.faction ? p.faction.charAt(0).toUpperCase() + p.faction.slice(1) : "None";
     const fIcon = p?.faction === "harmony" ? "🌿" : p?.faction === "purity" ? "⚔" : p?.faction === "rift" ? "🔶" : "⚡";
 
-    const greeting = isMarked
-        ? `👑 *Welcome back, Branded One.* The Rifts recognize your authority.`
+    const greeting = hasPro
+        ? `👑 *Welcome back, Bearer of the Mark.* The Rifts recognize your rank.`
         : `🌌 *Greetings, traveler.* The Lumorian crystals hum at your presence.`;
 
     const divider = `┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈`;
@@ -4941,11 +4905,10 @@ if (command === "help") {
         `┃ ${PREFIX}buy <item> ─ purchase\n` +
         `┃ ${PREFIX}subscribe-market ─ notifications ON\n` +
         `┃ ${PREFIX}unsubscribe-market ─ notifications OFF\n\n` +
-        `${divider}\n  🕶  *BLACK MARKET (Premium)*\n${divider}\n` +
-        `┃ ${PREFIX}summon-merchant ─ call the void shop\n` +
+        `${divider}\n  🕶  *BLACK MARKET (Pro perk)*\n${divider}\n` +
+        `┃ ${PREFIX}summon-merchant ─ call the void shop (pro)\n` +
         `┃ ${PREFIX}black-market ─ browse forbidden items\n` +
-        `┃ ${PREFIX}buy-bm <item> <qty> ─ buy from void\n` +
-        `┃ ${PREFIX}marked-daily ─ Architect's bounty\n`,
+        `┃ ${PREFIX}buy-bm <item> <qty> ─ buy from void\n`,
 
       factions:
         `${divider}\n  🛡  *FACTIONS & WARS*\n${divider}\n` +
@@ -5033,6 +4996,20 @@ if (command === "help") {
         `┃ ${PREFIX}ping ─ test bot\n` +
         `┃ ${PREFIX}uptime ─ bot uptime\n`,
 
+      pro:
+        `${divider}\n  💎  *PRO / SUBSCRIPTIONS*\n${divider}\n` +
+        `┃ ${PREFIX}pro-info ─ tier plans & USD pricing\n` +
+        `┃ ${PREFIX}pro ─ your subscription status\n` +
+        `┃ ${PREFIX}pro-daily ─ daily Lucons + Lucrystals\n` +
+        `┃ ${PREFIX}pro --hunt-energy ─ refill hunt gauge\n` +
+        `┃ ${PREFIX}pro-market ─ browse Lucrystal shop\n` +
+        `┃ ${PREFIX}pbuy <item> ─ buy with Lucrystals\n` +
+        `┃ ${PREFIX}exchange <lucons> ─ 1000L → 1 LCR\n` +
+        `┃ ${PREFIX}autocatch <n> ─ arm offline mora catcher\n` +
+        `┃ ${PREFIX}autocatch off ─ disarm\n` +
+        `┃ ${PREFIX}autocatch-log ─ view mora caught while away\n` +
+        `┃ _Pro users bypass faction tax on daily/weekly._\n`,
+
       admin:
         `${divider}\n  🛡️  *SUDO (Admin)*\n${divider}\n` +
         `┃ ${PREFIX}ban / ${PREFIX}unban / ${PREFIX}punish / ${PREFIX}forgive\n` +
@@ -5050,7 +5027,8 @@ if (command === "help") {
         `┃ _All Sudo powers + sudo management_\n\n` +
         `${divider}\n  👑  *ARCHITECT (Owner)*\n${divider}\n` +
         `┃ ${PREFIX}throne / ${PREFIX}unthrone ─ set Right-Hand\n` +
-        `┃ ${PREFIX}grant-mark / ${PREFIX}revoke-mark\n` +
+        `┃ ${PREFIX}pro-grant @user <tier> ─ subscribe a player\n` +
+        `┃ ${PREFIX}crystals @user <amt> ─ top up Lucrystals\n` +
         `┃ ${PREFIX}set-gauge / ${PREFIX}reduce-gauge\n` +
         `┃ ${PREFIX}war init / ${PREFIX}war-start\n` +
         `┃ ${PREFIX}war winner @user ─ report match result\n` +
@@ -5074,8 +5052,16 @@ if (command === "help") {
       hunting: "hunting", hunt: "hunting", explore: "hunting", exploration: "hunting",
       fun: "fun", misc: "fun", sticker: "fun",
       utilities: "utilities", utility: "utilities", util: "utilities",
+      pro: "pro", premium: "pro", subscription: "pro", sub: "pro", crystals: "pro", lcr: "pro",
       admin: "admin", sudo: "admin", owner: "admin", architect: "admin",
     };
+
+    // ── "New commands" banner (entries <12h old) ────────────
+    const freshCmds = getActiveNewCommands();
+    const newCmdsBlock = freshCmds.length
+      ? `${divider}\n  ✨  *NEW COMMANDS* _(<12h)_\n${divider}\n` +
+        freshCmds.map(c => `┃ ${c.name} ─ ${c.blurb}`).join("\n") + `\n\n`
+      : "";
 
     const requestedSection = String(args[0] || "").toLowerCase().trim();
 
@@ -5087,6 +5073,7 @@ if (command === "help") {
         `║    ✦  *L U M O R A*  ✦    ║\n` +
         `║   _Help — ${key.toUpperCase()}_   ║\n` +
         `╚═══════════════════════════╝\n\n` +
+        newCmdsBlock +
         gettingStarted + `\n` +
         SECTIONS[key] + `\n` +
         `${divider}\n` +
@@ -5117,6 +5104,7 @@ if (command === "help") {
       `╚═══════════════════════════╝\n\n` +
       greeting + `\n` +
       `${fIcon} Faction: *${pFaction}* | 💰 ${p?.lucons || 0} Lucons\n\n` +
+      newCmdsBlock +
       gettingStarted + `\n` +
       `${divider}\n` +
       `  📚  *HELP SECTIONS*\n` +
@@ -5134,6 +5122,7 @@ if (command === "help") {
       `┃ ${PREFIX}help hunting    ─ hunting, terrains, post-battle\n` +
       `┃ ${PREFIX}help fun        ─ stickers, dice, roast, etc.\n` +
       `┃ ${PREFIX}help utilities  ─ leaderboard, ping, bug-report\n` +
+      `┃ ${PREFIX}help pro        ─ subscriptions, Lucrystals, autocatch\n` +
       `┃ ${PREFIX}help admin      ─ sudo / owner / architect\n\n` +
       `╔═══════════════════════════╗\n` +
       `║  💰 Currency: *${settings.currencyName}*\n` +
@@ -5148,221 +5137,6 @@ if (command === "help") {
     return;
 }
 
-// Legacy block kept commented for safety; replaced by section system above.
-if (false) {
-    const helpText =
-        `╔═══════════════════════════╗\n` +
-        `║    ✦  *L U M O R A*  ✦    ║\n` +
-        `║   _Dominion Command Codex_  ║\n` +
-        `╚═══════════════════════════╝\n\n` +
-        greeting + `\n` +
-        `${fIcon} Faction: *${pFaction}* | 💰 ${p?.lucons || 0} Lucons\n\n` +
-
-        `${divider}\n` +
-        `  🚀  *GETTING STARTED*\n` +
-        `${divider}\n` +
-        `┃ ${PREFIX}lumora ─ enter the world\n` +
-        `┃ ${PREFIX}start ─ begin your journey\n` +
-        `┃ ${PREFIX}choose ─ pick your starter Mora\n` +
-        `┃ ${PREFIX}profile ─ view stats & rank\n` +
-        `┃ ${PREFIX}set-username ─ set display name\n` +
-        `┃ ${PREFIX}set-icon ─ set profile icon\n` +
-        `┃ ${PREFIX}gender <m/f/other> ─ set gender\n` +
-        `┃ ${PREFIX}mora ─ browse all Mora data\n` +
-        `┃ ${PREFIX}tamed ─ your captured Mora\n\n` +
-
-        `${divider}\n` +
-        `  💞  *COMPANION & MUTATION*\n` +
-        `${divider}\n` +
-        `┃ ${PREFIX}companion <mora> ─ set companion\n` +
-        `┃ ${PREFIX}companion ─ view companion & bond\n` +
-        `┃ ${PREFIX}mutate <mora> ─ trigger mutation\n` +
-        `┃ ${PREFIX}achievements ─ view titles & achievements\n\n` +
-
-        `${divider}\n` +
-        `  🎒  *INVENTORY & GEAR*\n` +
-        `${divider}\n` +
-        `┃ ${PREFIX}inventory ─ your items\n` +
-        `┃ ${PREFIX}item <name> ─ item details\n` +
-        `┃ ${PREFIX}consume <name> ─ use consumable\n` +
-        `┃ ${PREFIX}gear ─ equipped loadout\n` +
-        `┃ ${PREFIX}equip <item> ─ equip from bag\n` +
-        `┃ ${PREFIX}unequip <slot> ─ remove gear\n\n` +
-
-        `${divider}\n` +
-        `  💰  *ECONOMY & TRADING*\n` +
-        `${divider}\n` +
-        `┃ ${PREFIX}daily ─ daily Lucons + streak bonus\n` +
-        `┃ ${PREFIX}weekly ─ weekly Lucons (faction taxed)\n` +
-        `┃ ${PREFIX}give ─ send Lucons\n` +
-        `┃ ${PREFIX}reverse ─ undo a transaction\n` +
-        `┃ ${PREFIX}tamed-give ─ trade Mora\n` +
-        `┃ ${PREFIX}gitem <item> <qty> @user ─ give items\n\n` +
-
-        `${divider}\n` +
-        `  🔗  *REFERRALS*\n` +
-        `${divider}\n` +
-        `┃ ${PREFIX}myref ─ share your code\n` +
-        `┃ ${PREFIX}start <code> ─ join via referral\n` +
-        `┃ ${PREFIX}claim-ref ─ claim reward (DM)\n` +
-        `┃ ${PREFIX}pick-ref <choice> ─ pick reward (DM)\n\n` +
-
-        `${divider}\n` +
-        `  🏪  *MARKET*\n` +
-        `${divider}\n` +
-        `┃ ${PREFIX}market ─ browse the shop\n` +
-        `┃ ${PREFIX}buy <item> ─ purchase\n` +
-        `┃ ${PREFIX}subscribe-market ─ notifications ON\n` +
-        `┃ ${PREFIX}unsubscribe-market ─ notifications OFF\n\n` +
-
-        `${divider}\n` +
-        `  🕶  *BLACK MARKET (Premium)*\n` +
-        `${divider}\n` +
-        `┃ ${PREFIX}summon-merchant ─ call the void shop\n` +
-        `┃ ${PREFIX}black-market ─ browse forbidden items\n` +
-        `┃ ${PREFIX}buy-bm <item> <qty> ─ buy from void\n` +
-        `┃ ${PREFIX}marked-daily ─ Architect's bounty\n\n` +
-
-        `${divider}\n` +
-        `  🛡  *FACTIONS & WARS*\n` +
-        `${divider}\n` +
-        `┃ ${PREFIX}factioninfo <name> ─ perks & drawbacks\n` +
-        `┃ ${PREFIX}faction market ─ exclusive faction shop\n` +
-        `┃ ${PREFIX}fbuy <item> ─ buy faction gear\n` +
-        `┃ ${PREFIX}missions ─ weekly faction missions\n` +
-        `┃ ${PREFIX}complete <ID> ─ claim mission reward\n` +
-        `┃ ${PREFIX}facpoints ─ faction point standings\n` +
-        `┃ ${PREFIX}submit-mora <mora> ─ submit to facility\n` +
-        `┃ ${PREFIX}pe-check ─ Primordial Energy levels\n` +
-        `┃ ${PREFIX}facprogress ─ season graph (200L)\n` +
-        `┃ ${PREFIX}war join ─ register for war\n` +
-        `┃ ${PREFIX}war bracket ─ view war bracket\n` +
-        `┃ ${PREFIX}war history ─ past war results\n` +
-        `┃ ${PREFIX}ready ─ ready up for match\n` +
-        `┃ ${PREFIX}withdraw ─ leave war (penalties!)\n` +
-        `┃ ${PREFIX}f-lb ─ resonance leaderboard\n\n` +
-
-        (settings?.arenaGroups?.enabled ? (
-        `${divider}\n` +
-        `  🏟️  *NPC ARENA*\n` +
-        `${divider}\n` +
-        `┃ ${PREFIX}arena ─ view arena tiers & NPCs\n` +
-        `┃ ${PREFIX}npc <tier> ─ challenge an NPC\n` +
-        `┃ ${PREFIX}intel <name> ─ NPC dossier (unlock by winning)\n` +
-        `┃ ${PREFIX}arena-flee ─ abandon arena battle\n\n`
-        ) : "") +
-
-        `${divider}\n` +
-        `  ⚔  *PvP BATTLE*\n` +
-        `${divider}\n` +
-        `┃ ${PREFIX}battle @user ─ challenge\n` +
-        `┃ ${PREFIX}accept / ${PREFIX}reject ─ respond\n` +
-        `┃ ${PREFIX}attack 1-5 ─ use a move\n` +
-        `┃ ${PREFIX}switch 1-5 ─ swap Mora\n` +
-        `┃ ${PREFIX}use ─ use item in battle\n` +
-        `┃ ${PREFIX}charge ─ recover energy\n` +
-        `┃ ${PREFIX}forfeit ─ surrender\n\n` +
-
-        `${divider}\n` +
-        `  🌲  *HUNTING & EXPLORATION*\n` +
-        `${divider}\n` +
-        `┃ ${PREFIX}map ─ world map\n` +
-        `┃ ${PREFIX}travel <terrain> <diff> ─ set out\n` +
-        `┃ ${PREFIX}proceed / ${PREFIX}dismiss ─ confirm/cancel\n` +
-        `┃ ${PREFIX}return ─ head back to Capital\n` +
-        `┃ ${PREFIX}hunt ─ scout for Mora\n` +
-        `┃ ${PREFIX}track ─ follow tracks\n` +
-        `┃ ${PREFIX}pick / ${PREFIX}pass ─ loot or leave\n` +
-        `┃ ${PREFIX}journal ─ hunt history & streak\n` +
-        `┃ ${PREFIX}bounty ─ today's bounty target\n` +
-        `┃ ${PREFIX}assemble ─ forge Rift Relic (5 frags)\n` +
-        `┃ ${PREFIX}lastterrain ─ last 3 terrains\n\n` +
-
-        `${divider}\n` +
-        `  🕊  *POST-BATTLE ACTIONS*\n` +
-        `${divider}\n` +
-        `┃ _After defeating wild Mora:_\n` +
-        `┃ ${PREFIX}tame ─ bond with it (+Tame Skill)\n` +
-        `┃ ${PREFIX}release ─ free it (+Intelligence)\n` +
-        `┃ ${PREFIX}sanctuary ─ shelter it (+Lucons +Resonance)\n` +
-        `┃\n` +
-        `┃ _Harmony:_ ${PREFIX}purify [scroll] ─ purify corrupted\n` +
-        `┃ _Purity:_ ${PREFIX}execute · ${PREFIX}conscript · ${PREFIX}fortify\n` +
-        `┃ _Rift:_ ${PREFIX}devour · ${PREFIX}bind · ${PREFIX}harvest\n\n` +
-
-        `${divider}\n` +
-        `  🎲  *FUN & MISC*\n` +
-        `${divider}\n` +
-        `┃ ${PREFIX}q ─ quote reply → sticker\n` +
-        `┃ ${PREFIX}sticker ─ image → sticker\n` +
-        `┃ ${PREFIX}toimg ─ sticker → image\n` +
-        `┃ ${PREFIX}8ball <question> ─ magic 8-ball\n` +
-        `┃ ${PREFIX}flip ─ coin flip\n` +
-        `┃ ${PREFIX}roll <max> ─ dice roll\n` +
-        `┃ ${PREFIX}ship @user ─ love calculator\n` +
-        `┃ ${PREFIX}rate <thing> ─ rate anything\n` +
-        `┃ ${PREFIX}roast @user ─ roast someone\n` +
-        `┃ ${PREFIX}truth / ${PREFIX}dare ─ truth or dare\n\n` +
-
-        `${divider}\n` +
-        `  🔧  *UTILITY*\n` +
-        `${divider}\n` +
-        `┃ ${PREFIX}lb ─ global leaderboard\n` +
-        `┃ ${PREFIX}heal ─ heal all Mora\n` +
-        `┃ ${PREFIX}catch ─ catch spawned Mora\n` +
-        `┃ ${PREFIX}afk <reason> ─ set AFK\n` +
-        `┃ ${PREFIX}link ─ group invite link\n` +
-        `┃ ${PREFIX}rules ─ view group rules\n` +
-        `┃ ${PREFIX}warns @user ─ view warnings\n` +
-        `┃ ${PREFIX}bug-report <desc> ─ report a bug\n` +
-        `┃ ${PREFIX}appeal ─ request review\n` +
-        `┃ ${PREFIX}ping ─ test bot\n` +
-        `┃ ${PREFIX}uptime ─ bot uptime\n\n` +
-
-        `${divider}\n` +
-        `  🛡️  *SUDO (Admin)*\n` +
-        `${divider}\n` +
-        `┃ ${PREFIX}ban / ${PREFIX}unban / ${PREFIX}punish / ${PREFIX}forgive\n` +
-        `┃ ${PREFIX}warn @user / ${PREFIX}unwarn @user\n` +
-        `┃ ${PREFIX}promote / ${PREFIX}demote ─ group admin\n` +
-        `┃ ${PREFIX}announce <msg> ─ announcement\n` +
-        `┃ ${PREFIX}tagall ─ tag all members\n` +
-        `┃ ${PREFIX}players ─ player count\n` +
-        `┃ ${PREFIX}add-rule / ${PREFIX}remove-rule\n` +
-        `┃ ${PREFIX}bugs ─ view bug reports\n` +
-        `┃ ${PREFIX}sudolist ─ view hierarchy\n\n` +
-
-        `${divider}\n` +
-        `  ⚔️👑  *RIGHT-HAND MAN*\n` +
-        `${divider}\n` +
-        `┃ ${PREFIX}sudo / ${PREFIX}unsudo ─ manage sudos\n` +
-        `┃ _All Sudo powers + sudo management_\n\n` +
-
-        `${divider}\n` +
-        `  👑  *ARCHITECT (Owner)*\n` +
-        `${divider}\n` +
-        `┃ ${PREFIX}throne / ${PREFIX}unthrone ─ set Right-Hand\n` +
-        `┃ ${PREFIX}grant-mark / ${PREFIX}revoke-mark\n` +
-        `┃ ${PREFIX}set-gauge / ${PREFIX}reduce-gauge\n` +
-        `┃ ${PREFIX}war init / ${PREFIX}war-start\n` +
-        `┃ ${PREFIX}war winner @user ─ report match result\n` +
-        `┃ ${PREFIX}owner-fac-p ─ faction panel\n` +
-        `┃ ${PREFIX}bug <id> fixed ─ close bug report\n` +
-        `┃ ${PREFIX}owner-arena ─ arena control panel\n` +
-        `┃ ${PREFIX}addarenagroup ─ add arena group\n` +
-        `┃ ${PREFIX}arenagroup-on/off ─ toggle arena\n\n` +
-
-        `╔═══════════════════════════╗\n` +
-        `║  💰 Currency: *${settings.currencyName}*\n` +
-        `║  📝 *.confirm* / *.cancel* when prompted\n` +
-        `║  _"The Rift watches. Choose wisely."_\n` +
-        `╚═══════════════════════════╝`;
-
-    await sock.sendMessage(chatId, {
-        image: { url: "./help.jpg" },
-        caption: helpText
-    });
-}
       // .factioninfo — show perks AND drawbacks for any faction
       if (command === "factioninfo") {
         const key = String(args[0] || "").toLowerCase().trim();

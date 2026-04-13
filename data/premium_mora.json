@@ -1,0 +1,97 @@
+[
+  {
+    "id": 9001,
+    "name": "Vaelkaris",
+    "type": "Shadow",
+    "rarity": "Mythical",
+    "isPremium": true,
+    "description": "A void-born predator that feeds on Rift echoes. Only bearers of the Lumoran Mark can withstand its bond.",
+    "baseStats": { "hp": 180, "atk": 140, "def": 120, "spd": 130, "energy": 95 },
+    "moves": {
+      "Voidrend": { "power": 110, "accuracy": 95, "category": "Physical", "desc": "Tears a rift in the air to strike." },
+      "Umbral Chains": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Binds the target, preventing switching." },
+      "Null Pulse": { "power": 90, "accuracy": 100, "category": "Special", "desc": "A silent wave that ignores defense." },
+      "Shadow Maw": { "power": 125, "accuracy": 90, "category": "Physical", "desc": "A gaping void bite." },
+      "Rift Devour": { "power": 140, "accuracy": 85, "category": "Special", "desc": "Consumes part of the enemy's soul." }
+    },
+    "learnset": {
+      "1": ["Voidrend", "Umbral Chains", "Null Pulse", "Shadow Maw", "Rift Devour"]
+    }
+  },
+  {
+    "id": 9002,
+    "name": "Solgrave",
+    "type": "Flame",
+    "rarity": "Mythical",
+    "isPremium": true,
+    "description": "The first flame of the Lumoran sun. A trial-born beast that scorns the weak.",
+    "baseStats": { "hp": 200, "atk": 150, "def": 130, "spd": 110, "energy": 90 },
+    "moves": {
+      "Solar Edict": { "power": 130, "accuracy": 90, "category": "Special", "desc": "Releases a burst of condensed starfire." },
+      "Ember Crown": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Raises attack and special attack sharply." },
+      "Firestorm Rend": { "power": 115, "accuracy": 95, "category": "Physical", "desc": "A flame-wreathed slash." },
+      "Pyre Step": { "power": 80, "accuracy": 100, "category": "Physical", "desc": "Quick burning dash. Never misses." },
+      "Ashfall Requiem": { "power": 150, "accuracy": 80, "category": "Special", "desc": "Ends the song of all living things nearby." }
+    },
+    "learnset": {
+      "1": ["Solar Edict", "Ember Crown", "Firestorm Rend", "Pyre Step", "Ashfall Requiem"]
+    }
+  },
+  {
+    "id": 9003,
+    "name": "Thaloran",
+    "type": "Aqua",
+    "rarity": "Mythical",
+    "isPremium": true,
+    "description": "A deep-abyss leviathan said to carry the memory of every drowned Lumorian.",
+    "baseStats": { "hp": 220, "atk": 130, "def": 150, "spd": 100, "energy": 100 },
+    "moves": {
+      "Abyss Roar": { "power": 120, "accuracy": 95, "category": "Special", "desc": "A sonic pulse from the trench." },
+      "Crushing Tide": { "power": 135, "accuracy": 90, "category": "Physical", "desc": "A wall of pressurized ocean." },
+      "Drown Ward": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Drastically raises defense." },
+      "Maelstrom": { "power": 110, "accuracy": 90, "category": "Special", "desc": "Whirls the target in a torrent." },
+      "Oathkeeper's Brine": { "power": 140, "accuracy": 85, "category": "Special", "desc": "Salts the wound, draining HP." }
+    },
+    "learnset": {
+      "1": ["Abyss Roar", "Crushing Tide", "Drown Ward", "Maelstrom", "Oathkeeper's Brine"]
+    }
+  },
+  {
+    "id": 9004,
+    "name": "Verdinox",
+    "type": "Nature",
+    "rarity": "Mythical",
+    "isPremium": true,
+    "description": "An ancient grove-warden whose roots drink from the Rift itself. Untamed by any outside the Mark.",
+    "baseStats": { "hp": 210, "atk": 135, "def": 145, "spd": 105, "energy": 92 },
+    "moves": {
+      "Canopy Fall": { "power": 125, "accuracy": 90, "category": "Physical", "desc": "A living tree slams down." },
+      "Bramble Bind": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Lowers speed sharply." },
+      "Photosever": { "power": 115, "accuracy": 95, "category": "Special", "desc": "A searing beam of concentrated light." },
+      "Grove Surge": { "power": 0, "accuracy": 100, "category": "Status", "desc": "Restores 40% HP." },
+      "Rootmaw": { "power": 140, "accuracy": 85, "category": "Physical", "desc": "Roots burst from the ground and clamp down." }
+    },
+    "learnset": {
+      "1": ["Canopy Fall", "Bramble Bind", "Photosever", "Grove Surge", "Rootmaw"]
+    }
+  },
+  {
+    "id": 9005,
+    "name": "Stormvael",
+    "type": "Volt",
+    "rarity": "Mythical",
+    "isPremium": true,
+    "description": "A living thunderhead born the day the Lumoran sky first cracked.",
+    "baseStats": { "hp": 175, "atk": 155, "def": 115, "spd": 160, "energy": 88 },
+    "moves": {
+      "Judgement Bolt": { "power": 140, "accuracy": 90, "category": "Special", "desc": "A spear of lightning from above." },
+      "Static Veil": { "power": 0, "accuracy": 100, "category": "Status", "desc": "May paralyze on contact." },
+      "Skyshock": { "power": 120, "accuracy": 95, "category": "Special", "desc": "A wide arcing burst." },
+      "Thunder Step": { "power": 85, "accuracy": 100, "category": "Physical", "desc": "A blinding fast lightning-dash." },
+      "Heaven's Rend": { "power": 155, "accuracy": 80, "category": "Special", "desc": "Splits the heavens in two." }
+    },
+    "learnset": {
+      "1": ["Judgement Bolt", "Static Veil", "Skyshock", "Thunder Step", "Heaven's Rend"]
+    }
+  }
+]

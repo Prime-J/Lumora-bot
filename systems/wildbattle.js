@@ -887,13 +887,14 @@ async function cmdWildCapture(ctx, chatId, senderId, msg) {
 
   const target = state.wildMora;
   
-  // 2. Pro Blessing Check for Premium Mora
+  // 2. Pro Subscription Check for Premium Mora
   if (target.isPremium) {
-    const hasTame = player.blessings && player.blessings.tame && player.blessings.tame > Date.now();
+    let hasPro = false;
+    try { hasPro = require("./pro").hasActivePro(player); } catch { hasPro = false; }
 
-    if (!hasTame) {
-      return sock.sendMessage(chatId, { 
-        text: `❌ *ACCESS DENIED*\n\n@${senderId.split('@')[0]}, your soul frequency is too weak to bind with **${target.name}**.\n\nYou need the *Tame Blessing* from the Architect to capture Premium-tier beasts!`,
+    if (!hasPro) {
+      return sock.sendMessage(chatId, {
+        text: `❌ *ACCESS DENIED*\n\n@${senderId.split('@')[0]}, your soul frequency is too weak to bind with **${target.name}**.\n\nOnly *Marked Lumorians* (active Pro subscribers) may tame Premium-tier beasts. See *.pro-info*.`,
         mentions: [senderId]
       }, { quoted: msg });
     }

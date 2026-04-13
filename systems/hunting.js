@@ -581,20 +581,22 @@ function buildTrackedCorruptedAnnouncement(announcement, ground, diffKey, name) 
 // SECTION 8 — BURNOUT / ENERGY SYSTEM
 // ══════════════════════════════════════════════════════════════
 // Players start with 200 energy (launch gift).
-// When it hits 0, it drops to 100 unless they have Vigor blessing.
+// When it hits 0, it drops to 100 unless they have an active pro tier.
 // Owner can override max via .set-gauge.
-// Energy regens 100 every 12 hours via the regen check in cmdHunt.
+// Energy regens 50% every 6 hours via the regen check in cmdHunt.
 
 function handleBurnout(player, hunter) {
-  const hasVigor = player.blessings?.vigor && player.blessings.vigor > Date.now();
+  // Pro subscribers keep their full 200 gauge ("Vigor" perk)
+  let hasPro = false;
+  try { hasPro = require("./pro").hasActivePro(player); } catch { hasPro = false; }
   if (player.huntEnergy <= 0 && player.maxHuntEnergy === 200) {
-    if (!hasVigor) {
+    if (!hasPro) {
       player.maxHuntEnergy   = 100;
       hunter.huntEnergyMax   = 100;
       player.huntEnergy      = 0;
       return "⚠️ *BURNOUT* — Your beginner surge has faded. Max energy is now *100*.\n";
     } else {
-      return "👑 *VIGOR BLESSING* — The Architect's seal protects your gauge from burnout!\n";
+      return "👑 *MARK OF VIGOR* — Your active Lumoran Mark shields your gauge from burnout!\n";
     }
   }
   // Low-energy warning (below 20% of max)
