@@ -4,6 +4,9 @@
 // Prefix/Currency/Owner now stored in data/settings.json
 // ✅ FIXED: Baileys is ESM-only -> dynamic import()
 // ============================
+const dns = require("dns");
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
+
 const express = require('express');
 const app = express();
 const port = process.env.PORT || 10000;
@@ -91,6 +94,11 @@ const arenaSystem = require('./systems/npcArena');
 const proSystem = require('./systems/pro');
 const moraCreationSystem = require('./systems/moraCreation');
 const mongoDb = require('./db/mongo');
+const { generateMoraCard } = require('./systems/moraCardCanvas');
+const { generateProfileCard } = require('./systems/profileCardCanvas');
+const { generateBattleResult } = require('./systems/battleResultCanvas');
+const { generateAchievementUnlock, generateAchievementCard } = require('./systems/achievementUnlockCanvas');
+const { generateLeaderboard } = require('./systems/leaderboardCanvas');
 
 // ============================
 // NEW COMMANDS — shown in .help for 12 hours after addedAt
@@ -194,7 +202,7 @@ async function resolveFactionGroups(sock) {
   for (const [code, faction] of Object.entries(FACTION_INVITE_MAP)) {
     try {
       const info = await sock.groupGetInviteInfo(code);
-      if (info?.id) FACTION_GROUPS[info.id] = { faction };
+      if (info?.id) FACTION_GROUPS[normJid(info.id)] = { faction };
     } catch (e) {
       console.log(`⚠️ Could not resolve faction group invite ${code}: ${e.message}`);
     }
@@ -260,6 +268,10 @@ async function bootPlayers() {
       }
       console.log("[boot] All players marked for MongoDB sync (will flush in 3s)");
     }
+  } else {
+    // Mirror MongoDB data to the local JSON warm cache so synchronous
+    // loadPlayers() calls throughout the codebase see it.
+    saveJSON(PLAYERS_FILE, players);
   }
 
   return players;
@@ -271,6 +283,10 @@ function markPlayerDirty(jid, players) {
   if (players) {
     mongoDb.markDirty(players, jid);
   }
+}
+
+function loadPlayers() {
+  return loadJSON(PLAYERS_FILE, {});
 }
 
 function savePlayers(players) {
@@ -353,23 +369,28 @@ function getRankForLevel(level) {
 
 // ── ACHIEVEMENTS & TITLES ───────────────────────────────
 const ACHIEVEMENTS = {
-  first_catch:   { title: "Mora Catcher",      desc: "Catch your first Mora",         icon: "🐾" },
-  tamer_10:      { title: "Beast Tamer",        desc: "Own 10 Mora",                   icon: "🦁" },
-  tamer_25:      { title: "Mora Warden",        desc: "Own 25 Mora",                   icon: "🛡️" },
-  battle_1:      { title: "First Blood",        desc: "Win your first PvP battle",     icon: "⚔️" },
-  battle_10:     { title: "Battle Hardened",     desc: "Win 10 PvP battles",            icon: "🗡️" },
-  battle_50:     { title: "War Machine",         desc: "Win 50 PvP battles",            icon: "💀" },
-  rich_5k:       { title: "Wealthy",            desc: "Hold 5,000 Lucons at once",     icon: "💰" },
-  rich_20k:      { title: "Tycoon",             desc: "Hold 20,000 Lucons at once",    icon: "👑" },
-  level_10:      { title: "Rising Star",        desc: "Reach level 10",                icon: "🌟" },
-  level_25:      { title: "Veteran",            desc: "Reach level 25",                icon: "🎖️" },
-  level_50:      { title: "Legend",             desc: "Reach level 50",                icon: "🏆" },
-  hunter_50:     { title: "Master Hunter",      desc: "Complete 50 hunts",             icon: "🏹" },
-  streak_7:      { title: "Devoted",            desc: "7-day login streak",            icon: "🔥" },
-  streak_30:     { title: "Unbreakable",        desc: "30-day login streak",           icon: "⚡" },
-  faction_500:   { title: "Faction Loyalist",   desc: "Earn 500 resonance",            icon: "🚩" },
-  companion_100: { title: "Soulbound",          desc: "Reach 100 companion bond",      icon: "💞" },
-  mutator:       { title: "Mutant Whisperer",   desc: "Trigger 10 mutations",          icon: "🧬" },
+  first_catch:   { title: "Mora Catcher",      desc: "Catch your first Mora",         icon: "🐾", aura: 2 },
+  tamer_10:      { title: "Beast Tamer",        desc: "Own 10 Mora",                   icon: "🦁", aura: 5 },
+  tamer_25:      { title: "Mora Warden",        desc: "Own 25 Mora",                   icon: "🛡️", aura: 8 },
+  battle_1:      { title: "First Blood",        desc: "Win your first PvP battle",     icon: "⚔️", aura: 3 },
+  battle_10:     { title: "Battle Hardened",     desc: "Win 10 PvP battles",            icon: "🗡️", aura: 7 },
+  battle_50:     { title: "War Machine",         desc: "Win 50 PvP battles",            icon: "💀", aura: 15 },
+  rich_5k:       { title: "Wealthy",            desc: "Hold 5,000 Lucons at once",     icon: "💰", aura: 4 },
+  rich_20k:      { title: "Tycoon",             desc: "Hold 20,000 Lucons at once",    icon: "👑", aura: 10 },
+  level_10:      { title: "Rising Star",        desc: "Reach level 10",                icon: "🌟", aura: 3 },
+  level_25:      { title: "Veteran",            desc: "Reach level 25",                icon: "🎖️", aura: 8 },
+  level_50:      { title: "Legend",             desc: "Reach level 50",                icon: "🏆", aura: 20 },
+  hunter_50:     { title: "Master Hunter",      desc: "Complete 50 hunts",             icon: "🏹", aura: 12 },
+  streak_7:      { title: "Devoted",            desc: "7-day login streak",            icon: "🔥", aura: 3 },
+  streak_30:     { title: "Unbreakable",        desc: "30-day login streak",           icon: "⚡", aura: 12 },
+  faction_500:   { title: "Faction Loyalist",   desc: "Earn 500 resonance",            icon: "🚩", aura: 10 },
+  companion_100: { title: "Soulbound",          desc: "Reach 100 companion bond",      icon: "💞", aura: 8 },
+  mutator:       { title: "Mutant Whisperer",   desc: "Trigger 10 mutations",          icon: "🧬", aura: 9 },
+  creator_first: { title: "Architect",         desc: "Submit your first Mora design", icon: "⚗️", aura: 6 },
+  creator_rare:  { title: "Crafted in Rift",   desc: "Create a Rare or higher Mora", icon: "💎", aura: 10 },
+  creator_epic:  { title: "Epic Forger",       desc: "Create an Epic Mora",          icon: "🌀", aura: 15 },
+  creator_legendary: { title: "Legendary Shaper", desc: "Create a Legendary Mora", icon: "🌟", aura: 25 },
+  creator_3:     { title: "Serial Architect",  desc: "Create 3 Moras",               icon: "🔬", aura: 12 },
 };
 
 function checkAchievements(player) {
@@ -395,6 +416,11 @@ function checkAchievements(player) {
     faction_500:   () => (p.resonance || 0) >= 500,
     companion_100: () => (p.companionBond || 0) >= 100,
     mutator:       () => (p.totalMutations || 0) >= 10,
+    creator_first: () => (p.totalCreations || 0) >= 1,
+    creator_rare:  () => (p.topCreationRarity || 0) >= 3,
+    creator_epic:  () => (p.topCreationRarity || 0) >= 4,
+    creator_legendary: () => (p.topCreationRarity || 0) >= 5,
+    creator_3:     () => (p.totalCreations || 0) >= 3,
   };
   for (const [key, check] of Object.entries(checks)) {
     if (!p.achievements.includes(key) && check()) {
@@ -775,6 +801,19 @@ function isArenaAllowedInChat(chatId, settings) {
 function denyArenaGroup(sock, chatId, msg) {
   return sock.sendMessage(chatId, {
     text: "🏟️ The Arena is unavailable in this group.\nGo to the arena group or contact the Architect.",
+  }, { quoted: msg });
+}
+function isMoraCreationAllowedInChat(chatId, settings) {
+  const mc = settings?.moraCreationGroups || { enabled: true, allowed: [] };
+  if (mc.enabled === false) return false;
+  if (!isGroupJid(chatId)) return true; // DMs always allowed
+  const allowed = Array.isArray(mc.allowed) ? mc.allowed : [];
+  if (allowed.length === 0) return true; // empty = all groups
+  return allowed.includes(chatId);
+}
+function denyMoraCreationGroup(sock, chatId, msg) {
+  return sock.sendMessage(chatId, {
+    text: "🧪 Mora creation is unavailable in this group.\nVisit an allowed Lumora Labs location or contact the Architect.",
   }, { quoted: msg });
 }
 // (old mark/blessing expiration helper removed — replaced by pro.js tier system)
@@ -1412,9 +1451,10 @@ sock.ev.on('group-participants.update', async (update) => {
     const playersNow = loadPlayers();
     const moraListNow = loadMora();
 
-    if (action === 'add') {
+    if (action === 'add' || action === 'join') {
         try { await resolveFactionGroups(sock); } catch {}
-        const groupInfo = FACTION_GROUPS[id];
+        const normId = normJid(id);
+        const groupInfo = FACTION_GROUPS[normId];
 
         for (const jid of participants) {
             const normed = normJid(jid);
@@ -1638,6 +1678,13 @@ sock.ev.removeAllListeners("messages.upsert");
       }
 
       const text = getText(msg).trim();
+
+      // ── PENDING CREATION FLOW INTERCEPTOR ──
+      const moraCreationSystem = require("./systems/moraCreation");
+      if (moraCreationSystem.hasPendingCreation(senderId)) {
+        return moraCreationSystem.handlePendingCreation(ctx, chatId, senderId, msg, text);
+      }
+
       const isCommand = text.startsWith(PREFIX);
 
       if (!isCommand) return;
@@ -3145,6 +3192,24 @@ if (command === "choose") {
         const mora = findMora(moraList, query) || findMora(moraList, queryRaw);
         if (!mora) return sock.sendMessage(chatId, { text: `❌ Mora not found: *${queryRaw}*` });
 
+        // Send visual mora card
+        try {
+          const moraCard = await generateMoraCard({
+            id: mora.id,
+            name: mora.name,
+            type: mora.type,
+            rarity: mora.rarity,
+            description: mora.description,
+            stats: mora.stats,
+            moves: mora.moves,
+            special: mora.special,
+            creator: mora.creator || "Wild Mora"
+          });
+          await sock.sendMessage(chatId, { image: moraCard });
+        } catch (e) {
+          console.log("Mora card generation failed:", e.message);
+        }
+
         return sock.sendMessage(chatId, {
           text:
             `🐉 *MORA INFO*\n\n` +
@@ -3250,6 +3315,36 @@ if (command === "pro-grant") {
         normJid: (x) => x,
     });
 }
+if (command === "pros") {
+    if (!isOwner) return sock.sendMessage(chatId, { text: "🛑 Owner only." });
+    const proPlayers = Object.entries(players)
+        .filter(([, p]) => p && proSystem.hasActivePro(p))
+        .map(([jid, p]) => ({
+            jid,
+            username: p.username || jid.split("@")[0],
+            tier: proSystem.getActiveTier(p)?.label || "unknown",
+            expiresAt: p.pro?.expiresAt || 0
+        }));
+
+    if (!proPlayers.length) {
+        return sock.sendMessage(chatId, { text: "📊 No active pro subscribers." });
+    }
+
+    const lines = [];
+    lines.push(`${DIVIDER}`);
+    lines.push(`💎 *ACTIVE PRO SUBSCRIBERS*`);
+    lines.push(`${DIVIDER}\n`);
+    for (const pp of proPlayers) {
+        const expiryDate = new Date(pp.expiresAt).toLocaleDateString();
+        lines.push(`👤 *${pp.username}*`);
+        lines.push(`   Tier: ${pp.tier}`);
+        lines.push(`   Expires: ${expiryDate}\n`);
+    }
+    lines.push(`${DIVIDER}`);
+    lines.push(`Total: *${proPlayers.length}* subscriber${proPlayers.length === 1 ? "" : "s"}`);
+
+    return sock.sendMessage(chatId, { text: lines.join("\n") });
+}
 if (command === "autocatch") {
     return proSystem.cmdAutocatch(ctx, chatId, senderId, msg, args);
 }
@@ -3263,6 +3358,9 @@ if (command === "autocatch-log") {
 if (command === "create-mora" || command === "createmora" || command === "cmora") {
     return moraCreationSystem.cmdCreateMora(ctx, chatId, senderId, msg, args);
 }
+if (command === "cancel-create" || command === "cancelcreate") {
+    return moraCreationSystem.cmdCancelCreate(ctx, chatId, senderId, msg);
+}
 if (command === "creations") {
     return moraCreationSystem.cmdCreationsList(ctx, chatId, senderId, msg);
 }
@@ -3271,6 +3369,110 @@ if (command === "approve-mora" || command === "approvemora") {
 }
 if (command === "reject-mora" || command === "rejectmora") {
     return moraCreationSystem.cmdRejectMora(ctx, chatId, senderId, msg, args);
+}
+
+// ─────────────────────────────────────────────
+// MORA CREATION GROUP MANAGEMENT (Owner-only)
+// ─────────────────────────────────────────────
+if (command === "moragroups") {
+    if (!isOwner) return sock.sendMessage(chatId, { text: "🛑 Owner only." });
+    const mc = settings?.moraCreationGroups || { enabled: true, allowed: [] };
+    let text = `${DIVIDER}\n🧪 *MORA CREATION LABS — SETTINGS*\n${DIVIDER}\n\n`;
+    text += `Status: ${mc.enabled ? "✅ *ENABLED*" : "❌ *DISABLED*"}\n\n`;
+    text += `Allowed groups (empty = all groups):\n`;
+    if (mc.allowed && mc.allowed.length > 0) {
+        mc.allowed.forEach(g => text += `  • ${g}\n`);
+    } else {
+        text += `  _(all groups allowed)_\n`;
+    }
+    text += `\nCommands:\n• *.addmoragroup* — add this group\n• *.removemoragroup* — remove this group\n• *.moracreation-on* — enable\n• *.moracreation-off* — disable`;
+    return sock.sendMessage(chatId, { text }, { quoted: msg });
+}
+if (command === "addmoragroup") {
+    if (!isOwner) return sock.sendMessage(chatId, { text: "🛑 Owner only." });
+    if (!isGroupJid(chatId)) return sock.sendMessage(chatId, { text: "❌ This command only works in groups." });
+    const mc = settings?.moraCreationGroups || { enabled: true, allowed: [] };
+    if (!Array.isArray(mc.allowed)) mc.allowed = [];
+    if (mc.allowed.includes(chatId)) {
+        return sock.sendMessage(chatId, { text: "ℹ️ This group is already in the list." });
+    }
+    mc.allowed.push(chatId);
+    settings.moraCreationGroups = mc;
+    const settingsModule = require("./lib/settings");
+    settingsModule.saveSettings(settings);
+    return sock.sendMessage(chatId, { text: "✅ This group added to Mora Creation Labs." });
+}
+if (command === "removemoragroup") {
+    if (!isOwner) return sock.sendMessage(chatId, { text: "🛑 Owner only." });
+    if (!isGroupJid(chatId)) return sock.sendMessage(chatId, { text: "❌ This command only works in groups." });
+    const mc = settings?.moraCreationGroups || { enabled: true, allowed: [] };
+    if (!Array.isArray(mc.allowed)) mc.allowed = [];
+    const idx = mc.allowed.indexOf(chatId);
+    if (idx === -1) {
+        return sock.sendMessage(chatId, { text: "ℹ️ This group is not in the list." });
+    }
+    mc.allowed.splice(idx, 1);
+    settings.moraCreationGroups = mc;
+    const settingsModule = require("./lib/settings");
+    settingsModule.saveSettings(settings);
+    return sock.sendMessage(chatId, { text: "✅ This group removed from Mora Creation Labs." });
+}
+if (command === "moracreation-on") {
+    if (!isOwner) return sock.sendMessage(chatId, { text: "🛑 Owner only." });
+    settings.moraCreationGroups = settings.moraCreationGroups || { enabled: true, allowed: [] };
+    settings.moraCreationGroups.enabled = true;
+    const settingsModule = require("./lib/settings");
+    settingsModule.saveSettings(settings);
+    return sock.sendMessage(chatId, { text: "✅ Mora Creation Labs *enabled*." });
+}
+if (command === "moracreation-off") {
+    if (!isOwner) return sock.sendMessage(chatId, { text: "🛑 Owner only." });
+    settings.moraCreationGroups = settings.moraCreationGroups || { enabled: true, allowed: [] };
+    settings.moraCreationGroups.enabled = false;
+    const settingsModule = require("./lib/settings");
+    settingsModule.saveSettings(settings);
+    return sock.sendMessage(chatId, { text: "✅ Mora Creation Labs *disabled*." });
+}
+
+// ─────────────────────────────────────────────
+// GIVE ORB (Owner-only)
+// ─────────────────────────────────────────────
+if (command === "give-orb" || command === "giveorb") {
+    if (!isOwner) return sock.sendMessage(chatId, { text: "🛑 Owner only." });
+
+    const mentioned = getMentionedJids(msg);
+    const replied = getRepliedJid(msg);
+    const argJid = toUserJidFromArg(args[0]);
+    const targetJid = mentioned[0] || replied || argJid;
+
+    if (!targetJid) {
+        return sock.sendMessage(chatId, { text: "Usage: *.give-orb @user [amount]*\nExample: `.give-orb @player 5`" });
+    }
+
+    const amount = Number(args[1]) || 1;
+    if (amount <= 0 || !Number.isFinite(amount)) {
+        return sock.sendMessage(chatId, { text: "❌ Amount must be a positive number." });
+    }
+
+    const target = players[normJid(targetJid)];
+    if (!target) {
+        return sock.sendMessage(chatId, { text: "❌ Player not registered." });
+    }
+
+    const itemsSystem = require("./systems/items");
+    itemsSystem.ensurePlayerItemData(target);
+    const result = itemsSystem.addItem(target, "REOB", amount);
+
+    if (!result.ok) {
+        return sock.sendMessage(chatId, { text: `❌ ${result.reason}` });
+    }
+
+    savePlayers(players);
+    const targetName = target.username || targetJid.split("@")[0];
+    return sock.sendMessage(chatId, {
+        text: `✅ Given *${amount} Rift Energy Orb${amount === 1 ? "" : "s"}* to *${targetName}*.`,
+        mentions: [targetJid]
+    }, { quoted: msg });
 }
 
 // 🕶️ SUMMON MERCHANT — now a perk of any active pro subscription
@@ -3667,6 +3869,16 @@ const achTitleLine = achCount
   ? `🏅 Titles: ${showTitles}${achCount > 3 ? `  (+${achCount - 3} more)` : ""}\n`
   : "";
 
+// Calculate aura with equipped achievement bonus
+let displayAura = p.aura ?? 0;
+let equippedAchLine = "";
+if (p.equippedAchievement && ACHIEVEMENTS[p.equippedAchievement]) {
+  const ach = ACHIEVEMENTS[p.equippedAchievement];
+  const auraBonus = ach.aura || 0;
+  displayAura += auraBonus;
+  equippedAchLine = `🎖️ Equipped: ${ach.icon} *${ach.title}* (+${auraBonus} Aura)\n`;
+}
+
 const profileCaption =
     `⚔️ *L U M O R A  •  P R O F I L E* ⚔️\n\n` +
 
@@ -3685,8 +3897,9 @@ const profileCaption =
     `├ 📊 Level: *${p.level ?? 1}* (${p.xp ?? 0} XP)\n` +
     `├ 💠 Resonance: *${p.resonance || 0}*\n` +
     `├ 🧠 Intelligence: *${p.intelligence ?? 0}*\n` +
-    `├ ✨ Aura: *${p.aura ?? 0}*\n` +
+    `├ ✨ Aura: *${displayAura}*${p.aura !== displayAura ? ` (base: ${p.aura ?? 0})` : ""}\n` +
     `└ 🪢 Tame Skill: *${p.tameSkill ?? 0}*\n\n` +
+    (equippedAchLine ? `${equippedAchLine}\n` : "") +
 
     `🚩 *F A C T I O N*\n` +
     `├ ⚔ Faction: *${factionLine}*\n` +
@@ -3710,6 +3923,25 @@ const profileCaption =
     `├ 🐾 Owned: *${moraCount}*\n` +
     `└ ⭐ Main Mora: *${main?.name || "None"}*` +
     (main ? ` (${main.type || "—"}) • Lv *${main.level ?? 1}*` : "");
+        // Try to send visual profile card
+        try {
+          const profileData = {
+            username: p.username || "Player",
+            faction: p.faction || "neutral",
+            level: p.level || 1,
+            xp: p.xp || 0,
+            intel: p.intelligence ?? 0,
+            aura: p.aura ?? 0,
+            totalCreations: p.totalCreations || 0,
+            equippedAchievement: p.equippedAchievement ? ACHIEVEMENTS[p.equippedAchievement] : null,
+            achievementAura: p.equippedAchievement && ACHIEVEMENTS[p.equippedAchievement] ? (ACHIEVEMENTS[p.equippedAchievement].aura || 0) : 0
+          };
+          const profileCard = await generateProfileCard(profileData);
+          await sock.sendMessage(chatId, { image: profileCard }, { quoted: msg });
+        } catch (e) {
+          console.log("Profile card generation failed:", e.message);
+        }
+
         if (p.profileIcon && typeof p.profileIcon === "string" && p.profileIcon.startsWith("data:")) {
           try {
             const [header, b64] = p.profileIcon.split(",");
@@ -4170,7 +4402,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
             newAch.map(k => `${ACHIEVEMENTS[k].icon} *${ACHIEVEMENTS[k].title}* — ${ACHIEVEMENTS[k].desc}`).join("\n");
         }
 
-        return sock.sendMessage(chatId, {
+        await sock.sendMessage(chatId, {
           text:
             `🧬 *MUTATION TRIGGERED!*\n\n` +
             `🐾 *${target.name}* mutated!\n` +
@@ -4179,6 +4411,19 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
             (isCompanion ? `💞 Companion bond amplified the mutation!` : `📦 Used: *${itemUsed === "MUT_002" ? "Primal Catalyst" : "Mutation Shard"}*`) +
             achLine,
         }, { quoted: msg });
+
+        // Send visual cards for new achievements
+        for (const achKey of newAch) {
+          try {
+            const ach = ACHIEVEMENTS[achKey];
+            const achCard = await generateAchievementUnlock(ach, p);
+            await sock.sendMessage(chatId, { image: achCard });
+          } catch (e) {
+            console.log("Achievement card generation failed:", e.message);
+          }
+        }
+
+        return;
       }
 
       // ============================
@@ -4204,6 +4449,60 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
             `🏆 *ACHIEVEMENTS & TITLES*\n\n` +
             (earned.length ? `✅ *Earned:*\n${earned.join("\n")}\n\n` : "") +
             (locked.length ? `🔒 *Locked:*\n${locked.join("\n")}` : "All achievements unlocked! 🎉"),
+        }, { quoted: msg });
+      }
+
+      // ============================
+      // EQUIP ACHIEVEMENT
+      // ============================
+      if (command === "equip" || command === "equip-achievement") {
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" }, { quoted: msg });
+        const p = players[senderId];
+        const achievementKey = (args[0] || "").toLowerCase();
+
+        if (!achievementKey) {
+          const earned = (p.achievements || []).map(k => `${ACHIEVEMENTS[k].icon} *${k}*`).join("\n");
+          return sock.sendMessage(chatId, {
+            text: earned ?
+              `Usage: *.equip <achievement_key>*\n\nYour achievements:\n${earned}` :
+              `❌ You have no achievements to equip.`
+          }, { quoted: msg });
+        }
+
+        const ach = ACHIEVEMENTS[achievementKey];
+        if (!ach) {
+          return sock.sendMessage(chatId, { text: `❌ Achievement not found.` }, { quoted: msg });
+        }
+
+        if (!(p.achievements || []).includes(achievementKey)) {
+          return sock.sendMessage(chatId, { text: `❌ You haven't earned this achievement yet.` }, { quoted: msg });
+        }
+
+        p.equippedAchievement = achievementKey;
+        savePlayers(players);
+        return sock.sendMessage(chatId, {
+          text: `✨ Equipped: ${ach.icon} *${ach.title}*\n\nYou gain *+${ach.aura}* Aura!`,
+          mentions: [senderId]
+        }, { quoted: msg });
+      }
+
+      // ============================
+      // UNEQUIP ACHIEVEMENT
+      // ============================
+      if (command === "unequip" || command === "unequip-achievement") {
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" }, { quoted: msg });
+        const p = players[senderId];
+
+        if (!p.equippedAchievement) {
+          return sock.sendMessage(chatId, { text: `❌ You don't have an achievement equipped.` }, { quoted: msg });
+        }
+
+        const ach = ACHIEVEMENTS[p.equippedAchievement];
+        p.equippedAchievement = null;
+        savePlayers(players);
+        return sock.sendMessage(chatId, {
+          text: `Unequipped: ${ach.icon} *${ach.title}*`,
+          mentions: [senderId]
         }, { quoted: msg });
       }
 
@@ -4655,6 +4954,31 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
       // --- COMMAND: GLOBAL LEADERBOARD ---
 if (command === "lb") {
     const text = lb.getGlobalLeaderboard(players);
+
+    // Send visual leaderboard card
+    try {
+      const topPlayers = Object.values(players)
+        .filter(p => p.username && p.level)
+        .sort((a, b) => (b.level || 0) - (a.level || 0))
+        .slice(0, 10)
+        .map((p, i) => ({
+          rank: i + 1,
+          username: p.username,
+          level: p.level || 1,
+          faction: p.faction || "neutral",
+          xp: p.xp || 0,
+          aura: p.aura || 0,
+          totalCreations: p.totalCreations || 0
+        }));
+
+      if (topPlayers.length > 0) {
+        const lbCard = await generateLeaderboard(topPlayers, "level");
+        await sock.sendMessage(chatId, { image: lbCard });
+      }
+    } catch (e) {
+      console.log("Leaderboard card generation failed:", e.message);
+    }
+
     await sock.sendMessage(chatId, { text });
 }
 
