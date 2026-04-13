@@ -50,7 +50,7 @@ const TIERS = {
     key: "ashen",
     label: "🜁 Ashen Mark",
     durationMs: 14 * 24 * 60 * 60 * 1000,      // 2 weeks
-    priceUsd: 2,                                // $2
+    priceUsd: 3,                                // $3
     crystalGrant: 100,
     dailyLucons: 250,
     dailyLcrRange: [2, 5],

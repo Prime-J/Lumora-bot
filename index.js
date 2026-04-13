@@ -251,7 +251,14 @@ async function bootPlayers() {
   if (Object.keys(players).length === 0) {
     players = loadJSON(PLAYERS_FILE, {});
     if (Object.keys(players).length > 0) {
-      console.log("[boot] Loaded players from JSON fallback");
+      console.log(`[boot] Loaded ${Object.keys(players).length} players from JSON fallback`);
+
+      // First run: sync all existing players to MongoDB immediately
+      console.log("[boot] Syncing all players to MongoDB...");
+      for (const jid of Object.keys(players)) {
+        mongoDb.markDirty(players, jid);
+      }
+      console.log("[boot] All players marked for MongoDB sync (will flush in 3s)");
     }
   }
 
