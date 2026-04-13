@@ -85,10 +85,12 @@ async function sendFactionWelcome(sock, chatId, faction) {
 // ============================
 async function sendLeaveTaunt(sock, chatId, leaverJid) {
   const taunt = pickRandom(LEAVE_MESSAGES);
-  const tag = `@${String(leaverJid).split('@')[0]}`;
+  // Ensure leaverJid is a string
+  const jidStr = typeof leaverJid === 'string' ? leaverJid : String(leaverJid);
+  const tag = `@${jidStr.split('@')[0]}`;
   return sock.sendMessage(chatId, {
     text: `${tag} just left the group.\n\n${taunt}`,
-    mentions: [leaverJid]
+    mentions: [jidStr]
   });
 }
 
