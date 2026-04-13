@@ -132,7 +132,12 @@ async function generateMoraCard(mora) {
   ctx.textAlign = "left";
   ctx.fillText("MOVES", 60, 855);
 
-  const moves = mora.moves || [];
+  // Handle moves as array or object
+  let moves = mora.moves || [];
+  if (typeof moves === "object" && !Array.isArray(moves)) {
+    moves = Object.entries(moves).map(([name, data]) => ({ name, ...data }));
+  }
+
   moves.slice(0, 4).forEach((move, i) => {
     const y = 895 + i * 35;
     ctx.fillStyle = "#E8E8E8";
