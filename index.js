@@ -1379,7 +1379,6 @@ async function startBot() {
       keys: makeCacheableSignalKeyStore(state.keys, logger),
     },
     browser: ["Lumora", "Chrome", "1.0.0"],
-    printQRInTerminal: true,
     syncFullHistory: false,
     markOnlineOnConnect: false,
     emitOwnEvents: false,
@@ -1387,6 +1386,7 @@ async function startBot() {
   });
 
   console.log("[socket] Socket created, waiting for connection...");
+  console.log("[socket] Credentials registered:", state.creds?.registered);
 
   // Error handling for socket
   sock.ev.on("connection.error", (err) => {
@@ -1404,7 +1404,12 @@ async function startBot() {
 
   sock.ev.on("connection.update", (update) => {
     console.log("[socket] Connection update received:", update.connection);
-    const { connection, lastDisconnect } = update;
+    const { connection, lastDisconnect, qr } = update;
+
+    if (qr) {
+      console.log("\n✅ SCAN THIS QR CODE IN WHATSAPP → LINKED DEVICES:\n");
+      qrcode.generate(qr, { small: true });
+    }
 
     if (connection === "open") {
       isReady = true;
