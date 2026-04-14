@@ -1379,11 +1379,18 @@ async function startBot() {
       keys: makeCacheableSignalKeyStore(state.keys, logger),
     },
     browser: ["Lumora", "Chrome", "1.0.0"],
-    printQRInTerminal: false,
+    printQRInTerminal: true,
     syncFullHistory: false,
     markOnlineOnConnect: false,
     emitOwnEvents: false,
     ...(waVersion ? { version: waVersion } : {}),
+  });
+
+  console.log("[socket] Socket created, waiting for connection...");
+
+  // Error handling for socket
+  sock.ev.on("connection.error", (err) => {
+    console.log("[socket] Connection error:", err?.message || err);
   });
 
   // Initialize MongoDB and load players once at bot startup
@@ -1396,12 +1403,8 @@ async function startBot() {
   let spawnStarted = false;
 
   sock.ev.on("connection.update", (update) => {
-    const { connection, lastDisconnect, qr } = update;
-
-    if (qr) {
-      console.log("\n✅ Scan this QR in WhatsApp → Linked Devices\n");
-      qrcode.generate(qr, { small: true });
-    }
+    console.log("[socket] Connection update received:", update.connection);
+    const { connection, lastDisconnect } = update;
 
     if (connection === "open") {
       isReady = true;
