@@ -1330,7 +1330,9 @@ function isHuntingCommand(cmd = "") {
     "hunt",
     "track",
     "pick",
-    "pass"
+    "pass",
+    "gather",
+    "intel"
   ].includes(String(cmd).toLowerCase());
 }
 
@@ -1463,6 +1465,7 @@ sock.ev.on('group-participants.update', async (update) => {
         try { await resolveFactionGroups(sock); } catch {}
         const normId = normJid(id);
         const groupInfo = FACTION_GROUPS[normId];
+        const groupIdStr = String(id); // Ensure id is a string
 
         for (const jid of participants) {
             const normed = normJid(jid);
@@ -1478,19 +1481,21 @@ sock.ev.on('group-participants.update', async (update) => {
             const faction = groupInfo ? groupInfo.faction : 'none';
             const pool = factionWelcome.WELCOME_MESSAGES[faction] || factionWelcome.WELCOME_MESSAGES.none;
             const welcomeMsg = pool[Math.floor(Math.random() * pool.length)];
-            const tag = `@${String(jid).split('@')[0]}`;
+            const jidStr = String(jid); // Ensure jid is a string
+            const tag = `@${jidStr.split('@')[0]}`;
 
             let welcomeText = `${welcomeMsg}\n\n` +
               `hey ${tag}........welcome to the family bro 🌌\n\n` +
               `if this is your first time here........type *.tutorial* and i'll walk you through everything step by step........trust me it's easy\n\n` +
-              `we're glad you're here 💪`;
+              `we're glad you're here 💪\n\n` +
+              `🔗 *Main Group:* https://chat.whatsapp.com/HRwht4ktwZ6F9DnldqissZ`;
 
             if (p && groupInfo && groupInfo.faction !== 'none') {
-                welcomeText += `\n\n🐉 oh and pick your starter Mora real quick:\n*.choose 1* or *.choose 2*`;
+                welcomeText += `\n\n🐉 *next up:* join your faction group and pick your starter Mora with:\n*.choose 1*, *.choose 2*, or *.choose 3*`;
             }
 
             try {
-              await sock.sendMessage(id, { text: welcomeText, mentions: [jid] });
+              await sock.sendMessage(groupIdStr, { text: welcomeText, mentions: [jidStr] });
             } catch (e) {
               console.log("Welcome send error:", e?.message || e);
             }
@@ -3158,10 +3163,11 @@ if (command === "choose") {
   // 5. GIVE STARTER
   p.starterChosen = true;
   p.moraOwned = p.moraOwned || [];
-  
+
   // Create the instance (Level 5)
   const newMora = {
     ...selectedMora,
+    moraId: Number(selectedMora.id), // Assign the mora ID
     level: 5,
     xp: 0,
     hp: selectedMora.baseStats.hp + 15,
@@ -3176,7 +3182,7 @@ if (command === "choose") {
 
   savePlayers(players);
 
-  return sock.sendMessage(chatId, { 
+  return sock.sendMessage(chatId, {
     text: `🎉 *CONGRATULATIONS!*\n\nYou have bonded with *${newMora.name}*!\n\n` +
           `Use *.profile* to see your stats or *.hunt* to begin your first battle.`,
     mentions: [senderId]
@@ -3200,23 +3206,7 @@ if (command === "choose") {
         const mora = findMora(moraList, query) || findMora(moraList, queryRaw);
         if (!mora) return sock.sendMessage(chatId, { text: `❌ Mora not found: *${queryRaw}*` });
 
-        // Send visual mora card
-        try {
-          const moraCard = await generateMoraCard({
-            id: mora.id,
-            name: mora.name,
-            type: mora.type,
-            rarity: mora.rarity,
-            description: mora.description,
-            stats: mora.stats,
-            moves: mora.moves,
-            special: mora.special,
-            creator: mora.creator || "Wild Mora"
-          });
-          await sock.sendMessage(chatId, { image: moraCard });
-        } catch (e) {
-          console.log("Mora card generation failed:", e.message);
-        }
+        // Canvas images disabled - user preference
 
         return sock.sendMessage(chatId, {
           text:
@@ -3944,10 +3934,9 @@ const profileCaption =
             equippedAchievement: p.equippedAchievement ? ACHIEVEMENTS[p.equippedAchievement] : null,
             achievementAura: p.equippedAchievement && ACHIEVEMENTS[p.equippedAchievement] ? (ACHIEVEMENTS[p.equippedAchievement].aura || 0) : 0
           };
-          const profileCard = await generateProfileCard(profileData);
-          await sock.sendMessage(chatId, { image: profileCard }, { quoted: msg });
+          // Canvas images disabled - user preference
         } catch (e) {
-          console.log("Profile card generation failed:", e.message);
+          console.log("Profile card generation error (disabled):", e.message);
         }
 
         if (p.profileIcon && typeof p.profileIcon === "string" && p.profileIcon.startsWith("data:")) {
@@ -4105,6 +4094,7 @@ if (command === "reset-stats") {
   if (command === "pick")    return huntingSystem.cmdPick(ctx, chatId, senderId, msg);
   if (command === "pass")    return huntingSystem.cmdPass(ctx, chatId, senderId, msg);
   if (command === "track")   return huntingSystem.cmdTrack(ctx, chatId, senderId, msg);
+  if (command === "gather" || command === "intel") return huntingSystem.cmdGatherIntel(ctx, chatId, senderId, msg);
 }
 
       // ENERGY CHARGE — PvP battle turn action
@@ -4146,9 +4136,9 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
             `first things first........type *.start* to create your profile\n\n` +
             `then give yourself a name:\n` +
-            `*.username YourName*\n\n` +
+            `*.set-username YourName*\n\n` +
             `and set your profile icon (pick a number 1-20):\n` +
-            `*.icon 1*\n\n` +
+            `*.set-icon 1*\n\n` +
             `you can also set your gender if you want:\n` +
             `*.gender male* or *.gender female*\n\n` +
             `cool........you're officially a Lumorian now 💪\n\n` +

@@ -172,7 +172,9 @@ function titleCase(str) {
 // ============================
 
 // Check if mora creation is allowed in this chat
-function isMoraCreationAllowed(chatId, settings) {
+// Owners bypass group restrictions
+function isMoraCreationAllowed(chatId, settings, isOwner = false) {
+  if (isOwner) return true; // Owners can create in any group
   const moraGroups = settings?.moraCreationGroups;
   if (!moraGroups?.enabled) return false;
   if (!moraGroups.allowed || moraGroups.allowed.length === 0) return true; // empty = all groups
@@ -188,8 +190,8 @@ async function cmdCreateMora(ctx, chatId, senderId, msg, args = []) {
     return sock.sendMessage(chatId, { text: "❌ Register first using *.start*." }, { quoted: msg });
   }
 
-  // Check if creation is allowed in this group
-  if (!isMoraCreationAllowed(chatId, settings)) {
+  // Check if creation is allowed in this group (owners bypass restrictions)
+  if (!isMoraCreationAllowed(chatId, settings, isOwner)) {
     return sock.sendMessage(chatId, {
       text: `❌ *Mora creation is not available in this group.*\nCheck with the Architect or visit an allowed Lumora Labs location.`,
     }, { quoted: msg });

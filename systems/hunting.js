@@ -1393,6 +1393,88 @@ async function cmdLastTerrain(ctx, chatId, senderId, msg) {
 }
 
 // ══════════════════════════════════════════════════════════════
+// SECTION 11.5 — INTELLIGENCE GATHERING (Faction-specific during hunts)
+// ══════════════════════════════════════════════════════════════
+const FACTION_INTEL_ACTIONS = {
+  harmony: {
+    name: "Release",
+    icon: "🌿",
+    desc: "Focus your senses on understanding the ecosystem around you.",
+    formula: (intel) => Math.max(3, Math.floor(intel * 0.15 + 2))
+  },
+  purity: {
+    name: "Analyze",
+    icon: "⚔️",
+    desc: "Conduct a tactical assessment of your surroundings.",
+    formula: (intel) => Math.max(3, Math.floor(intel * 0.18 + 1))
+  },
+  rift: {
+    name: "Probe",
+    icon: "🕶️",
+    desc: "Sense the void's whispers and hidden truths.",
+    formula: (intel) => Math.max(3, Math.floor(intel * 0.20 + 0))
+  },
+  none: {
+    name: "Observe",
+    icon: "✨",
+    desc: "Carefully observe the world around you.",
+    formula: (intel) => Math.max(2, Math.floor(intel * 0.10 + 1))
+  }
+};
+
+async function cmdGatherIntel(ctx, chatId, senderId, msg) {
+  const { sock, players, savePlayers } = ctx;
+  const state = loadHuntState();
+  const hunter = ensureHunter(state, senderId);
+  const player = players[senderId];
+
+  if (!player) {
+    return sock.sendMessage(chatId, { text: "❌ Register first using `.start`." }, { quoted: msg });
+  }
+
+  // Check if in capital (can't gather intel there)
+  if (hunter.location === "capital") {
+    return sock.sendMessage(chatId, {
+      text: `🏛️ You cannot gather intelligence in the Capital. Travel to the hunting grounds first.`,
+    }, { quoted: msg });
+  }
+
+  // Check cooldown (prevent spam - 2 minute cooldown)
+  const lastIntel = Number(hunter.lastIntelGather || 0);
+  const now = Date.now();
+  const cooldown = 120000; // 2 minutes
+  if (now - lastIntel < cooldown) {
+    const secondsLeft = Math.ceil((cooldown - (now - lastIntel)) / 1000);
+    return sock.sendMessage(chatId, {
+      text: `⏳ You're still processing your previous insights. Wait ${secondsLeft} seconds.`,
+    }, { quoted: msg });
+  }
+
+  const faction = player.faction || "none";
+  const action = FACTION_INTEL_ACTIONS[faction] || FACTION_INTEL_ACTIONS.none;
+  const currentIntel = Number(player.intelligence || 0);
+  const gain = action.formula(currentIntel);
+
+  // Apply gain
+  player.intelligence = currentIntel + gain;
+  hunter.lastIntelGather = now;
+  savePlayers(players);
+  saveHuntState(state);
+
+  const factionName = faction === "none" ? "the world" : faction.charAt(0).toUpperCase() + faction.slice(1);
+
+  return sock.sendMessage(chatId, {
+    text:
+      `${action.icon} *${action.name.toUpperCase()}*\n\n` +
+      `${action.desc}\n\n` +
+      `🧠 *+${gain} Intelligence*\n` +
+      `Total: *${player.intelligence}*\n\n` +
+      `_Knowledge from ${factionName} flows through you._`,
+    mentions: [senderId]
+  }, { quoted: msg });
+}
+
+// ══════════════════════════════════════════════════════════════
 // SECTION 12 — ENCOUNTER CLEAR (called by wildbattle.js on end)
 // ══════════════════════════════════════════════════════════════
 async function clearEncounterAfterWildBattle(senderId) {
@@ -1425,6 +1507,7 @@ module.exports = {
   cmdPick,
   cmdPass,
   cmdTrack,
+  cmdGatherIntel,
 
   // NEW commands (add to index.js routing + help text)
   cmdJournal,      // .journal
