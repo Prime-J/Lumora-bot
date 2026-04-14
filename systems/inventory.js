@@ -661,6 +661,33 @@ async function cmdItem(ctx, chatId, senderId, msg, args = []) {
   return sock.sendMessage(chatId, { text: buildItemDetailText(item, qty) }, { quoted: msg });
 }
 
+// Effects that require picking a specific party mora as their target.
+const MORA_TARGET_EFFECTS = ["removeCorruption", "primordialReduce"];
+
+// Resolve a target mora from a party-slot number (1..5) or a name fragment.
+// Returns the mora object from player.moraOwned, or null.
+function findPartyMoraTarget(player, token) {
+  const owned = Array.isArray(player?.moraOwned) ? player.moraOwned : [];
+  const party = Array.isArray(player?.party) ? player.party : [];
+
+  const t = String(token || "").trim();
+  if (!t) return null;
+
+  if (/^[1-5]$/.test(t)) {
+    const ownedIdx = party[Number(t) - 1];
+    if (Number.isInteger(ownedIdx) && owned[ownedIdx]) return owned[ownedIdx];
+    return null;
+  }
+
+  const needle = t.toLowerCase();
+  for (const ownedIdx of party) {
+    if (!Number.isInteger(ownedIdx)) continue;
+    const m = owned[ownedIdx];
+    if (m && String(m.name || "").toLowerCase().includes(needle)) return m;
+  }
+  return null;
+}
+
 async function cmdConsume(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers } = ctx;
   const player = players[senderId];
@@ -669,19 +696,22 @@ async function cmdConsume(ctx, chatId, senderId, msg, args = []) {
   itemsSystem.ensurePlayerItemData(player);
   syncEnergyFromHuntState(player, senderId);
 
-  if (!args.length) return sock.sendMessage(chatId, { text: "Usage: `.consume <name or id> [amount]`" }, { quoted: msg });
+  if (!args.length) return sock.sendMessage(chatId, { text: "Usage: `.consume <name or id> [amount | party-slot | mora-name]`" }, { quoted: msg });
 
-  // Parse optional amount at end
-  let amount     = 1;
-  let queryParts = [...args];
-  if (/^\d+$/.test(queryParts[queryParts.length - 1])) {
-    amount = Math.max(1, Number(queryParts.pop()));
+  // Find the item by trying successively shorter prefixes of args.
+  // This lets multi-word items like "cleanse shard" coexist with a trailing
+  // target token (slot number or mora name).
+  let item = null;
+  let itemWordCount = args.length;
+  while (itemWordCount > 0) {
+    const q = args.slice(0, itemWordCount).join(" ").trim();
+    const found = itemsSystem.findItem(q);
+    if (found) { item = found; break; }
+    itemWordCount--;
   }
-  const query = queryParts.join(" ").trim();
-  if (!query) return sock.sendMessage(chatId, { text: "Usage: `.consume <name or id> [amount]`" }, { quoted: msg });
+  if (!item) return sock.sendMessage(chatId, { text: `❌ Item not found: *${args.join(" ")}*` }, { quoted: msg });
 
-  const item = itemsSystem.findItem(query);
-  if (!item) return sock.sendMessage(chatId, { text: `❌ Item not found: *${query}*` }, { quoted: msg });
+  const tail = args.slice(itemWordCount);
 
   // Scrolls are also consumed via this command
   const isConsumable = item.category === "consumable" || item.category === "scroll";
@@ -705,8 +735,6 @@ async function cmdConsume(ctx, chatId, senderId, msg, args = []) {
     }, { quoted: msg });
   }
 
-  const useAmount = Math.min(amount, owned);
-
   // Get effects — scrolls use SCROLL_EFFECTS, consumables use item.effects
   const effects = item.category === "scroll"
     ? (SCROLL_EFFECTS[item.id] || {})
@@ -717,6 +745,39 @@ async function cmdConsume(ctx, chatId, senderId, msg, args = []) {
       text: `⚠️ *${item.name}* has no implemented effect yet.\n_(Effect: ${item.effect || "none"})_`,
     }, { quoted: msg });
   }
+
+  // Resolve tail: either a numeric amount or a party-mora target token.
+  // Effects like removeCorruption require the user to pick which party mora
+  // to target — otherwise cleanse picks arbitrarily or fails silently.
+  const needsTarget = Object.keys(effects).some(k => MORA_TARGET_EFFECTS.includes(k));
+  let amount = 1;
+  let targetMora = null;
+
+  if (needsTarget) {
+    if (!tail.length) {
+      return sock.sendMessage(chatId, {
+        text: `❌ *${item.name}* needs a target.\n` +
+              `Usage: \`.consume ${String(item.name).toLowerCase()} <party-slot 1-5 | mora name>\`\n` +
+              `Example: \`.consume ${String(item.name).toLowerCase()} 2\` or \`.consume ${String(item.name).toLowerCase()} sparko\``,
+      }, { quoted: msg });
+    }
+    const targetToken = tail.join(" ").trim();
+    targetMora = findPartyMoraTarget(player, targetToken);
+    if (!targetMora) {
+      return sock.sendMessage(chatId, {
+        text: `❌ No mora in your party matches *${targetToken}*.\nCheck \`.party\` to see your 5 party slots.`,
+      }, { quoted: msg });
+    }
+    if (Object.keys(effects).includes("removeCorruption") && !targetMora.corrupted) {
+      return sock.sendMessage(chatId, {
+        text: `✨ *${targetMora.name}* isn't corrupted — no need to cleanse.`,
+      }, { quoted: msg });
+    }
+  } else if (tail.length && /^\d+$/.test(tail[0])) {
+    amount = Math.max(1, Number(tail[0]));
+  }
+
+  const useAmount = Math.min(amount, owned);
 
   const maxHp  = getPlayerMaxHp(player);
   const maxEn  = getPlayerMaxHuntEnergy(player);
@@ -735,7 +796,7 @@ async function cmdConsume(ctx, chatId, senderId, msg, args = []) {
 
   const allLog = [];
   for (let i = 0; i < useAmount; i++) {
-    const { log } = applyItemEffects(player, effects, {});
+    const { log } = applyItemEffects(player, effects, { targetMora });
     allLog.push(...log);
   }
 

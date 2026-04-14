@@ -3478,6 +3478,87 @@ if (command === "give-orb" || command === "giveorb") {
     }, { quoted: msg });
 }
 
+// ─────────────────────────────────────────────
+// PLAYER-TO-PLAYER TRANSFERS: LCR (Lucrystals) and REOB
+// ─────────────────────────────────────────────
+if (command === "transfer-lcr" || command === "transfer-reob") {
+    const sender = players[senderId];
+    if (!sender) return sock.sendMessage(chatId, { text: "❌ Register first with *.start*." }, { quoted: msg });
+
+    const mentioned = getMentionedJids(msg);
+    const replied = getRepliedJid(msg);
+    const argJid = toUserJidFromArg(args[0]);
+
+    let targetJid = null;
+    let amountStr = null;
+    if (mentioned[0] || replied) {
+        targetJid = mentioned[0] || replied;
+        amountStr = args[0];
+    } else {
+        targetJid = argJid;
+        amountStr = args[1];
+    }
+
+    const label = command === "transfer-lcr" ? "Lucrystals (LCR)" : "Rift Energy Orbs (REOB)";
+    if (!targetJid || !amountStr) {
+        return sock.sendMessage(chatId, {
+            text: `Usage:\n• .${command} @user <amount>\n• Reply to a user then .${command} <amount>\n\nSends *${label}* to another player.`
+        }, { quoted: msg });
+    }
+
+    const target = players[normJid(targetJid)];
+    if (!target) return sock.sendMessage(chatId, { text: "❌ That user isn't registered in Lumora." });
+    if (normJid(targetJid) === senderId) return sock.sendMessage(chatId, { text: `😑 You can't transfer ${label} to yourself.` });
+
+    const amount = Number(amountStr);
+    if (!Number.isFinite(amount) || amount <= 0) {
+        return sock.sendMessage(chatId, { text: "❌ Amount must be a positive number." });
+    }
+
+    const targetName = target.username || targetJid.split("@")[0];
+    const senderName = sender.username || senderId.split("@")[0];
+
+    if (command === "transfer-lcr") {
+        const proSystem = require("./systems/pro");
+        const senderPro = proSystem.ensureProState(sender);
+        const targetPro = proSystem.ensureProState(target);
+        if (Number(senderPro.crystals || 0) < amount) {
+            return sock.sendMessage(chatId, { text: `❌ You only have *${Number(senderPro.crystals || 0)} LCR*.` });
+        }
+        senderPro.crystals = Number(senderPro.crystals || 0) - amount;
+        targetPro.crystals = Number(targetPro.crystals || 0) + amount;
+        savePlayers(players);
+        return sock.sendMessage(chatId, {
+            text: `💠 *LCR TRANSFER*\n\n${senderName} sent *${amount} Lucrystals* to ${targetName}.`,
+            mentions: [targetJid]
+        }, { quoted: msg });
+    }
+
+    // transfer-reob
+    const itemsSystem = require("./systems/items");
+    itemsSystem.ensurePlayerItemData(sender);
+    itemsSystem.ensurePlayerItemData(target);
+    const owned = itemsSystem.getItemQuantity(sender, "REOB");
+    if (owned < amount) {
+        return sock.sendMessage(chatId, { text: `❌ You only have *${owned}* Rift Energy Orb${owned === 1 ? "" : "s"}.` });
+    }
+    const removed = itemsSystem.removeItem(sender, "REOB", amount);
+    if (!removed?.ok && removed !== true) {
+        // removeItem may return a truthy/ok shape — fall through if successful
+    }
+    const added = itemsSystem.addItem(target, "REOB", amount);
+    if (!added?.ok) {
+        // rollback
+        itemsSystem.addItem(sender, "REOB", amount);
+        return sock.sendMessage(chatId, { text: `❌ Transfer failed: ${added?.reason || "target inventory full"}` });
+    }
+    savePlayers(players);
+    return sock.sendMessage(chatId, {
+        text: `🔮 *REOB TRANSFER*\n\n${senderName} sent *${amount} Rift Energy Orb${amount === 1 ? "" : "s"}* to ${targetName}.`,
+        mentions: [targetJid]
+    }, { quoted: msg });
+}
+
 // 🕶️ SUMMON MERCHANT — now a perk of any active pro subscription
 if (command === "summon-merchant") {
     const p = players[senderId];
@@ -3690,6 +3771,130 @@ if (command === "buy-bm") {
             moveBlocks +
             `\n\n📖 *DESCRIPTION*\n${species?.description || "—"}\n`,
         });
+      }
+
+      // ================= TAMED SEARCH =================
+      // List every owned mora whose name matches the query, with their IDs.
+      // Useful when a player has multiple of the same species.
+      if (command === "tamed-search" || command === "tsearch") {
+        const p = players[senderId];
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using .start" }, { quoted: msg });
+
+        const owned = Array.isArray(p.moraOwned) ? p.moraOwned : [];
+        if (!owned.length) return sock.sendMessage(chatId, { text: "😔 You don't own any Mora yet." }, { quoted: msg });
+
+        const query = args.join(" ").trim().toLowerCase();
+        if (!query) {
+          return sock.sendMessage(chatId, {
+            text: `Usage: *.tamed-search <name>*\nExample: \`.tamed-search sparko\``,
+          }, { quoted: msg });
+        }
+
+        const partySet = new Set(
+          Array.isArray(p.party) ? p.party.filter((x) => x !== null && x !== undefined) : []
+        );
+
+        const matches = [];
+        owned.forEach((m, i) => {
+          if (!m) return;
+          if (String(m.name || "").toLowerCase().includes(query)) {
+            matches.push({ m, i });
+          }
+        });
+
+        if (!matches.length) {
+          return sock.sendMessage(chatId, {
+            text: `🔍 No tamed Mora match *${query}*.`,
+          }, { quoted: msg });
+        }
+
+        const lines = matches.map(({ m, i }) => {
+          const lv = m.level ?? 1;
+          const inParty = partySet.has(i) ? " ⚔️ [PARTY]" : "";
+          const pe = Math.floor(m.pe || 0);
+          const corrupt = m.corrupted ? " 🕷 CORRUPTED" : "";
+          return (
+            `#${i + 1} • *${m.name}*${inParty}${corrupt}\n` +
+            `🆔 ID_${m.moraId} • Lv ${lv}\n` +
+            `❤️ ${m.hp}/${m.maxHp} • 🕷 PE ${pe}`
+          );
+        });
+
+        return sock.sendMessage(chatId, {
+          text:
+            `🔎 *TAMED SEARCH — "${query}"*\n` +
+            `━━━━━━━━━━━━━━━━━━\n` +
+            `Found *${matches.length}* match${matches.length === 1 ? "" : "es"}\n\n` +
+            lines.join(`\n\n──────────────────\n\n`) +
+            `\n\n━━━━━━━━━━━━━━━━━━\n` +
+            `Use \`.tamed <#>\` to inspect by slot.`,
+        }, { quoted: msg });
+      }
+
+      // ================= VIEW SANCTUARY (faction status roll-up) =================
+      // Shows the caller their own faction's combined stats: total mora tamed
+      // across all members, total lucons pooled by the faction, and faction
+      // points from the global tracker. Top contributors listed for flavor.
+      if (command === "view-sanctuary" || command === "viewsanctuary" || command === "sanctuary-view") {
+        const p = players[senderId];
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.start*." }, { quoted: msg });
+        if (!p.faction || !["harmony","purity","rift"].includes(p.faction)) {
+          return sock.sendMessage(chatId, { text: "❌ You must belong to a faction to view its sanctuary." }, { quoted: msg });
+        }
+
+        const faction = p.faction;
+        const fp = loadFactionPoints();
+        const factionMeta = FACTIONS[faction] || {};
+        const factionName = factionMeta.name || faction;
+        const factionEmoji = factionMeta.emoji || "⚔";
+
+        // Roll up live player data for everyone in this faction
+        let memberCount = 0;
+        let totalMora = 0;
+        let corruptedMora = 0;
+        let totalLucons = 0;
+        const contributors = [];
+
+        for (const [jid, pl] of Object.entries(players)) {
+          if (!pl || pl.faction !== faction) continue;
+          memberCount++;
+          const owned = Array.isArray(pl.moraOwned) ? pl.moraOwned : [];
+          totalMora += owned.length;
+          corruptedMora += owned.filter(m => m?.corrupted).length;
+          const lucons = Number(pl.lucons || 0);
+          totalLucons += lucons;
+          contributors.push({
+            name: pl.username || jid.split("@")[0],
+            moras: owned.length,
+            lucons,
+          });
+        }
+
+        contributors.sort((a, b) => b.moras - a.moras || b.lucons - a.lucons);
+        const topLines = contributors.slice(0, 5).map((c, i) =>
+          `${i + 1}. *${c.name}* — 🐉 ${c.moras}  •  💰 ${c.lucons}`
+        );
+
+        const factionLabel =
+          faction === "harmony" ? "Sanctuary" :
+          faction === "purity"  ? "Citadel" :
+          faction === "rift"    ? "Rift Nexus" : "Sanctuary";
+
+        return sock.sendMessage(chatId, {
+          text:
+            `━━━━━━━━━━━━━━━━━━\n` +
+            `${factionEmoji} *${factionName.toUpperCase()} — ${factionLabel.toUpperCase()}*\n` +
+            `━━━━━━━━━━━━━━━━━━\n\n` +
+            `👥 Members: *${memberCount}*\n` +
+            `🐉 Total Mora Deployed: *${totalMora}*\n` +
+            (corruptedMora ? `🕷 Corrupted Among Them: *${corruptedMora}*\n` : "") +
+            `💰 Faction Wealth (pooled Lucons): *${totalLucons.toLocaleString()}*\n` +
+            `🏅 Faction Points: *${fp[faction] || 0}*\n\n` +
+            `━━━━━━━━━━━━━━━━━━\n` +
+            `🏆 *TOP CONTRIBUTORS*\n` +
+            (topLines.length ? topLines.join("\n") : "_(no contributors yet)_") +
+            `\n━━━━━━━━━━━━━━━━━━`,
+        }, { quoted: msg });
       }
 
       // ================= FACTION POINTS =================
@@ -4064,7 +4269,15 @@ if (command === "reset-stats") {
       if (command === "attack")  return battleSystem.cmdAttack?.(ctx, chatId, senderId, args, msg);
       if (command === "switch")  return battleSystem.cmdSwitch?.(ctx, chatId, senderId, args, msg);
       if (command === "forfeit") return battleSystem.cmdForfeit(ctx, chatId, senderId, msg);
-      if (command === "use")     return battleSystem.cmdUse?.(ctx, chatId, senderId, msg, args);
+      if (command === "use") {
+        // In an active battle: handled by battle system (item-as-action).
+        // Outside battle: fall through to .consume so items like Cleanse
+        // Shard work with a target party slot/name.
+        if (battleSystem.getBattle?.(chatId)) {
+          return battleSystem.cmdUse?.(ctx, chatId, senderId, msg, args);
+        }
+        return inventorySystem.cmdConsume(ctx, chatId, senderId, msg, args);
+      }
 
       // ============================
       // HUNTING COMMANDS
@@ -5293,7 +5506,9 @@ if (command === "help") {
         `${divider}\n  🎒  *INVENTORY & GEAR*\n${divider}\n` +
         `┃ ${PREFIX}inventory ─ your items\n` +
         `┃ ${PREFIX}item <name> ─ item details\n` +
-        `┃ ${PREFIX}consume <name> ─ use consumable\n` +
+        `┃ ${PREFIX}consume <name> [amt|target] ─ use consumable\n` +
+        `┃ ${PREFIX}use cleanse shard <slot|name> ─ cleanse party mora\n` +
+        `┃ ${PREFIX}tamed-search <name> ─ find owned mora by name\n` +
         `┃ ${PREFIX}gear ─ equipped loadout\n` +
         `┃ ${PREFIX}equip <item> ─ equip from bag\n` +
         `┃ ${PREFIX}unequip <slot> ─ remove gear\n` +
@@ -5303,8 +5518,10 @@ if (command === "help") {
         `${divider}\n  💰  *ECONOMY & TRADING*\n${divider}\n` +
         `┃ ${PREFIX}daily ─ daily Lucons + streak bonus\n` +
         `┃ ${PREFIX}weekly ─ weekly Lucons (faction taxed)\n` +
-        `┃ ${PREFIX}give ─ send Lucons\n` +
-        `┃ ${PREFIX}reverse <code> ─ undo a transaction\n` +
+        `┃ ${PREFIX}give @user <amt> ─ send Lucons\n` +
+        `┃ ${PREFIX}transfer-lcr @user <amt> ─ send Lucrystals\n` +
+        `┃ ${PREFIX}transfer-reob @user <amt> ─ send Rift Energy Orbs\n` +
+        `┃ ${PREFIX}reverse <code> ─ undo a Lucons transaction\n` +
         `┃ ${PREFIX}tamed-give ─ trade Mora\n` +
         `┃ ${PREFIX}gitem <item> <qty> @user ─ give items\n`,
 
@@ -5334,6 +5551,7 @@ if (command === "help") {
         `┃ ${PREFIX}missions ─ weekly faction missions\n` +
         `┃ ${PREFIX}complete <ID> ─ claim mission reward\n` +
         `┃ ${PREFIX}facpoints ─ faction point standings\n` +
+        `┃ ${PREFIX}view-sanctuary ─ your faction's full status\n` +
         `┃ ${PREFIX}submit-mora <mora> ─ submit to facility\n` +
         `┃ ${PREFIX}pe-check ─ Primordial Energy levels\n` +
         `┃ ${PREFIX}facprogress ─ season graph (200L)\n` +
@@ -5370,6 +5588,7 @@ if (command === "help") {
         `┃ ${PREFIX}return ─ head back to Capital\n` +
         `┃ ${PREFIX}hunt ─ scout for Mora\n` +
         `┃ ${PREFIX}track ─ follow tracks\n` +
+        `┃ ${PREFIX}gather / ${PREFIX}intel ─ faction intel action\n` +
         `┃ ${PREFIX}pick / ${PREFIX}pass ─ loot or leave\n` +
         `┃ ${PREFIX}journal ─ hunt history & streak\n` +
         `┃ ${PREFIX}bounty ─ today's bounty target\n` +
@@ -5448,6 +5667,11 @@ if (command === "help") {
         `┃ ${PREFIX}creations ─ list pending Mora submissions\n` +
         `┃ ${PREFIX}approve-mora <id> <amt> <lucons|lcr> ─ approve + pay creator\n` +
         `┃ ${PREFIX}reject-mora <id> ─ reject a submission\n` +
+        `┃ ${PREFIX}give-orb @user <amt> ─ give Rift Energy Orbs\n` +
+        `┃ ${PREFIX}moragroups ─ list allowed mora-creation labs\n` +
+        `┃ ${PREFIX}addmoragroup ─ add current group as a mora lab\n` +
+        `┃ ${PREFIX}removemoragroup ─ remove current group from labs\n` +
+        `┃ ${PREFIX}moracreation-on/off ─ toggle mora creation globally\n` +
         `┃ ${PREFIX}set-gauge / ${PREFIX}reduce-gauge\n` +
         `┃ ${PREFIX}war init / ${PREFIX}war-start\n` +
         `┃ ${PREFIX}war winner @user ─ report match result\n` +
