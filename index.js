@@ -1390,17 +1390,15 @@ async function startBot() {
   console.log("[socket] Socket created, waiting for connection...");
   console.log("[socket] Credentials registered:", state.creds?.registered);
 
-  // Error handling for socket
+  // CRITICAL: Register handlers IMMEDIATELY before any async work.
+  // Baileys emits connection events from the moment the socket is created — if we
+  // await MongoDB or anything else first, those early events get dropped and the bot
+  // hangs forever waiting for a connection update that already fired.
+  sock.ev.on("creds.update", saveCreds);
+
   sock.ev.on("connection.error", (err) => {
     console.log("[socket] Connection error:", err?.message || err);
   });
-
-  // Initialize MongoDB and load players once at bot startup
-  console.log("[bot] Initializing player storage...");
-  const initialPlayers = await bootPlayers();
-  console.log(`[bot] Loaded ${Object.keys(initialPlayers).length} players`);
-
-  sock.ev.on("creds.update", saveCreds);
 
   let spawnStarted = false;
 
@@ -1515,6 +1513,13 @@ sock.ev.on('group-participants.update', async (update) => {
     if (!isBaileysNoise(err)) console.log("group-participants.update error:", err?.stack || err);
   }
 });
+
+// Initialize MongoDB and load players AFTER connection handlers are wired but
+// BEFORE the message handler — so connection events aren't lost and message
+// handlers won't fire against uninitialized player data.
+console.log("[bot] Initializing player storage...");
+const initialPlayers = await bootPlayers();
+console.log(`[bot] Loaded ${Object.keys(initialPlayers).length} players`);
 
 sock.ev.removeAllListeners("messages.upsert");
   sock.ev.on("messages.upsert", async ({ messages, type }) => {
