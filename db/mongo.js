@@ -10,6 +10,7 @@ const FLUSH_TIMEOUT = 5000; // 5 second timeout for graceful shutdown
 let connected = false;
 const dirtyJids = new Set(); // Track which JIDs need to write
 let flushTimer = null;
+let latestPlayersRef = null; // Always points to the most recent players object
 
 /**
  * Player schema: stores JID + full data object
@@ -88,11 +89,14 @@ function markDirty(players, jid) {
   if (!connected) return; // No-op if not connected
 
   dirtyJids.add(jid);
+  latestPlayersRef = players; // Always keep the freshest reference
 
   // Schedule flush if not already pending
   if (!flushTimer) {
     flushTimer = setTimeout(() => {
-      flushDirtyPlayers(players).catch((err) => {
+      // Use latestPlayersRef — NOT the closure from the first markDirty
+      // call — so we always flush the most recent player data.
+      flushDirtyPlayers(latestPlayersRef).catch((err) => {
         console.warn("[mongo] Flush failed:", err.message);
       });
     }, FLUSH_INTERVAL);

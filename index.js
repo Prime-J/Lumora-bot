@@ -244,9 +244,6 @@ function saveJSON(filePath, data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
-// Track which JIDs were modified in this message cycle
-let dirtyJidsThisCycle = new Set();
-
 // Async boot: initialize MongoDB and load all players
 async function bootPlayers() {
   // Try to connect to MongoDB
@@ -277,14 +274,6 @@ async function bootPlayers() {
   return players;
 }
 
-// Mark a specific JID as needing MongoDB flush
-function markPlayerDirty(jid, players) {
-  dirtyJidsThisCycle.add(jid);
-  if (players) {
-    mongoDb.markDirty(players, jid);
-  }
-}
-
 function loadPlayers() {
   return loadJSON(PLAYERS_FILE, {});
 }
@@ -293,11 +282,13 @@ function savePlayers(players) {
   // Always save to JSON (warm cache for quick loads)
   saveJSON(PLAYERS_FILE, players);
 
-  // Mark all dirty JIDs from this cycle for async MongoDB flush
-  for (const jid of dirtyJidsThisCycle) {
+  // Mark EVERY jid dirty for MongoDB. The batched flush (3s debounce)
+  // will write them efficiently. Previously dirtyJidsThisCycle was never
+  // populated, so MongoDB never received updates after boot — causing
+  // data to revert on every redeploy.
+  for (const jid of Object.keys(players)) {
     mongoDb.markDirty(players, jid);
   }
-  dirtyJidsThisCycle.clear();
 }
 function parseMinutes(str) {
   const n = Number(str);
