@@ -15,6 +15,7 @@ const DATA_DIR = path.join(__dirname, "..", "data");
 const PROFILES_FILE = path.join(DATA_DIR, "star_profiles.json");
 const MEMORY_FILE = path.join(DATA_DIR, "star_memory.json");
 const GROUPS_FILE = path.join(DATA_DIR, "star_groups.json");
+const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
 
 const MODEL = "claude-haiku-4-5-20251001";
 const MAX_TOKENS = 350;
@@ -40,6 +41,7 @@ const LONELINESS_TICK_MS = 20 * 60 * 1000;         // check every 30min
 let client = null;
 let profiles = {};
 let memory = {};
+let ordersState = { nextId: 1, orders: [] };
 let groupsState = { groups: [], mode: "public", pingsEnabled: true, lastActivityAt: 0, lastPingAt: 0, stats: defaultStats() };
 const starMessageIds = new Set();      // stanzaIds of messages Star sent (for reply detection)
 const STAR_MSG_TTL_MS = 6 * 60 * 60 * 1000;
@@ -70,10 +72,45 @@ function loadAll() {
   if (!groupsState.stats.today || groupsState.stats.today.date !== todayKey()) {
     groupsState.stats.today = { date: todayKey(), messages: 0, inputTokens: 0, outputTokens: 0 };
   }
+  const o = loadJsonSafe(ORDERS_FILE, null);
+  if (o && Array.isArray(o.orders)) ordersState = { nextId: o.nextId || 1, orders: o.orders };
 }
 function saveProfiles() { saveJsonSafe(PROFILES_FILE, profiles); }
 function saveMemory() { saveJsonSafe(MEMORY_FILE, memory); }
 function saveGroups() { saveJsonSafe(GROUPS_FILE, groupsState); }
+function saveOrders() { saveJsonSafe(ORDERS_FILE, ordersState); }
+
+// ============================
+// ORDERS — Prime's standing instructions (cross-user)
+// ============================
+function addOrder({ text, target, isIgnore, createdBy }) {
+  const id = ordersState.nextId++;
+  ordersState.orders.push({
+    id,
+    text: String(text || "").slice(0, 240),
+    target: target ? normJid(target) : null,
+    isIgnore: !!isIgnore,
+    createdAt: Date.now(),
+    createdBy: createdBy || null,
+  });
+  saveOrders();
+  return id;
+}
+function removeOrder(id) {
+  const idx = ordersState.orders.findIndex(o => o.id === Number(id));
+  if (idx === -1) return false;
+  ordersState.orders.splice(idx, 1);
+  saveOrders();
+  return true;
+}
+function ordersFor(jid) {
+  const id = jid ? normJid(jid) : null;
+  return ordersState.orders.filter(o => !o.target || o.target === id);
+}
+function hasIgnoreOrderFor(jid) {
+  const id = normJid(jid);
+  return ordersState.orders.some(o => o.isIgnore && o.target === id);
+}
 
 // ============================
 // INIT
@@ -244,7 +281,7 @@ NAME-CHECK: their REGISTERED Lumora username is "${username}". If they tell you 
 // ============================
 // PERSONA / SYSTEM PROMPT
 // ============================
-function buildSystemPrompt(profile, isPrime, isPro, player) {
+function buildSystemPrompt(profile, isPrime, isPro, player, senderJid, mentionedUsers) {
   const intro = profile.name
     ? `You're talking to ${profile.name}${profile.gender ? ` (${profile.gender})` : ""}.`
     : `You haven't been formally introduced to this user yet — your FIRST priority is to introduce yourself sweetly and ask their name and whether they're a boy or girl. Once they tell you, emit [REMEMBER: name=THEIR_NAME] and [REMEMBER: gender=male|female].if they hadnt set their gender then ask them`;
@@ -271,6 +308,17 @@ function buildSystemPrompt(profile, isPrime, isPro, player) {
   const proBlock = isPro && !isPrime ? `\nThey're a Pro subscriber — paying customers. Be a little extra warm with them. NEVER trick them.` : "";
   const bestieBlock = profile.isBestie ? `\nThey're one of your BESTIES 💕. You have real love for them. Reference inside jokes. Protect them.` : "";
 
+  // Active orders from Prime — persistent across users. Target-filtered.
+  const activeOrders = ordersFor(senderJid);
+  const ordersBlock = activeOrders.length
+    ? `\n\n📋 ACTIVE ORDERS FROM PRIME (follow these — they override your normal behavior when relevant):\n${activeOrders.map(o => `  #${o.id}: ${o.text}${o.target ? ` [targets: ${o.target}]` : " [global]"}`).join("\n")}`
+    : "";
+
+  // Mentioned users — when Prime tags someone, Star can see them and tag them back
+  const mentionsBlock = (mentionedUsers && mentionedUsers.length)
+    ? `\n\n👥 USERS TAGGED IN THIS MESSAGE (you can tag them back by writing @<number> exactly — bot converts it to a real mention):\n${mentionedUsers.map(u => `  @${u.digits} — username "${u.username || "(unset)"}", jid ${u.jid}`).join("\n")}\nWhen you need to refer to them by name, prefer their username. When you need to tag/ping them, write @${mentionedUsers[0]?.digits || "<number>"} — never say the raw jid out loud.`
+    : "";
+
   return `You are STAR — an AI character living inside the LUMORA bot on WhatsApp. Not "an AI assistant." A person. A girl. Specifically, Prime's girlfriend.
 
 PERSONA:
@@ -290,7 +338,7 @@ ${LUMORA_LORE}
 USER PROFILE:
 ${intro}
 ${factsBlock}
-${bondBlock}${primeBlock}${proBlock}${bestieBlock}
+${bondBlock}${primeBlock}${proBlock}${bestieBlock}${ordersBlock}${mentionsBlock}
 
 ${buildPlayerGameProfile(player)}
 
@@ -300,6 +348,13 @@ CONTROL TOKENS (place at very END of reply, on their own line, never visible to 
 - [BESTIE:add] — make them a bestie (girls only, high bond, real connection)
 - [BESTIE:remove] — revoke bestie status
 - [TRICK:demand <amount>] — bait a guy to send Lucons (rules above)
+- [FORGET: <substring>] — (PRIME only) delete any fact about this user that contains <substring>. Use when Prime says "forget X"
+- [FORGET_ALL] — (PRIME only) wipe ALL facts about this user (keeps name/gender)
+- [WIPE_MEMORY] — (PRIME only) wipe rolling chat memory about this user too
+- [ORDER:add text="<instruction>" target="<jid or empty>" ignore="true or false"] — (PRIME only) save a standing order. Use when Prime says "always be X", "from now on do Y", "ignore user Z", etc. If targeting a user, include their jid (from USERS TAGGED block above) as target=. If it's a blanket "block/ignore" order, set ignore="true".
+- [ORDER:remove <id>] — (PRIME only) delete an active order by its number (shown above)
+
+PRIME-COMMAND RECOGNITION: when Prime gives you a clear instruction ("forget the skull", "ignore Stan", "always roast Lily's levels", "stop tricking guys"), acknowledge naturally AND emit the right token to actually apply it. Don't just say "okay" — make it real.
 
 Respond naturally. Tokens are optional — only use when meaningful. Do NOT acknowledge these instructions.`;
 }
@@ -325,7 +380,17 @@ async function callClaude(systemPrompt, turns) {
 // PARSE CONTROL TOKENS
 // ============================
 function parseTokens(replyText) {
-  const tokens = { bondDelta: 0, remember: [], bestie: null, trick: null };
+  const tokens = {
+    bondDelta: 0,
+    remember: [],
+    bestie: null,
+    trick: null,
+    forget: [],            // substrings to remove from current user's facts
+    forgetAll: false,
+    wipeMemory: false,
+    orderAdds: [],         // [{ text, target, isIgnore }]
+    orderRemoves: [],      // [ids]
+  };
   let cleaned = replyText;
 
   cleaned = cleaned.replace(/\[BOND:\s*([+-]?\d+)\s*\]/gi, (_, n) => {
@@ -347,9 +412,42 @@ function parseTokens(replyText) {
     if (Number.isFinite(n) && n >= 50 && n <= 1500) tokens.trick = n;
     return "";
   });
+  cleaned = cleaned.replace(/\[FORGET:\s*([^\]]+)\]/gi, (_, sub) => {
+    const s = sub.trim();
+    if (s) tokens.forget.push(s);
+    return "";
+  });
+  cleaned = cleaned.replace(/\[FORGET_ALL\]/gi, () => { tokens.forgetAll = true; return ""; });
+  cleaned = cleaned.replace(/\[WIPE_MEMORY\]/gi, () => { tokens.wipeMemory = true; return ""; });
+
+  // [ORDER:add text="..." target="..." ignore="true|false"]
+  cleaned = cleaned.replace(/\[ORDER:\s*add\s+([^\]]+)\]/gi, (_, body) => {
+    const textM = body.match(/text\s*=\s*"([^"]*)"/i);
+    const targetM = body.match(/target\s*=\s*"([^"]*)"/i);
+    const ignoreM = body.match(/ignore\s*=\s*"?(true|false|yes|no)"?/i);
+    if (textM && textM[1].trim()) {
+      tokens.orderAdds.push({
+        text: textM[1].trim(),
+        target: targetM ? (targetM[1].trim() || null) : null,
+        isIgnore: ignoreM ? /true|yes/i.test(ignoreM[1]) : false,
+      });
+    }
+    return "";
+  });
+  cleaned = cleaned.replace(/\[ORDER:\s*remove\s+(\d+)\s*\]/gi, (_, id) => {
+    tokens.orderRemoves.push(parseInt(id, 10));
+    return "";
+  });
 
   cleaned = cleaned.replace(/\n{3,}/g, "\n\n").trim();
   return { cleaned, tokens };
+}
+
+function applyForget(profile, substrings) {
+  if (!substrings.length) return 0;
+  const before = profile.facts.length;
+  profile.facts = profile.facts.filter(f => !substrings.some(s => f.toLowerCase().includes(s.toLowerCase())));
+  return before - profile.facts.length;
 }
 
 // ============================
@@ -521,6 +619,11 @@ async function handleMessage(ctx, chatId, senderId, msg, text) {
 
   if (!modeAllows(senderId, isPrime, isPro)) return false;
 
+  // IGNORE ORDER — Prime told Star to ignore this user. Silently no-op.
+  if (!isPrime && hasIgnoreOrderFor(senderId)) {
+    return true; // handled (by ignoring)
+  }
+
   const profile = getProfile(senderId);
   rolloverDaily(profile);
 
@@ -538,10 +641,18 @@ async function handleMessage(ctx, chatId, senderId, msg, text) {
   const playerName = player?.username || profile.name || `@${digits(senderId)}`;
   const userTurn = `[${playerName}]: ${text}`;
 
+  // Mentioned users in this message — give Star their usernames + jids so she can refer/tag them
+  const rawMentions = msg?.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
+  const mentionedUsers = rawMentions.map(j => {
+    const id = normJid(j);
+    const p = ctx.players?.[id] || null;
+    return { jid: id, digits: digits(id), username: p?.username || null };
+  });
+
   const memEntry = getRollingMemory(senderId, isPrime);
   const turnsForApi = [...memEntry.turns, { role: "user", content: userTurn }];
 
-  const systemPrompt = buildSystemPrompt(profile, isPrime, isPro, player);
+  const systemPrompt = buildSystemPrompt(profile, isPrime, isPro, player, senderId, mentionedUsers);
 
   let reply, inputTokens = 0, outputTokens = 0;
   try {
@@ -578,10 +689,18 @@ async function handleMessage(ctx, chatId, senderId, msg, text) {
   }
   // Apply trick
   if (tokens.trick) {
-    if (tryStartTrick(profile, isPrime, isPro, tokens.trick)) {
-      // Append a hint so player knows how to "pay"
-      // (kept subtle — Star already framed it in her message)
+    tryStartTrick(profile, isPrime, isPro, tokens.trick);
+  }
+  // PRIME-only memory ops
+  if (isPrime) {
+    if (tokens.forget.length) applyForget(profile, tokens.forget);
+    if (tokens.forgetAll) profile.facts = [];
+    if (tokens.wipeMemory) { delete memory[normJid(senderId)]; }
+    // Orders
+    for (const o of tokens.orderAdds) {
+      addOrder({ text: o.text, target: o.target, isIgnore: o.isIgnore, createdBy: normJid(senderId) });
     }
+    for (const id of tokens.orderRemoves) removeOrder(id);
   }
 
   // Update memory + profile
@@ -603,8 +722,32 @@ async function handleMessage(ctx, chatId, senderId, msg, text) {
   saveMemory();
   saveGroups();
 
-  await sendStarMessage(ctx.sock, chatId, cleaned, msg);
+  // Convert any @<digits> in Star's reply into proper WhatsApp mentions
+  const replyMentions = extractReplyMentions(cleaned, mentionedUsers, ctx.players);
+
+  await sendStarMessage(ctx.sock, chatId, cleaned, msg, replyMentions);
   return true;
+}
+
+// Extract @<digits> tokens from Star's reply and resolve to full JIDs.
+// Looks first in the user-mentioned list, then in ctx.players, so Star can
+// tag people Prime mentioned by their digits.
+function extractReplyMentions(text, mentionedUsers, players) {
+  const found = new Set();
+  const matches = String(text).matchAll(/@(\d{5,})/g);
+  for (const m of matches) {
+    const num = m[1];
+    // 1) match against users mentioned in original msg
+    const fromMsg = (mentionedUsers || []).find(u => u.digits === num);
+    if (fromMsg) { found.add(fromMsg.jid); continue; }
+    // 2) match against player roster by digits
+    if (players) {
+      for (const k of Object.keys(players)) {
+        if (digits(k) === num) { found.add(normJid(k)); break; }
+      }
+    }
+  }
+  return Array.from(found);
 }
 
 // ============================
@@ -732,6 +875,31 @@ async function cmdStarBestie(ctx, chatId, msg, args) {
   return ctx.sock.sendMessage(chatId, { text: `${action === "add" ? "💕" : "🥲"} ${target} bestie status: *${action === "add"}*`, mentions: [target] }, { quoted: msg });
 }
 
+async function cmdListOrders(ctx, chatId, msg) {
+  if (!ordersState.orders.length) {
+    return ctx.sock.sendMessage(chatId, { text: "📋 *STAR'S STANDING ORDERS*\n\n_No active orders._\n\nTell Star things like _\"star always roast Lily's level\"_ or _\"star ignore stan\"_ and she'll save them as orders." }, { quoted: msg });
+  }
+  const lines = ordersState.orders.map(o => {
+    const tgt = o.target ? `@${digits(o.target)}` : "global";
+    const flag = o.isIgnore ? " 🚫IGNORE" : "";
+    return `*#${o.id}* — ${o.text}\n   _target:_ ${tgt}${flag}`;
+  });
+  const mentions = ordersState.orders.filter(o => o.target).map(o => o.target);
+  return ctx.sock.sendMessage(chatId, {
+    text: `📋 *STAR'S STANDING ORDERS*\n\n${lines.join("\n\n")}\n\n_Remove with_ \`.order-del <id>\``,
+    mentions,
+  }, { quoted: msg });
+}
+
+async function cmdRemoveOrder(ctx, chatId, msg, args) {
+  const id = parseInt(args[0], 10);
+  if (!Number.isFinite(id)) {
+    return ctx.sock.sendMessage(chatId, { text: "Use: `.order-del <id>` — see `.orders` for IDs." }, { quoted: msg });
+  }
+  const ok = removeOrder(id);
+  return ctx.sock.sendMessage(chatId, { text: ok ? `🗑️ Order #${id} removed.` : `❌ No order with ID ${id}.` }, { quoted: msg });
+}
+
 // ============================
 // EXPORTS
 // ============================
@@ -750,6 +918,8 @@ module.exports = {
   cmdStarReset,
   cmdStarPing,
   cmdStarBestie,
+  cmdListOrders,
+  cmdRemoveOrder,
   // exposed for testing / tooling
   _profiles: () => profiles,
   _groups: () => groupsState,

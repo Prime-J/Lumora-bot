@@ -2750,6 +2750,14 @@ if (command === "gift-star") {
   const amount = parseInt(args[0], 10);
   return starSystem.receiveGift(ctx, chatId, senderId, msg, amount);
 }
+if (command === "orders") {
+  if (!isOwner) return;
+  return starSystem.cmdListOrders(ctx, chatId, msg);
+}
+if (command === "order-del") {
+  if (!isOwner) return;
+  return starSystem.cmdRemoveOrder(ctx, chatId, msg, args);
+}
 
 if (command === "addfacpts") {
   if (!isOwner) return;

@@ -1,8 +1,20 @@
 {
-  "groups": [],
+  "groups": [
+    "120363425214613922@g.us"
+  ],
   "mode": "public",
   "pingsEnabled": true,
-  "lastActivityAt": 0,
+  "lastActivityAt": 1776796741860,
   "lastPingAt": 0,
-  "stats": { "totalMessages": 0, "totalInputTokens": 0, "totalOutputTokens": 0, "today": { "date": "", "messages": 0, "inputTokens": 0, "outputTokens": 0 } }
+  "stats": {
+    "totalMessages": 67,
+    "totalInputTokens": 126910,
+    "totalOutputTokens": 5111,
+    "today": {
+      "date": "2026-04-21",
+      "messages": 67,
+      "inputTokens": 126910,
+      "outputTokens": 5111
+    }
+  }
 }
