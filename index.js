@@ -250,10 +250,25 @@ async function bootPlayers() {
   // Try to connect to MongoDB
   await mongoDb.initMongo();
 
-  // Load from MongoDB (or empty if not connected)
+  // Load from MongoDB. Returns:
+  //   - object with data: success
+  //   - {}: connected but truly empty database
+  //   - null: load FAILED (network/timeout) — don't trust JSON fallback
   let players = await mongoDb.loadAllPlayers();
 
-  // Fall back to JSON file if MongoDB gave us nothing
+  if (players === null) {
+    // CRITICAL: Mongo connected but the find() failed even after retries.
+    // Mongo HAS the data — we just couldn't read it. DO NOT fall back to
+    // JSON (which on Railway is empty/stale after redeploy) because that
+    // would make every player "unregistered". Return empty + writes are
+    // already blocked by mongo.markDirty's bootLoadFailed guard.
+    console.error("[boot] ⚠️  Mongo load failed. Bot is in READ-ONLY-FOR-MONGO mode.");
+    console.error("[boot] ⚠️  Restart Railway to retry. Players will appear unregistered until then.");
+    console.error("[boot] ⚠️  No saves will reach Mongo, so existing data is SAFE.");
+    return {};
+  }
+
+  // Fall back to JSON file if MongoDB returned nothing (genuinely empty DB)
   if (Object.keys(players).length === 0) {
     players = loadJSON(PLAYERS_FILE, {});
     if (Object.keys(players).length > 0) {
@@ -272,6 +287,7 @@ async function bootPlayers() {
     saveJSON(PLAYERS_FILE, players);
   }
 
+  console.log(`[boot] Loaded ${Object.keys(players).length} players total`);
   return players;
 }
 

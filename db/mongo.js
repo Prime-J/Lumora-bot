@@ -8,6 +8,9 @@ const FLUSH_INTERVAL = 3000; // 3 seconds, batched writes
 const FLUSH_TIMEOUT = 5000; // 5 second timeout for graceful shutdown
 
 let connected = false;
+let bootLoadFailed = false; // CRITICAL safety: set true if initial load errored;
+                            // when true, ALL writes to Mongo are blocked so we can't
+                            // overwrite real records with empty/garbage data.
 const dirtyJids = new Set(); // Track which JIDs need to write
 let flushTimer = null;
 let latestPlayersRef = null; // Always points to the most recent players object
@@ -42,8 +45,9 @@ async function initMongo() {
 
   try {
     await mongoose.connect(MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 15000,
+      socketTimeoutMS: 60000,   // bumped from 10s — initial find() needs longer
+      connectTimeoutMS: 30000,
     });
     connected = true;
     console.log("[mongo] Connected to MongoDB Atlas");
@@ -65,18 +69,37 @@ async function loadAllPlayers() {
     return {};
   }
 
-  try {
-    const docs = await Player.find({});
-    const players = {};
-    for (const doc of docs) {
-      players[doc.jid] = doc.data || {};
+  const MAX_TRIES = 3;
+  for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
+    try {
+      // .lean() skips Mongoose hydration — much faster on large collections
+      // .maxTimeMS(60000) lets the server-side query run longer than 10s
+      const docs = await Player.find({}).maxTimeMS(60000).lean();
+      const players = {};
+      for (const doc of docs) {
+        players[doc.jid] = doc.data || {};
+      }
+      console.log(`[mongo] Loaded ${Object.keys(players).length} players from MongoDB (attempt ${attempt})`);
+      return players;
+    } catch (err) {
+      console.warn(`[mongo] Load attempt ${attempt}/${MAX_TRIES} failed:`, err.message);
+      if (attempt < MAX_TRIES) {
+        const wait = 3000 * attempt;
+        console.log(`[mongo] Retrying in ${wait}ms...`);
+        await new Promise((r) => setTimeout(r, wait));
+      }
     }
-    console.log(`[mongo] Loaded ${Object.keys(players).length} players from MongoDB`);
-    return players;
-  } catch (err) {
-    console.warn("[mongo] Error loading players:", err.message);
-    return {};
   }
+  // CRITICAL: every retry failed. Mark boot as failed so we never write garbage
+  // to Mongo. Returning null is a sentinel — caller must distinguish "really
+  // empty" from "couldn't read."
+  bootLoadFailed = true;
+  console.error("[mongo] CRITICAL: All load attempts failed. Mongo writes are now BLOCKED for this session.");
+  return null;
+}
+
+function isBootLoadFailed() {
+  return bootLoadFailed;
 }
 
 /**
@@ -87,6 +110,7 @@ async function loadAllPlayers() {
  */
 function markDirty(players, jid) {
   if (!connected) return; // No-op if not connected
+  if (bootLoadFailed) return; // Safety: never overwrite Mongo if we failed to read it
 
   dirtyJids.add(jid);
   latestPlayersRef = players; // Always keep the freshest reference
@@ -171,4 +195,5 @@ module.exports = {
   loadAllPlayers,
   markDirty,
   gracefulShutdown,
+  isBootLoadFailed,
 };
