@@ -35,7 +35,7 @@ const TRICK_EXPIRY_MS = 10 * 60 * 1000;            // pending demand expires in 
 
 const LONELINESS_IDLE_MS = 60 * 60 * 1000;         // group quiet 1hr
 const LONELINESS_STAR_QUIET_MS = 2 * 60 * 60 * 1000; // and Star hasn't pinged in 2hr
-const LONELINESS_TICK_MS = 30 * 60 * 1000;         // check every 30min
+const LONELINESS_TICK_MS = 20 * 60 * 1000;         // check every 30min
 
 let client = null;
 let profiles = {};
@@ -297,13 +297,21 @@ function parseTokens(replyText) {
 // FACT DEDUPE / EXTRACTION
 // ============================
 function applyFacts(profile, newFacts) {
+  // Split each fact on commas so multi-key entries like
+  //   "name=Prime, gender=male, relationship=creator"
+  // become three separate facts.
+  const flat = [];
   for (const raw of newFacts) {
-    const f = raw.trim();
-    if (!f) continue;
-    // Special: name=X / gender=X
-    const nameM = f.match(/^name\s*[=:]\s*(.+)$/i);
-    if (nameM) { profile.name = nameM[1].trim().slice(0, 40); continue; }
-    const gM = f.match(/^gender\s*[=:]\s*(male|female|m|f|boy|girl)$/i);
+    String(raw).split(/\s*,\s*/).forEach(p => { const t = p.trim(); if (t) flat.push(t); });
+  }
+  for (const f of flat) {
+    // name=X — only capture up to the next key or end
+    const nameM = f.match(/^name\s*[=:]\s*([^,;\n]+?)\s*$/i);
+    if (nameM) {
+      profile.name = nameM[1].trim().slice(0, 40);
+      continue;
+    }
+    const gM = f.match(/^gender\s*[=:]\s*(male|female|m|f|boy|girl)\s*$/i);
     if (gM) {
       const g = gM[1].toLowerCase();
       profile.gender = (g === "m" || g === "boy" || g === "male") ? "male" : "female";
@@ -311,7 +319,6 @@ function applyFacts(profile, newFacts) {
     }
     if (!profile.facts.includes(f)) profile.facts.push(f);
   }
-  // Cap facts to 30
   if (profile.facts.length > 30) profile.facts = profile.facts.slice(-30);
 }
 
