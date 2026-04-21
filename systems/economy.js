@@ -110,6 +110,10 @@ async function cmdDaily(ctx, chatId, senderId) {
     if (healersTax.taxed) {
       finalReward = healersTax.reward;
       lines.push(healersTax.message);
+      const taxAmt = baseReward - healersTax.reward;
+      if (taxAmt > 0 && typeof ctx.addTreasuryLucons === "function") {
+        ctx.addTreasuryLucons("harmony", taxAmt, senderId);
+      }
     }
   }
 
@@ -118,6 +122,10 @@ async function cmdDaily(ctx, chatId, senderId) {
     const riftReward = factionMarketSystem.applyRiftDailyReduction(p, finalReward);
     if (p.faction === "rift" && riftReward < finalReward) {
       lines.push(`🔶 *Rift Tax*: Daily income reduced 20% (Rift Seekers live on the edge)\nNet: *${riftReward} Lucons*`);
+      const riftTaxAmt = finalReward - riftReward;
+      if (riftTaxAmt > 0 && typeof ctx.addTreasuryLucons === "function") {
+        ctx.addTreasuryLucons("rift", riftTaxAmt, senderId);
+      }
     }
     finalReward = Math.max(1, p.faction === "rift" ? riftReward : finalReward);
   } else {
@@ -198,6 +206,10 @@ async function cmdWeekly(ctx, chatId, senderId) {
     const riftWeekly = factionMarketSystem.applyRiftDailyReduction(p, reward);
     if (p.faction === "rift" && riftWeekly < reward) {
       wLines.push(`🔶 *Rift Tax*: -20% reduction applied. Net: *${riftWeekly} Lucons*`);
+      const riftTaxAmt = reward - riftWeekly;
+      if (riftTaxAmt > 0 && typeof ctx.addTreasuryLucons === "function") {
+        ctx.addTreasuryLucons("rift", riftTaxAmt, senderId);
+      }
     }
     reward = p.faction === "rift" ? riftWeekly : reward;
   }
@@ -206,6 +218,9 @@ async function cmdWeekly(ctx, chatId, senderId) {
   if (!hasProW && p.faction === "harmony") {
     reward = Math.max(1, reward - 100);
     wLines.push(`🌿 *Healer's Tax*: 100 Lucons donated to the community. Net: *${reward} Lucons*`);
+    if (typeof ctx.addTreasuryLucons === "function") {
+      ctx.addTreasuryLucons("harmony", 100, senderId);
+    }
   }
 
   if (hasProW) {

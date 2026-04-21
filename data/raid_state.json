@@ -1,0 +1,7 @@
+{
+  "active": null,
+  "cooldowns": { "harmony": 0, "purity": 0, "rift": 0 },
+  "kaelState": { "active": false, "expiresAt": 0, "claimedBy": null, "summonedBy": null },
+  "raidGroups": { "enabled": true, "allowed": [] },
+  "history": []
+}

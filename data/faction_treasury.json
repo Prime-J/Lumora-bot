@@ -1,0 +1,38 @@
+{
+  "harmony": {
+    "lucons": 0,
+    "moraDeployed": [],
+    "treasures": [],
+    "wallHp": 500,
+    "wallMaxHp": 500,
+    "wallLevel": 1,
+    "wallMaterials": [],
+    "wallRegenAt": 0,
+    "honour": 100,
+    "contributions": {}
+  },
+  "purity": {
+    "lucons": 0,
+    "moraDeployed": [],
+    "treasures": [],
+    "wallHp": 500,
+    "wallMaxHp": 500,
+    "wallLevel": 1,
+    "wallMaterials": [],
+    "wallRegenAt": 0,
+    "honour": 100,
+    "contributions": {}
+  },
+  "rift": {
+    "lucons": 0,
+    "moraDeployed": [],
+    "treasures": [],
+    "wallHp": 500,
+    "wallMaxHp": 500,
+    "wallLevel": 1,
+    "wallMaterials": [],
+    "wallRegenAt": 0,
+    "honour": 100,
+    "contributions": {}
+  }
+}

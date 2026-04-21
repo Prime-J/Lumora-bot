@@ -1162,5 +1162,85 @@
     "storageCost": 0,
     "effect": "Rift Seeker origin — use to forge a Mora at Lumora Labs (.create-mora). Grants +1% rarity boost per creation.",
     "desc": "A volatile sphere born from the fractured void itself, harvested by Rift Seekers from the deepest rifts. When channeled through the Creation Array, it channels primordial chaos into pure potential—the raw stuff of life itself."
+  },
+  "CRY_001": {
+    "id": "CRY_001",
+    "name": "Shard Crystal",
+    "category": "crystal",
+    "rarity": "Common",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 100,
+    "stock": 8,
+    "storageCost": 1,
+    "effect": "Fortifies faction wall: +50 HP",
+    "desc": "A rough fragment of stabilizing crystal. Used to reinforce faction strongholds.",
+    "effects": {
+      "wallHp": 50
+    }
+  },
+  "CRY_002": {
+    "id": "CRY_002",
+    "name": "Core Crystal",
+    "category": "crystal",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 300,
+    "stock": 4,
+    "storageCost": 1,
+    "effect": "Fortifies faction wall: +150 HP",
+    "desc": "A refined crystal with a dense, hardened core — strong enough to hold the shape of a wall under pressure.",
+    "effects": {
+      "wallHp": 150
+    }
+  },
+  "CRY_003": {
+    "id": "CRY_003",
+    "name": "Prismatic Crystal",
+    "category": "crystal",
+    "rarity": "Rare",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 800,
+    "stock": 2,
+    "storageCost": 1,
+    "effect": "Fortifies faction wall: +400 HP",
+    "desc": "A multifaceted crystal that refracts incoming force across its structure. Highly prized by wall engineers.",
+    "effects": {
+      "wallHp": 400
+    }
+  },
+  "CRY_004": {
+    "id": "CRY_004",
+    "name": "Rift Crystal",
+    "category": "crystal",
+    "rarity": "Epic",
+    "marketType": "black",
+    "rotates": true,
+    "price": 2000,
+    "stock": 1,
+    "storageCost": 1,
+    "effect": "Fortifies faction wall: +1000 HP",
+    "desc": "A crystal harvested from the heart of a Rift Surge. Contains the raw violence of the Rift itself — unmatched in defensive potential.",
+    "effects": {
+      "wallHp": 1000
+    }
+  },
+  "RES_001": {
+    "id": "RES_001",
+    "name": "Rift Escape Shard",
+    "category": "consumable",
+    "rarity": "Rare",
+    "marketType": "faction",
+    "rotates": true,
+    "price": 300,
+    "stock": 3,
+    "storageCost": 1,
+    "effect": "Breaks free from raid capture. Single use.",
+    "desc": "A jagged shard that tears open a brief rift, pulling the holder out of captivity. Single-use — once consumed, the rift seals behind you.",
+    "effects": {
+      "raidEscape": true
+    }
   }
 }

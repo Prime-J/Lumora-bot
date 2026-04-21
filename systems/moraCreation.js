@@ -513,6 +513,7 @@ async function cmdApproveMora(ctx, chatId, senderId, msg, args = []) {
     learnset: s.draft.learnset,
     createdBy: s.creatorJid,
     createdByName: s.creatorName,
+    generation: 2,
   };
   moraList.push(newMora);
   saveMoraFile(moraList);

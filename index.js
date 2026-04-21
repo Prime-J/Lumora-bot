@@ -93,6 +93,7 @@ const miscSystem = require('./systems/misc');
 const arenaSystem = require('./systems/npcArena');
 const proSystem = require('./systems/pro');
 const moraCreationSystem = require('./systems/moraCreation');
+const raidsSystem = require('./systems/raids');
 const mongoDb = require('./db/mongo');
 const { generateMoraCard } = require('./systems/moraCardCanvas');
 const { generateProfileCard } = require('./systems/profileCardCanvas');
@@ -546,6 +547,89 @@ function addFactionPoints(faction, amount, reason = "") {
   const fp = loadFactionPoints();
   fp[faction] = (fp[faction] || 0) + amount;
   saveFactionPoints(fp);
+}
+
+// ============================
+// FACTION TREASURY + HONOUR
+// ============================
+const FACTION_TREASURY_FILE = path.join(DATA_DIR, "faction_treasury.json");
+const TREASURY_DEFAULT = () => ({
+  lucons: 0,
+  moraDeployed: [],
+  treasures: [],
+  wallHp: 500,
+  wallMaxHp: 500,
+  wallLevel: 1,
+  wallMaterials: [],
+  wallRegenAt: 0,
+  honour: 100,
+  contributions: {},
+});
+
+function loadTreasury() {
+  const t = loadJSON(FACTION_TREASURY_FILE, {
+    harmony: TREASURY_DEFAULT(),
+    purity: TREASURY_DEFAULT(),
+    rift: TREASURY_DEFAULT(),
+  });
+  for (const f of ["harmony", "purity", "rift"]) {
+    if (!t[f]) t[f] = TREASURY_DEFAULT();
+    const def = TREASURY_DEFAULT();
+    for (const k of Object.keys(def)) {
+      if (t[f][k] === undefined) t[f][k] = def[k];
+    }
+  }
+  return t;
+}
+
+function saveTreasury(t) {
+  return saveJSON(FACTION_TREASURY_FILE, t);
+}
+
+function addTreasuryLucons(faction, amount, jid = null) {
+  if (!faction || !["harmony","purity","rift"].includes(faction)) return;
+  if (!amount || amount <= 0) return;
+  const t = loadTreasury();
+  t[faction].lucons = Math.max(0, (t[faction].lucons || 0) + Math.floor(amount));
+  if (jid) {
+    t[faction].contributions[jid] = (t[faction].contributions[jid] || 0) + Math.floor(amount);
+  }
+  saveTreasury(t);
+}
+
+function addTreasuryMora(faction, moraEntry) {
+  if (!faction || !["harmony","purity","rift"].includes(faction)) return;
+  const t = loadTreasury();
+  t[faction].moraDeployed.push(moraEntry);
+  saveTreasury(t);
+}
+
+function adjustHonour(faction, delta) {
+  if (!faction || !["harmony","purity","rift"].includes(faction)) return;
+  const t = loadTreasury();
+  t[faction].honour = Math.max(0, Math.min(300, (t[faction].honour || 100) + delta));
+  saveTreasury(t);
+}
+
+function regenWallIfDue(faction) {
+  if (!faction) return;
+  const t = loadTreasury();
+  const f = t[faction];
+  if (!f) return;
+  const now = Date.now();
+  const SIX_HOURS = 6 * 60 * 60 * 1000;
+  if (!f.wallRegenAt) f.wallRegenAt = now + SIX_HOURS;
+  if (now >= f.wallRegenAt && f.wallHp < f.wallMaxHp) {
+    const regen = Math.floor(f.wallMaxHp * 0.1);
+    f.wallHp = Math.min(f.wallMaxHp, f.wallHp + regen);
+    f.wallRegenAt = now + SIX_HOURS;
+    saveTreasury(t);
+  }
+}
+
+function getWallLevelCapacity(level) {
+  const caps = { 1: 500, 2: 700, 3: 1000, 4: 1400, 5: 2000 };
+  return caps[level] || 500;
 }
 
 // ============================
@@ -1063,6 +1147,7 @@ function createOwnedMoraFromSpecies(species) {
     maxHp: 0,
     pe: 0,
     corrupted: false,
+    generation: species.generation || 1,
     moves: picked,
     stats: { atk: 10, def: 10, spd: 10, energy: 30 },
     energy: undefined,
@@ -1676,6 +1761,14 @@ sock.ev.removeAllListeners("messages.upsert");
         mentionTag,
         primordial: PRIMORDIAL,
         pushNames: pushNameCache,
+        loadTreasury,
+        saveTreasury,
+        addTreasuryLucons,
+        addTreasuryMora,
+        adjustHonour,
+        regenWallIfDue,
+        getWallLevelCapacity,
+        addFactionPoints,
       };
 
       if (isGroupJid(chatId) && settings.features.groupSpawnsEnabled !== false) {
@@ -3681,9 +3774,10 @@ if (command === "buy-bm") {
             const need = xpSystem.xpToNextLevel(lv);
             const xpNow = typeof m.xp === "number" ? m.xp : 0;
             const inParty = partySet.has(i) ? " ⚔️ [PARTY]" : "";
+            const genBadge = Number(m.generation) === 2 ? " 🧬 2nd Gen" : "";
 
             return (
-              `${i + 1}️⃣ *${m.name}*${inParty}\n` +
+              `${i + 1}️⃣ *${m.name}*${inParty}${genBadge}\n` +
               `🆔 ID_${m.moraId} • ⚡ ${m.type || "—"} • 💠 ${m.rarity || "—"}\n` +
               `📈 Lv ${lv} • ✨ ${xpNow}/${need}\n` +
               `❤️ ${m.hp}/${m.maxHp}`
@@ -3823,9 +3917,6 @@ if (command === "buy-bm") {
       }
 
       // ================= VIEW SANCTUARY (faction status roll-up) =================
-      // Shows the caller their own faction's combined stats: total mora tamed
-      // across all members, total lucons pooled by the faction, and faction
-      // points from the global tracker. Top contributors listed for flavor.
       if (command === "view-sanctuary" || command === "viewsanctuary" || command === "sanctuary-view") {
         const p = players[senderId];
         if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.start*." }, { quoted: msg });
@@ -3834,37 +3925,52 @@ if (command === "buy-bm") {
         }
 
         const faction = p.faction;
+        regenWallIfDue(faction);
         const fp = loadFactionPoints();
+        const treasury = loadTreasury()[faction] || {};
         const factionMeta = FACTIONS[faction] || {};
         const factionName = factionMeta.name || faction;
         const factionEmoji = factionMeta.emoji || "⚔";
 
-        // Roll up live player data for everyone in this faction
+        // Roll up live player data
         let memberCount = 0;
-        let totalMora = 0;
         let corruptedMora = 0;
-        let totalLucons = 0;
         const contributors = [];
-
         for (const [jid, pl] of Object.entries(players)) {
           if (!pl || pl.faction !== faction) continue;
           memberCount++;
           const owned = Array.isArray(pl.moraOwned) ? pl.moraOwned : [];
-          totalMora += owned.length;
           corruptedMora += owned.filter(m => m?.corrupted).length;
-          const lucons = Number(pl.lucons || 0);
-          totalLucons += lucons;
           contributors.push({
             name: pl.username || jid.split("@")[0],
-            moras: owned.length,
-            lucons,
+            donated: Number(treasury.contributions?.[jid] || 0),
           });
         }
+        contributors.sort((a, b) => b.donated - a.donated);
+        const topLines = contributors.slice(0, 5)
+          .filter(c => c.donated > 0)
+          .map((c, i) => `${i + 1}. *${c.name}* — 🧱 ${c.donated.toLocaleString()}L donated`);
 
-        contributors.sort((a, b) => b.moras - a.moras || b.lucons - a.lucons);
-        const topLines = contributors.slice(0, 5).map((c, i) =>
-          `${i + 1}. *${c.name}* — 🐉 ${c.moras}  •  💰 ${c.lucons}`
-        );
+        // Wall bar
+        const wallHp = Math.max(0, Number(treasury.wallHp || 0));
+        const wallMax = Math.max(1, Number(treasury.wallMaxHp || 500));
+        const wallPct = wallHp / wallMax;
+        const filled = Math.round(wallPct * 10);
+        const wallBar = "█".repeat(filled) + "░".repeat(10 - filled);
+        const wallLevel = Number(treasury.wallLevel || 1);
+
+        // Honour
+        const honour = Number(treasury.honour || 100);
+        const honourIcon = honour >= 150 ? "⭐ *REVERED*" : honour >= 100 ? "🏅 *Honoured*" : honour >= 50 ? "⚪ *Standing*" : "💀 *Disgraced*";
+        const honourNote = honour >= 150
+          ? "_Market discounts active; +20% FP on missions._"
+          : honour < 50
+          ? "_Market +10%; -10% FP on missions._"
+          : "_No honour modifiers active._";
+
+        const deployedCount = (treasury.moraDeployed || []).length;
+        const treasuryLucons = Number(treasury.lucons || 0);
+        const stockpile = (treasury.wallMaterials || []).length;
 
         const factionLabel =
           faction === "harmony" ? "Sanctuary" :
@@ -3877,14 +3983,259 @@ if (command === "buy-bm") {
             `${factionEmoji} *${factionName.toUpperCase()} — ${factionLabel.toUpperCase()}*\n` +
             `━━━━━━━━━━━━━━━━━━\n\n` +
             `👥 Members: *${memberCount}*\n` +
-            `🐉 Total Mora Deployed: *${totalMora}*\n` +
-            (corruptedMora ? `🕷 Corrupted Among Them: *${corruptedMora}*\n` : "") +
-            `💰 Faction Wealth (pooled Lucons): *${totalLucons.toLocaleString()}*\n` +
             `🏅 Faction Points: *${fp[faction] || 0}*\n\n` +
+            `🛡️ *TREASURY*\n` +
+            `├ 💰 Vault: *${treasuryLucons.toLocaleString()} Lucons*\n` +
+            `├ 🐉 Deployed Mora: *${deployedCount}*\n` +
+            (corruptedMora ? `├ 🕷 Corrupted Among Them: *${corruptedMora}*\n` : "") +
+            `└ 💎 Crystal Stockpile: *${stockpile}*\n\n` +
+            `🧱 *WALL — Lv ${wallLevel}*\n` +
+            `├ ${wallBar}  ${wallHp}/${wallMax}\n` +
+            `└ _Use_ *.fortify-wall* _to reinforce._\n\n` +
+            `${honourIcon} — Honour: *${honour}*\n` +
+            `_${honourNote}_\n\n` +
             `━━━━━━━━━━━━━━━━━━\n` +
-            `🏆 *TOP CONTRIBUTORS*\n` +
-            (topLines.length ? topLines.join("\n") : "_(no contributors yet)_") +
-            `\n━━━━━━━━━━━━━━━━━━`,
+            `🏆 *TOP WALL DONORS*\n` +
+            (topLines.length ? topLines.join("\n") : "_(none yet — be the first!)_") +
+            `\n━━━━━━━━━━━━━━━━━━\n` +
+            `📖 *.fortify-wall <crystal|amount>*  •  *.upgrade-wall*`,
+        }, { quoted: msg });
+      }
+
+      // ================= FORTIFY WALL =================
+      if (command === "fortify-wall" || command === "fortifywall") {
+        const p = players[senderId];
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.start*." }, { quoted: msg });
+        if (!p.faction || !["harmony","purity","rift"].includes(p.faction)) {
+          return sock.sendMessage(chatId, { text: "❌ Join a faction first." }, { quoted: msg });
+        }
+        const faction = p.faction;
+        regenWallIfDue(faction);
+
+        const queryRaw = args.join(" ").trim();
+        if (!queryRaw) {
+          return sock.sendMessage(chatId, {
+            text:
+              `🧱 *FORTIFY THE WALL*\n\n` +
+              `Donate crystals OR lucons to strengthen your faction's wall.\n\n` +
+              `*Crystals:*\n` +
+              `• Shard Crystal (+50 HP each)\n` +
+              `• Core Crystal (+150 HP each)\n` +
+              `• Prismatic Crystal (+400 HP each)\n` +
+              `• Rift Crystal (+1000 HP each)\n\n` +
+              `*Usage:*\n` +
+              `• \`.fortify-wall shard crystal 3\` — use 3 shard crystals\n` +
+              `• \`.fortify-wall 500\` — donate 500 lucons (1L = 1 HP)\n\n` +
+              `_Crystals stored in the wall may DROP as loot when raiders break it._`,
+          }, { quoted: msg });
+        }
+
+        const itemsDb = require("./systems/items").loadItems();
+        const t = loadTreasury();
+        const f = t[faction];
+
+        // Check if it's a pure-number = lucon donation
+        if (/^\d+$/.test(queryRaw)) {
+          const amt = Number(queryRaw);
+          if (amt <= 0) return sock.sendMessage(chatId, { text: "❌ Amount must be positive." }, { quoted: msg });
+          if ((p.lucons || 0) < amt) return sock.sendMessage(chatId, { text: "❌ Not enough Lucons." }, { quoted: msg });
+          const addHp = Math.min(amt, f.wallMaxHp - f.wallHp);
+          if (addHp <= 0) return sock.sendMessage(chatId, { text: "🧱 The wall is already at full strength." }, { quoted: msg });
+
+          p.lucons -= amt;
+          f.wallHp = Math.min(f.wallMaxHp, f.wallHp + addHp);
+          f.contributions[senderId] = (f.contributions[senderId] || 0) + amt;
+          saveTreasury(t);
+          savePlayers(players);
+
+          const unused = amt - addHp;
+          const returnNote = unused > 0 ? `\n\n_Wall was near full — ${unused} Lucons returned._` : "";
+          if (unused > 0) { p.lucons += unused; savePlayers(players); }
+
+          return sock.sendMessage(chatId, {
+            text:
+              `🧱 *Wall reinforced.*\n\n` +
+              `+${addHp} HP  →  *${f.wallHp}/${f.wallMaxHp}*\n` +
+              `💸 -${amt - unused} Lucons\n` +
+              `🏆 Your total wall donations: *${f.contributions[senderId]}*${returnNote}`,
+          }, { quoted: msg });
+        }
+
+        // Otherwise parse as "<crystal name> [qty]"
+        let qty = 1;
+        let nameTokens = queryRaw.split(/\s+/);
+        const lastToken = nameTokens[nameTokens.length - 1];
+        if (/^\d+$/.test(lastToken)) {
+          qty = Math.max(1, Number(lastToken));
+          nameTokens = nameTokens.slice(0, -1);
+        }
+        const itemName = nameTokens.join(" ").toLowerCase();
+
+        const crystalIds = ["CRY_001","CRY_002","CRY_003","CRY_004"];
+        const crystal = crystalIds.map(id => itemsDb[id]).find(it =>
+          it && it.name.toLowerCase() === itemName || (it && it.name.toLowerCase().startsWith(itemName))
+        );
+        if (!crystal) {
+          return sock.sendMessage(chatId, { text: "❌ Unknown crystal. Try: *shard crystal*, *core crystal*, *prismatic crystal*, *rift crystal*." }, { quoted: msg });
+        }
+
+        const inv = p.inventory || {};
+        const have = Number(inv[crystal.id] || 0);
+        if (have < qty) {
+          return sock.sendMessage(chatId, { text: `❌ You only have ${have} ${crystal.name}${have === 1 ? "" : "s"}.` }, { quoted: msg });
+        }
+
+        const hpPer = Number(crystal.effects?.wallHp || 0);
+        const roomLeft = f.wallMaxHp - f.wallHp;
+        if (roomLeft <= 0) return sock.sendMessage(chatId, { text: "🧱 The wall is already at full strength." }, { quoted: msg });
+        const maxUsable = Math.max(1, Math.ceil(roomLeft / Math.max(1, hpPer)));
+        const useQty = Math.min(qty, maxUsable);
+        const hpGain = Math.min(roomLeft, hpPer * useQty);
+
+        inv[crystal.id] = have - useQty;
+        if (inv[crystal.id] <= 0) delete inv[crystal.id];
+        p.inventory = inv;
+        f.wallHp = Math.min(f.wallMaxHp, f.wallHp + hpGain);
+        for (let i = 0; i < useQty; i++) {
+          f.wallMaterials.push({ id: crystal.id, name: crystal.name, hp: hpPer, by: senderId });
+        }
+        const luconEquiv = hpGain; // for contribution tracking
+        f.contributions[senderId] = (f.contributions[senderId] || 0) + luconEquiv;
+
+        saveTreasury(t);
+        savePlayers(players);
+
+        return sock.sendMessage(chatId, {
+          text:
+            `🧱 *Wall reinforced with ${crystal.name}.*\n\n` +
+            `-${useQty}× ${crystal.name}\n` +
+            `+${hpGain} HP  →  *${f.wallHp}/${f.wallMaxHp}*\n` +
+            `💎 Crystals stored in wall: *${f.wallMaterials.length}*\n` +
+            `🏆 Total contribution value: *${f.contributions[senderId]}*\n\n` +
+            `_If raiders break through, these crystals drop as loot._`,
+        }, { quoted: msg });
+      }
+
+      // ================= UPGRADE WALL =================
+      if (command === "upgrade-wall" || command === "upgradewall") {
+        const p = players[senderId];
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.start*." }, { quoted: msg });
+        if (!p.faction || !["harmony","purity","rift"].includes(p.faction)) {
+          return sock.sendMessage(chatId, { text: "❌ Join a faction first." }, { quoted: msg });
+        }
+        const faction = p.faction;
+
+        // Require top-5 by level within faction
+        const members = Object.entries(players)
+          .filter(([, pl]) => pl && pl.faction === faction)
+          .map(([jid, pl]) => ({ jid, level: Number(pl.level || 1) }))
+          .sort((a, b) => b.level - a.level);
+        const top5Jids = members.slice(0, 5).map(m => m.jid);
+        if (!top5Jids.includes(senderId) && !isOwner) {
+          return sock.sendMessage(chatId, { text: "❌ Only the top 5 members of your faction (by level) may order wall upgrades." }, { quoted: msg });
+        }
+
+        const t = loadTreasury();
+        const f = t[faction];
+        const currentLv = Number(f.wallLevel || 1);
+        if (currentLv >= 5) return sock.sendMessage(chatId, { text: "🧱 The wall is already at its maximum level (5)." }, { quoted: msg });
+
+        const nextLv = currentLv + 1;
+        const cost = nextLv * 500;
+        if ((f.lucons || 0) < cost) {
+          return sock.sendMessage(chatId, { text: `❌ Treasury has only *${f.lucons}L*. Upgrade to Lv${nextLv} costs *${cost}L*.` }, { quoted: msg });
+        }
+
+        f.lucons -= cost;
+        f.wallLevel = nextLv;
+        f.wallMaxHp = getWallLevelCapacity(nextLv);
+        f.wallHp = f.wallMaxHp; // full heal on upgrade
+        saveTreasury(t);
+
+        return sock.sendMessage(chatId, {
+          text:
+            `🧱 *WALL UPGRADED — Lv ${currentLv} → Lv ${nextLv}*\n\n` +
+            `💰 Treasury -${cost}L  →  *${f.lucons}L remaining*\n` +
+            `🛡️ New max HP: *${f.wallMaxHp}* (fully restored)\n\n` +
+            `_The wall hums with new resonance. Let the raiders come._`,
+        }, { quoted: msg });
+      }
+
+      // ================= RAIDS =================
+      try { await raidsSystem.tickRaid(ctx); } catch {}
+      try { raidsSystem.tickKael(ctx); } catch {}
+
+      if (command === "summon-kael" || command === "summonkael") {
+        return raidsSystem.cmdSummonKael(ctx, chatId, senderId, msg);
+      }
+      if (command === "claim-raidcontract" || command === "claimraidcontract" || command === "claim-contract") {
+        return raidsSystem.cmdClaimContract(ctx, chatId, senderId, msg);
+      }
+      if (command === "raid") {
+        const sub = (args[0] || "").toLowerCase();
+        if (sub === "join") return raidsSystem.cmdRaidJoin(ctx, chatId, senderId, msg);
+        if (sub === "launch") return raidsSystem.cmdRaidLaunch(ctx, chatId, senderId, msg, args.slice(1));
+        if (sub === "status") return raidsSystem.cmdRaidStatus(ctx, chatId, msg);
+        if (sub === "history") return raidsSystem.cmdRaidHistory(ctx, chatId, msg);
+        return sock.sendMessage(chatId, { text: "📖 *.raid join* | *.raid launch <faction>* | *.raid status* | *.raid history*" }, { quoted: msg });
+      }
+      if (command === "raid-attack" || command === "raidattack") {
+        return raidsSystem.cmdRaidAttackEncounter(ctx, chatId, senderId, msg);
+      }
+      if (command === "raid-reinforce" || command === "raidreinforce") {
+        return raidsSystem.cmdRaidReinforce(ctx, chatId, senderId, msg);
+      }
+      if (command === "engage" || command === "raid-engage") {
+        return raidsSystem.cmdRaidEngage(ctx, chatId, senderId, msg, { getMentionedJids, normJid });
+      }
+      if (command === "reroll-roles" || command === "rerollroles") {
+        return raidsSystem.cmdRerollRoles(ctx, chatId, senderId, msg);
+      }
+      if (command === "ready") {
+        return raidsSystem.cmdReady(ctx, chatId, senderId, msg);
+      }
+      if (command === "raid-go" || command === "raidgo") {
+        return raidsSystem.cmdRaidGo(ctx, chatId, senderId, msg);
+      }
+      if (command === "raid-kick" || command === "raidkick") {
+        return raidsSystem.cmdRaidKick(ctx, chatId, senderId, msg, { getMentionedJids, normJid });
+      }
+      if (command === "escape" || command === "raid-escape") {
+        return raidsSystem.cmdEscapeCapture(ctx, chatId, senderId, msg);
+      }
+      if (command === "add-raidgroup" || command === "addraidgroup") {
+        return raidsSystem.cmdAddRaidGroup(ctx, chatId, senderId, msg);
+      }
+      if (command === "remove-raidgroup" || command === "removeraidgroup") {
+        return raidsSystem.cmdRemoveRaidGroup(ctx, chatId, senderId, msg);
+      }
+      if (command === "raids-on") return raidsSystem.cmdRaidsToggle(ctx, chatId, senderId, msg, true);
+      if (command === "raids-off") return raidsSystem.cmdRaidsToggle(ctx, chatId, senderId, msg, false);
+      if (command === "raid-end" || command === "raidend") {
+        return raidsSystem.cmdForceEnd(ctx, chatId, senderId, msg);
+      }
+
+      // ================= CHRONICLES =================
+      if (command === "chronicles" || command === "lore") {
+        const fs = require("fs");
+        const cpath = path.join(DATA_DIR, "chronicles.json");
+        let entries = [];
+        try { entries = JSON.parse(fs.readFileSync(cpath, "utf8")).entries || []; } catch {}
+        const recent = entries.slice(-5).reverse();
+        const recentLines = recent.length
+          ? recent.map((e, i) => `${i + 1}. _${e.text}_`).join("\n")
+          : "_The pages are still blank._";
+        return sock.sendMessage(chatId, {
+          text:
+            `📜 *THE CHRONICLES OF LUMORA*\n` +
+            `━━━━━━━━━━━━━━━━━━\n\n` +
+            `_The full saga — a living narrator voicing the rise of warriors, the fall of vaults, the arcs of factions — is being written._\n\n` +
+            `🌀 *Coming soon:* A two-part chronicle:\n` +
+            `• *The Present* — today's heroes, their paths, their choices.\n` +
+            `• *The Past* — raids won and lost, honour shifts, faction milestones.\n\n` +
+            `━━━━━━━━━━━━━━━━━━\n` +
+            `📖 *Recent events recorded:*\n${recentLines}\n\n` +
+            `━━━━━━━━━━━━━━━━━━`,
         }, { quoted: msg });
       }
 
@@ -3965,6 +4316,22 @@ if (command === "buy-bm") {
 
         p.lucons = (p.lucons || 0) + luconReward;
         addFactionPoints(faction, fpReward);
+
+        // Deploy mora into the faction treasury
+        const treasuryEntry = {
+          name: chosen.name,
+          rarity: chosen.rarity,
+          level: chosen.level || 1,
+          moraId: chosen.moraId,
+          type: chosen.type,
+          stats: chosen.stats,
+          corrupted: !!chosen.corrupted,
+          submittedBy: senderId,
+          submittedByName: p.username || senderId.split("@")[0],
+          submittedAt: Date.now(),
+        };
+        addTreasuryMora(faction, treasuryEntry);
+
         savePlayers(players);
 
         return sock.sendMessage(chatId, {
@@ -3973,6 +4340,7 @@ if (command === "buy-bm") {
             `📤 *${chosen.name}* (${chosen.rarity} • Lv ${chosen.level}) has been submitted.\n\n` +
             `💰 Reward: *+${luconReward} Lucons*\n` +
             `🏅 Faction Points: *+${fpReward}*\n` +
+            `🛡️ Deployed to *${titleCase(faction)} Treasury* — will defend during raids.\n` +
             `💳 Balance: *${p.lucons} Lucons*`,
         }, { quoted: msg });
       }
@@ -5542,8 +5910,11 @@ if (command === "help") {
         `┃ ${PREFIX}missions ─ weekly faction missions\n` +
         `┃ ${PREFIX}complete <ID> ─ claim mission reward\n` +
         `┃ ${PREFIX}facpoints ─ faction point standings\n` +
-        `┃ ${PREFIX}view-sanctuary ─ your faction's full status\n` +
-        `┃ ${PREFIX}submit-mora <mora> ─ submit to facility\n` +
+        `┃ ${PREFIX}view-sanctuary ─ treasury, wall, honour\n` +
+        `┃ ${PREFIX}fortify-wall <crystal|amount> ─ reinforce wall\n` +
+        `┃ ${PREFIX}upgrade-wall ─ spend treasury to level up (top 5)\n` +
+        `┃ ${PREFIX}submit-mora <mora> ─ deploy to treasury\n` +
+        `┃ ${PREFIX}chronicles ─ 📜 the story of Lumora (coming soon)\n` +
         `┃ ${PREFIX}pe-check ─ Primordial Energy levels\n` +
         `┃ ${PREFIX}facprogress ─ season graph (200L)\n` +
         `┃ ${PREFIX}war join ─ register for war\n` +
@@ -5551,7 +5922,22 @@ if (command === "help") {
         `┃ ${PREFIX}war history ─ past war results\n` +
         `┃ ${PREFIX}ready ─ ready up for match\n` +
         `┃ ${PREFIX}withdraw ─ leave war (penalties!)\n` +
-        `┃ ${PREFIX}f-lb ─ resonance leaderboard\n`,
+        `┃ ${PREFIX}f-lb ─ resonance leaderboard\n` +
+        `\n${divider}\n  🌀  *CROSS-FACTION RAIDS*\n${divider}\n` +
+        `┃ ${PREFIX}summon-kael ─ summon the Riftwalker (top 3 / Pro)\n` +
+        `┃ ${PREFIX}claim-raidcontract ─ bind Kael's contract (-10% bal)\n` +
+        `┃ ${PREFIX}raid join ─ join raid (-10% balance)\n` +
+        `┃ ${PREFIX}raid launch <faction> ─ begin assault\n` +
+        `┃ ${PREFIX}reroll-roles ─ leader: reroll (max 2)\n` +
+        `┃ ${PREFIX}ready ─ confirm before wall phase\n` +
+        `┃ ${PREFIX}raid-go ─ leader: force-start\n` +
+        `┃ ${PREFIX}raid-kick @user ─ leader: remove unready raider\n` +
+        `┃ ${PREFIX}raid-attack ─ strike wall / fight treasury mora\n` +
+        `┃ ${PREFIX}raid-reinforce ─ defender: restore wall HP\n` +
+        `┃ ${PREFIX}engage @raider ─ defender: intercept (PvP)\n` +
+        `┃ ${PREFIX}escape ─ use Rift Escape Shard to break free\n` +
+        `┃ ${PREFIX}raid status ─ view ongoing raid\n` +
+        `┃ ${PREFIX}raid history ─ past raids\n`,
 
       arena:
         `${divider}\n  🏟️  *NPC ARENA*\n${divider}\n` +

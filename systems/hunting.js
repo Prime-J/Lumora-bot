@@ -464,19 +464,30 @@ function buildPulseText(pulseResult) {
 // SECTION 6 — ITEM ENCOUNTER POOL
 // ══════════════════════════════════════════════════════════════
 function pickEncounterItem(weather) {
+  // Rift Surge — chance to drop Rift Crystal (fortification)
+  if (weather?.id === "rift_surge" && Math.random() < 0.05) {
+    return { id:"CRY_004", name:"Rift Crystal", rarity:"Epic", quantity:1, effect:"+1000 wall HP" };
+  }
+  // Rare prismatic crystal drop — any weather
+  if (Math.random() < 0.03) {
+    return { id:"CRY_003", name:"Prismatic Crystal", rarity:"Rare", quantity:1, effect:"+400 wall HP" };
+  }
+
   const pool = [
     { id:"MAT_001", name:"Rift Dust",              rarity:"Common",   quantity:1, effect:"Crafting material" },
     { id:"ITM_001", name:"Minor Healing Capsule",   rarity:"Common",   quantity:1, effect:"Restores 30 player HP" },
     { id:"ITM_004", name:"Energy Capsule",           rarity:"Common",   quantity:1, effect:"Restores 20 Mora energy" },
     { id:"ITM_014", name:"Capture Net",              rarity:"Common",   quantity:1, effect:"+5% catch success" },
+    { id:"CRY_001", name:"Shard Crystal",            rarity:"Common",   quantity:1, effect:"+50 wall HP" },
     { id:"MAT_002", name:"Aura Crystal",             rarity:"Uncommon", quantity:1, effect:"Crafting material" },
     { id:"MAT_003", name:"Mora Fang",                rarity:"Uncommon", quantity:1, effect:"Crafting material" },
+    { id:"CRY_002", name:"Core Crystal",             rarity:"Uncommon", quantity:1, effect:"+150 wall HP" },
     { id:"MAT_005", name:"Shadow Resin",             rarity:"Rare",     quantity:1, effect:"Rare crafting material" },
   ];
 
   // Rain boosts item finds — add a duplicate common for higher chance
   if (weather?.id === "rain" && Math.random() < 0.40) {
-    return pool[Math.floor(Math.random() * 4)]; // extra common weight
+    return pool[Math.floor(Math.random() * 5)]; // extra common weight
   }
   return pool[Math.floor(Math.random() * pool.length)];
 }

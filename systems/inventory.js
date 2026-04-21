@@ -524,6 +524,7 @@ function groupInventoryItems(player, itemsDb) {
     gear:        [],
     access:      [],
     specials:    [],
+    crystals:    [],
     misc:        [],
   };
 
@@ -545,6 +546,7 @@ function groupInventoryItems(player, itemsDb) {
       case "gear":       sections.gear.push(line);        break;
       case "access":     sections.access.push(line);      break;
       case "special":    sections.specials.push(line);    break;
+      case "crystal":    sections.crystals.push(line);    break;
       default:           sections.misc.push(line);        break;
     }
   }
@@ -564,6 +566,7 @@ function buildInventoryText(player, targetName = "Hunter") {
     buildSection("🧰 *Hunting Items*",  sections.hunting),
     buildSection("💎 *Materials*",      sections.materials),
     buildSection("🛡️ *Gear*",           sections.gear),
+    buildSection("🔮 *Crystals*",       sections.crystals),
     buildSection("🔑 *Access*",         sections.access),
     buildSection("✨ *Special*",        sections.specials),
     buildSection("📦 *Other*",          sections.misc),
