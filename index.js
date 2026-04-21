@@ -2220,24 +2220,28 @@ if (command === "war-start") {
   return;
 }
 
-// .ready
+// .ready  — war ready (falls through to raid ready if sender isn't in a war)
 if (command === "ready") {
-  const result = fEngine.markReady(senderId);
-  if (!result.ok) return sock.sendMessage(chatId, { text: `❌ ${result.msg}` }, { quoted: msg });
+  const inWar = !!fEngine.war?.participants?.find?.(x => x.id === senderId);
+  if (inWar) {
+    const result = fEngine.markReady(senderId);
+    if (!result.ok) return sock.sendMessage(chatId, { text: `❌ ${result.msg}` }, { quoted: msg });
 
-  if (result.bothReady) {
-    const match = fEngine.getActiveMatch();
-    return sock.sendMessage(chatId, {
-      text:
-        `⚡ *BOTH FIGHTERS READY!*\n\n` +
-        `@${String(match.p1).split("@")[0]} vs @${String(match.p2).split("@")[0]}\n\n` +
-        `_The battle can begin! Use *.battle @opponent* to fight!_\n` +
-        `Owner: use *.war winner @user* to report the result.`,
-      mentions: [match.p1, match.p2],
-    }, { quoted: msg });
+    if (result.bothReady) {
+      const match = fEngine.getActiveMatch();
+      return sock.sendMessage(chatId, {
+        text:
+          `⚡ *BOTH FIGHTERS READY!*\n\n` +
+          `@${String(match.p1).split("@")[0]} vs @${String(match.p2).split("@")[0]}\n\n` +
+          `_The battle can begin! Use *.battle @opponent* to fight!_\n` +
+          `Owner: use *.war winner @user* to report the result.`,
+        mentions: [match.p1, match.p2],
+      }, { quoted: msg });
+    }
+
+    return sock.sendMessage(chatId, { text: "🏁 You're ready! Waiting for your opponent..." }, { quoted: msg });
   }
-
-  return sock.sendMessage(chatId, { text: "🏁 You're ready! Waiting for your opponent..." }, { quoted: msg });
+  // not in war → fall through; the raid-ready handler later will pick it up
 }
 
 // .withdraw
@@ -4167,8 +4171,8 @@ if (command === "buy-bm") {
       }
 
       // ================= RAIDS =================
-      try { await raidsSystem.tickRaid(ctx); } catch {}
-      try { raidsSystem.tickKael(ctx); } catch {}
+      try { await raidsSystem.tickRaid(ctx); } catch (e) { console.log("[tickRaid]", e?.message || e); }
+      try { raidsSystem.tickKael(ctx); } catch (e) { console.log("[tickKael]", e?.message || e); }
 
       if (command === "summon-kael" || command === "summonkael") {
         return raidsSystem.cmdSummonKael(ctx, chatId, senderId, msg);
@@ -6317,7 +6321,18 @@ if (command === "help") {
 
     } catch (err) {
       if (isBaileysNoise(err)) return;
-      console.log("Handler error:", err?.stack || err);
+      const _msg0 = messages?.[0];
+      const _chat = _msg0?.key?.remoteJid || "?";
+      const _text = _msg0?.message?.conversation || _msg0?.message?.extendedTextMessage?.text || "";
+      console.log(`[handler-error] chat=${_chat} text=${JSON.stringify(_text).slice(0,120)}`);
+      console.log(err?.stack || err);
+      try {
+        if (_chat) {
+          await sock.sendMessage(_chat, {
+            text: `⚠️ The Rift hiccupped on that command. The owner has been notified — try again or use a different command.`,
+          }, { quoted: _msg0 });
+        }
+      } catch {}
     }
   });
 }
