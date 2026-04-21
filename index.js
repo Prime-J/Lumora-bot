@@ -383,6 +383,7 @@ const ACHIEVEMENTS = {
   creator_epic:  { title: "Epic Forger",       desc: "Create an Epic Mora",          icon: "🌀", aura: 15 },
   creator_legendary: { title: "Legendary Shaper", desc: "Create a Legendary Mora", icon: "🌟", aura: 25 },
   creator_3:     { title: "Serial Architect",  desc: "Create 3 Moras",               icon: "🔬", aura: 12 },
+  rift_survivor: { title: "Survivor of the Rift Tear", desc: "Endured the data-storm crisis of patch 0.1.1", icon: "🌀", aura: 15 },
 };
 
 function checkAchievements(player) {
@@ -530,6 +531,10 @@ function pickRefMoraOptions(moraList, rarities) {
 }
 
 function nowMs() { return Date.now(); }
+
+function hasRiftEnergyBuff(player) {
+  return !!player && Number(player.riftEnergyUntil || 0) > Date.now();
+}
 
 // ============================
 // FACTION POINTS SYSTEM
@@ -4215,6 +4220,107 @@ if (command === "buy-bm") {
         return raidsSystem.cmdForceEnd(ctx, chatId, senderId, msg);
       }
 
+      // ================= CLAIM RESTORATION GIFT (Patch 0.1.1) =================
+      if (command === "claim-gift" || command === "claimgift") {
+        const p = players[senderId];
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.start*." }, { quoted: msg });
+        if (p.giftClaimedAt) {
+          const when = new Date(p.giftClaimedAt).toISOString().slice(0, 10);
+          return sock.sendMessage(chatId, { text: `✨ You already received the Rift Restoration on *${when}*. The gift was a one-time gesture.` }, { quoted: msg });
+        }
+
+        const moraList = loadMora();
+        const byRarity = (r) => moraList.filter(m => String(m.rarity).toLowerCase() === r.toLowerCase());
+        const legends = byRarity("Legendary");
+        const rares = byRarity("Rare");
+        const uncommons = byRarity("Uncommon");
+
+        if (!legends.length || rares.length < 1 || uncommons.length < 1) {
+          return sock.sendMessage(chatId, { text: "⚠️ Mora pools missing. Contact the owner." }, { quoted: msg });
+        }
+
+        const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+        const grantedNames = [];
+        p.moraOwned ||= [];
+
+        // 1× Legendary, level 10–15
+        {
+          const species = pickRandom(legends);
+          const lvl = 10 + Math.floor(Math.random() * 6);
+          const owned = createOwnedMoraFromSpecies(species);
+          owned.level = lvl;
+          xpSystem.applyLevelScaling(owned, species);
+          owned.hp = owned.maxHp;
+          p.moraOwned.push(owned);
+          grantedNames.push(`🌟 *${owned.name}* — Legendary • Lv ${lvl}`);
+        }
+
+        // 3× Rare
+        for (let i = 0; i < 3; i++) {
+          const species = pickRandom(rares);
+          const owned = createOwnedMoraFromSpecies(species);
+          owned.hp = owned.maxHp;
+          p.moraOwned.push(owned);
+          grantedNames.push(`💎 *${owned.name}* — Rare • Lv 1`);
+        }
+
+        // 3× Uncommon
+        for (let i = 0; i < 3; i++) {
+          const species = pickRandom(uncommons);
+          const owned = createOwnedMoraFromSpecies(species);
+          owned.hp = owned.maxHp;
+          p.moraOwned.push(owned);
+          grantedNames.push(`✨ *${owned.name}* — Uncommon • Lv 1`);
+        }
+
+        // 7000 Lucons
+        p.lucons = Number(p.lucons || 0) + 7000;
+
+        // 1× REOB
+        p.inventory ||= {};
+        p.inventory.REOB = Number(p.inventory.REOB || 0) + 1;
+
+        // 18 hours of infinite hunt energy
+        const eighteenHours = 18 * 60 * 60 * 1000;
+        p.riftEnergyUntil = Date.now() + eighteenHours;
+
+        // Survivor achievement
+        p.achievements ||= [];
+        if (!p.achievements.includes("rift_survivor")) p.achievements.push("rift_survivor");
+
+        p.giftClaimedAt = Date.now();
+        savePlayers(players);
+
+        return sock.sendMessage(chatId, {
+          text:
+            `🌀 *━━━━━━━━━━━━━━━━━━━━━━━*\n` +
+            `   *RIFT RESTORATION* — Patch 0.1.1\n` +
+            `🌀 *━━━━━━━━━━━━━━━━━━━━━━━*\n\n` +
+            `_When the Rift convulsed, the data-storm tore through every Stronghold._\n` +
+            `_Vaults blinked. Records faltered. For one terrible moment, even the names of bonded Mora flickered out of the world._\n\n` +
+            `_But you stayed. You held the line while we patched the tear._\n\n` +
+            `*Kael bows — for once, sincerely.*\n\n` +
+            `🎭 *Kael:* "You weathered the storm, little Lumorian. The Rift owes you a debt. Take what is yours."\n\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            `🎁 *RESTORATION REWARDS*\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+            `🐉 *NEW MORA GRANTED:*\n` +
+            grantedNames.join("\n") + `\n\n` +
+            `💰 *+7,000 Lucons* — pulled fresh from the Rift Treasury\n` +
+            `🌀 *+1 Rift Energy Orb (REOB)* — a forge-spark for new creation\n` +
+            `🏆 *Title Unlocked:* 🌀 *Survivor of the Rift Tear*\n\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            `⚡ *RIFT ENERGY SURGE — ACTIVE*\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+            `_Raw Primordial Energy floods your veins. The Rift hums in time with your heartbeat._\n` +
+            `_For the next *18 hours*, hunting costs you *no energy*. Travel, hunt, and chase Mora until the surge fades._\n\n` +
+            `⏳ Surge ends: *${new Date(p.riftEnergyUntil).toLocaleString()}*\n\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            `_Thank you for surviving with us._\n` +
+            `_— The Lumora Team_`,
+        }, { quoted: msg });
+      }
+
       // ================= CHRONICLES =================
       if (command === "chronicles" || command === "lore") {
         const fs = require("fs");
@@ -5846,7 +5952,8 @@ if (command === "help") {
       `┃ ${PREFIX}set-icon ─ set profile icon\n` +
       `┃ ${PREFIX}gender <m/f/other> ─ set gender\n` +
       `┃ ${PREFIX}mora ─ browse all Mora data\n` +
-      `┃ ${PREFIX}tamed ─ your captured Mora\n`;
+      `┃ ${PREFIX}tamed ─ your captured Mora\n` +
+      `┃ ${PREFIX}claim-gift ─ 🎁 Rift Tear survivor's gift (one-time)\n`;
 
     // ── Section content map ─────────────────────────────────
     const SECTIONS = {
@@ -5922,8 +6029,10 @@ if (command === "help") {
         `┃ ${PREFIX}war history ─ past war results\n` +
         `┃ ${PREFIX}ready ─ ready up for match\n` +
         `┃ ${PREFIX}withdraw ─ leave war (penalties!)\n` +
-        `┃ ${PREFIX}f-lb ─ resonance leaderboard\n` +
-        `\n${divider}\n  🌀  *CROSS-FACTION RAIDS*\n${divider}\n` +
+        `┃ ${PREFIX}f-lb ─ resonance leaderboard\n`,
+
+      raids:
+        `${divider}\n  🌀  *CROSS-FACTION RAIDS*\n${divider}\n` +
         `┃ ${PREFIX}summon-kael ─ summon the Riftwalker (top 3 / Pro)\n` +
         `┃ ${PREFIX}claim-raidcontract ─ bind Kael's contract (-10% bal)\n` +
         `┃ ${PREFIX}raid join ─ join raid (-10% balance)\n` +
@@ -5937,7 +6046,14 @@ if (command === "help") {
         `┃ ${PREFIX}engage @raider ─ defender: intercept (PvP)\n` +
         `┃ ${PREFIX}escape ─ use Rift Escape Shard to break free\n` +
         `┃ ${PREFIX}raid status ─ view ongoing raid\n` +
-        `┃ ${PREFIX}raid history ─ past raids\n`,
+        `┃ ${PREFIX}raid history ─ past raids\n` +
+        `┃ ${PREFIX}fortify-wall <crystal|amount> ─ reinforce wall\n` +
+        `┃ ${PREFIX}upgrade-wall ─ spend treasury to level up wall\n` +
+        `┃ ${PREFIX}view-sanctuary ─ treasury, wall, honour\n\n` +
+        `_Owner only:_\n` +
+        `┃ ${PREFIX}add-raidgroup / ${PREFIX}remove-raidgroup\n` +
+        `┃ ${PREFIX}raids-on / ${PREFIX}raids-off\n` +
+        `┃ ${PREFIX}raid-end ─ force-end active raid\n`,
 
       arena:
         `${divider}\n  🏟️  *NPC ARENA*\n${divider}\n` +
@@ -6067,6 +6183,7 @@ if (command === "help") {
       referrals: "referrals", referral: "referrals", ref: "referrals",
       market: "market", shop: "market", bm: "market", "black-market": "market",
       factions: "factions", faction: "factions", war: "factions", wars: "factions",
+      raids: "raids", raid: "raids", kael: "raids", riftwalker: "raids", wall: "raids",
       arena: "arena", npc: "arena", challenge: "arena",
       pvp: "pvp", battle: "pvp",
       hunting: "hunting", hunt: "hunting", explore: "hunting", exploration: "hunting",
@@ -6135,6 +6252,7 @@ if (command === "help") {
       `┃ ${PREFIX}help referrals  ─ referral codes & rewards\n` +
       `┃ ${PREFIX}help market     ─ market & black market\n` +
       `┃ ${PREFIX}help factions   ─ factions, missions, wars\n` +
+      `┃ ${PREFIX}help raids      ─ Kael, walls, cross-faction raids\n` +
       (settings?.arenaGroups?.enabled
         ? `┃ ${PREFIX}help arena      ─ NPC arena & .challenge\n`
         : "") +

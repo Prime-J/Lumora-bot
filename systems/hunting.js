@@ -742,7 +742,8 @@ async function cmdTravel(ctx, chatId, senderId, msg, args = []) {
     return sock.sendMessage(chatId, { text: "⚠️ You already have a pending travel. Use `.proceed` or `.dismiss`." }, { quoted: msg });
   }
 
-  if (Number(hunter.huntEnergy || 0) < Number(diff.energyCost || 0)) {
+  const riftBuffActive = Number(travelPlayer?.riftEnergyUntil || 0) > Date.now();
+  if (!riftBuffActive && Number(hunter.huntEnergy || 0) < Number(diff.energyCost || 0)) {
     return sock.sendMessage(chatId, { text: `❌ Not enough hunt energy.\nNeed: *${diff.energyCost}*  |  Have: *${hunter.huntEnergy}*` }, { quoted: msg });
   }
 
@@ -790,8 +791,11 @@ async function cmdProceed(ctx, chatId, senderId, msg) {
 
   const weather = getOrRollWeather(hunter);
 
-  hunter.huntEnergy  = Math.max(0, Number(hunter.huntEnergy || 0) - Number(pending.energyCost || 0));
-  player.huntEnergy  = hunter.huntEnergy;
+  const proceedRiftBuff = Number(player?.riftEnergyUntil || 0) > Date.now();
+  if (!proceedRiftBuff) {
+    hunter.huntEnergy = Math.max(0, Number(hunter.huntEnergy || 0) - Number(pending.energyCost || 0));
+    player.huntEnergy = hunter.huntEnergy;
+  }
   hunter.location    = pending.terrainId;
   hunter.currentDifficulty = pending.difficulty;
   hunter.pendingTravel     = null;
@@ -934,9 +938,10 @@ async function cmdHunt(ctx, chatId, senderId, msg) {
 
   // Hunt costs 75% of the travel energy cost
   const huntCost = Math.max(4, Math.floor(Number(diff.energyCost || 8) * 0.75));
+  const huntRiftBuff = Number(player?.riftEnergyUntil || 0) > Date.now();
 
   // ─ Energy validation ──────────────────────────────────────
-  if (Number(player.huntEnergy || 0) < huntCost) {
+  if (!huntRiftBuff && Number(player.huntEnergy || 0) < huntCost) {
     return sock.sendMessage(chatId, {
       text:
         `🪫 *ENERGY DEPLETED*\n\n` +
@@ -946,8 +951,10 @@ async function cmdHunt(ctx, chatId, senderId, msg) {
   }
 
   // ─ Deduct energy ─────────────────────────────────────────
-  player.huntEnergy  -= huntCost;
-  hunter.huntEnergy   = player.huntEnergy;
+  if (!huntRiftBuff) {
+    player.huntEnergy -= huntCost;
+    hunter.huntEnergy  = player.huntEnergy;
+  }
   hunter.lastHuntAt   = now;
   hunter.totalHunts   = (hunter.totalHunts || 0) + 1;
 
