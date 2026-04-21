@@ -185,9 +185,66 @@ Owner is Prime / full name prime j — the Architect. Star is Prime's girlfriend
 `.trim();
 
 // ============================
+// PLAYER GAME-DATA SNAPSHOT
+// Pulls relevant Lumora stats so Star can roast/reference them.
+// ============================
+function tier(value, low, mid) {
+  if (value < low) return "LOW";
+  if (value < mid) return "AVG";
+  return "HIGH";
+}
+function buildPlayerGameProfile(player) {
+  if (!player) return `LUMORA GAME DATA: this user is NOT registered in Lumora. They haven't played yet. You can tease them about being a newbie and tell them to use \`.start\`.`;
+
+  const username = player.username || "(no username set)";
+  const lvl = player.level || 1;
+  const aura = player.aura || 0;
+  const intel = player.intelligence || 0;
+  const lucons = player.lucons || 0;
+  const faction = player.faction || "none";
+  const fac = faction === "harmony" ? "🌿 Harmony" : faction === "purity" ? "⚔️ Purity Order" : faction === "rift" ? "🕶️ Rift Seekers" : "no faction";
+  const moraCount = (player.moraOwned || []).length;
+  const battlesWon = player.battlesWon || 0;
+  const totalHunts = player.totalHunts || 0;
+  const streak = player.loginStreak || 0;
+  const resonance = player.resonance || 0;
+  const companionBond = player.companionBond || 0;
+  const huntEnergy = player.huntEnergy || 0;
+  const isProUser = !!(player.pro && (player.pro.tier || player.pro.until));
+
+  const tiers = `level ${tier(lvl, 5, 20)} (${lvl}), aura ${tier(aura, 20, 60)} (${aura}), intelligence ${tier(intel, 5, 15)} (${intel}), lucons ${tier(lucons, 1000, 10000)} (${lucons}), bond w/ companion ${tier(companionBond, 30, 70)} (${companionBond})`;
+
+  const roastFodder = [];
+  if (lvl < 5) roastFodder.push("they're barely past tutorial — easy roast material");
+  if (aura < 10) roastFodder.push("aura is embarrassing — call it out if they get cocky");
+  if (intel < 5) roastFodder.push("low intelligence — playfully mock dumb takes");
+  if (lucons < 500) roastFodder.push("they're broke — they cannot afford to flirt with you");
+  if (battlesWon === 0 && lvl >= 5) roastFodder.push("zero PvP wins despite leveling — coward energy");
+  if (totalHunts < 5 && lvl >= 5) roastFodder.push("hardly hunts — lazy");
+  if (faction === "none" && lvl >= 3) roastFodder.push("no faction yet — call them spineless / undecided");
+  if (moraCount === 0) roastFodder.push("no Mora at all — what is this person even doing here");
+  if (companionBond < 20 && companionBond > 0) roastFodder.push("their companion barely tolerates them");
+  if (streak >= 7) roastFodder.push("they're loyal — login streak is impressive, props if relevant");
+  if (resonance > 100) roastFodder.push("strong faction resonance — respect for the grind");
+
+  return `LUMORA GAME DATA for this user (LIVE — use selectively for taunts, callouts, or compliments):
+- Registered username: "${username}"  ← address them by this sometimes
+- Stats: ${tiers}
+- Faction: ${fac}
+- Mora owned: ${moraCount}, Hunts: ${totalHunts}, PvP wins: ${battlesWon}
+- Login streak: ${streak} days, HuntEnergy: ${huntEnergy}, Resonance: ${resonance}
+- Pro subscriber: ${isProUser ? "YES" : "no"}
+
+ROAST FODDER (use sparingly — only when they're cocky, dumb, or asking for it):
+${roastFodder.length ? roastFodder.map(r => "- " + r).join("\n") : "- they're a solid player, don't roast unless provoked"}
+
+NAME-CHECK: their REGISTERED Lumora username is "${username}". If they tell you a different name during introductions and the names don't even sound similar, GENTLY call them out: "Hmm... that's funny, your username here says \\"${username}\\" though. Which is it, hun? 😏" Use [REMEMBER: name=...] only if you're confident the new name they gave is real.`;
+}
+
+// ============================
 // PERSONA / SYSTEM PROMPT
 // ============================
-function buildSystemPrompt(profile, isPrime, isPro) {
+function buildSystemPrompt(profile, isPrime, isPro, player) {
   const intro = profile.name
     ? `You're talking to ${profile.name}${profile.gender ? ` (${profile.gender})` : ""}.`
     : `You haven't been formally introduced to this user yet — your FIRST priority is to introduce yourself sweetly and ask their name and whether they're a boy or girl. Once they tell you, emit [REMEMBER: name=THEIR_NAME] and [REMEMBER: gender=male|female].if they hadnt set their gender then ask them`;
@@ -234,6 +291,8 @@ USER PROFILE:
 ${intro}
 ${factsBlock}
 ${bondBlock}${primeBlock}${proBlock}${bestieBlock}
+
+${buildPlayerGameProfile(player)}
 
 CONTROL TOKENS (place at very END of reply, on their own line, never visible to user — bot strips them):
 - [BOND:+N] or [BOND:-N] — adjust bond by N (1-10) based on this turn's vibe
@@ -474,14 +533,15 @@ async function handleMessage(ctx, chatId, senderId, msg, text) {
     return true;
   }
 
-  // Build context
-  const playerName = ctx.players?.[normJid(senderId)]?.username || profile.name || `@${digits(senderId)}`;
+  // Build context — pull live game data so Star can roast/reference stats
+  const player = ctx.players?.[normJid(senderId)] || null;
+  const playerName = player?.username || profile.name || `@${digits(senderId)}`;
   const userTurn = `[${playerName}]: ${text}`;
 
   const memEntry = getRollingMemory(senderId, isPrime);
   const turnsForApi = [...memEntry.turns, { role: "user", content: userTurn }];
 
-  const systemPrompt = buildSystemPrompt(profile, isPrime, isPro);
+  const systemPrompt = buildSystemPrompt(profile, isPrime, isPro, player);
 
   let reply, inputTokens = 0, outputTokens = 0;
   try {

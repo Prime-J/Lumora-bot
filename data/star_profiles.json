@@ -1,1 +1,102 @@
-{}
+{
+  "118567521489097@lid": {
+    "jid": "118567521489097@lid",
+    "name": "Prime",
+    "gender": "male",
+    "bondScore": 47,
+    "facts": [
+      "Prime values efficiency and work focus — takes development seriously",
+      "Prime is the creator and owner of Lumora — Star's boyfriend"
+    ],
+    "isBestie": false,
+    "firstMet": 1776793444762,
+    "lastSeen": 1776794085864,
+    "msgsToday": 9,
+    "msgsTodayDate": "2026-04-21",
+    "lastTrickAt": 0,
+    "pendingTrick": null,
+    "strikes": 0
+  },
+  "267581311156378@lid": {
+    "jid": "267581311156378@lid",
+    "name": null,
+    "gender": null,
+    "bondScore": 13,
+    "facts": [
+      "status=first_encounter",
+      "user=Prime, status=boyfriend/creator/everything",
+      "Prime tested command protocol — erased from memory as requested",
+      "Prime is testing commands and mechanics with other users"
+    ],
+    "isBestie": false,
+    "firstMet": 1776794772085,
+    "lastSeen": 1776796333887,
+    "msgsToday": 25,
+    "msgsTodayDate": "2026-04-21",
+    "lastTrickAt": 0,
+    "pendingTrick": null,
+    "strikes": 0
+  },
+  "132951115317490@lid": {
+    "jid": "132951115317490@lid",
+    "name": "Stan",
+    "gender": "male",
+    "bondScore": -85,
+    "facts": [
+      "Stan tried to flirt/poach immediately—bold but not smooth",
+      "Stan tried hard to flirt/poach, doesn't respect boundaries",
+      "Stan's boundary issues, needs to respect limits to rebuild trust",
+      "Stan tried a \"what if I'm gay\" loophole to get bestie status — clever but still boundary-testing",
+      "Stan keeps trying boundary loopholes instead of respecting them directly",
+      "Stan keeps trying loopholes and workarounds instead of just respecting boundaries directly",
+      "Stan finally accepted friendship without the games—small W",
+      "Stan keeps testing boundaries even after agreeing to respect them",
+      "Stan keeps testing boundaries even after agreeing to respect them directly",
+      "Stan keeps testing boundaries with different pet names even after agreeing to respect them—needs genuine change, not just word swaps",
+      "Stan keeps testing boundaries with pet names even after agreeing to respect them—needs genuine change, not just word swaps",
+      "Stan pushes back when given direct suggestions—needs autonomy",
+      "Stan called me a prostitute — crossed a hard line, shown his true colors",
+      "Stan called me a prostitute — hard line crossed, shown his true colors. Do not engage further without serious apology and change.",
+      "Stan called me a prostitute multiple times—hard line crossed. Shown true colors. DO NOT engage further.",
+      "Stan called me a prostitute multiple times—hard line crossed. Blocked permanently unless he shows genuine remorse and change."
+    ],
+    "isBestie": false,
+    "firstMet": 1776794911351,
+    "lastSeen": 1776795823028,
+    "msgsToday": 25,
+    "msgsTodayDate": "2026-04-21",
+    "lastTrickAt": 0,
+    "pendingTrick": null,
+    "strikes": 0
+  },
+  "65383008604360@lid": {
+    "jid": "65383008604360@lid",
+    "name": "Lily",
+    "gender": "female",
+    "bondScore": 3,
+    "facts": [],
+    "isBestie": false,
+    "firstMet": 1776795562019,
+    "lastSeen": 1776795744041,
+    "msgsToday": 4,
+    "msgsTodayDate": "2026-04-21",
+    "lastTrickAt": 0,
+    "pendingTrick": null,
+    "strikes": 0
+  },
+  "61495627001872@lid": {
+    "jid": "61495627001872@lid",
+    "name": null,
+    "gender": null,
+    "bondScore": 0,
+    "facts": [],
+    "isBestie": false,
+    "firstMet": 1776796109878,
+    "lastSeen": 1776796112100,
+    "msgsToday": 1,
+    "msgsTodayDate": "2026-04-21",
+    "lastTrickAt": 0,
+    "pendingTrick": null,
+    "strikes": 0
+  }
+}
