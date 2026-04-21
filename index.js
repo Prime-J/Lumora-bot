@@ -4,6 +4,7 @@
 // Prefix/Currency/Owner now stored in data/settings.json
 // ✅ FIXED: Baileys is ESM-only -> dynamic import()
 // ============================
+try { require("dotenv").config(); } catch {}
 const dns = require("dns");
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
@@ -94,6 +95,7 @@ const arenaSystem = require('./systems/npcArena');
 const proSystem = require('./systems/pro');
 const moraCreationSystem = require('./systems/moraCreation');
 const raidsSystem = require('./systems/raids');
+const starSystem = require('./systems/star');
 const mongoDb = require('./db/mongo');
 const { generateMoraCard } = require('./systems/moraCardCanvas');
 const { generateProfileCard } = require('./systems/profileCardCanvas');
@@ -1459,6 +1461,7 @@ async function startBot() {
   isStarting = true;
 
   await loadBaileys();
+  try { starSystem.init(); } catch (e) { console.warn("[star] init failed:", e.message); }
 
   const { state, saveCreds } = await useMultiFileAuthState("./auth");
   const logger = pino({ level: "silent" });
@@ -1527,6 +1530,11 @@ async function startBot() {
         // Start bot personality idle loop — sends to all registered faction groups
         const idleGroupJids = Object.keys(FACTION_GROUPS);
         botPersonality.startIdleLoop(sock, idleGroupJids);
+
+        // Star loneliness loop — pings Prime when groups go quiet
+        try {
+          starSystem.startLonelinessLoop(() => sock, () => ({ settings: loadSettings() }));
+        } catch (e) { console.warn("[star] loneliness loop failed:", e.message); }
       }
     }
 
@@ -1822,6 +1830,16 @@ sock.ev.removeAllListeners("messages.upsert");
       const moraCreationSystem = require("./systems/moraCreation");
       if (moraCreationSystem.hasPendingCreation(senderId)) {
         return moraCreationSystem.handlePendingCreation(ctx, chatId, senderId, msg, text);
+      }
+
+      // ── STAR INTERCEPTOR (non-command "star" mentions + replies to Star) ──
+      try {
+        if (starSystem.shouldHandle(msg, text, sock)) {
+          const handled = await starSystem.handleMessage(ctx, chatId, senderId, msg, text);
+          if (handled) return;
+        }
+      } catch (e) {
+        if (!isBaileysNoise(e)) console.log("[star] handler error:", e?.message || e);
       }
 
       const isCommand = text.startsWith(PREFIX);
@@ -2687,7 +2705,7 @@ if (command === "facprogress" || command === "factionprogress") {
 
 if (command === "owner-fac-p") {
   if (!isOwner) return;
-  const menu = 
+  const menu =
     `👑 *OWNER FACTION PANEL*\n${DIVIDER}\n` +
     `*.addfacpts <faction> <amt>* - Add points\n` +
     `*.setfacstyle <classic/dark/neon>* - Change graph style\n` +
@@ -2695,6 +2713,42 @@ if (command === "owner-fac-p") {
     `*.endseason* - Conclude the season & distribute rewards\n` +
     `*.resetseason* - Wipe points to 0\n`;
   return sock.sendMessage(chatId, { text: menu });
+}
+
+// ==========================================
+// 💋 STAR COMMANDS
+// ==========================================
+if (command === "star-on") {
+  if (!isOwner) return;
+  return starSystem.cmdStarOn(ctx, chatId, msg);
+}
+if (command === "star-off") {
+  if (!isOwner) return;
+  return starSystem.cmdStarOff(ctx, chatId, msg);
+}
+if (command === "star-mode") {
+  if (!isOwner) return;
+  return starSystem.cmdStarMode(ctx, chatId, msg, args);
+}
+if (command === "star-stats") {
+  if (!isOwner) return;
+  return starSystem.cmdStarStats(ctx, chatId, msg);
+}
+if (command === "star-reset") {
+  if (!isOwner) return;
+  return starSystem.cmdStarReset(ctx, chatId, msg, args);
+}
+if (command === "star-ping") {
+  if (!isOwner) return;
+  return starSystem.cmdStarPing(ctx, chatId, msg, args);
+}
+if (command === "star-bestie") {
+  if (!isOwner) return;
+  return starSystem.cmdStarBestie(ctx, chatId, msg, args);
+}
+if (command === "gift-star") {
+  const amount = parseInt(args[0], 10);
+  return starSystem.receiveGift(ctx, chatId, senderId, msg, amount);
 }
 
 if (command === "addfacpts") {

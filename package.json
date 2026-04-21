@@ -12,8 +12,10 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.40.1",
     "@napi-rs/canvas": "^0.1.97",
     "@whiskeysockets/baileys": "^7.0.0-rc.9",
+    "dotenv": "^16.6.1",
     "express": "^5.2.1",
     "mongodb": "^7.1.1",
     "mongoose": "^9.4.1",

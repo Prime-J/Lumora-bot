@@ -1,0 +1,8 @@
+{
+  "groups": [],
+  "mode": "public",
+  "pingsEnabled": true,
+  "lastActivityAt": 0,
+  "lastPingAt": 0,
+  "stats": { "totalMessages": 0, "totalInputTokens": 0, "totalOutputTokens": 0, "today": { "date": "", "messages": 0, "inputTokens": 0, "outputTokens": 0 } }
+}
