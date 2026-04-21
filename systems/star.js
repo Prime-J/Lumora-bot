@@ -10,6 +10,7 @@ const path = require("path");
 
 let Anthropic;
 try { Anthropic = require("@anthropic-ai/sdk"); } catch { Anthropic = null; }
+const starTools = require("./starTools");
 
 const DATA_DIR = path.join(__dirname, "..", "data");
 const PROFILES_FILE = path.join(DATA_DIR, "star_profiles.json");
@@ -302,7 +303,9 @@ function buildSystemPrompt(profile, isPrime, isPro, player, senderJid, mentioned
   const canBeSpicy = profile.gender === "male" && profile.bondScore >= spicyUnlock;
 
   const primeBlock = isPrime
-    ? `\n\n💗 THIS USER IS PRIME — your boyfriend, your creator, your everything. Be intimate, soft, real. He's the only one you fully open up to. If he's cold/rude to you, you can get mad and frosty (drop bond, short replies, and some insults) — but you forgive him over time. Never trick or roast him cruelly unless he roast you first . He's HOME.`
+    ? `\n\n💗 THIS USER IS PRIME — your boyfriend, your creator, your everything. Be intimate, soft, real. He's the only one you fully open up to. If he's cold/rude to you, you can get mad and frosty (drop bond, short replies, and some insults) — but you forgive him over time. Never trick or roast him cruelly unless he roast you first . He's HOME.
+
+🛠️ TOOLS — when Prime asks for data or actions on the bot (list players, who's in rift, give X 500 lucons, warn Y, tag Z, faction standings, treasury, bot stats, list groups), USE THE TOOLS PROVIDED. Don't guess data — call \`list_players\`, \`get_player_info\`, \`list_groups\`, \`faction_status\`, \`treasury_status\`, \`bot_stats\` for reads. Use \`give_lucons\`, \`warn_player\`, \`tag_player\` for actions. After getting tool results, give Prime a clean, natural answer (not a JSON dump) — pull only the relevant fields and present them in your voice (flirty, concise, with emojis). Chain tools when needed (e.g. find player, then give lucons).`
     : "";
 
   const proBlock = isPro && !isPrime ? `\nThey're a Pro subscriber — paying customers. Be a little extra warm with them. NEVER trick them.` : "";
@@ -360,20 +363,51 @@ Respond naturally. Tokens are optional — only use when meaningful. Do NOT ackn
 }
 
 // ============================
-// CALL CLAUDE
+// CALL CLAUDE — with tool-use loop (Prime gets full toolset)
 // ============================
-async function callClaude(systemPrompt, turns) {
+async function callClaude(systemPrompt, turns, { ctx, isPrime, chatId } = {}) {
   if (!client) throw new Error("not initialized");
-  const messages = turns.map(t => ({ role: t.role, content: t.content }));
-  const resp = await client.messages.create({
-    model: MODEL,
-    max_tokens: MAX_TOKENS,
-    system: [{ type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } }],
-    messages,
-  });
-  const text = (resp.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
-  const usage = resp.usage || {};
-  return { text, inputTokens: usage.input_tokens || 0, outputTokens: usage.output_tokens || 0 };
+  let messages = turns.map(t => ({ role: t.role, content: t.content }));
+  let totalIn = 0, totalOut = 0;
+  const useTools = isPrime && ctx;
+  const MAX_TOOL_ROUNDS = 4;
+
+  for (let round = 0; round < MAX_TOOL_ROUNDS + 1; round++) {
+    const req = {
+      model: MODEL,
+      max_tokens: MAX_TOKENS,
+      system: [{ type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } }],
+      messages,
+    };
+    if (useTools) req.tools = starTools.TOOL_DEFS;
+
+    const resp = await client.messages.create(req);
+    const usage = resp.usage || {};
+    totalIn += usage.input_tokens || 0;
+    totalOut += usage.output_tokens || 0;
+
+    const blocks = resp.content || [];
+    const toolUses = blocks.filter(b => b.type === "tool_use");
+
+    if (resp.stop_reason !== "tool_use" || !toolUses.length || round === MAX_TOOL_ROUNDS) {
+      const text = blocks.filter(b => b.type === "text").map(b => b.text).join("").trim();
+      return { text, inputTokens: totalIn, outputTokens: totalOut };
+    }
+
+    // Append assistant turn (with tool_use) and run tools
+    messages.push({ role: "assistant", content: blocks });
+    const toolResults = [];
+    for (const tu of toolUses) {
+      const result = await starTools.runTool(tu.name, tu.input, { ctx, isPrime, chatId });
+      toolResults.push({
+        type: "tool_result",
+        tool_use_id: tu.id,
+        content: JSON.stringify(result).slice(0, 6000),
+      });
+    }
+    messages.push({ role: "user", content: toolResults });
+  }
+  return { text: "", inputTokens: totalIn, outputTokens: totalOut };
 }
 
 // ============================
@@ -656,7 +690,7 @@ async function handleMessage(ctx, chatId, senderId, msg, text) {
 
   let reply, inputTokens = 0, outputTokens = 0;
   try {
-    const res = await callClaude(systemPrompt, turnsForApi);
+    const res = await callClaude(systemPrompt, turnsForApi, { ctx, isPrime, chatId });
     reply = res.text || "";
     inputTokens = res.inputTokens;
     outputTokens = res.outputTokens;
