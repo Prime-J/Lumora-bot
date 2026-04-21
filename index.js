@@ -1465,6 +1465,10 @@ async function startBot() {
     syncFullHistory: false,
     markOnlineOnConnect: false,
     emitOwnEvents: false,
+    // Without this stub Baileys can't retry decryption on stale sender keys,
+    // which causes "bot stops responding in some old groups" after restarts.
+    // Returning an empty conversation lets the retry loop succeed harmlessly.
+    getMessage: async () => ({ conversation: "" }),
     ...(waVersion ? { version: waVersion } : {}),
   });
 
@@ -1546,7 +1550,10 @@ sock.ev.on('group-participants.update', async (update) => {
         const groupInfo = FACTION_GROUPS[normId];
         const groupIdStr = String(id); // Ensure id is a string
 
-        for (const jid of participants) {
+        for (const rawJid of participants) {
+            // Baileys may pass participants as strings OR objects {id: '...'}
+            const jid = (typeof rawJid === 'string') ? rawJid : (rawJid?.id || rawJid?.jid || '');
+            if (!jid) continue;
             const normed = normJid(jid);
             const p = playersNow[normed];
 
@@ -1560,7 +1567,7 @@ sock.ev.on('group-participants.update', async (update) => {
             const faction = groupInfo ? groupInfo.faction : 'none';
             const pool = factionWelcome.WELCOME_MESSAGES[faction] || factionWelcome.WELCOME_MESSAGES.none;
             const welcomeMsg = pool[Math.floor(Math.random() * pool.length)];
-            const jidStr = String(jid); // Ensure jid is a string
+            const jidStr = String(jid);
             const tag = `@${jidStr.split('@')[0]}`;
 
             let welcomeText = `${welcomeMsg}\n\n` +
@@ -1582,7 +1589,9 @@ sock.ev.on('group-participants.update', async (update) => {
     }
 
     if (action === 'remove') {
-        for (const jid of participants) {
+        for (const rawJid of participants) {
+            const jid = (typeof rawJid === 'string') ? rawJid : (rawJid?.id || rawJid?.jid || '');
+            if (!jid) continue;
             try {
               await factionWelcome.sendLeaveTaunt(sock, id, jid);
             } catch (e) {
@@ -1610,7 +1619,14 @@ sock.ev.removeAllListeners("messages.upsert");
     if (!isReady) return;
 
     const msg = messages?.[0];
-    if (!msg || !msg.message) return;
+    if (!msg) return;
+    if (!msg.message) {
+      // Decryption failure / sender-key issue — log so we can spot stale-session groups
+      if (msg.messageStubType) {
+        console.log(`[no-decrypt] chat=${msg.key?.remoteJid} stubType=${msg.messageStubType}`);
+      }
+      return;
+    }
 
     // Debug print
     const debugBody = msg.message.conversation || msg.message.extendedTextMessage?.text || "";

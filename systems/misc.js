@@ -17,15 +17,28 @@ try { sharp = require("sharp"); } catch { sharp = null; }
 // DejaVuSans.ttf + DejaVuSans-Bold.ttf into assets/fonts/ and this picks them
 // up automatically. Falls back silently if the files aren't present.
 try {
-  const fontDir = path.join(__dirname, "..", "assets", "fonts");
+  // Look in both flat assets/fonts/ AND the nested dejavu archive layout
+  const baseDir = path.join(__dirname, "..", "assets", "fonts");
+  const searchDirs = [
+    baseDir,
+    path.join(baseDir, "dejavu-fonts-ttf-2.37", "ttf"),
+  ];
   const candidates = [
     ["DejaVuSans.ttf",      "LumoraSans"],
     ["DejaVuSans-Bold.ttf", "LumoraSans"],
   ];
-  for (const [file, family] of candidates) {
-    const p = path.join(fontDir, file);
-    if (fs.existsSync(p)) GlobalFonts.registerFromPath(p, family);
+  let registered = 0;
+  for (const dir of searchDirs) {
+    for (const [file, family] of candidates) {
+      const p = path.join(dir, file);
+      if (fs.existsSync(p)) {
+        GlobalFonts.registerFromPath(p, family);
+        registered++;
+      }
+    }
+    if (registered) break; // stop at first dir that had fonts
   }
+  if (!registered) console.log("[misc] no DejaVu fonts found — quote stickers will be blank");
 } catch (e) {
   console.log("Font registration failed:", e?.message || e);
 }
