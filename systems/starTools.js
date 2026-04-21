@@ -108,6 +108,11 @@ const TOOL_DEFS = [
     description: "Get overall bot stats: total players, faction breakdown, active in last 24h, total Lucons in economy. Use when Prime asks 'how's the bot doing', 'stats'.",
     input_schema: { type: "object", properties: {} },
   },
+  {
+    name: "force_spawn",
+    description: "Force a wild Mora to spawn in the CURRENT group right now (bypasses cooldown and roll). PRIME ONLY. Groups only. Use when Prime says 'spawn one', 'drop a mora', 'force spawn'.",
+    input_schema: { type: "object", properties: {} },
+  },
 ];
 
 // --------------------------------------
@@ -303,6 +308,18 @@ async function execTagPlayer(ctx, input, isPrime, chatId) {
   } catch (e) { return { ok: false, error: e.message }; }
 }
 
+async function execForceSpawn(ctx, isPrime, chatId) {
+  if (!isPrime) return { error: "PRIME_ONLY" };
+  if (!chatId || !chatId.endsWith("@g.us")) return { ok: false, error: "must be in a group" };
+  try {
+    const spawnSystem = require("./spawn");
+    if (typeof spawnSystem.forceSpawn !== "function") return { ok: false, error: "forceSpawn unavailable" };
+    return await spawnSystem.forceSpawn(ctx, chatId);
+  } catch (e) {
+    return { ok: false, error: e.message || String(e) };
+  }
+}
+
 async function execBotStats(ctx) {
   const players = ctx.players || {};
   const arr = Object.values(players);
@@ -341,6 +358,7 @@ async function runTool(toolName, toolInput, { ctx, isPrime, chatId }) {
       case "warn_player":      return await execWarnPlayer(ctx, toolInput || {}, isPrime, chatId);
       case "tag_player":       return await execTagPlayer(ctx, toolInput || {}, isPrime, chatId);
       case "bot_stats":        return await execBotStats(ctx);
+      case "force_spawn":      return await execForceSpawn(ctx, isPrime, chatId);
       default: return { error: `unknown tool: ${toolName}` };
     }
   } catch (e) {

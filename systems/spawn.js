@@ -683,9 +683,30 @@ async function cmdCatch(ctx, chatId, senderId, args) {
   });
 }
 
+async function forceSpawn(ctx, chatId) {
+  if (!chatId || !chatId.endsWith("@g.us")) return { ok: false, error: "groups only" };
+  try {
+    const state = loadState();
+    const gs = getGroupState(state, chatId);
+    gs.active = null;
+    gs.premium = null;
+    gs.lastSpawnAt = 0;
+    saveState(state);
+    await maybeSpawn(ctx, chatId);
+    const s2 = loadState();
+    const after = getGroupState(s2, chatId);
+    if (after.premium) return { ok: true, type: "premium", name: after.premium.name };
+    if (after.active) return { ok: true, type: "normal", name: after.active.correctName };
+    return { ok: false, error: "spawn did not fire (no mora list or filtered out)" };
+  } catch (e) {
+    return { ok: false, error: e.message || String(e) };
+  }
+}
+
 module.exports = {
   start,
   maybeSpawn,
+  forceSpawn,
   cmdCatch,
   cmdSpawnRates,
   // exposed for pro.js auto-catch

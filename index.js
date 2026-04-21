@@ -6236,6 +6236,23 @@ if (command === "help") {
         `┃ ${PREFIX}autocatch-log ─ view mora caught while away\n` +
         `┃ _Pro users bypass faction tax on daily/weekly._\n`,
 
+      star:
+        `${divider}\n  💋  *STAR — AI COMPANION*\n${divider}\n` +
+        `┃ Mention "star" or reply to her to chat\n` +
+        `┃ ${PREFIX}gift-star <amt> ─ send Star Lucons (or fall for her tricks)\n` +
+        `┃ _25 free messages/day. Pro = unlimited._\n\n` +
+        `${divider}\n  👑  *STAR — OWNER CONTROLS*\n${divider}\n` +
+        `┃ ${PREFIX}star-on / ${PREFIX}star-off ─ activate Star in this group\n` +
+        `┃ ${PREFIX}star-mode <off|public|private|private+pro>\n` +
+        `┃ ${PREFIX}star-stats ─ usage + cost\n` +
+        `┃ ${PREFIX}star-reset @user ─ wipe Star's memory of someone\n` +
+        `┃ ${PREFIX}star-ping on|off ─ loneliness pings\n` +
+        `┃ ${PREFIX}star-bestie add|remove @user ─ make/remove a bestie\n` +
+        `┃ ${PREFIX}orders ─ list Star's standing orders\n` +
+        `┃ ${PREFIX}order-del <id> ─ remove an order\n` +
+        `┃ _Tools (auto, ask in chat):_ list players, give lucons, warn,\n` +
+        `┃ _tag, force spawn, faction/treasury status, bot stats._\n`,
+
       admin:
         `${divider}\n  🛡️  *SUDO (Admin)*\n${divider}\n` +
         `┃ ${PREFIX}ban / ${PREFIX}unban / ${PREFIX}punish / ${PREFIX}forgive\n` +
@@ -6288,6 +6305,7 @@ if (command === "help") {
       fun: "fun", misc: "fun", sticker: "fun",
       utilities: "utilities", utility: "utilities", util: "utilities",
       pro: "pro", premium: "pro", subscription: "pro", sub: "pro", crystals: "pro", lcr: "pro",
+      star: "star", ai: "star", girlfriend: "star",
       admin: "admin", sudo: "admin", owner: "admin", architect: "admin",
     };
 
@@ -6359,6 +6377,7 @@ if (command === "help") {
       `┃ ${PREFIX}help fun        ─ stickers, dice, roast, etc.\n` +
       `┃ ${PREFIX}help utilities  ─ leaderboard, ping, bug-report\n` +
       `┃ ${PREFIX}help pro        ─ subscriptions, Lucrystals, autocatch\n` +
+      `┃ ${PREFIX}help star       ─ 💋 Star, your AI companion\n` +
       `┃ ${PREFIX}help admin      ─ sudo / owner / architect\n\n` +
       `╔═══════════════════════════╗\n` +
       `║  💰 Currency: *${settings.currencyName}*\n` +
