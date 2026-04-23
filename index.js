@@ -5,6 +5,32 @@
 // ✅ FIXED: Baileys is ESM-only -> dynamic import()
 // ============================
 try { require("dotenv").config(); } catch {}
+
+// Silence libsignal's noisy session dumps (Railway rate-limits >500 logs/sec).
+// libsignal console.info's the full session object on every open/close/rotate,
+// which on an active bot easily crosses 500 logs/sec and kills the deployment.
+{
+  const SIGNAL_NOISE = [
+    "Closing session:",
+    "Opening session:",
+    "Session already closed",
+    "Session already open",
+    "Removing old closed session:",
+    "Migrating session to:",
+    "Closing open session in favor of incoming prekey bundle",
+    "Closing stale open session for new outgoing prekey bundle",
+    "Decrypted message with closed session.",
+    "Failed to decrypt message with any known session",
+    "Session error:",
+    "V1 session storage migration error",
+  ];
+  const isNoise = (args) => typeof args[0] === "string" && SIGNAL_NOISE.some(p => args[0].includes(p));
+  for (const m of ["info", "warn", "error", "log"]) {
+    const orig = console[m].bind(console);
+    console[m] = (...args) => { if (!isNoise(args)) orig(...args); };
+  }
+}
+
 const dns = require("dns");
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
