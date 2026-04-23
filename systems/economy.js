@@ -49,6 +49,30 @@ function weekKeyUTC(ms) {
   return `${y}-W${String(weekNo).padStart(2, "0")}`;
 }
 
+function nextDailyResetMs(now) {
+  const d = new Date(now);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1, 0, 0, 0, 0);
+}
+
+function nextWeeklyResetMs(now) {
+  // Next Monday 00:00 UTC (ISO week start)
+  const d = new Date(now);
+  const dayNum = d.getUTCDay() || 7; // Sun=7 in ISO
+  const daysUntilMonday = 8 - dayNum; // 1 if Sun, 7 if Mon already
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + daysUntilMonday, 0, 0, 0, 0);
+}
+
+function formatUntil(targetMs, now) {
+  const diff = targetMs - now;
+  if (diff <= 0) return "available now";
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  if (days > 0) return hours ? `in ${days}d ${hours}h` : `in ${days}d`;
+  if (hours > 0) return mins ? `in ${hours}h ${mins}m` : `in ${hours}h`;
+  return `in ${Math.max(1, mins)}m`;
+}
+
 function makeCode() {
   return (
     "TX-" +
@@ -78,13 +102,18 @@ async function cmdDaily(ctx, chatId, senderId) {
   const last = Number(p.lastDailyAt || 0);
   if (last && isSameUTCDate(last, now)) {
     const cooldownFlavors = [
-      "⏳ The Lumora crystals are still recharging. Come back tomorrow.",
+      "⏳ The Lumora crystals are still recharging.",
       "⏳ The Rift whispers: _patience, traveler._ Daily already claimed.",
       "⏳ You've already drained today's energy. Rest and return.",
       "⏳ Even the strongest Lumorians must wait. Daily claimed.",
       "⏳ The vault is sealed until tomorrow. Daily already taken.",
     ];
-    return sock.sendMessage(chatId, { text: cooldownFlavors[Math.floor(Math.random() * cooldownFlavors.length)] });
+    const flavor = cooldownFlavors[Math.floor(Math.random() * cooldownFlavors.length)];
+    const nextDaily = formatUntil(nextDailyResetMs(now), now);
+    const nextWeekly = formatUntil(nextWeeklyResetMs(now), now);
+    return sock.sendMessage(chatId, {
+      text: `${flavor}\n\n🕒 Next *.daily*: ${nextDaily}\n📅 Next *.weekly*: ${nextWeekly}`,
+    });
   }
 
   // ── Base reward ──────────────────────────────────────────
@@ -160,12 +189,16 @@ async function cmdDaily(ctx, chatId, senderId) {
 
   const streakLine = `🔥 *Login Streak:* Day ${p.loginStreak} (+${streakBonus} bonus)`;
   const taxNote = lines.length ? `\n\n${lines.join("\n\n")}` : "";
+  const nextDaily = formatUntil(nextDailyResetMs(now), now);
+  const nextWeekly = formatUntil(nextWeeklyResetMs(now), now);
   return sock.sendMessage(chatId, {
     text:
       `✅ *Daily Claimed!*\n\n` +
       `💰 *+${finalReward} Lucons*\n` +
       `${streakLine}\n` +
-      `🏦 Balance: *${p.lucons}*` +
+      `🏦 Balance: *${p.lucons}*\n\n` +
+      `🕒 Next *.daily*: ${nextDaily}\n` +
+      `📅 Next *.weekly*: ${nextWeekly}` +
       taxNote,
   });
 }
@@ -190,7 +223,12 @@ async function cmdWeekly(ctx, chatId, senderId) {
       "⏳ The Rift's generosity has limits. Weekly already taken.",
       "⏳ You already collected your weekly bounty. The vault needs time.",
     ];
-    return sock.sendMessage(chatId, { text: weeklyCooldowns[Math.floor(Math.random() * weeklyCooldowns.length)] });
+    const flavor = weeklyCooldowns[Math.floor(Math.random() * weeklyCooldowns.length)];
+    const nextDaily = formatUntil(nextDailyResetMs(now), now);
+    const nextWeekly = formatUntil(nextWeeklyResetMs(now), now);
+    return sock.sendMessage(chatId, {
+      text: `${flavor}\n\n📅 Next *.weekly*: ${nextWeekly}\n🕒 Next *.daily*: ${nextDaily}`,
+    });
   }
 
   let reward = 250;
@@ -233,11 +271,15 @@ async function cmdWeekly(ctx, chatId, senderId) {
   savePlayers(players);
 
   const wNote = wLines.length ? `\n\n${wLines.join("\n\n")}` : "";
+  const nextDailyW = formatUntil(nextDailyResetMs(now), now);
+  const nextWeeklyW = formatUntil(nextWeeklyResetMs(now), now);
   return sock.sendMessage(chatId, {
     text:
       `✅ *Weekly Claimed!*\n\n` +
       `💰 *+${reward} Lucons*\n` +
-      `🏦 Balance: *${p.lucons}*` +
+      `🏦 Balance: *${p.lucons}*\n\n` +
+      `📅 Next *.weekly*: ${nextWeeklyW}\n` +
+      `🕒 Next *.daily*: ${nextDailyW}` +
       wNote,
   });
 }

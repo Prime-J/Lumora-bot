@@ -622,7 +622,7 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
           `🔥 *RIFT SEEKERS — THE VOID HUNGERS*\n` +
           `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
           `The fallen Mora's energy lingers. Claim it:\n\n` +
-          `🩸 *.devour* — Absorb its energy. Gain *PE* + *Rift Fury* buff.\n` +
+          `🩸 *.devour* — Absorb its energy. Gain *PE* + *Intelligence*.\n` +
           `⛓ *.bind* — Force-bind with Rift chains. *30%* chance to tame as *corrupted*.\n` +
           `🔮 *.harvest* — Strip materials. Gain *Lucons* + *Resonance*.\n` +
           `━━━━━━━━━━━━━━━━━━━━━━━━━`,
@@ -1392,8 +1392,10 @@ async function cmdWildDevour(ctx, chatId, senderId, msg) {
     activeMora.pe = Math.min(100, Number(activeMora.pe || 0) + peGain);
   }
 
-  // Rift Fury buff: +15% damage for 3 battles
-  player.riftFury = { battles: 3, bonus: 0.15, appliedAt: Date.now() };
+  // Intelligence gain (scales with rarity, same as Purity fortify)
+  const rarity = String(state.wildSpecies?.rarity || state.wildMora?.rarity || "common").toLowerCase();
+  const intGain = getRewards(rarity).intelligence;
+  player.intelligence = (player.intelligence || 0) + intGain;
 
   const fp = loadFactionPointsWild();
   fp.rift = (fp.rift || 0) + 5;
@@ -1412,7 +1414,7 @@ async function cmdWildDevour(ctx, chatId, senderId, msg) {
       `@${String(senderId).split("@")[0]}'s *${activeMora?.name || "Mora"}* absorbs the dying energy of *${state.wildMora.name}*.\n` +
       `Raw power floods through the Rift bond.\n\n` +
       `🕷 *+${peGain} Primordial Energy*\n` +
-      `🔥 *Rift Fury* — +15% damage for 3 battles\n` +
+      `🧠 *+${intGain} Intelligence* _(${rarity} rarity)_\n` +
       `🔥 *+5 Faction Points* for Rift Seekers` +
       peWarning + `\n\n` +
       `_"The Rift takes everything. Even death."_`,

@@ -574,11 +574,12 @@ async function cmdCatch(ctx, chatId, senderId, args) {
     saveState(state);
     savePlayers(players);
 
+    const premDescription = species.description ? `\n\n_${species.description}_` : "";
     return safeSend(sock, chatId, {
       text:
         `⚡ *PREMIUM BOND FORGED* ⚡\n\n` +
-        `@${senderId.split("@")[0]} has bound the mythic *${species.name}*!\n` +
-        `Moves acquired:\n• ${owned.moves.join("\n• ")}`,
+        `@${senderId.split("@")[0]} has bound the mythic *${species.name}*!${premDescription}\n\n` +
+        `🔮 *${species.name}* is now in your tamed Mora.`,
       mentions: [senderId],
     });
   }
@@ -674,12 +675,15 @@ async function cmdCatch(ctx, chatId, senderId, args) {
   saveState(state);
 
   const harmonyBonus = catchFaction === "harmony" ? "\n🌿 *Harmony Bond Bonus:* +10 Lucons!" : "";
+  const description = species.description ? `\n\n_${species.description}_` : "";
+  const rarityLabel = species.rarity ? ` (${String(species.rarity).toLowerCase()})` : "";
 
   return safeSend(sock, chatId, {
     text:
-      `✅ Correct! You caught *${species.name}* 🎉\n\n` +
-      `Moves learned:\n• ${owned.moves.join("\n• ")}` +
+      `✅ @${senderId.split("@")[0]} tamed *${species.name}*${rarityLabel}! 🎉${description}\n\n` +
+      `🔮 *${species.name}* is now in your tamed Mora.` +
       harmonyBonus,
+    mentions: [senderId],
   });
 }
 
