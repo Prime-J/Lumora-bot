@@ -580,8 +580,9 @@ async function receiveGift(ctx, chatId, senderId, msg, amount) {
 // SEND HELPER — tracks message ID for reply detection
 // ============================
 async function sendStarMessage(sock, chatId, text, quotedMsg, mentions) {
+  if (!text || !String(text).trim()) return null; // never send blanks
   const opts = quotedMsg ? { quoted: quotedMsg } : undefined;
-  const payload = { text };
+  const payload = { text: String(text) };
   if (mentions && mentions.length) payload.mentions = mentions;
   const sent = await sock.sendMessage(chatId, payload, opts);
   const id = sent?.key?.id;
@@ -598,6 +599,14 @@ async function sendStarMessage(sock, chatId, text, quotedMsg, mentions) {
 // ============================
 function shouldHandle(msg, text, sock) {
   if (!text || typeof text !== "string") return false;
+
+  // CRITICAL: never react to Star's own messages — would loop forever since
+  // her name is literally "star" and appears in most of her replies.
+  if (msg?.key?.fromMe) return false;
+
+  // Also drop messages whose participant is the bot itself (defence in depth)
+  const senderJid = msg?.key?.participant || msg?.key?.remoteJid;
+  if (sock?.user?.id && senderJid && digits(senderJid) === digits(sock.user.id)) return false;
 
   // Mention-by-name: word-boundary "star" (case-insensitive)
   if (/\bstar\b/i.test(text)) return true;
@@ -703,8 +712,9 @@ async function handleMessage(ctx, chatId, senderId, msg, text) {
     return true;
   }
 
-  if (!reply) {
-    await sendStarMessage(ctx.sock, chatId, `...`, msg);
+  if (!reply || !reply.trim()) {
+    // Empty model output (e.g. she only ran tools and had nothing left to say).
+    // Stay silent rather than spamming "..." — return handled.
     return true;
   }
 
