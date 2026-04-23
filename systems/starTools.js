@@ -113,6 +113,34 @@ const TOOL_DEFS = [
     description: "Force a wild Mora to spawn in the CURRENT group right now (bypasses cooldown and roll). PRIME ONLY. Groups only. Use when Prime says 'spawn one', 'drop a mora', 'force spawn'.",
     input_schema: { type: "object", properties: {} },
   },
+  {
+    name: "dm_player",
+    description: "Send a DIRECT MESSAGE (private chat) to a player as Star. PRIME ONLY. Use when Prime says 'dm X', 'message Y privately', 'tell Z in dms', 'slide into X's dms'. Star writes the message in her own voice — Prime tells you the gist, you craft the actual text.",
+    input_schema: {
+      type: "object",
+      properties: {
+        identifier: { type: "string", description: "username, jid, or digits of recipient" },
+        message: { type: "string", description: "the actual message text Star will send (in her voice)" },
+      },
+      required: ["identifier", "message"],
+    },
+  },
+  {
+    name: "dm_broadcast",
+    description: "Send a DM to MANY players at once. PRIME ONLY. Use when Prime says 'dm everyone', 'message all rift players', 'broadcast to top 10', etc. Filters work like list_players. Throttles between sends.",
+    input_schema: {
+      type: "object",
+      properties: {
+        message: { type: "string", description: "the message text (Star's voice)" },
+        faction: { type: "string", enum: ["harmony", "purity", "rift", "any"], description: "filter by faction (default any)" },
+        min_level: { type: "number" },
+        max_level: { type: "number" },
+        active_only: { type: "boolean", description: "only players seen in last 7d" },
+        limit: { type: "number", description: "max recipients, capped at 200" },
+      },
+      required: ["message"],
+    },
+  },
 ];
 
 // --------------------------------------
@@ -308,6 +336,49 @@ async function execTagPlayer(ctx, input, isPrime, chatId) {
   } catch (e) { return { ok: false, error: e.message }; }
 }
 
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function execDmPlayer(ctx, input, isPrime) {
+  if (!isPrime) return { error: "PRIME_ONLY" };
+  const hit = findPlayer(ctx, input.identifier);
+  if (!hit) return { ok: false, error: `No player matching "${input.identifier}"` };
+  if (!input.message || !String(input.message).trim()) return { ok: false, error: "empty message" };
+  try {
+    await ctx.sock.sendMessage(hit.jid, { text: String(input.message) });
+    return { ok: true, dmed: hit.player.username || digits(hit.jid), jid: hit.jid };
+  } catch (e) { return { ok: false, error: e.message }; }
+}
+
+async function execDmBroadcast(ctx, input, isPrime) {
+  if (!isPrime) return { error: "PRIME_ONLY" };
+  if (!input.message || !String(input.message).trim()) return { ok: false, error: "empty message" };
+  const players = ctx.players || {};
+  let arr = Object.entries(players).map(([jid, p]) => ({ jid, ...p }));
+  if (input.faction && input.faction !== "any") arr = arr.filter(p => p.faction === input.faction);
+  if (Number.isFinite(input.min_level)) arr = arr.filter(p => (p.level || 1) >= input.min_level);
+  if (Number.isFinite(input.max_level)) arr = arr.filter(p => (p.level || 1) <= input.max_level);
+  if (input.active_only) {
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    arr = arr.filter(p => (p.lastSeen || 0) >= cutoff);
+  }
+  const limit = Math.min(Math.max(parseInt(input.limit, 10) || 50, 1), 200);
+  arr = arr.slice(0, limit);
+
+  let sent = 0, failed = 0;
+  const failures = [];
+  for (const p of arr) {
+    try {
+      await ctx.sock.sendMessage(p.jid, { text: String(input.message) });
+      sent++;
+    } catch (e) {
+      failed++;
+      if (failures.length < 5) failures.push({ jid: p.jid, error: e.message });
+    }
+    await sleep(800); // throttle to avoid rate limits
+  }
+  return { ok: true, attempted: arr.length, sent, failed, sample_failures: failures };
+}
+
 async function execForceSpawn(ctx, isPrime, chatId) {
   if (!isPrime) return { error: "PRIME_ONLY" };
   if (!chatId || !chatId.endsWith("@g.us")) return { ok: false, error: "must be in a group" };
@@ -359,6 +430,8 @@ async function runTool(toolName, toolInput, { ctx, isPrime, chatId }) {
       case "tag_player":       return await execTagPlayer(ctx, toolInput || {}, isPrime, chatId);
       case "bot_stats":        return await execBotStats(ctx);
       case "force_spawn":      return await execForceSpawn(ctx, isPrime, chatId);
+      case "dm_player":        return await execDmPlayer(ctx, toolInput || {}, isPrime);
+      case "dm_broadcast":     return await execDmBroadcast(ctx, toolInput || {}, isPrime);
       default: return { error: `unknown tool: ${toolName}` };
     }
   } catch (e) {
