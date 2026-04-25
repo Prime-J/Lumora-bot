@@ -579,8 +579,15 @@ async function receiveGift(ctx, chatId, senderId, msg, amount) {
 // ============================
 // SEND HELPER — tracks message ID for reply detection
 // ============================
+const STAR_CHAT_COOLDOWN_MS = 4000; // hard floor between Star sends to the same chat
+const lastStarSendAt = new Map();
 async function sendStarMessage(sock, chatId, text, quotedMsg, mentions) {
   if (!text || !String(text).trim()) return null; // never send blanks
+  // Per-chat cooldown — kills any feedback loop dead before it can flood.
+  const now = Date.now();
+  const last = lastStarSendAt.get(chatId) || 0;
+  if (now - last < STAR_CHAT_COOLDOWN_MS) return null;
+  lastStarSendAt.set(chatId, now);
   const opts = quotedMsg ? { quoted: quotedMsg } : undefined;
   const payload = { text: String(text) };
   if (mentions && mentions.length) payload.mentions = mentions;

@@ -1670,6 +1670,10 @@ sock.ev.removeAllListeners("messages.upsert");
 
     const msg = messages?.[0];
     if (!msg) return;
+    // Drop the bot's own messages at the top — emitOwnEvents:false isn't
+    // always honoured (paired devices, history sync) and self-events caused
+    // a Star → reply → Star loop that flooded groups with blank bubbles.
+    if (msg.key?.fromMe) return;
     if (!msg.message) {
       // Decryption failure / sender-key issue — log so we can spot stale-session groups
       if (msg.messageStubType) {

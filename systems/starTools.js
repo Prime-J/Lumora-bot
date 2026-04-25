@@ -318,6 +318,7 @@ async function execWarnPlayer(ctx, input, isPrime, chatId) {
   if (!isPrime) return { error: "PRIME_ONLY" };
   const hit = findPlayer(ctx, input.identifier);
   if (!hit) return { ok: false, error: `No player matching "${input.identifier}"` };
+  if (!input.reason || !String(input.reason).trim()) return { ok: false, error: "empty reason" };
   const text = `⚠️ *Heads up from Prime, hun.* @${digits(hit.jid)}\n\n${input.reason}\n\n_— Star_`;
   try {
     await ctx.sock.sendMessage(chatId, { text, mentions: [hit.jid] });
@@ -329,6 +330,7 @@ async function execTagPlayer(ctx, input, isPrime, chatId) {
   if (!isPrime) return { error: "PRIME_ONLY" };
   const hit = findPlayer(ctx, input.identifier);
   if (!hit) return { ok: false, error: `No player matching "${input.identifier}"` };
+  if (!input.message || !String(input.message).trim()) return { ok: false, error: "empty message" };
   const text = `@${digits(hit.jid)} ${input.message}`;
   try {
     await ctx.sock.sendMessage(chatId, { text, mentions: [hit.jid] });
