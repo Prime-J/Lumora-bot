@@ -1,0 +1,31 @@
+{
+  "current": {
+    "version": "0.1.2",
+    "name": "Cross-Faction Raids",
+    "releasedAt": 1776067200000,
+    "notes": "Cross-faction raids, Kael the Riftwalker, faction treasuries, walls, the .donate command, Star (AI companion)."
+  },
+  "pending": {
+    "version": "0.1.3",
+    "name": "The Banking Era",
+    "stages": [
+      "🐛 Bug fixes — NPC arena uses party only, NPC AI sharpens (charges + switches), arena rewards rebalanced",
+      "🌲 Hunting — no mid-hunt healing, increased difficulty",
+      "⚖️ .submit-mora no longer rewards Lucons",
+      "🪦 'Rookie' tag laid to rest",
+      "🕒 Daily / Weekly timers fixed (real next-claim time)",
+      "🏦 BANKS — store Lucons safely, Alverah taxes daily/weekly claims by % of total wealth",
+      "🥷 ROBBERY — Snatch Glove (3 tiers: 5s / 3s / 2s defend windows). Defender's aura = damage on failed snatch.",
+      "📊 .rank — generated rank card (canvas)",
+      "📋 .ranks — full rank ladder",
+      "🎉 Rank-up reveal image",
+      "💰 .wealth — bank + wallet + total + your wealth-lb position",
+      "🏆 .wealth-lb — wealth leaderboard",
+      "🎭 Profile mask — sold in market, hides .profile from others",
+      "🏅 Achievements — unlock rewards + .equip-achievement to show on .rank",
+      "👑 Alverah — meet the Bank Manager (.main-bank)",
+      "📉 Lucon weight on global leaderboard reduced"
+    ]
+  },
+  "history": []
+}

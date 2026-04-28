@@ -122,6 +122,7 @@ const proSystem = require('./systems/pro');
 const moraCreationSystem = require('./systems/moraCreation');
 const raidsSystem = require('./systems/raids');
 const starSystem = require('./systems/star');
+const updatesSystem = require('./systems/updates');
 const mongoDb = require('./db/mongo');
 const { generateMoraCard } = require('./systems/moraCardCanvas');
 const { generateProfileCard } = require('./systems/profileCardCanvas');
@@ -2375,6 +2376,13 @@ if (command === "cancel") {
       // ============================
       if (command === "ping") {
         return sock.sendMessage(chatId, { text: "🏓 Pong! STAR Is AWAKE🏓" });
+      }
+
+      if (command === "update" || command === "updates") {
+        return updatesSystem.cmdUpdate(ctx, chatId, msg);
+      }
+      if (command === "update-release" || command === "release-update") {
+        return updatesSystem.cmdUpdateRelease(ctx, chatId, msg, args, isOwner);
       }
 
       if (command === "missions") {
