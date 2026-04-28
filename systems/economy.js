@@ -49,17 +49,20 @@ function weekKeyUTC(ms) {
   return `${y}-W${String(weekNo).padStart(2, "0")}`;
 }
 
-function nextDailyResetMs(now) {
-  const d = new Date(now);
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1, 0, 0, 0, 0);
+// 24h / 7d rolling cooldowns from the last claim — matches what players
+// expect ("daily = once per 24 hours") instead of UTC-midnight resets which
+// rendered confusing times like "in 1h" when local clock said otherwise.
+const DAY_MS  = 24 * 60 * 60 * 1000;
+const WEEK_MS = 7 * DAY_MS;
+
+function nextDailyResetMs(now, lastClaim = 0) {
+  if (!lastClaim) return now;
+  return Number(lastClaim) + DAY_MS;
 }
 
-function nextWeeklyResetMs(now) {
-  // Next Monday 00:00 UTC (ISO week start)
-  const d = new Date(now);
-  const dayNum = d.getUTCDay() || 7; // Sun=7 in ISO
-  const daysUntilMonday = 8 - dayNum; // 1 if Sun, 7 if Mon already
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + daysUntilMonday, 0, 0, 0, 0);
+function nextWeeklyResetMs(now, lastClaim = 0) {
+  if (!lastClaim) return now;
+  return Number(lastClaim) + WEEK_MS;
 }
 
 function formatUntil(targetMs, now) {
@@ -100,17 +103,18 @@ async function cmdDaily(ctx, chatId, senderId) {
   const now = nowMs();
 
   const last = Number(p.lastDailyAt || 0);
-  if (last && isSameUTCDate(last, now)) {
+  if (last && now < last + DAY_MS) {
     const cooldownFlavors = [
       "⏳ The Lumora crystals are still recharging.",
       "⏳ The Rift whispers: _patience, traveler._ Daily already claimed.",
       "⏳ You've already drained today's energy. Rest and return.",
       "⏳ Even the strongest Lumorians must wait. Daily claimed.",
-      "⏳ The vault is sealed until tomorrow. Daily already taken.",
+      "⏳ The vault is sealed. Daily already taken.",
     ];
     const flavor = cooldownFlavors[Math.floor(Math.random() * cooldownFlavors.length)];
-    const nextDaily = formatUntil(nextDailyResetMs(now), now);
-    const nextWeekly = formatUntil(nextWeeklyResetMs(now), now);
+    const nextDaily = formatUntil(nextDailyResetMs(now, last), now);
+    const lastWeekly = Number(p.lastWeeklyAt || 0);
+    const nextWeekly = lastWeekly ? formatUntil(nextWeeklyResetMs(now, lastWeekly), now) : "available now";
     return sock.sendMessage(chatId, {
       text: `${flavor}\n\n🕒 Next *.daily*: ${nextDaily}\n📅 Next *.weekly*: ${nextWeekly}`,
     });
@@ -189,8 +193,9 @@ async function cmdDaily(ctx, chatId, senderId) {
 
   const streakLine = `🔥 *Login Streak:* Day ${p.loginStreak} (+${streakBonus} bonus)`;
   const taxNote = lines.length ? `\n\n${lines.join("\n\n")}` : "";
-  const nextDaily = formatUntil(nextDailyResetMs(now), now);
-  const nextWeekly = formatUntil(nextWeeklyResetMs(now), now);
+  const nextDaily = formatUntil(nextDailyResetMs(now, now), now);
+  const lastWeekly = Number(p.lastWeeklyAt || 0);
+  const nextWeekly = lastWeekly ? formatUntil(nextWeeklyResetMs(now, lastWeekly), now) : "available now";
   return sock.sendMessage(chatId, {
     text:
       `✅ *Daily Claimed!*\n\n` +
@@ -214,18 +219,17 @@ async function cmdWeekly(ctx, chatId, senderId) {
   const p = players[senderId];
   const now = nowMs();
 
-  const currentWeek = weekKeyUTC(now);
-  const lastWeek = String(p.lastWeeklyWeek || "");
-
-  if (lastWeek === currentWeek) {
+  const lastWeeklyAt = Number(p.lastWeeklyAt || 0);
+  if (lastWeeklyAt && now < lastWeeklyAt + WEEK_MS) {
     const weeklyCooldowns = [
       "⏳ The weekly tribute has already been claimed. Patience, Lumorian.",
       "⏳ The Rift's generosity has limits. Weekly already taken.",
       "⏳ You already collected your weekly bounty. The vault needs time.",
     ];
     const flavor = weeklyCooldowns[Math.floor(Math.random() * weeklyCooldowns.length)];
-    const nextDaily = formatUntil(nextDailyResetMs(now), now);
-    const nextWeekly = formatUntil(nextWeeklyResetMs(now), now);
+    const lastDaily = Number(p.lastDailyAt || 0);
+    const nextDaily = lastDaily ? formatUntil(nextDailyResetMs(now, lastDaily), now) : "available now";
+    const nextWeekly = formatUntil(nextWeeklyResetMs(now, lastWeeklyAt), now);
     return sock.sendMessage(chatId, {
       text: `${flavor}\n\n📅 Next *.weekly*: ${nextWeekly}\n🕒 Next *.daily*: ${nextDaily}`,
     });
@@ -266,13 +270,14 @@ async function cmdWeekly(ctx, chatId, senderId) {
   }
 
   reward = Math.max(1, reward);
-  p.lucons         = Number(p.lucons || 0) + reward;
-  p.lastWeeklyWeek = currentWeek;
+  p.lucons       = Number(p.lucons || 0) + reward;
+  p.lastWeeklyAt = now;
   savePlayers(players);
 
   const wNote = wLines.length ? `\n\n${wLines.join("\n\n")}` : "";
-  const nextDailyW = formatUntil(nextDailyResetMs(now), now);
-  const nextWeeklyW = formatUntil(nextWeeklyResetMs(now), now);
+  const lastDaily2 = Number(p.lastDailyAt || 0);
+  const nextDailyW = lastDaily2 ? formatUntil(nextDailyResetMs(now, lastDaily2), now) : "available now";
+  const nextWeeklyW = formatUntil(nextWeeklyResetMs(now, now), now);
   return sock.sendMessage(chatId, {
     text:
       `✅ *Weekly Claimed!*\n\n` +

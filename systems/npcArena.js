@@ -19,6 +19,25 @@ const path = require("path");
 const ARENA_STATE_FILE = path.join(__dirname, "../data/arena_state.json");
 const NPC_ASSETS_DIR   = path.join(__dirname, "../assets/npc");
 
+// 0.1.3 — arena now uses the player's PARTY only, not their full tamed list.
+// Resolves party slot indices into actual mora references so HP mutations
+// during battle still write back to the original moraOwned entry.
+function getArenaParty(player) {
+  const owned = Array.isArray(player?.moraOwned) ? player.moraOwned : [];
+  const slots = Array.isArray(player?.party) ? player.party : [];
+  const out = [];
+  for (const idx of slots) {
+    if (idx === null || idx === undefined) continue;
+    if (Number.isInteger(idx) && idx >= 0 && idx < owned.length && owned[idx]) {
+      out.push(owned[idx]);
+    }
+  }
+  return out;
+}
+
+// 0.1.3 — global reward dampener so XP/Aura grind isn't trivial.
+const REWARD_NERF = 0.70;
+
 // ════════════════════════════════════════════════════════════
 // SECTION 1 – TIER DEFINITIONS
 // ════════════════════════════════════════════════════════════
@@ -639,7 +658,7 @@ function buildNpcMora(moraList, levelRange, difficulty = null) {
 // ════════════════════════════════════════════════════════════
 // SECTION 12 – NPC AI MOVE PICKER
 // ════════════════════════════════════════════════════════════
-function npcPickAction(npcParty, activeIdx, moraList) {
+function npcPickAction(npcParty, activeIdx, moraList, opponent = null) {
   const active = npcParty[activeIdx];
   if (!active || active.hp <= 0) {
     const next = npcParty.findIndex((m, i) => i !== activeIdx && m?.hp > 0);
@@ -654,8 +673,49 @@ function npcPickAction(npcParty, activeIdx, moraList) {
     return mv && active.energy >= cost;
   });
 
+  // 0.1.3 — TACTICAL SWITCH: if opponent is set and current matchup is bad
+  // (active is type-disadvantaged AND below 45% HP), look for a bench mora
+  // with a clearly better matchup. Same trigger when energy is gone but a
+  // bench mora is full-energy with strong moves.
+  if (opponent && Number(opponent.hp || 0) > 0) {
+    const curMatch = typeChart(String(active.type || ""), String(opponent.type || ""));
+    const lowHp = (active.hp / Math.max(1, active.maxHp)) < 0.45;
+    const energyStarved = !affordable.length;
+
+    if ((curMatch < 1.0 && lowHp) || energyStarved) {
+      let bestSwap = -1;
+      let bestScore = curMatch + (lowHp ? 0.15 : 0); // need to clearly beat current
+      for (let i = 0; i < npcParty.length; i++) {
+        if (i === activeIdx) continue;
+        const cand = npcParty[i];
+        if (!cand || Number(cand.hp || 0) <= 0) continue;
+        const candMatch = typeChart(String(cand.type || ""), String(opponent.type || ""));
+        const candHpFrac = cand.hp / Math.max(1, cand.maxHp);
+        // Score: type advantage + HP fraction (favor healthy, advantaged mora)
+        const score = candMatch + candHpFrac * 0.25;
+        if (score > bestScore + 0.10) { bestScore = score; bestSwap = i; }
+      }
+      if (bestSwap >= 0) return { kind: "switch", value: bestSwap };
+    }
+  }
+
+  // Random small chance to switch even outside the bad-matchup case — keeps
+  // NPCs from feeling robotic. Only if a clearly better bench option exists.
+  if (opponent && Math.random() < 0.10) {
+    const curMatch = typeChart(String(active.type || ""), String(opponent.type || ""));
+    for (let i = 0; i < npcParty.length; i++) {
+      if (i === activeIdx) continue;
+      const cand = npcParty[i];
+      if (!cand || Number(cand.hp || 0) <= 0) continue;
+      const candMatch = typeChart(String(cand.type || ""), String(opponent.type || ""));
+      if (candMatch >= 1.25 && candMatch > curMatch + 0.20) {
+        return { kind: "switch", value: i };
+      }
+    }
+  }
+
   if (!affordable.length) {
-    active.energy = clamp(active.energy + Math.floor(active.maxEnergy * 0.20), 0, active.maxEnergy);
+    active.energy = clamp(active.energy + Math.floor(active.maxEnergy * 0.25), 0, active.maxEnergy);
     return { kind: "charge" };
   }
 
@@ -958,7 +1018,7 @@ async function cmdChallenge(ctx, chatId, senderId, msg, args) {
     }, { quoted: msg });
   }
 
-  const party     = Array.isArray(player.moraOwned) ? player.moraOwned : [];
+  const party     = getArenaParty(player);
   const aliveMora = party.filter(m => m && Number(m.hp || 0) > 0);
   if (!aliveMora.length) {
     return sock.sendMessage(chatId, {
@@ -1110,7 +1170,7 @@ async function cmdNpcChallenge(ctx, chatId, senderId, msg, args) {
     }, { quoted: msg });
   }
 
-  const party     = Array.isArray(player.moraOwned) ? player.moraOwned : [];
+  const party     = getArenaParty(player);
   const aliveMora = party.filter(m => m && Number(m.hp || 0) > 0);
   if (!aliveMora.length) {
     return sock.sendMessage(chatId, {
@@ -1204,7 +1264,7 @@ async function cmdNpcAttack(ctx, chatId, senderId, msg, args) {
   if (!battle) return false;
 
   const player     = players[senderId];
-  const party      = Array.isArray(player?.moraOwned) ? player.moraOwned : [];
+  const party      = getArenaParty(player);
   const playerMora = party[battle.playerActiveIdx];
 
   if (!player || !playerMora) {
@@ -1330,7 +1390,9 @@ async function cmdNpcAttack(ctx, chatId, senderId, msg, args) {
   // ── NPC attacks back ──────────────────────────────────────
   const curNpc = battle.npcParty[battle.npcActiveIdx];
   if (curNpc && curNpc.hp > 0) {
-    const act = npcPickAction(battle.npcParty, battle.npcActiveIdx, moraList);
+    // Pass the player's active mora as opponent so the AI can do tactical
+    // type-matchup switches and sane charge decisions.
+    const act = npcPickAction(battle.npcParty, battle.npcActiveIdx, moraList, playerMora);
     if (!act) {
       return resolveEnd(ctx, chatId, senderId, msg, state, battle, players, true, logs);
     }
@@ -1417,7 +1479,7 @@ async function cmdNpcSwitch(ctx, chatId, senderId, msg, args) {
   if (!battle) return false;
 
   const player = players[senderId];
-  const party  = Array.isArray(player?.moraOwned) ? player.moraOwned : [];
+  const party  = getArenaParty(player);
   const slotRaw = String(args[0] || "").trim();
 
   if (!slotRaw) {
@@ -1483,7 +1545,7 @@ async function resolveEnd(ctx, chatId, senderId, msg, state, battle, players, pl
   const { sock, savePlayers, loadMora, xpSystem, auraSystem } = ctx;
 
   const player  = players[senderId];
-  const party   = Array.isArray(player?.moraOwned) ? player.moraOwned : [];
+  const party   = getArenaParty(player);
   const moraList = loadMora();
   const tier    = battle.tier;
   const config  = state.config || DEFAULT_CONFIG;
@@ -1496,9 +1558,9 @@ async function resolveEnd(ctx, chatId, senderId, msg, state, battle, players, pl
     saveState(state);
 
     const baseXp       = 65 + tier.levelRange[1] * 4;
-    const playerXpGain = Math.max(5, Math.floor(baseXp * tier.xpMult * mult));
-    const auraGain     = Math.max(1, Math.floor(tier.auraReward * mult));
-    const moraXpGain   = Math.max(3, Math.floor(baseXp * 0.5 * tier.xpMult * mult));
+    const playerXpGain = Math.max(5, Math.floor(baseXp * tier.xpMult * mult * REWARD_NERF));
+    const auraGain     = Math.max(1, Math.floor(tier.auraReward * mult * REWARD_NERF));
+    const moraXpGain   = Math.max(3, Math.floor(baseXp * 0.5 * tier.xpMult * mult * REWARD_NERF));
 
     const levelUps = [];
     for (const mora of party) {

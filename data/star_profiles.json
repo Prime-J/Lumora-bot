@@ -93,5 +93,39 @@
     "lastTrickAt": 0,
     "pendingTrick": null,
     "strikes": 0
+  },
+  "267581311156378@lid": {
+    "jid": "267581311156378@lid",
+    "name": null,
+    "gender": null,
+    "bondScore": 15,
+    "facts": [],
+    "isBestie": false,
+    "firstMet": 1777339983257,
+    "lastSeen": 1777340947913,
+    "msgsToday": 12,
+    "msgsTodayDate": "2026-04-28",
+    "lastTrickAt": 0,
+    "pendingTrick": null,
+    "strikes": 0
+  },
+  "93965797830698@lid": {
+    "jid": "93965797830698@lid",
+    "name": "Suta no Kareshi",
+    "gender": null,
+    "bondScore": -8,
+    "facts": [
+      "knows wuxia/anime",
+      "likes Yun Che vibes",
+      "loves Yun Che vibes"
+    ],
+    "isBestie": false,
+    "firstMet": 1777339993774,
+    "lastSeen": 1777341374673,
+    "msgsToday": 25,
+    "msgsTodayDate": "2026-04-28",
+    "lastTrickAt": 0,
+    "pendingTrick": null,
+    "strikes": 0
   }
 }

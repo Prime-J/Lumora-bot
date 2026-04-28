@@ -68,19 +68,20 @@
   },
   "120363425643014112@g.us": {
     "active": {
-      "moraId": 11,
-      "correctName": "Brinlock",
+      "moraId": 94,
+      "correctName": "Primal-Golem",
       "options": [
-        "Abyssor",
-        "Voltrix",
-        "Brinlock"
+        "Phantom-Stalker",
+        "Primal-Golem",
+        "Torrivine"
       ],
-      "spawnedAt": 1773077363851
+      "spawnedAt": 1777339413742
     },
-    "lastSpawnAt": 1773077363851,
+    "lastSpawnAt": 1777339413742,
     "wrongCd": {
       "161955146932275@lid": 1773076755014
-    }
+    },
+    "premium": null
   },
   "120363406675624227@g.us": {
     "active": {
@@ -112,7 +113,7 @@
   },
   "120363408325172828@g.us": {
     "active": null,
-    "lastSpawnAt": 1776158120879,
+    "lastSpawnAt": 1777005456440,
     "wrongCd": {
       "132951115317490@lid": 1776156174928,
       "267581311156378@lid": 1773615809870,
@@ -210,8 +211,17 @@
     "premium": null
   },
   "120363407032662317@g.us": {
-    "active": null,
-    "lastSpawnAt": 1776101426127,
+    "active": {
+      "moraId": 5,
+      "correctName": "Emberu",
+      "options": [
+        "Emberu",
+        "Voltrix",
+        "Thornel"
+      ],
+      "spawnedAt": 1776986178114
+    },
+    "lastSpawnAt": 1776986178114,
     "wrongCd": {
       "194592469209292@lid": 1775215712368,
       "231009564000341@lid": 1775215714024
@@ -233,8 +243,17 @@
     "wrongCd": {}
   },
   "120363427706945701@g.us": {
-    "active": null,
-    "lastSpawnAt": 1776158137786,
+    "active": {
+      "moraId": 52,
+      "correctName": "Sproutlet",
+      "options": [
+        "Sproutlet",
+        "Luxar",
+        "Flarion"
+      ],
+      "spawnedAt": 1777117640811
+    },
+    "lastSpawnAt": 1777117640811,
     "wrongCd": {
       "41700340814048@lid": 1773497552986,
       "132951115317490@lid": 1775732649681,
@@ -314,8 +333,17 @@
     "wrongCd": {}
   },
   "120363422631229311@g.us": {
-    "active": null,
-    "lastSpawnAt": 1776102098992,
+    "active": {
+      "moraId": 2,
+      "correctName": "Thornel",
+      "options": [
+        "Thornel",
+        "Umbrix",
+        "Celestion"
+      ],
+      "spawnedAt": 1776796550604
+    },
+    "lastSpawnAt": 1776796550604,
     "wrongCd": {
       "194592469209292@lid": 1775215802516,
       "267581311156378@lid": 1775508858553,
@@ -328,43 +356,35 @@
   },
   "120363424733510886@g.us": {
     "active": {
-      "moraId": 67,
-      "correctName": "Valtopher",
+      "moraId": 84,
+      "correctName": "Cinder-Drake",
       "options": [
-        "Bup",
-        "Valtopher",
-        "Sparko"
+        "Umbrix",
+        "Cinder-Drake",
+        "Cindrake"
       ],
-      "spawnedAt": 1776155848059
+      "spawnedAt": 1777341858342
     },
-    "lastSpawnAt": 1776155848059,
+    "lastSpawnAt": 1777341858342,
     "wrongCd": {
       "112038919540887@lid": 1775301794747,
       "36538058551468@lid": 1774724689799,
       "172542392303736@lid": 1775286780442,
       "161955146932275@lid": 1775379645203,
-      "98775909560494@lid": 1775725791753
+      "98775909560494@lid": 1775725791753,
+      "93965797830698@lid": 1777339764623
     },
     "premium": null
   },
   "120363426158386570@g.us": {
-    "active": {
-      "moraId": 15,
-      "correctName": "Noctik",
-      "options": [
-        "Pyrix",
-        "Tidal-Serpent",
-        "Noctik"
-      ],
-      "spawnedAt": 1776158526831
-    },
-    "lastSpawnAt": 1776158526831,
+    "active": null,
+    "lastSpawnAt": 1776796067805,
     "wrongCd": {
       "85376064581854@lid": 1776157565734,
       "243443360096505@lid": 1776157558630,
       "170115601592429@lid": 1775510265979,
       "267581311156378@lid": 1775373208423,
-      "61495627001872@lid": 1776015093237,
+      "61495627001872@lid": 1776796097354,
       "231009564000341@lid": 1775510884079,
       "144500265619658@lid": 1775824465575,
       "30907222241448@lid": 1775757935070,
@@ -397,25 +417,36 @@
   },
   "120363418138585733@g.us": {
     "active": {
-      "moraId": 64,
-      "correctName": "Frostfang",
+      "moraId": 29,
+      "correctName": "Drakonis",
       "options": [
-        "Frostfang",
-        "Primal-Golem",
-        "Aquatyr"
+        "Frosten",
+        "Drakonis",
+        "Abyss-Lurk"
       ],
-      "spawnedAt": 1776013096784
+      "spawnedAt": 1777339817358
     },
-    "lastSpawnAt": 1776013096784,
-    "wrongCd": {}
+    "lastSpawnAt": 1777339817358,
+    "wrongCd": {},
+    "premium": null
   },
   "120363419175806635@g.us": {
-    "active": null,
-    "lastSpawnAt": 1776016577307,
+    "active": {
+      "moraId": 58,
+      "correctName": "Breezefluff",
+      "options": [
+        "Infernal-Centaur",
+        "Nira",
+        "Breezefluff"
+      ],
+      "spawnedAt": 1776987542188
+    },
+    "lastSpawnAt": 1776987542188,
     "wrongCd": {
       "54018575458536@lid": 1775499639038,
       "61495627001872@lid": 1775561844595
-    }
+    },
+    "premium": null
   },
   "120363419146183444@g.us": {
     "active": {
@@ -432,8 +463,17 @@
     "wrongCd": {}
   },
   "120363425214613922@g.us": {
-    "active": null,
-    "lastSpawnAt": 1776158068899,
+    "active": {
+      "moraId": 5,
+      "correctName": "Emberu",
+      "options": [
+        "Emberu",
+        "Joltwing",
+        "Gem-Tortoise"
+      ],
+      "spawnedAt": 1776986178049
+    },
+    "lastSpawnAt": 1776986178049,
     "wrongCd": {
       "85376064581854@lid": 1776156759450,
       "61495627001872@lid": 1776013761090,
@@ -451,8 +491,17 @@
     "premium": null
   },
   "120363419019567076@g.us": {
-    "active": null,
-    "lastSpawnAt": 1776155327785,
+    "active": {
+      "moraId": 35,
+      "correctName": "Luxar",
+      "options": [
+        "Flurrybat",
+        "Thornel",
+        "Luxar"
+      ],
+      "spawnedAt": 1777339710718
+    },
+    "lastSpawnAt": 1777339710718,
     "wrongCd": {
       "85376064581854@lid": 1776092693732
     },
@@ -470,6 +519,74 @@
       "spawnedAt": 1776154244523
     },
     "lastSpawnAt": 1776154244523,
+    "wrongCd": {},
+    "premium": null
+  },
+  "120363401538466873@g.us": {
+    "active": {
+      "moraId": 70,
+      "correctName": "Abyss-Lurk",
+      "options": [
+        "Drakoryx",
+        "Abyss-Lurk",
+        "Cyber-Byte"
+      ],
+      "spawnedAt": 1776986396408
+    },
+    "lastSpawnAt": 1776986396408,
+    "wrongCd": {},
+    "premium": null
+  },
+  "120363423377937726@g.us": {
+    "active": {
+      "moraId": 10,
+      "correctName": "Zephyra",
+      "options": [
+        "Zephyra",
+        "Bup",
+        "Pebbrum"
+      ],
+      "spawnedAt": 1776796249034
+    },
+    "lastSpawnAt": 1776796249034,
+    "wrongCd": {
+      "223574925258895@lid": 1776795241898
+    },
+    "premium": null
+  },
+  "120363427969635806@g.us": {
+    "active": null,
+    "lastSpawnAt": 1776796305323,
+    "wrongCd": {},
+    "premium": null
+  },
+  "120363365310327742@g.us": {
+    "active": {
+      "moraId": 15,
+      "correctName": "Noctik",
+      "options": [
+        "Iron-Sentinel",
+        "Drakonis",
+        "Noctik"
+      ],
+      "spawnedAt": 1777340189352
+    },
+    "lastSpawnAt": 1777340189352,
+    "wrongCd": {},
+    "premium": null
+  },
+  "120363407016452730@g.us": {
+    "active": {
+      "moraId": 3,
+      "correctName": "Terron",
+      "options": [
+        "Gem-Tortoise",
+        "Brinlock",
+        "Terron"
+      ],
+      "spawnedAt": 1777339441386
+    },
+    "lastSpawnAt": 1777339441386,
     "wrongCd": {},
     "premium": null
   }

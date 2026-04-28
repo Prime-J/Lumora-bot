@@ -1,6 +1,6 @@
 {
   "harmony": {
-    "lucons": 0,
+    "lucons": 300,
     "moraDeployed": [],
     "treasures": [],
     "wallHp": 500,
@@ -9,22 +9,27 @@
     "wallMaterials": [],
     "wallRegenAt": 0,
     "honour": 100,
-    "contributions": {}
+    "contributions": {
+      "61495627001872@lid": 150,
+      "144500265619658@lid": 150
+    }
   },
   "purity": {
-    "lucons": 0,
+    "lucons": 300,
     "moraDeployed": [],
     "treasures": [],
-    "wallHp": 500,
-    "wallMaxHp": 500,
-    "wallLevel": 1,
+    "wallHp": 700,
+    "wallMaxHp": 700,
+    "wallLevel": 2,
     "wallMaterials": [],
     "wallRegenAt": 0,
     "honour": 100,
-    "contributions": {}
+    "contributions": {
+      "267581311156378@lid": 1300
+    }
   },
   "rift": {
-    "lucons": 0,
+    "lucons": 90,
     "moraDeployed": [],
     "treasures": [],
     "wallHp": 500,
@@ -33,6 +38,9 @@
     "wallMaterials": [],
     "wallRegenAt": 0,
     "honour": 100,
-    "contributions": {}
+    "contributions": {
+      "35253779460280@lid": 70,
+      "93965797830698@lid": 20
+    }
   }
 }

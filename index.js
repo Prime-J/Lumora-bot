@@ -2566,12 +2566,19 @@ if (command === "uptime") {
   }
 
   // 2. Check for Active Hunt (Global)
-  // Assuming your hunt system sets p.activeHunt = true when they travel
-  if (p.activeHunt) {
-    return sock.sendMessage(chatId, {
-      text: "❌ *STAMINA LOCKED*\n\nYou are currently tracking Mora in the wild. Return to the Capital or finish your encounter to heal.",
-    });
-  }
+  // 0.1.3 — was checking the never-set p.activeHunt flag, so heal worked
+  // mid-hunt and trivialised exploration. Now reads the real hunt-state
+  // location: anything other than "capital" means you're out in the wild.
+  try {
+    const huntState = require("./systems/hunting").loadHuntState();
+    const hunter = huntState?.players?.[senderId];
+    const loc = hunter?.location || "capital";
+    if (loc !== "capital" || hunter?.activeEncounter || hunter?.pendingTravel) {
+      return sock.sendMessage(chatId, {
+        text: "❌ *STAMINA LOCKED*\n\nYou are currently in the wild. Use *.return* to head back to the Capital before healing.",
+      });
+    }
+  } catch {}
 
   // 3. If they are safe, run the heal
   return healSystem.cmdHeal(ctx, chatId, senderId);
@@ -2964,7 +2971,7 @@ if (command === "endseason") {
         }
 
         if (id === 15 && players[tId]) {
-          entry.meta.prevTitle = String(players[tId].title || "Rookie 🚼");
+          entry.meta.prevTitle = String(players[tId].title || "");
           players[tId].title = "⚠ Punished";
           savePlayers(players);
         }
@@ -3025,7 +3032,7 @@ if (command === "endseason") {
           xp: 0,
           lucons: 350,
           rank: "Trainee",
-          title: "Rookie 🚼",
+          title: "",
           intelligence: 5,
           aura: 10,
           tameSkill: 5,
@@ -4579,9 +4586,9 @@ if (command === "buy-bm") {
             text:
               `📤 *MORA SUBMISSION*\n\n` +
               `Submit a Mora to your faction facility.\n\n` +
-              `🌿 *Harmony* — Mora lives freely at the Sanctuary. You earn Lucons + FP.\n` +
-              `⚔️ *Purity* — Mora is taken for discipline/research. You earn Lucons + FP.\n` +
-              `🕶️ *Rift* — Corrupted Mora sold into the Rift market. Higher reward for corrupted.\n\n` +
+              `🌿 *Harmony* — Mora lives freely at the Sanctuary. You earn Faction Points.\n` +
+              `⚔️ *Purity* — Mora is taken for discipline/research. You earn Faction Points.\n` +
+              `🕶️ *Rift* — Corrupted Mora sold into the Rift market. Higher FP for corrupted.\n\n` +
               `Usage: *.submit-mora <mora name or number>*`,
           }, { quoted: msg });
         }
@@ -4608,15 +4615,12 @@ if (command === "buy-bm") {
         const faction = p.faction;
         const isCorrupted = !!chosen.corrupted;
 
-        // Calculate reward
-        let luconReward = 100 + (chosen.level || 1) * 15;
+        // Submit reward — FP only. Lucons removed in 0.1.3 because the
+        // submit/buy-back cycle was minting easy money.
         let fpReward = 5;
-        const RARITY_BONUS = { Common:0, Uncommon:50, Rare:150, Epic:300, Legendary:600, Mythic:1000 };
-        luconReward += RARITY_BONUS[chosen.rarity] || 0;
-
-        if (faction === "rift" && isCorrupted) { luconReward = Math.floor(luconReward * 1.6); fpReward = 12; }
-        if (faction === "harmony")              fpReward = 10;
-        if (faction === "purity")               fpReward = 8;
+        if (faction === "rift" && isCorrupted) fpReward = 12;
+        if (faction === "harmony")             fpReward = 10;
+        if (faction === "purity")              fpReward = 8;
 
         const speech = pickSpeech(`mora_submit_${faction}`);
 
@@ -4631,7 +4635,6 @@ if (command === "buy-bm") {
           });
         }
 
-        p.lucons = (p.lucons || 0) + luconReward;
         addFactionPoints(faction, fpReward);
 
         // Deploy mora into the faction treasury
@@ -4655,10 +4658,8 @@ if (command === "buy-bm") {
           text:
             `${speech}\n\n` +
             `📤 *${chosen.name}* (${chosen.rarity} • Lv ${chosen.level}) has been submitted.\n\n` +
-            `💰 Reward: *+${luconReward} Lucons*\n` +
             `🏅 Faction Points: *+${fpReward}*\n` +
-            `🛡️ Deployed to *${titleCase(faction)} Treasury* — will defend during raids.\n` +
-            `💳 Balance: *${p.lucons} Lucons*`,
+            `🛡️ Deployed to *${titleCase(faction)} Treasury* — will defend during raids.`,
         }, { quoted: msg });
       }
 
@@ -4767,7 +4768,7 @@ const profileCaption =
     `⚔️ *L U M O R A  •  P R O F I L E* ⚔️\n\n` +
 
     `👤 *${username}*\n` +
-    `🏷️ Title: *${p.title || "Rookie"}*\n` +
+    (p.title && String(p.title).trim() ? `🏷️ Title: *${p.title}*\n` : "") +
     achTitleLine +
     `🎖️ Rank: *${playerRank}*\n` +
     genderLine +
