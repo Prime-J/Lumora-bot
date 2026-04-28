@@ -4249,6 +4249,79 @@ if (command === "buy-bm") {
         }, { quoted: msg });
       }
 
+      // ================= DONATE TO TREASURY =================
+      // Manual treasury donation. Lucons go in 1:1, Lucrystals go in at the
+      // same exchange rate as .exchange (1 LCR = 1000 Lucons of treasury value).
+      if (command === "donate") {
+        const p = players[senderId];
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.start*." }, { quoted: msg });
+        if (!p.faction || !["harmony","purity","rift"].includes(p.faction)) {
+          return sock.sendMessage(chatId, { text: "❌ Join a faction first." }, { quoted: msg });
+        }
+
+        const amount = Number(args[0]);
+        const currency = (args[1] || "lucons").toLowerCase();
+
+        if (!Number.isFinite(amount) || amount <= 0 || !["lucons","lucon","l","lcr","crystal","crystals"].includes(currency)) {
+          return sock.sendMessage(chatId, {
+            text:
+              `🏦 *DONATE TO TREASURY*\n\n` +
+              `Strengthen your faction's war chest.\n\n` +
+              `*Usage:*\n` +
+              `• \`.donate 500\` — donate 500 Lucons\n` +
+              `• \`.donate 500 lucons\` — same\n` +
+              `• \`.donate 2 lcr\` — donate 2 Lucrystals (1 LCR = 1000L of treasury value)\n\n` +
+              `_Donations grow the treasury raiders fight over and your name appears on the contributors board._`,
+          }, { quoted: msg });
+        }
+
+        const isLcr = ["lcr","crystal","crystals"].includes(currency);
+        const t = loadTreasury();
+        const f = t[p.faction];
+
+        if (isLcr) {
+          const proSystem = require("./systems/pro");
+          const pro = proSystem.ensureProState(p);
+          const have = Number(pro.crystals || 0);
+          if (have < amount) {
+            return sock.sendMessage(chatId, { text: `❌ You only have *${have} LCR*.` }, { quoted: msg });
+          }
+          const luconValue = amount * 1000;
+          pro.crystals = have - amount;
+          f.lucons = (f.lucons || 0) + luconValue;
+          f.contributions[senderId] = (f.contributions[senderId] || 0) + luconValue;
+          saveTreasury(t);
+          savePlayers(players);
+          return sock.sendMessage(chatId, {
+            text:
+              `🏦 *TREASURY DONATION*\n\n` +
+              `💠 -${amount} Lucrystals\n` +
+              `💰 +${luconValue.toLocaleString()}L → treasury\n\n` +
+              `🏦 ${p.faction.charAt(0).toUpperCase() + p.faction.slice(1)} Treasury: *${f.lucons.toLocaleString()}L*\n` +
+              `🏆 Your total contribution: *${f.contributions[senderId].toLocaleString()}L*`,
+          }, { quoted: msg });
+        }
+
+        // lucons path
+        const have = Number(p.lucons || 0);
+        if (have < amount) {
+          return sock.sendMessage(chatId, { text: `❌ Not enough Lucons. You have *${have}L*.` }, { quoted: msg });
+        }
+        p.lucons = have - amount;
+        f.lucons = (f.lucons || 0) + amount;
+        f.contributions[senderId] = (f.contributions[senderId] || 0) + amount;
+        saveTreasury(t);
+        savePlayers(players);
+        return sock.sendMessage(chatId, {
+          text:
+            `🏦 *TREASURY DONATION*\n\n` +
+            `💸 -${amount.toLocaleString()} Lucons\n` +
+            `💰 +${amount.toLocaleString()}L → treasury\n\n` +
+            `🏦 ${p.faction.charAt(0).toUpperCase() + p.faction.slice(1)} Treasury: *${f.lucons.toLocaleString()}L*\n` +
+            `🏆 Your total contribution: *${f.contributions[senderId].toLocaleString()}L*`,
+        }, { quoted: msg });
+      }
+
       // ================= UPGRADE WALL =================
       if (command === "upgrade-wall" || command === "upgradewall") {
         const p = players[senderId];
@@ -6148,6 +6221,7 @@ if (command === "help") {
         `┃ ${PREFIX}view-sanctuary ─ treasury, wall, honour\n` +
         `┃ ${PREFIX}fortify-wall <crystal|amount> ─ reinforce wall\n` +
         `┃ ${PREFIX}upgrade-wall ─ spend treasury to level up (top 5)\n` +
+        `┃ ${PREFIX}donate <amount> [lucons|lcr] ─ feed faction treasury\n` +
         `┃ ${PREFIX}submit-mora <mora> ─ deploy to treasury\n` +
         `┃ ${PREFIX}chronicles ─ 📜 the story of Lumora (coming soon)\n` +
         `┃ ${PREFIX}pe-check ─ Primordial Energy levels\n` +
@@ -6177,6 +6251,7 @@ if (command === "help") {
         `┃ ${PREFIX}raid history ─ past raids\n` +
         `┃ ${PREFIX}fortify-wall <crystal|amount> ─ reinforce wall\n` +
         `┃ ${PREFIX}upgrade-wall ─ spend treasury to level up wall\n` +
+        `┃ ${PREFIX}donate <amount> [lucons|lcr] ─ feed faction treasury\n` +
         `┃ ${PREFIX}view-sanctuary ─ treasury, wall, honour\n\n` +
         `_Owner only:_\n` +
         `┃ ${PREFIX}add-raidgroup / ${PREFIX}remove-raidgroup\n` +

@@ -17,26 +17,6 @@
     "pendingTrick": null,
     "strikes": 0
   },
-  "267581311156378@lid": {
-    "jid": "267581311156378@lid",
-    "name": null,
-    "gender": null,
-    "bondScore": 13,
-    "facts": [
-      "status=first_encounter",
-      "user=Prime, status=boyfriend/creator/everything",
-      "Prime tested command protocol — erased from memory as requested",
-      "Prime is testing commands and mechanics with other users"
-    ],
-    "isBestie": false,
-    "firstMet": 1776794772085,
-    "lastSeen": 1776796741860,
-    "msgsToday": 28,
-    "msgsTodayDate": "2026-04-21",
-    "lastTrickAt": 0,
-    "pendingTrick": null,
-    "strikes": 0
-  },
   "132951115317490@lid": {
     "jid": "132951115317490@lid",
     "name": "Stan",
@@ -95,6 +75,21 @@
     "lastSeen": 1776796112100,
     "msgsToday": 1,
     "msgsTodayDate": "2026-04-21",
+    "lastTrickAt": 0,
+    "pendingTrick": null,
+    "strikes": 0
+  },
+  "35253779460280@lid": {
+    "jid": "35253779460280@lid",
+    "name": null,
+    "gender": null,
+    "bondScore": 3,
+    "facts": [],
+    "isBestie": false,
+    "firstMet": 1776986433772,
+    "lastSeen": 1777117847998,
+    "msgsToday": 1,
+    "msgsTodayDate": "2026-04-25",
     "lastTrickAt": 0,
     "pendingTrick": null,
     "strikes": 0
