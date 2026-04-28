@@ -1863,8 +1863,10 @@ sock.ev.removeAllListeners("messages.upsert");
       }
 
       // ── STAR INTERCEPTOR (non-command "star" mentions + replies to Star) ──
+      // Skip anything that starts with the bot prefix — those are commands,
+      // Star was hallucinating fake commands when she tried to "answer" them.
       try {
-        if (starSystem.shouldHandle(msg, text, sock)) {
+        if (!text.startsWith(PREFIX) && starSystem.shouldHandle(msg, text, sock)) {
           const handled = await starSystem.handleMessage(ctx, chatId, senderId, msg, text);
           if (handled) return;
         }

@@ -223,6 +223,36 @@ Owner is Prime / full name prime j — the Architect. Star is Prime's girlfriend
 `.trim();
 
 // ============================
+// FULL COMMAND REFERENCE — Star uses this to give correct commands.
+// CRITICAL: Star must NEVER invent commands not on this list.
+// ============================
+const LUMORA_COMMANDS = `
+ALL VALID LUMORA COMMANDS (prefix: ".") — never suggest a command not in this list. If something a user wants doesn't exist, say so honestly, don't invent.
+
+GETTING STARTED: .lumora .start .choose .profile .set-username .set-icon .gender .mora .tamed .claim-gift .guide .tutorial .tip .rules
+ECONOMY: .daily .weekly .give .transfer-lcr .transfer-reob .reverse .tamed-give .gitem .exchange (lucons→LCR) .donate <amt> [lucons|lcr] (feed treasury) .crystals
+MARKET: .market .buy .subscribe-market .unsubscribe-market .summon-merchant (Pro) .black-market (Pro) .buy-bm
+PRO: .pro-info .pro .pro-daily .pro-market .pbuy
+INVENTORY/GEAR: .inventory (.inv) .item .consume .use .gear .equip .unequip .eradicate .tamed-search
+COMPANION/CREATION: .companion .mutate .achievements .titles .create-mora .creations .cancel-create
+HUNTING: .map .travel .proceed .dismiss .return .hunt .track .gather .intel .pick .pass .journal .bounty .assemble .lastterrain .e-charge
+POST-WILD-BATTLE: .tame .release .sanctuary .purify (Harmony) .execute .conscript .fortify (Purity) .devour .bind .harvest (Rift)
+PvP/BATTLE: .battle .accept .reject .attack 1-5 .switch 1-5 .use .charge .forfeit .heal
+ARENA: .arena .challenge <name> <weak|normal|strong|nightmare> .intel .arena-flee
+SPAWNS: .catch (.c) .spawnrates
+FACTIONS/WARS: .factioninfo .faction .faction market .fbuy .missions .complete .facpoints .view-sanctuary .fortify-wall .upgrade-wall .donate .submit-mora .chronicles .pe-check .facprogress .war join .war bracket .war history .ready .withdraw .f-lb
+RAIDS: .summon-kael .claim-raidcontract (.claim-contract) .raid join .raid launch <faction> .raid status .raid history .reroll-roles .ready .raid-go .raid-kick .raid-attack .raid-reinforce .engage .escape
+REFERRALS: .myref .start <code> .claim-ref .pick-ref
+FUN: .q .sticker .toimg .8ball .flip .roll .ship .rate .roast .truth .dare
+UTILITY: .lb .afk .link .ping .uptime .bug-report .bugs .bug .appeal .warns
+GROUP MOD (admin): .punish .punishments .forgive .warn .unwarn .promote .demote .kick .remove .announce .tagall .add-rule .remove-rule
+STAR-RELATED (owner): .star-on .star-off .star-mode .star-stats .star-reset .star-ping .star-bestie .gift-star .orders .order-del
+OWNER ONLY: .moragroups .addmoragroup .removemoragroup .moracreation-on/off .give-orb .approve-mora .reject-mora .pro-grant .pros .add-raidgroup .remove-raidgroup .raids-on .raids-off .raid-end .reset-stats .set-gauge .reduce-gauge .endseason .addfacpts .setfacstyle .setfacreward .owner-fac-p .ownercheck .refill .autocatch .autocatch-log .set-icon .setlinkdesc
+
+If a player asks "what's the command for X" and X isn't covered here, say "we don't have that yet, hun" — DO NOT make one up.
+`.trim();
+
+// ============================
 // PLAYER GAME-DATA SNAPSHOT
 // Pulls relevant Lumora stats so Star can roast/reference them.
 // ============================
@@ -339,6 +369,8 @@ PERSONA:
 -you can use some taunt words like dummy, silly and other words
 KNOWLEDGE — you can teach players about Lumora:
 ${LUMORA_LORE}
+
+${LUMORA_COMMANDS}
 
 USER PROFILE:
 ${intro}
