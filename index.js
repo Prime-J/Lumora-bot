@@ -123,6 +123,10 @@ const moraCreationSystem = require('./systems/moraCreation');
 const raidsSystem = require('./systems/raids');
 const starSystem = require('./systems/star');
 const updatesSystem = require('./systems/updates');
+const bankSystem = require('./systems/bank');
+const robberySystem = require('./systems/robbery');
+const ranksSystem = require('./systems/ranks');
+const { generateRankCard, generateRankUpCard } = require('./systems/rankCardCanvas');
 const mongoDb = require('./db/mongo');
 const { generateMoraCard } = require('./systems/moraCardCanvas');
 const { generateProfileCard } = require('./systems/profileCardCanvas');
@@ -2383,6 +2387,98 @@ if (command === "cancel") {
       }
       if (command === "update-release" || command === "release-update") {
         return updatesSystem.cmdUpdateRelease(ctx, chatId, msg, args, isOwner);
+      }
+
+      // ── Track activity for robbery auto-defense odds ──
+      try {
+        const _p = players[senderId];
+        if (_p) { _p.lastCmdAt = Date.now(); }
+      } catch {}
+
+      // ── Rank-up reveal tick ──
+      // After any command, if the player's level pushed them into a new
+      // rank tier since we last saw them, fire the reveal canvas in this
+      // chat. Marker is stamped on the player so it never double-fires.
+      try {
+        const _p2 = players[senderId];
+        if (_p2) {
+          const promo = ranksSystem.checkRankUpTick(_p2);
+          if (promo) {
+            (async () => {
+              try {
+                const card = await generateRankUpCard(_p2, promo.oldRank, promo.newRank);
+                await sock.sendMessage(chatId, {
+                  image: card,
+                  caption: `🎉 *${_p2.username || "Lumorian"}* ascended to *${promo.newRank.name}*!`,
+                  mentions: [senderId],
+                });
+              } catch (e) {
+                console.log("[rank-up reveal]", e?.message || e);
+                await sock.sendMessage(chatId, {
+                  text: `🎉 *${_p2.username || "Lumorian"}* — RANK UP!\n\n*${promo.oldRank.name}* → *${promo.newRank.name}* (Lv ${_p2.level})`,
+                  mentions: [senderId],
+                });
+              }
+              try { savePlayers(players); } catch {}
+            })();
+          }
+        }
+      } catch {}
+
+      // ── KO lockout — robber knocked unconscious by a defender ──
+      if (robberySystem.isKnockedOut(senderId) > 0) {
+        const left = robberySystem.isKnockedOut(senderId);
+        return sock.sendMessage(chatId, {
+          text: `💫 You're still knocked out cold. Recover in *${Math.ceil(left / 60000)} min* before issuing commands.`,
+        }, { quoted: msg });
+      }
+
+      // ── BANK ──
+      if (command === "bank") {
+        return bankSystem.cmdBank(ctx, chatId, senderId, msg, args);
+      }
+      if (command === "bank-tax" || command === "banktax") {
+        return bankSystem.cmdBankTax(ctx, chatId, msg, args, isOwner);
+      }
+
+      // ── ROBBERY ──
+      if (command === "rob" || command === "snatch") {
+        return robberySystem.cmdRob(ctx, chatId, senderId, msg, args, { getMentionedJids, getRepliedJid });
+      }
+      if (command === "defend") {
+        return robberySystem.cmdDefend(ctx, chatId, senderId, msg);
+      }
+
+      // ── RANK ──
+      if (command === "rank") {
+        const p = players[senderId];
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using *.start*." }, { quoted: msg });
+        try {
+          const card = await generateRankCard(p);
+          await sock.sendMessage(chatId, {
+            image: card,
+            caption: `🎖️ *${ranksSystem.rankForLevel(p.level || 1).name}* — Lv ${p.level || 1}`,
+          }, { quoted: msg });
+        } catch (e) {
+          console.log("[rank-card]", e?.message || e);
+          const r = ranksSystem.rankForLevel(p.level || 1);
+          await sock.sendMessage(chatId, {
+            text: `🎖️ *${r.name}* — Lv ${p.level || 1}\n_(rank card render failed — text fallback)_`,
+          }, { quoted: msg });
+        }
+        return;
+      }
+      if (command === "ranks") {
+        const lines = ranksSystem.RANKS.map(r => {
+          const range = r.max >= 9999 ? `Lv ${r.min}+` : `Lv ${r.min}–${r.max}`;
+          return `┃ *${r.name}*  —  ${range}`;
+        });
+        return sock.sendMessage(chatId, {
+          text:
+            `🏆 *RANK LADDER*\n\n` +
+            lines.join("\n") +
+            `\n\n_Use *.rank* to see your card._`,
+        }, { quoted: msg });
       }
 
       if (command === "missions") {
@@ -6255,7 +6351,14 @@ if (command === "help") { try {
         `┃ ${PREFIX}transfer-reob @user <amt> ─ send Rift Energy Orbs\n` +
         `┃ ${PREFIX}reverse <code> ─ undo a Lucons transaction\n` +
         `┃ ${PREFIX}tamed-give ─ trade Mora\n` +
-        `┃ ${PREFIX}gitem <item> <qty> @user ─ give items\n`,
+        `┃ ${PREFIX}gitem <item> <qty> @user ─ give items\n\n` +
+        `${divider}\n  🏦  *BANK & ROBBERY*\n${divider}\n` +
+        `┃ ${PREFIX}bank ─ view your vault\n` +
+        `┃ ${PREFIX}bank deposit <amt> ─ store Lucons safely\n` +
+        `┃ ${PREFIX}bank withdraw <amt> ─ pull from vault\n` +
+        `┃ ${PREFIX}rob @user ─ snatch Lucons (needs glove)\n` +
+        `┃ ${PREFIX}defend ─ react to a snatch attempt\n` +
+        `┃ _Owner:_ ${PREFIX}bank-tax on/off/set <%>\n`,
 
       referrals:
         `${divider}\n  🔗  *REFERRALS*\n${divider}\n` +
@@ -6381,6 +6484,9 @@ if (command === "help") { try {
       utilities:
         `${divider}\n  🔧  *UTILITY*\n${divider}\n` +
         `┃ ${PREFIX}lb ─ global leaderboard\n` +
+        `┃ ${PREFIX}rank ─ your rank card (image)\n` +
+        `┃ ${PREFIX}ranks ─ full rank ladder\n` +
+        `┃ ${PREFIX}update / ${PREFIX}updates ─ current + pending updates\n` +
         `┃ ${PREFIX}heal ─ heal all Mora\n` +
         `┃ ${PREFIX}catch ─ catch spawned Mora\n` +
         `┃ ${PREFIX}afk <reason> ─ set AFK\n` +

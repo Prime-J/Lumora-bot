@@ -181,6 +181,18 @@ async function cmdDaily(ctx, chatId, senderId) {
   const streakBonus = Math.min((p.loginStreak || 1) * 10, 200);
   finalReward += streakBonus;
 
+  // 0.1.3 — Alverah's claim tax. Scales with total wealth, only applies
+  // when the player has Lucons in the bank. Withdraw before claiming to
+  // dodge it (but then your wallet is robbable — that's the trade).
+  try {
+    const bankSys = require("./bank");
+    const { net, tax, pct } = bankSys.applyClaimTax(p, finalReward);
+    finalReward = net;
+    if (tax > 0) {
+      lines.push(`🏦 *Alverah's Tax* (${pct}%): -${tax.toLocaleString()}L → bank pool`);
+    }
+  } catch (e) { /* bank module not loaded — skip silently */ }
+
   // Companion bond +2 on daily claim
   if (p.companionId != null) {
     p.companionBond = (p.companionBond || 0) + 2;
@@ -268,6 +280,16 @@ async function cmdWeekly(ctx, chatId, senderId) {
   if (hasProW) {
     wLines.push(`✨ *Pro Mark shields you from faction taxes this cycle.*`);
   }
+
+  // 0.1.3 — Alverah's claim tax on weekly too
+  try {
+    const bankSys = require("./bank");
+    const { net, tax, pct } = bankSys.applyClaimTax(p, reward);
+    reward = net;
+    if (tax > 0) {
+      wLines.push(`🏦 *Alverah's Tax* (${pct}%): -${tax.toLocaleString()}L → bank pool`);
+    }
+  } catch (e) { /* skip silently */ }
 
   reward = Math.max(1, reward);
   p.lucons       = Number(p.lucons || 0) + reward;

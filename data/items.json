@@ -1242,5 +1242,53 @@
     "effects": {
       "raidEscape": true
     }
+  },
+  "SNATCH_GLOVE": {
+    "id": "SNATCH_GLOVE",
+    "name": "Snatch Glove",
+    "category": "tool",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": false,
+    "price": 1000,
+    "stock": 5,
+    "storageCost": 0,
+    "effect": "Lets you attempt .rob @user. Victim has 5 seconds to .defend. Consumed on use (success or fail).",
+    "desc": "A scuffed leather glove laced with rift-thread. Quiet, but the silver tier — defenders see it coming.",
+    "effects": {
+      "snatchTier": 1
+    }
+  },
+  "SHADOW_GLOVE": {
+    "id": "SHADOW_GLOVE",
+    "name": "Shadow Glove",
+    "category": "tool",
+    "rarity": "Rare",
+    "marketType": "pro",
+    "rotates": false,
+    "price": 8000,
+    "stock": 3,
+    "storageCost": 0,
+    "effect": "Faster snatch — victim has only 3 seconds to .defend. Consumed on use.",
+    "desc": "Pro-grade glove woven from voidsilk. The defender feels nothing until you are already gone.",
+    "effects": {
+      "snatchTier": 2
+    }
+  },
+  "PHANTOM_GLOVE": {
+    "id": "PHANTOM_GLOVE",
+    "name": "Phantom Glove",
+    "category": "tool",
+    "rarity": "Legendary",
+    "marketType": "black",
+    "rotates": false,
+    "price": 25000,
+    "stock": 2,
+    "storageCost": 0,
+    "effect": "Elite snatch — victim has only 2 seconds to .defend. Consumed on use.",
+    "desc": "Forbidden tool from the black market. Wearing one is a crime in Harmony lands. Wearing one is *expected* in Rift territory.",
+    "effects": {
+      "snatchTier": 3
+    }
   }
 }
