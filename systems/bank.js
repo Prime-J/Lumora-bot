@@ -117,6 +117,8 @@ async function cmdBank(ctx, chatId, senderId, msg, args) {
     const { net, tax, pct } = applyDepositTax(amount);
     p.lucons = (p.lucons || 0) - amount;
     p.bankBalance = p.bankBalance + net;
+    // 0.1.3 — track lifetime deposits for the Vault Keeper achievement
+    p.bankDepositTotal = Number(p.bankDepositTotal || 0) + net;
     savePlayers(players);
 
     const taxLine = tax > 0 ? `\n💸 Deposit tax (${pct}%): *-${tax.toLocaleString()}L* → Alverah's pool` : "";

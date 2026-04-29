@@ -410,30 +410,42 @@ function getRankForLevel(level) {
 }
 
 // ── ACHIEVEMENTS & TITLES ───────────────────────────────
+// 0.1.3 — achievements now ALSO grant unlock rewards (lucons / items)
+// in addition to the passive aura bonus. Rewards fire ONCE when the
+// achievement is first earned (handled in checkAchievements).
 const ACHIEVEMENTS = {
-  first_catch:   { title: "Mora Catcher",      desc: "Catch your first Mora",         icon: "🐾", aura: 2 },
-  tamer_10:      { title: "Beast Tamer",        desc: "Own 10 Mora",                   icon: "🦁", aura: 5 },
-  tamer_25:      { title: "Mora Warden",        desc: "Own 25 Mora",                   icon: "🛡️", aura: 8 },
-  battle_1:      { title: "First Blood",        desc: "Win your first PvP battle",     icon: "⚔️", aura: 3 },
-  battle_10:     { title: "Battle Hardened",     desc: "Win 10 PvP battles",            icon: "🗡️", aura: 7 },
-  battle_50:     { title: "War Machine",         desc: "Win 50 PvP battles",            icon: "💀", aura: 15 },
-  rich_5k:       { title: "Wealthy",            desc: "Hold 5,000 Lucons at once",     icon: "💰", aura: 4 },
-  rich_20k:      { title: "Tycoon",             desc: "Hold 20,000 Lucons at once",    icon: "👑", aura: 10 },
-  level_10:      { title: "Rising Star",        desc: "Reach level 10",                icon: "🌟", aura: 3 },
-  level_25:      { title: "Veteran",            desc: "Reach level 25",                icon: "🎖️", aura: 8 },
-  level_50:      { title: "Legend",             desc: "Reach level 50",                icon: "🏆", aura: 20 },
-  hunter_50:     { title: "Master Hunter",      desc: "Complete 50 hunts",             icon: "🏹", aura: 12 },
-  streak_7:      { title: "Devoted",            desc: "7-day login streak",            icon: "🔥", aura: 3 },
-  streak_30:     { title: "Unbreakable",        desc: "30-day login streak",           icon: "⚡", aura: 12 },
-  faction_500:   { title: "Faction Loyalist",   desc: "Earn 500 resonance",            icon: "🚩", aura: 10 },
-  companion_100: { title: "Soulbound",          desc: "Reach 100 companion bond",      icon: "💞", aura: 8 },
-  mutator:       { title: "Mutant Whisperer",   desc: "Trigger 10 mutations",          icon: "🧬", aura: 9 },
-  creator_first: { title: "Architect",         desc: "Submit your first Mora design", icon: "⚗️", aura: 6 },
-  creator_rare:  { title: "Crafted in Rift",   desc: "Create a Rare or higher Mora", icon: "💎", aura: 10 },
-  creator_epic:  { title: "Epic Forger",       desc: "Create an Epic Mora",          icon: "🌀", aura: 15 },
-  creator_legendary: { title: "Legendary Shaper", desc: "Create a Legendary Mora", icon: "🌟", aura: 25 },
-  creator_3:     { title: "Serial Architect",  desc: "Create 3 Moras",               icon: "🔬", aura: 12 },
-  rift_survivor: { title: "Survivor of the Rift Tear", desc: "Endured the data-storm crisis of patch 0.1.1", icon: "🌀", aura: 15 },
+  first_catch:   { title: "Mora Catcher",      desc: "Catch your first Mora",         icon: "🐾", aura: 2,  reward: { lucons: 200 } },
+  tamer_10:      { title: "Beast Tamer",        desc: "Own 10 Mora",                   icon: "🦁", aura: 5,  reward: { lucons: 750 } },
+  tamer_25:      { title: "Mora Warden",        desc: "Own 25 Mora",                   icon: "🛡️", aura: 8,  reward: { lucons: 2000, items: { CRY_001: 2 } } },
+  battle_1:      { title: "First Blood",        desc: "Win your first PvP battle",     icon: "⚔️", aura: 3,  reward: { lucons: 300 } },
+  battle_10:     { title: "Battle Hardened",     desc: "Win 10 PvP battles",            icon: "🗡️", aura: 7,  reward: { lucons: 1500 } },
+  battle_50:     { title: "War Machine",         desc: "Win 50 PvP battles",            icon: "💀", aura: 15, reward: { lucons: 6000, items: { CRY_002: 1 } } },
+  rich_5k:       { title: "Wealthy",            desc: "Hold 5,000 Lucons at once",     icon: "💰", aura: 4,  reward: { lucons: 500 } },
+  rich_20k:      { title: "Tycoon",             desc: "Hold 20,000 Lucons at once",    icon: "👑", aura: 10, reward: { lucons: 2500 } },
+  level_10:      { title: "Rising Star",        desc: "Reach level 10",                icon: "🌟", aura: 3,  reward: { lucons: 500 } },
+  level_25:      { title: "Veteran",            desc: "Reach level 25",                icon: "🎖️", aura: 8,  reward: { lucons: 2500, items: { REOB: 1 } } },
+  level_50:      { title: "Legend",             desc: "Reach level 50",                icon: "🏆", aura: 20, reward: { lucons: 8000, lcr: 5, items: { REOB: 2 } } },
+  hunter_50:     { title: "Master Hunter",      desc: "Complete 50 hunts",             icon: "🏹", aura: 12, reward: { lucons: 3500 } },
+  streak_7:      { title: "Devoted",            desc: "7-day login streak",            icon: "🔥", aura: 3,  reward: { lucons: 700 } },
+  streak_30:     { title: "Unbreakable",        desc: "30-day login streak",           icon: "⚡", aura: 12, reward: { lucons: 5000, lcr: 3 } },
+  faction_500:   { title: "Faction Loyalist",   desc: "Earn 500 resonance",            icon: "🚩", aura: 10, reward: { lucons: 2000 } },
+  companion_100: { title: "Soulbound",          desc: "Reach 100 companion bond",      icon: "💞", aura: 8,  reward: { lucons: 1500 } },
+  mutator:       { title: "Mutant Whisperer",   desc: "Trigger 10 mutations",          icon: "🧬", aura: 9,  reward: { lucons: 2000, items: { MUT_001: 2 } } },
+  creator_first: { title: "Architect",         desc: "Submit your first Mora design", icon: "⚗️", aura: 6,  reward: { lucons: 1500 } },
+  creator_rare:  { title: "Crafted in Rift",   desc: "Create a Rare or higher Mora", icon: "💎", aura: 10, reward: { lucons: 3000 } },
+  creator_epic:  { title: "Epic Forger",       desc: "Create an Epic Mora",          icon: "🌀", aura: 15, reward: { lucons: 6000 } },
+  creator_legendary: { title: "Legendary Shaper", desc: "Create a Legendary Mora",   icon: "🌟", aura: 25, reward: { lucons: 12000, lcr: 5 } },
+  creator_3:     { title: "Serial Architect",  desc: "Create 3 Moras",               icon: "🔬", aura: 12, reward: { lucons: 3500 } },
+  rift_survivor: { title: "Survivor of the Rift Tear", desc: "Endured the data-storm crisis of patch 0.1.1", icon: "🌀", aura: 15, reward: { lucons: 0 } },
+
+  // 0.1.3 — new achievements
+  banker:        { title: "Vault Keeper",      desc: "Deposit 10,000L into the bank", icon: "🏦", aura: 6,  reward: { lucons: 1500 } },
+  rich_100k:     { title: "Mogul",              desc: "Hold 100,000L total wealth",    icon: "💎", aura: 18, reward: { lucons: 5000, lcr: 3 } },
+  snatcher:      { title: "Glove Hand",         desc: "Successfully snatch 5 victims", icon: "🥷", aura: 8,  reward: { lucons: 2000 } },
+  defender_5:    { title: "Sharp Reflexes",     desc: "Defend against 5 snatch attempts", icon: "🛡️", aura: 10, reward: { lucons: 2500 } },
+  donor_5k:      { title: "Treasury Patron",    desc: "Donate 5,000L (lucon-equivalent) to your faction", icon: "🏛️", aura: 7, reward: { lucons: 1000 } },
+  ranked_elite:  { title: "Elite Ascendant",    desc: "Reach the Elite rank (Lv 40)",  icon: "🟣", aura: 14, reward: { lucons: 4000, lcr: 2 } },
+  ranked_champion: { title: "Champion's Crown", desc: "Reach the Champion rank (Lv 59)", icon: "🥇", aura: 20, reward: { lucons: 7000, lcr: 4 } },
 };
 
 function checkAchievements(player) {
@@ -464,11 +476,37 @@ function checkAchievements(player) {
     creator_epic:  () => (p.topCreationRarity || 0) >= 4,
     creator_legendary: () => (p.topCreationRarity || 0) >= 5,
     creator_3:     () => (p.totalCreations || 0) >= 3,
+    // 0.1.3 — new
+    banker:          () => Number(p.bankDepositTotal || 0) >= 10000,
+    rich_100k:       () => ((p.lucons || 0) + (p.bankBalance || 0)) >= 100000,
+    snatcher:        () => Number(p.snatchSuccesses || 0) >= 5,
+    defender_5:      () => Number(p.snatchDefenses || 0) >= 5,
+    donor_5k:        () => Number(p.totalDonatedL || 0) >= 5000,
+    ranked_elite:    () => (p.level || 1) >= 40,
+    ranked_champion: () => (p.level || 1) >= 59,
   };
   for (const [key, check] of Object.entries(checks)) {
     if (!p.achievements.includes(key) && check()) {
       p.achievements.push(key);
       earned.push(key);
+      // 0.1.3 — pay out unlock rewards (one-shot)
+      try {
+        const ach = ACHIEVEMENTS[key];
+        if (ach?.reward) {
+          if (ach.reward.lucons) p.lucons = (p.lucons || 0) + Number(ach.reward.lucons);
+          if (ach.reward.lcr) {
+            const proSys = require("./systems/pro");
+            const pro = proSys.ensureProState(p);
+            pro.crystals = Number(pro.crystals || 0) + Number(ach.reward.lcr);
+          }
+          if (ach.reward.items && typeof ach.reward.items === "object") {
+            if (!p.inventory) p.inventory = {};
+            for (const [itemId, qty] of Object.entries(ach.reward.items)) {
+              p.inventory[itemId] = Number(p.inventory[itemId] || 0) + Number(qty);
+            }
+          }
+        }
+      } catch (e) { console.log("[ach-reward]", key, e?.message); }
     }
   }
   return earned;
@@ -2394,6 +2432,46 @@ if (command === "cancel") {
       try {
         const _p = players[senderId];
         if (_p) { _p.lastCmdAt = Date.now(); }
+      } catch {}
+
+      // ── Achievement unlock tick ──
+      // After every command, check whether anything just qualified. If so,
+      // pay out the rewards (handled inside checkAchievements) and post a
+      // notification card per unlock.
+      try {
+        const _pa = players[senderId];
+        if (_pa) {
+          const earned = checkAchievements(_pa);
+          if (earned && earned.length) {
+            savePlayers(players);
+            (async () => {
+              for (const key of earned) {
+                const ach = ACHIEVEMENTS[key];
+                if (!ach) continue;
+                const rewardLines = [];
+                if (ach.reward?.lucons) rewardLines.push(`💰 +${ach.reward.lucons.toLocaleString()} Lucons`);
+                if (ach.reward?.lcr)    rewardLines.push(`💠 +${ach.reward.lcr} Lucrystals`);
+                if (ach.reward?.items) {
+                  for (const [iid, q] of Object.entries(ach.reward.items)) {
+                    rewardLines.push(`🎁 +${q}× ${iid}`);
+                  }
+                }
+                rewardLines.push(`🔮 +${ach.aura || 0} Aura (passive while equipped)`);
+                try {
+                  await sock.sendMessage(chatId, {
+                    text:
+                      `🏅 *ACHIEVEMENT UNLOCKED*\n\n` +
+                      `${ach.icon} *${ach.title}*\n` +
+                      `_${ach.desc}_\n\n` +
+                      `*Rewards:*\n${rewardLines.join("\n")}\n\n` +
+                      `_Use *.equip ${key}* to display this title on your *.rank* card._`,
+                    mentions: [senderId],
+                  });
+                } catch {}
+              }
+            })();
+          }
+        }
       } catch {}
 
       // ── Rank-up reveal tick ──
@@ -4520,6 +4598,8 @@ if (command === "buy-bm") {
           pro.crystals = have - amount;
           f.lucons = (f.lucons || 0) + luconValue;
           f.contributions[senderId] = (f.contributions[senderId] || 0) + luconValue;
+          // 0.1.3 — Treasury Patron achievement counter (lucon-equivalent)
+          p.totalDonatedL = Number(p.totalDonatedL || 0) + luconValue;
           saveTreasury(t);
           savePlayers(players);
           return sock.sendMessage(chatId, {
@@ -4540,6 +4620,8 @@ if (command === "buy-bm") {
         p.lucons = have - amount;
         f.lucons = (f.lucons || 0) + amount;
         f.contributions[senderId] = (f.contributions[senderId] || 0) + amount;
+        // 0.1.3 — Treasury Patron achievement counter
+        p.totalDonatedL = Number(p.totalDonatedL || 0) + amount;
         saveTreasury(t);
         savePlayers(players);
         return sock.sendMessage(chatId, {

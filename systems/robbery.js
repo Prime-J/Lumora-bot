@@ -198,6 +198,8 @@ async function resolveExpired(ctx, victimJid) {
   const taken = Math.min(p.potential, Number(victim.lucons || 0));
   victim.lucons = Math.max(0, (victim.lucons || 0) - taken);
   robber.lucons = (robber.lucons || 0) + taken;
+  // 0.1.3 — Glove Hand achievement counter
+  robber.snatchSuccesses = Number(robber.snatchSuccesses || 0) + 1;
 
   // Consume glove (snatch always burns one — success OR fail)
   const inv = robber.inventory || (robber.inventory = {});
@@ -261,6 +263,9 @@ async function resolveDefended(ctx, p, auto) {
   if (knockout) {
     knockouts.set(p.robberJid, Date.now() + KO_LOCKOUT_MS);
   }
+
+  // 0.1.3 — Sharp Reflexes achievement counter
+  victim.snatchDefenses = Number(victim.snatchDefenses || 0) + 1;
 
   savePlayers(players);
 
