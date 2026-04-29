@@ -244,16 +244,16 @@
   },
   "120363427706945701@g.us": {
     "active": {
-      "moraId": 52,
-      "correctName": "Sproutlet",
+      "moraId": 78,
+      "correctName": "Spectral-Raven",
       "options": [
-        "Sproutlet",
-        "Luxar",
-        "Flarion"
+        "Joltwing",
+        "Sparko",
+        "Spectral-Raven"
       ],
-      "spawnedAt": 1777117640811
+      "spawnedAt": 1777457480557
     },
-    "lastSpawnAt": 1777117640811,
+    "lastSpawnAt": 1777457480557,
     "wrongCd": {
       "41700340814048@lid": 1773497552986,
       "132951115317490@lid": 1775732649681,

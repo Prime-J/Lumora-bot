@@ -31553,7 +31553,7 @@
     "id": "35253779460280@lid",
     "level": 1,
     "xp": 0,
-    "lucons": 640,
+    "lucons": 517,
     "rank": "Trainee",
     "title": "",
     "intelligence": 5,
@@ -31604,7 +31604,11 @@
       "autocatchRemaining": 0,
       "lastProDaily": 0,
       "lastHuntRefillAt": 0
-    }
+    },
+    "lastCmdAt": 1777456383998,
+    "bankBalance": 123,
+    "bankRegistered": true,
+    "bankDepositTotal": 123
   },
   "93965797830698@lid": {
     "username": null,
