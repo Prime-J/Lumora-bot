@@ -128,6 +128,7 @@ const robberySystem = require('./systems/robbery');
 const ranksSystem = require('./systems/ranks');
 const { generateRankCard, generateRankUpCard } = require('./systems/rankCardCanvas');
 const { generateWealthCard, findWealthRank, buildWealthLb } = require('./systems/wealthCanvas');
+const { generateAlverahCard } = require('./systems/alverahCanvas');
 const mongoDb = require('./db/mongo');
 const { generateMoraCard } = require('./systems/moraCardCanvas');
 const { generateProfileCard } = require('./systems/profileCardCanvas');
@@ -2517,7 +2518,66 @@ if (command === "cancel") {
         return bankSystem.cmdBank(ctx, chatId, senderId, msg, args);
       }
       if (command === "bank-tax" || command === "banktax") {
-        return bankSystem.cmdBankTax(ctx, chatId, msg, args, isOwner);
+        return bankSystem.cmdBankTax(ctx, chatId, msg, args, isOwner, senderId);
+      }
+      if (command === "bank-assign" || command === "bankassign") {
+        return bankSystem.cmdBankAssign(ctx, chatId, senderId, msg, args, isOwner, { getMentionedJids, getRepliedJid, normJid });
+      }
+      if (command === "bank-remove" || command === "bankremove" || command === "bank-dismiss") {
+        return bankSystem.cmdBankRemove(ctx, chatId, msg, isOwner);
+      }
+      if (command === "bank-pool" || command === "bankpool") {
+        return bankSystem.cmdBankPool(ctx, chatId, msg, isOwner, senderId);
+      }
+      if (command === "bank-grant" || command === "bankgrant") {
+        return bankSystem.cmdBankGrant(ctx, chatId, senderId, msg, args, isOwner, { getMentionedJids, getRepliedJid, normJid });
+      }
+      if (command === "bank-vault" || command === "bankvault" || command === "vault-audit") {
+        return bankSystem.cmdBankVault(ctx, chatId, msg, isOwner, senderId);
+      }
+      if (command === "main-bank" || command === "mainbank") {
+        const s = bankSystem.loadBankSettings();
+        let totalBanked = 0, depositors = 0;
+        let topName = "—", topAmt = 0;
+        for (const [, _p] of Object.entries(players)) {
+          const b = Number(_p?.bankBalance || 0);
+          if (b > 0) {
+            totalBanked += b;
+            depositors++;
+            if (b > topAmt) { topAmt = b; topName = _p.username || "Anonymous"; }
+          }
+        }
+        const ownerHandle = s.bankOwnerJid ? String(s.bankOwnerJid).split("@")[0] : null;
+        try {
+          const card = await generateAlverahCard({
+            ownerName: s.bankOwnerName || "Alverah",
+            ownerHandle,
+            totalBanked,
+            depositors,
+            taxPool: Number(s.totalTaxPool || 0),
+            depositTaxOn: !!s.depositTaxOn,
+            depositTaxPct: Number(s.depositTaxPct || 0),
+            claimTaxNote: "Wealthier Lumorians pay a larger cut on every .daily / .weekly when banked.",
+            topVault: { name: topName, amount: topAmt },
+          });
+          await sock.sendMessage(chatId, {
+            image: card,
+            caption: `🏦 *THE MAIN BANK* — stewarded by *${s.bankOwnerName || "Alverah"}*`,
+            mentions: s.bankOwnerJid ? [s.bankOwnerJid] : [],
+          }, { quoted: msg });
+        } catch (e) {
+          console.log("[main-bank]", e?.message || e);
+          await sock.sendMessage(chatId, {
+            text:
+              `🏦 *THE MAIN BANK*\n\n` +
+              `Steward: *${s.bankOwnerName || "Alverah"}*${ownerHandle ? ` (@${ownerHandle})` : ""}\n` +
+              `📦 Total banked: *${totalBanked.toLocaleString()}L*\n` +
+              `🏛️ Tax pool: *${(s.totalTaxPool || 0).toLocaleString()}L*\n` +
+              `👥 Depositors: *${depositors}*`,
+            mentions: s.bankOwnerJid ? [s.bankOwnerJid] : [],
+          }, { quoted: msg });
+        }
+        return;
       }
 
       // ── ROBBERY ──
@@ -6509,7 +6569,9 @@ if (command === "help") { try {
         `┃ ${PREFIX}rob @user ─ snatch Lucons (needs glove)\n` +
         `┃ ${PREFIX}defend ─ react to a snatch attempt\n` +
         `┃ ${PREFIX}mask / ${PREFIX}unmask ─ hide/show your profile (Veil Mask)\n` +
-        `┃ _Owner:_ ${PREFIX}bank-tax on/off/set <%>\n`,
+        `┃ ${PREFIX}main-bank ─ Alverah's portrait + global ledger\n` +
+        `┃ _Bank Owner:_ ${PREFIX}bank-tax / ${PREFIX}bank-pool / ${PREFIX}bank-grant @user <amt> / ${PREFIX}bank-vault\n` +
+        `┃ _Architect:_ ${PREFIX}bank-assign @user · ${PREFIX}bank-remove\n`,
 
       referrals:
         `${divider}\n  🔗  *REFERRALS*\n${divider}\n` +
