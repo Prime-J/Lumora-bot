@@ -6034,6 +6034,21 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
         if (!isPrivileged) return sock.sendMessage(chatId, { text: "❌ Owner/Sudo-only command." }, { quoted: msg });
         const announcement = args.join(" ").trim();
         if (!announcement) return sock.sendMessage(chatId, { text: `Use: ${PREFIX}announce <message>` }, { quoted: msg });
+
+        // Hidden tag — pull every group participant and pass them in `mentions`
+        // WITHOUT writing @handles in the visible text. WhatsApp fires a push
+        // notification to every mentioned user but the message reads clean.
+        // Falls back to a normal send if metadata fetch fails (e.g. DMs).
+        let participantJids = [];
+        if (isGroupJid(chatId)) {
+          try {
+            const meta = await sock.groupMetadata(chatId);
+            participantJids = (meta?.participants || []).map(p => p.id).filter(Boolean);
+          } catch (e) {
+            console.log("[announce] groupMetadata failed:", e?.message || e);
+          }
+        }
+
         return sock.sendMessage(chatId, {
           text:
             `╔═══════════════════════════╗\n` +
@@ -6041,6 +6056,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
             `╚═══════════════════════════╝\n\n` +
             `${announcement}\n\n` +
             `_— ${players[senderId]?.username || "Architect"}_`,
+          mentions: participantJids,
         }, { quoted: msg });
       }
 
