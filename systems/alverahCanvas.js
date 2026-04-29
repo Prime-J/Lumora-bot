@@ -2,7 +2,14 @@
 // Generated dynamically so the displayed Bank Owner name + numbers update
 // the instant the Architect reassigns the role.
 
-const { createCanvas } = require("@napi-rs/canvas");
+const { createCanvas, loadImage } = require("@napi-rs/canvas");
+const fs = require("fs");
+const path = require("path");
+
+// Drop your character art at assets/alverah.png (recommend ~600x700,
+// transparent or dark background). Falls back to the stylised silhouette
+// if the file is missing.
+const ALVERAH_IMG_PATH = path.join(__dirname, "..", "assets", "alverah.png");
 
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
@@ -222,8 +229,60 @@ async function generateAlverahCard({ ownerName, ownerHandle, totalBanked, deposi
   ctx.font = "italic 22px serif";
   ctx.fillText(`Stewarded by ${ownerName}`, W / 2, 112);
 
-  // Portrait
-  drawAlverahPortrait(ctx, W / 2, 320, 1.4, accent, glow);
+  // Portrait — prefer the user-supplied image, silhouette fallback
+  const portraitCx = W / 2, portraitCy = 320;
+  const portraitW = 360, portraitH = 440;
+  let imgDrawn = false;
+  if (fs.existsSync(ALVERAH_IMG_PATH)) {
+    try {
+      const img = await loadImage(ALVERAH_IMG_PATH);
+      // Frame: rounded-rect mask + gold double-border
+      const fx = portraitCx - portraitW / 2;
+      const fy = portraitCy - portraitH / 2 + 30; // nudged down so name plate fits
+      // Glow behind frame
+      ctx.save();
+      ctx.shadowColor = glow;
+      ctx.shadowBlur = 38;
+      ctx.fillStyle = "rgba(0,0,0,0.55)";
+      roundRect(ctx, fx, fy, portraitW, portraitH, 24);
+      ctx.fill();
+      ctx.restore();
+      // Clip + draw image (cover-fit, centred)
+      ctx.save();
+      roundRect(ctx, fx, fy, portraitW, portraitH, 24);
+      ctx.clip();
+      const imgRatio = img.width / img.height;
+      const frameRatio = portraitW / portraitH;
+      let dw, dh, dx, dy;
+      if (imgRatio > frameRatio) {
+        dh = portraitH; dw = dh * imgRatio;
+        dx = fx - (dw - portraitW) / 2; dy = fy;
+      } else {
+        dw = portraitW; dh = dw / imgRatio;
+        dx = fx; dy = fy - (dh - portraitH) / 2;
+      }
+      ctx.drawImage(img, dx, dy, dw, dh);
+      ctx.restore();
+      // Frame border
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 4;
+      ctx.shadowColor = glow;
+      ctx.shadowBlur = 18;
+      roundRect(ctx, fx, fy, portraitW, portraitH, 24);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = royal;
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, fx + 6, fy + 6, portraitW - 12, portraitH - 12, 20);
+      ctx.stroke();
+      imgDrawn = true;
+    } catch (e) {
+      // fall through to silhouette
+    }
+  }
+  if (!imgDrawn) {
+    drawAlverahPortrait(ctx, W / 2, 320, 1.4, accent, glow);
+  }
 
   // Owner name plate under portrait
   ctx.shadowColor = glow;
