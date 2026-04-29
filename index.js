@@ -3284,6 +3284,51 @@ if (command === "endseason") {
         return sock.sendMessage(senderId, { text: "❓ Invalid choice. Use A1, A2, A3, B, or C." }, { quoted: msg });
       }
 
+      // ================= OWNER: SET / FIX FACTION =================
+      // 0.1.3 — added to repair players mis-stamped by the swapped invite-map
+      // bug (purity-choosers were getting tagged rift). Use:
+      //   .set-faction @user <harmony|purity|rift|none>
+      // Owner / right-hand only.
+      if (command === "set-faction" || command === "setfaction" || command === "fix-faction") {
+        if (!isOwner && !isRightHand) return;
+        const targets = getMentionedJids(msg);
+        const repliedTo = getRepliedJid(msg);
+        const targetJid = targets[0] || repliedTo || (args[0] && toUserJidFromArg(args[0]));
+        const factionArg = String(args[args.length - 1] || "").trim().toLowerCase();
+        if (!targetJid || !["harmony", "purity", "rift", "none"].includes(factionArg)) {
+          return sock.sendMessage(chatId, {
+            text: "Usage: *.set-faction @user <harmony|purity|rift|none>*\nReply to a user or mention them.",
+          }, { quoted: msg });
+        }
+        const tNorm = normJid(targetJid);
+        const target = players[tNorm];
+        if (!target) {
+          return sock.sendMessage(chatId, { text: "❌ That user isn't registered." }, { quoted: msg });
+        }
+        const before = target.faction || "none";
+        target.faction = factionArg === "none" ? null : factionArg;
+        if (factionArg === "none") {
+          target.joinedFactionGroup = false;
+        } else {
+          target.joinedFactionGroup = true;
+          // refresh starter options if they haven't picked yet
+          if (!target.starterChosen) {
+            try {
+              target.starterOptions = pickStarterOptionsByFaction(moraList, target.faction);
+            } catch {}
+          }
+        }
+        savePlayers(players);
+        return sock.sendMessage(chatId, {
+          text:
+            `✅ *Faction repaired.*\n\n` +
+            `Player: @${tNorm.split("@")[0]}\n` +
+            `Was: *${before}*\n` +
+            `Now: *${factionArg}*`,
+          mentions: [tNorm],
+        }, { quoted: msg });
+      }
+
       // ================= FACTION PICK =================
       if (command === "faction") {
         if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" });
@@ -3305,12 +3350,18 @@ savePlayers(players);
 // 📩 SEND DM WITH GROUP LINK
 // ============================
 
-// 🔧 CHANGEABLE: put your real links here
-const FACTION_GROUPS = {
-  harmony: "https://chat.whatsapp.com/G0msNxullTKKEfHVltjlXZ",
-  purity: "https://chat.whatsapp.com/EBPQYruOnigJX3jj7X3Npj?mode=gi_t",
-  rift: "https://chat.whatsapp.com/IYx4DKOR40w9gze32C9wKQ"
-};
+// 0.1.3 — derived from FACTION_INVITE_MAP at the top of this file so the
+// DM link can never disagree with the resolver again. Previously these two
+// maps had purity/rift codes swapped, which sent purity-choosers into the
+// rift group and the welcome handler stamped them as rift for life.
+const FACTION_GROUPS = (() => {
+  const out = {};
+  for (const [code, faction] of Object.entries(FACTION_INVITE_MAP)) {
+    if (faction === "none") continue;
+    out[faction] = `https://chat.whatsapp.com/${code}`;
+  }
+  return out;
+})();
 
 try {
   await sock.sendMessage(senderId, {
@@ -5846,14 +5897,16 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
       }
       // --- COMMAND: GLOBAL LEADERBOARD ---
 if (command === "lb") {
+    // Single source of truth — text + canvas pull from the SAME sorted list
+    // so #1 in the image == #1 in the text. Was using two different sorts
+    // (text by aura/tamed/lucons, canvas by level only) which produced wildly
+    // different rankings.
+    const sortedTop = lb.getGlobalLeaderboardData(players);
     const text = lb.getGlobalLeaderboard(players);
 
-    // Send visual leaderboard card
     try {
-      const topPlayers = Object.values(players)
+      const topPlayers = sortedTop
         .filter(p => p.username && p.level)
-        .sort((a, b) => (b.level || 0) - (a.level || 0))
-        .slice(0, 10)
         .map((p, i) => ({
           rank: i + 1,
           username: p.username,
@@ -5861,7 +5914,7 @@ if (command === "lb") {
           faction: p.faction || "neutral",
           xp: p.xp || 0,
           aura: p.aura || 0,
-          totalCreations: p.totalCreations || 0
+          totalCreations: p.totalCreations || 0,
         }));
 
       if (topPlayers.length > 0) {
@@ -6138,8 +6191,9 @@ if (command === "f-lb") {
         );
       }
 
-      // HELP
-if (command === "help") {
+      // HELP — wrapped so a missing help.jpg / sendMessage failure can't
+      // bubble to the catch and look like an unknown command.
+if (command === "help") { try {
     const p = players[senderId];
     const hasPro = proSystem.hasActivePro(p);
     const pFaction = p?.faction ? p.faction.charAt(0).toUpperCase() + p.faction.slice(1) : "None";
@@ -6447,10 +6501,14 @@ if (command === "help") {
         SECTIONS[key] + `\n` +
         `${divider}\n` +
         `_Use *.help* to see all sections._`;
-      await sock.sendMessage(chatId, {
-        image: { url: "./help.jpg" },
-        caption: sectionText,
-      });
+      try {
+        await sock.sendMessage(chatId, {
+          image: { url: "./help.jpg" },
+          caption: sectionText,
+        });
+      } catch (imgErr) {
+        await sock.sendMessage(chatId, { text: sectionText });
+      }
       return;
     }
 
@@ -6501,12 +6559,25 @@ if (command === "help") {
       `║  _"The Rift watches. Choose wisely."_\n` +
       `╚═══════════════════════════╝`;
 
-    await sock.sendMessage(chatId, {
-      image: { url: "./help.jpg" },
-      caption: indexText,
-    });
+    try {
+      await sock.sendMessage(chatId, {
+        image: { url: "./help.jpg" },
+        caption: indexText,
+      });
+    } catch (imgErr) {
+      // Image load/send failed — fall back to text-only so help never silently dies.
+      await sock.sendMessage(chatId, { text: indexText });
+    }
     return;
-}
+} catch (helpErr) {
+  console.log("[help-handler]", helpErr?.message || helpErr);
+  try {
+    await sock.sendMessage(chatId, {
+      text: `📖 Help temporarily unavailable. Try a specific section: *.help arena*, *.help economy*, *.help raids*, etc.`,
+    }, { quoted: msg });
+  } catch {}
+  return;
+} }
 
       // .factioninfo — show perks AND drawbacks for any faction
       if (command === "factioninfo") {

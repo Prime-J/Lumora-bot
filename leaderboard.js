@@ -18,12 +18,18 @@ function calculateTotalScore(p) {
     };
 }
 
-function getGlobalLeaderboard(players) {
-    // Calculate score for everyone and sort
-    const sorted = Object.values(players)
+// 0.1.3 — single source of truth for the global leaderboard ordering.
+// Both the text renderer (.lb) and the canvas card pull from this so they
+// can never disagree about who's #1.
+function getGlobalLeaderboardData(players) {
+    return Object.values(players)
         .map(p => ({ ...p, stats: calculateTotalScore(p) }))
         .sort((a, b) => b.stats.total - a.stats.total)
         .slice(0, 10);
+}
+
+function getGlobalLeaderboard(players) {
+    const sorted = getGlobalLeaderboardData(players);
 
     let text = "🌌 *LUMORA GLOBAL LEADERBOARD* 🌌\n_Top 10 strongest souls in the Dominion_\n\n";
 
@@ -100,4 +106,4 @@ async function checkNewLeader(sock, chatId, players, factionsData) {
     return changed; // To tell index.js to save factions.json
 }
 
-module.exports = { getGlobalLeaderboard, getFactionLeaderboard, checkNewLeader };
+module.exports = { getGlobalLeaderboard, getGlobalLeaderboardData, getFactionLeaderboard, checkNewLeader };
