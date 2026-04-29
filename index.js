@@ -2419,7 +2419,14 @@ if (command === "cancel") {
       // CORE COMMANDS
       // ============================
       if (command === "ping") {
-        return sock.sendMessage(chatId, { text: "🏓 Pong! STAR Is AWAKE🏓" });
+        const t0 = Number(msg?.messageTimestamp || 0) * 1000;
+        const ms = t0 ? Math.max(0, Date.now() - t0) : 0;
+        return sock.sendMessage(chatId, {
+          text:
+            `🏓 *Pong.*\n` +
+            `⏱️ Response: *${ms}ms*\n\n` +
+            `_Prijo is active and ready to roll, young master._`,
+        }, { quoted: msg });
       }
 
       if (command === "update" || command === "updates") {
@@ -6823,20 +6830,21 @@ if (command === "help") { try {
         `┃ _Pro users bypass faction tax on daily/weekly._\n`,
 
       star:
-        `${divider}\n  💋  *STAR — AI COMPANION*\n${divider}\n` +
-        `┃ Mention "star" or reply to her to chat\n` +
-        `┃ ${PREFIX}gift-star <amt> ─ send Star Lucons (or fall for her tricks)\n` +
-        `┃ _25 free messages/day. Pro = unlimited._\n\n` +
-        `${divider}\n  👑  *STAR — OWNER CONTROLS*\n${divider}\n` +
-        `┃ ${PREFIX}star-on / ${PREFIX}star-off ─ activate Star in this group\n` +
+        `${divider}\n  🎩  *PRIJO — STEWARD-IN-RESIDENCE*\n${divider}\n` +
+        `_(Star is on vacation with her family. Prijo, the young master's elder butler, philosopher, and former poet, holds the post in her absence.)_\n\n` +
+        `┃ Mention "prijo" (or "star") or reply to him to converse\n` +
+        `┃ ${PREFIX}gift-star <amt> ─ send a tribute to the house\n` +
+        `┃ _25 free conversations/day. Pro = unlimited._\n\n` +
+        `${divider}\n  👑  *PRIJO — ARCHITECT CONTROLS*\n${divider}\n` +
+        `┃ ${PREFIX}star-on / ${PREFIX}star-off ─ enable/dismiss Prijo in this group\n` +
         `┃ ${PREFIX}star-mode <off|public|private|private+pro>\n` +
         `┃ ${PREFIX}star-stats ─ usage + cost\n` +
-        `┃ ${PREFIX}star-reset @user ─ wipe Star's memory of someone\n` +
+        `┃ ${PREFIX}star-reset @user ─ wipe Prijo's memory of someone\n` +
         `┃ ${PREFIX}star-ping on|off ─ loneliness pings\n` +
-        `┃ ${PREFIX}star-bestie add|remove @user ─ make/remove a bestie\n` +
-        `┃ ${PREFIX}orders ─ list Star's standing orders\n` +
+        `┃ ${PREFIX}star-bestie add|remove @user ─ mark/unmark a confidant\n` +
+        `┃ ${PREFIX}orders ─ list Prijo's standing orders\n` +
         `┃ ${PREFIX}order-del <id> ─ remove an order\n` +
-        `┃ _Tools (auto, ask in chat):_ list players, give lucons, warn,\n` +
+        `┃ _Tools (automatic, ask in chat):_ list players, give lucons, warn,\n` +
         `┃ _tag, force spawn, faction/treasury status, bot stats._\n`,
 
       admin:
@@ -6891,7 +6899,7 @@ if (command === "help") { try {
       fun: "fun", misc: "fun", sticker: "fun",
       utilities: "utilities", utility: "utilities", util: "utilities",
       pro: "pro", premium: "pro", subscription: "pro", sub: "pro", crystals: "pro", lcr: "pro",
-      star: "star", ai: "star", girlfriend: "star",
+      star: "star", prijo: "star", ai: "star", girlfriend: "star", butler: "star", steward: "star",
       admin: "admin", sudo: "admin", owner: "admin", architect: "admin",
     };
 
@@ -6967,7 +6975,7 @@ if (command === "help") { try {
       `┃ ${PREFIX}help fun        ─ stickers, dice, roast, etc.\n` +
       `┃ ${PREFIX}help utilities  ─ leaderboard, ping, bug-report\n` +
       `┃ ${PREFIX}help pro        ─ subscriptions, Lucrystals, autocatch\n` +
-      `┃ ${PREFIX}help star       ─ 💋 Star, your AI companion\n` +
+      `┃ ${PREFIX}help star       ─ 🎩 Prijo, the young master's steward (Star on leave)\n` +
       `┃ ${PREFIX}help admin      ─ sudo / owner / architect\n\n` +
       `╔═══════════════════════════╗\n` +
       `║  💰 Currency: *${settings.currencyName}*\n` +
