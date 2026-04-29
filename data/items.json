@@ -1290,5 +1290,21 @@
     "effects": {
       "snatchTier": 3
     }
+  },
+  "PROFILE_MASK": {
+    "id": "PROFILE_MASK",
+    "name": "Veil Mask",
+    "category": "tool",
+    "rarity": "Rare",
+    "marketType": "normal",
+    "rotates": false,
+    "price": 3500,
+    "stock": 4,
+    "storageCost": 0,
+    "effect": "Hides your profile from .profile lookups by other players. Toggle off with .unmask.",
+    "desc": "Crystalline filigree that scatters scrying. Wear it and your stats vanish from prying eyes.",
+    "effects": {
+      "mask": true
+    }
   }
 }

@@ -127,6 +127,7 @@ const bankSystem = require('./systems/bank');
 const robberySystem = require('./systems/robbery');
 const ranksSystem = require('./systems/ranks');
 const { generateRankCard, generateRankUpCard } = require('./systems/rankCardCanvas');
+const { generateWealthCard, findWealthRank, buildWealthLb } = require('./systems/wealthCanvas');
 const mongoDb = require('./db/mongo');
 const { generateMoraCard } = require('./systems/moraCardCanvas');
 const { generateProfileCard } = require('./systems/profileCardCanvas');
@@ -2468,6 +2469,71 @@ if (command === "cancel") {
         }
         return;
       }
+      // ── WEALTH ──
+      if (command === "wealth") {
+        const p = players[senderId];
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using *.start*." }, { quoted: msg });
+        bankSystem.ensureBank(p);
+        const { position, total } = findWealthRank(players, senderId);
+        try {
+          const card = await generateWealthCard(p, position, total);
+          await sock.sendMessage(chatId, {
+            image: card,
+            caption: `💰 *${p.username || "Lumorian"}* — wealth ledger`,
+          }, { quoted: msg });
+        } catch (e) {
+          console.log("[wealth-card]", e?.message || e);
+          const wallet = (p.lucons || 0).toLocaleString();
+          const bank = (p.bankBalance || 0).toLocaleString();
+          const tot = ((p.lucons || 0) + (p.bankBalance || 0)).toLocaleString();
+          const rank = position ? `#${position} / ${total}` : "Unranked";
+          await sock.sendMessage(chatId, {
+            text: `💰 *WEALTH LEDGER*\n\n💼 Wallet: *${wallet}L*\n🏦 Bank: *${bank}L*\n💎 Total: *${tot}L*\n📊 Wealth Rank: *${rank}*`,
+          }, { quoted: msg });
+        }
+        return;
+      }
+      if (command === "wealth-lb" || command === "wealthlb" || command === "wlb") {
+        const sorted = buildWealthLb(players).slice(0, 10);
+        if (!sorted.length) {
+          return sock.sendMessage(chatId, { text: "💰 No Lumorians have any Lucons yet." }, { quoted: msg });
+        }
+        const lines = sorted.map((e, i) => {
+          const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`;
+          return `${medal}  *${e.username}*  —  ${e.total.toLocaleString()}L`;
+        });
+        return sock.sendMessage(chatId, {
+          text: `💎 *WEALTH LEADERBOARD*\n_Top 10 by total (wallet + bank)_\n\n${lines.join("\n")}`,
+        }, { quoted: msg });
+      }
+
+      // ── PROFILE MASK ──
+      if (command === "mask") {
+        const p = players[senderId];
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using *.start*." }, { quoted: msg });
+        const inv = p.inventory || {};
+        if (Number(inv.PROFILE_MASK || 0) <= 0) {
+          return sock.sendMessage(chatId, {
+            text: "❌ You need a *Veil Mask* (regular market — 3,500L) to mask your profile.",
+          }, { quoted: msg });
+        }
+        p.profileMasked = true;
+        savePlayers(players);
+        return sock.sendMessage(chatId, {
+          text: "🎭 *Veil Mask equipped.* Your profile is hidden from prying eyes.\n\n_Use *.unmask* to remove._",
+        }, { quoted: msg });
+      }
+      if (command === "unmask") {
+        const p = players[senderId];
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using *.start*." }, { quoted: msg });
+        if (!p.profileMasked) {
+          return sock.sendMessage(chatId, { text: "🪞 You're not masked." }, { quoted: msg });
+        }
+        p.profileMasked = false;
+        savePlayers(players);
+        return sock.sendMessage(chatId, { text: "🪞 *Veil removed.* Your profile is visible again." }, { quoted: msg });
+      }
+
       if (command === "ranks") {
         const lines = ranksSystem.RANKS.map(r => {
           const range = r.max >= 9999 ? `Lv ${r.min}+` : `Lv ${r.min}–${r.max}`;
@@ -6356,8 +6422,11 @@ if (command === "help") { try {
         `┃ ${PREFIX}bank ─ view your vault\n` +
         `┃ ${PREFIX}bank deposit <amt> ─ store Lucons safely\n` +
         `┃ ${PREFIX}bank withdraw <amt> ─ pull from vault\n` +
+        `┃ ${PREFIX}wealth ─ wealth ledger card\n` +
+        `┃ ${PREFIX}wealth-lb ─ top 10 richest\n` +
         `┃ ${PREFIX}rob @user ─ snatch Lucons (needs glove)\n` +
         `┃ ${PREFIX}defend ─ react to a snatch attempt\n` +
+        `┃ ${PREFIX}mask / ${PREFIX}unmask ─ hide/show your profile (Veil Mask)\n` +
         `┃ _Owner:_ ${PREFIX}bank-tax on/off/set <%>\n`,
 
       referrals:
