@@ -45,6 +45,16 @@ function saveBankSettings(s) {
 
 function ensureBank(player) {
   if (typeof player.bankBalance !== "number") player.bankBalance = 0;
+  // Auto-register anyone who has historically used the vault — keeps
+  // legacy depositors from being locked out by the new gate.
+  if (typeof player.bankRegistered !== "boolean") {
+    player.bankRegistered = (player.bankBalance > 0);
+  }
+}
+
+function isRegistered(player) {
+  ensureBank(player);
+  return !!player.bankRegistered;
 }
 
 // Wealth-scaled claim tax. Richer = pays more. Always applied to .daily
@@ -105,6 +115,31 @@ async function cmdBank(ctx, chatId, senderId, msg, args) {
   ensureBank(p);
 
   const sub = String(args[0] || "").toLowerCase();
+
+  // ── Registration ──
+  if (sub === "register" || sub === "join" || sub === "open") {
+    if (p.bankRegistered) {
+      return sock.sendMessage(chatId, { text: "🏦 You're already registered with the Main Bank." }, { quoted: msg });
+    }
+    p.bankRegistered = true;
+    savePlayers(players);
+    return sock.sendMessage(chatId, {
+      text:
+        `🏦 *VAULT REGISTRATION COMPLETE*\n\n` +
+        `Welcome to the Main Bank, ${p.username || "Lumorian"}.\n\n` +
+        `Use *.bank deposit <amt>* to lock Lucons away from snatchers.\n` +
+        `Use *.bank* anytime to view your vault.`,
+    }, { quoted: msg });
+  }
+
+  // Gate the deposit/withdraw flows behind registration
+  if ((sub === "deposit" || sub === "dep" || sub === "withdraw" || sub === "with") && !p.bankRegistered) {
+    return sock.sendMessage(chatId, {
+      text:
+        `🏦 You haven't registered with the Main Bank yet.\n\n` +
+        `Run *.bank register* to open a vault. It's free.`,
+    }, { quoted: msg });
+  }
 
   if (!sub || sub === "view" || sub === "balance") {
     const taxPct = getClaimTaxPct(p);

@@ -2535,8 +2535,96 @@ if (command === "cancel") {
       if (command === "bank-vault" || command === "bankvault" || command === "vault-audit") {
         return bankSystem.cmdBankVault(ctx, chatId, msg, isOwner, senderId);
       }
+      // PUBLIC: Alverah portrait + welcome / registration card
+      // Anyone can run this — it's the bank's storefront.
       if (command === "main-bank" || command === "mainbank") {
         const s = bankSystem.loadBankSettings();
+        const p = players[senderId] || null;
+        if (p) bankSystem.ensureBank(p);
+        const registered = !!(p && p.bankRegistered);
+
+        const ownerHandle = s.bankOwnerJid ? String(s.bankOwnerJid).split("@")[0] : null;
+        const ownerLine = ownerHandle
+          ? `Steward: *${s.bankOwnerName || "Alverah"}* (@${ownerHandle})`
+          : `Steward: *${s.bankOwnerName || "Alverah"}* (Architect rules direct)`;
+
+        const taxBracketLines = [
+          "  • <500L total       —  0%",
+          "  • 500-2k             —  1%",
+          "  • 2k-10k             —  3%",
+          "  • 10k-50k            —  5%",
+          "  • 50k-200k           —  8%",
+          "  • >200k              —  12%",
+        ].join("\n");
+
+        const depositTaxLine = s.depositTaxOn
+          ? `🟢 Deposit tax: *ON* @ ${s.depositTaxPct}%`
+          : `⚪ Deposit tax: *OFF*`;
+
+        const statusBlock = registered
+          ? `✅ You are *registered* — vault active.\n` +
+            `💼 Wallet: *${(p.lucons || 0).toLocaleString()}L*\n` +
+            `🏦 Vault: *${(p.bankBalance || 0).toLocaleString()}L*`
+          : `⚠️ You're *not registered* with the bank yet.\n` +
+            `Run *.bank register* to open a vault (free).`;
+
+        const caption =
+          `🏦 *THE MAIN BANK*\n` +
+          `${ownerLine}\n\n` +
+          `_"Coin trusted to stone never bleeds in the alley."_\n\n` +
+          `━━━━━━━━━━━━━━━━━━\n` +
+          `📜 *YOUR STATUS*\n` +
+          `${statusBlock}\n\n` +
+          `━━━━━━━━━━━━━━━━━━\n` +
+          `💸 *TAX POLICY*\n` +
+          `${depositTaxLine}\n\n` +
+          `_Claim tax (auto, on .daily / .weekly while banked):_\n` +
+          `${taxBracketLines}\n\n` +
+          `━━━━━━━━━━━━━━━━━━\n` +
+          `📖 *.bank register* — open a vault\n` +
+          `📖 *.bank deposit <amt>* / *.bank withdraw <amt>*\n` +
+          `📖 *.bank* — your balances\n` +
+          `📖 *.wealth* — wealth ledger card`;
+
+        try {
+          // Public card uses Alverah's image only — no internal numbers.
+          const card = await generateAlverahCard({
+            ownerName: s.bankOwnerName || "Alverah",
+            ownerHandle,
+            totalBanked: 0,        // hidden from public card
+            depositors: 0,
+            taxPool: 0,
+            depositTaxOn: !!s.depositTaxOn,
+            depositTaxPct: Number(s.depositTaxPct || 0),
+            claimTaxNote: "Coin trusted to stone never bleeds in the alley.",
+            topVault: { name: "—", amount: 0 },
+            publicMode: true,
+          });
+          await sock.sendMessage(chatId, {
+            image: card,
+            caption,
+            mentions: s.bankOwnerJid ? [s.bankOwnerJid] : [],
+          }, { quoted: msg });
+        } catch (e) {
+          console.log("[main-bank]", e?.message || e);
+          await sock.sendMessage(chatId, {
+            text: caption,
+            mentions: s.bankOwnerJid ? [s.bankOwnerJid] : [],
+          }, { quoted: msg });
+        }
+        return;
+      }
+
+      // PRIVATE: full internal ledger canvas — Architect or Bank Owner only.
+      // Same Alverah image but the caption surfaces total banked, tax pool,
+      // depositors, top vault, etc.
+      if (command === "bank-info" || command === "bankinfo" || command === "main-bank-info") {
+        const s = bankSystem.loadBankSettings();
+        if (!isOwner && !bankSystem.isBankOwner(senderId)) {
+          return sock.sendMessage(chatId, {
+            text: "❌ Only the Architect or Bank Owner can view the internal ledger. Try *.main-bank* for the public view.",
+          }, { quoted: msg });
+        }
         let totalBanked = 0, depositors = 0;
         let topName = "—", topAmt = 0;
         for (const [, _p] of Object.entries(players)) {
@@ -2559,22 +2647,29 @@ if (command === "cancel") {
             depositTaxPct: Number(s.depositTaxPct || 0),
             claimTaxNote: "Wealthier Lumorians pay a larger cut on every .daily / .weekly when banked.",
             topVault: { name: topName, amount: topAmt },
+            publicMode: false,
           });
           await sock.sendMessage(chatId, {
             image: card,
-            caption: `🏦 *THE MAIN BANK* — stewarded by *${s.bankOwnerName || "Alverah"}*`,
+            caption:
+              `🏛️ *INTERNAL BANK LEDGER*\n\n` +
+              `Steward: *${s.bankOwnerName || "Alverah"}*${ownerHandle ? ` (@${ownerHandle})` : ""}\n` +
+              `📦 Total banked: *${totalBanked.toLocaleString()}L*\n` +
+              `🏛️ Tax pool: *${(s.totalTaxPool || 0).toLocaleString()}L*\n` +
+              `👥 Depositors: *${depositors}*\n` +
+              `🥇 Top vault: *${topName}* — ${topAmt.toLocaleString()}L\n` +
+              `${s.depositTaxOn ? `🟢 Deposit tax: ON @ ${s.depositTaxPct}%` : "⚪ Deposit tax: OFF"}`,
             mentions: s.bankOwnerJid ? [s.bankOwnerJid] : [],
           }, { quoted: msg });
         } catch (e) {
-          console.log("[main-bank]", e?.message || e);
+          console.log("[bank-info]", e?.message || e);
           await sock.sendMessage(chatId, {
             text:
-              `🏦 *THE MAIN BANK*\n\n` +
+              `🏛️ *INTERNAL BANK LEDGER*\n\n` +
               `Steward: *${s.bankOwnerName || "Alverah"}*${ownerHandle ? ` (@${ownerHandle})` : ""}\n` +
               `📦 Total banked: *${totalBanked.toLocaleString()}L*\n` +
               `🏛️ Tax pool: *${(s.totalTaxPool || 0).toLocaleString()}L*\n` +
               `👥 Depositors: *${depositors}*`,
-            mentions: s.bankOwnerJid ? [s.bankOwnerJid] : [],
           }, { quoted: msg });
         }
         return;
@@ -6569,7 +6664,9 @@ if (command === "help") { try {
         `┃ ${PREFIX}rob @user ─ snatch Lucons (needs glove)\n` +
         `┃ ${PREFIX}defend ─ react to a snatch attempt\n` +
         `┃ ${PREFIX}mask / ${PREFIX}unmask ─ hide/show your profile (Veil Mask)\n` +
-        `┃ ${PREFIX}main-bank ─ Alverah's portrait + global ledger\n` +
+        `┃ ${PREFIX}bank register ─ open your vault\n` +
+        `┃ ${PREFIX}main-bank ─ Alverah's storefront (public)\n` +
+        `┃ _Bank Owner / Architect:_ ${PREFIX}bank-info ─ internal ledger\n` +
         `┃ _Bank Owner:_ ${PREFIX}bank-tax / ${PREFIX}bank-pool / ${PREFIX}bank-grant @user <amt> / ${PREFIX}bank-vault\n` +
         `┃ _Architect:_ ${PREFIX}bank-assign @user · ${PREFIX}bank-remove\n`,
 

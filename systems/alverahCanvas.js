@@ -178,7 +178,7 @@ function drawAlverahPortrait(ctx, cx, cy, scale, accent, glow) {
   ctx.restore();
 }
 
-async function generateAlverahCard({ ownerName, ownerHandle, totalBanked, depositors, taxPool, depositTaxOn, depositTaxPct, claimTaxNote, topVault }) {
+async function generateAlverahCard({ ownerName, ownerHandle, totalBanked, depositors, taxPool, depositTaxOn, depositTaxPct, claimTaxNote, topVault, publicMode = false }) {
   const W = 900, H = 1100;
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext("2d");
@@ -307,12 +307,22 @@ async function generateAlverahCard({ ownerName, ownerHandle, totalBanked, deposi
   const tileW = (W - 120) / 2;
   const gap = 20;
 
-  const tiles = [
-    { label: "TOTAL BANKED",   value: totalBanked.toLocaleString() + "L",     icon: "📦", x: 60 },
-    { label: "TAX POOL",       value: taxPool.toLocaleString() + "L",         icon: "🏛️", x: 60 + tileW + gap },
-    { label: "DEPOSITORS",     value: String(depositors),                     icon: "👥", x: 60,                 yOff: tileH + gap },
-    { label: "TOP VAULT",      value: topVault.amount.toLocaleString() + "L", icon: "🥇", x: 60 + tileW + gap,   yOff: tileH + gap, sub: topVault.name },
-  ];
+  // Public card hides the internal numbers — just show the portrait,
+  // owner name, and a welcome flourish. The caption (sent by index.js)
+  // handles the registration UI.
+  const tiles = publicMode
+    ? [
+        { label: "OPEN HOURS",    value: "Always",                              icon: "🕯️", x: 60 },
+        { label: "VAULT FEE",     value: "Free to open",                        icon: "🔑", x: 60 + tileW + gap },
+        { label: "DEPOSIT TAX",   value: depositTaxOn ? `${depositTaxPct}%` : "OFF", icon: "💸", x: 60,                 yOff: tileH + gap },
+        { label: "CLAIM TAX",     value: "WEALTH-SCALED",                       icon: "📊", x: 60 + tileW + gap,   yOff: tileH + gap },
+      ]
+    : [
+        { label: "TOTAL BANKED",   value: totalBanked.toLocaleString() + "L",     icon: "📦", x: 60 },
+        { label: "TAX POOL",       value: taxPool.toLocaleString() + "L",         icon: "🏛️", x: 60 + tileW + gap },
+        { label: "DEPOSITORS",     value: String(depositors),                     icon: "👥", x: 60,                 yOff: tileH + gap },
+        { label: "TOP VAULT",      value: topVault.amount.toLocaleString() + "L", icon: "🥇", x: 60 + tileW + gap,   yOff: tileH + gap, sub: topVault.name },
+      ];
 
   tiles.forEach(tl => {
     const y = tileY + (tl.yOff || 0);
@@ -360,7 +370,9 @@ async function generateAlverahCard({ ownerName, ownerHandle, totalBanked, deposi
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 18px sans-serif";
   ctx.fillText(
-    `Deposit Tax: ${depositTaxOn ? `ON @ ${depositTaxPct}%` : "OFF"}   •   Claim Tax: AUTOMATIC`,
+    publicMode
+      ? `🏦  Welcome to the Vault. Step inside.`
+      : `Deposit Tax: ${depositTaxOn ? `ON @ ${depositTaxPct}%` : "OFF"}   •   Claim Tax: AUTOMATIC`,
     W / 2, policyY + 32
   );
   ctx.fillStyle = "#cbd5e1";
