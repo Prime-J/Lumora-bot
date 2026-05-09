@@ -1,7 +1,16 @@
 {
   "120363424245590124@g.us": {
-    "active": null,
-    "lastSpawnAt": 1776097304852,
+    "active": {
+      "moraId": 13,
+      "correctName": "Pebbrum",
+      "options": [
+        "Pebbrum",
+        "Zovax",
+        "Nira"
+      ],
+      "spawnedAt": 1777714407996
+    },
+    "lastSpawnAt": 1777714407996,
     "wrongCd": {
       "259983665004558@lid": 1775823139081,
       "132951115317490@lid": 1775410372843,
@@ -112,8 +121,17 @@
     "wrongCd": {}
   },
   "120363408325172828@g.us": {
-    "active": null,
-    "lastSpawnAt": 1777005456440,
+    "active": {
+      "moraId": 2,
+      "correctName": "Thornel",
+      "options": [
+        "Drakoryx",
+        "Luminary",
+        "Thornel"
+      ],
+      "spawnedAt": 1778333373655
+    },
+    "lastSpawnAt": 1778333373655,
     "wrongCd": {
       "132951115317490@lid": 1776156174928,
       "267581311156378@lid": 1773615809870,
@@ -165,7 +183,7 @@
   },
   "120363408860967993@g.us": {
     "active": null,
-    "lastSpawnAt": 1776158465278,
+    "lastSpawnAt": 1778333223919,
     "wrongCd": {
       "259983665004558@lid": 1776097886862,
       "132951115317490@lid": 1776013617114,
@@ -206,22 +224,23 @@
       "108951072948295@lid": 1775760188746,
       "172542392303736@lid": 1775806160488,
       "200824785490015@lid": 1775822057109,
-      "144500265619658@lid": 1775825257140
+      "144500265619658@lid": 1775825257140,
+      "93965797830698@lid": 1777510689816
     },
     "premium": null
   },
   "120363407032662317@g.us": {
     "active": {
-      "moraId": 5,
-      "correctName": "Emberu",
+      "moraId": 16,
+      "correctName": "Voltrix",
       "options": [
-        "Emberu",
         "Voltrix",
-        "Thornel"
+        "Aquatyr",
+        "Tidal-Serpent"
       ],
-      "spawnedAt": 1776986178114
+      "spawnedAt": 1778333308308
     },
-    "lastSpawnAt": 1776986178114,
+    "lastSpawnAt": 1778333308308,
     "wrongCd": {
       "194592469209292@lid": 1775215712368,
       "231009564000341@lid": 1775215714024
@@ -244,16 +263,16 @@
   },
   "120363427706945701@g.us": {
     "active": {
-      "moraId": 78,
-      "correctName": "Spectral-Raven",
+      "moraId": 66,
+      "correctName": "Obsidihorn",
       "options": [
-        "Joltwing",
-        "Sparko",
-        "Spectral-Raven"
+        "Florageist",
+        "Sproutlet",
+        "Obsidihorn"
       ],
-      "spawnedAt": 1777457480557
+      "spawnedAt": 1777714391675
     },
-    "lastSpawnAt": 1777457480557,
+    "lastSpawnAt": 1777714391675,
     "wrongCd": {
       "41700340814048@lid": 1773497552986,
       "132951115317490@lid": 1775732649681,
@@ -377,8 +396,17 @@
     "premium": null
   },
   "120363426158386570@g.us": {
-    "active": null,
-    "lastSpawnAt": 1776796067805,
+    "active": {
+      "moraId": 2,
+      "correctName": "Thornel",
+      "options": [
+        "Omnaris",
+        "Thornel",
+        "Phantom-Stalker"
+      ],
+      "spawnedAt": 1777509914000
+    },
+    "lastSpawnAt": 1777509914000,
     "wrongCd": {
       "85376064581854@lid": 1776157565734,
       "243443360096505@lid": 1776157558630,
@@ -464,16 +492,16 @@
   },
   "120363425214613922@g.us": {
     "active": {
-      "moraId": 5,
-      "correctName": "Emberu",
+      "moraId": 7,
+      "correctName": "Umbrake",
       "options": [
-        "Emberu",
-        "Joltwing",
-        "Gem-Tortoise"
+        "Umbrake",
+        "Tesla-Dragon",
+        "Sky-Leviathan"
       ],
-      "spawnedAt": 1776986178049
+      "spawnedAt": 1778333198535
     },
-    "lastSpawnAt": 1776986178049,
+    "lastSpawnAt": 1778333198535,
     "wrongCd": {
       "85376064581854@lid": 1776156759450,
       "61495627001872@lid": 1776013761090,

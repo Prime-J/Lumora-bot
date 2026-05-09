@@ -4,7 +4,7 @@
     "id": "132951115317490@lid",
     "level": 7,
     "xp": 619,
-    "lucons": 22849,
+    "lucons": 23049,
     "rank": "Trainee",
     "title": "",
     "intelligence": 5,
@@ -1120,7 +1120,7 @@
     ],
     "starterChosen": false,
     "createdAt": "2026-04-03T21:03:50.244Z",
-    "lastDailyAt": 1776155794329,
+    "lastDailyAt": 1778333328795,
     "lastWeeklyWeek": "2026-W16",
     "lastHealAt": 1776016487793,
     "profileMasked": false,
@@ -1129,7 +1129,7 @@
       "ITM_014": 3,
       "MAT_001": 2,
       "MAT_002": 1,
-      "ITM_002": 9,
+      "ITM_002": 10,
       "ACC_001": 1,
       "ITM_016": 1,
       "ITM_005": 3,
@@ -1177,7 +1177,7 @@
     "pvpWinStreak": 0,
     "gender": "Male",
     "companionId": 38,
-    "companionBond": 53,
+    "companionBond": 55,
     "achievements": [
       "first_catch",
       "tamer_10",
@@ -1185,8 +1185,8 @@
       "rich_5k",
       "rich_20k"
     ],
-    "loginStreak": 3,
-    "lastLoginDate": "2026-04-14",
+    "loginStreak": 1,
+    "lastLoginDate": "2026-05-09",
     "battlesWon": 0,
     "totalHunts": 0,
     "totalMutations": 3,
@@ -1199,7 +1199,11 @@
       "autocatchRemaining": 0,
       "lastProDaily": 0,
       "lastHuntRefillAt": 0
-    }
+    },
+    "lastCmdAt": 1778333389196,
+    "bankBalance": 0,
+    "bankRegistered": false,
+    "lastWeeklyAt": 1778333331852
   },
   "54018575458536@lid": {
     "username": "nyx",
@@ -7488,7 +7492,7 @@
     "id": "61495627001872@lid",
     "level": 5,
     "xp": 521,
-    "lucons": 12795,
+    "lucons": 13155,
     "rank": "Trainee",
     "title": "",
     "intelligence": 25,
@@ -10415,7 +10419,7 @@
     ],
     "starterChosen": false,
     "createdAt": "2026-04-03T21:04:45.122Z",
-    "lastDailyAt": 1776795673462,
+    "lastDailyAt": 1778333371584,
     "lastWeeklyWeek": "2026-W17",
     "lastHealAt": 1776795668524,
     "profileMasked": false,
@@ -10456,16 +10460,17 @@
     "lastPvpWinAt": 1775818590618,
     "gender": "Male",
     "companionId": 99,
-    "companionBond": 26,
+    "companionBond": 28,
     "achievements": [
       "first_catch",
       "tamer_10",
       "tamer_25",
       "rich_5k",
-      "rift_survivor"
+      "rift_survivor",
+      "battle_1"
     ],
     "loginStreak": 1,
-    "lastLoginDate": "2026-04-21",
+    "lastLoginDate": "2026-05-09",
     "battlesWon": 1,
     "totalHunts": 0,
     "totalMutations": 0,
@@ -10486,14 +10491,17 @@
       "autocatchRemaining": 0,
       "lastProDaily": 0,
       "lastHuntRefillAt": 0
-    }
+    },
+    "lastCmdAt": 1778333379591,
+    "bankBalance": 0,
+    "bankRegistered": false
   },
   "267581311156378@lid": {
     "username": "prime",
     "id": "267581311156378@lid",
     "level": 1,
     "xp": 26,
-    "lucons": 99,
+    "lucons": 359,
     "rank": "Trainee",
     "title": "",
     "intelligence": 5,
@@ -10700,14 +10708,15 @@
     ],
     "starterChosen": false,
     "createdAt": "2026-04-03T21:05:00.585Z",
-    "lastDailyAt": 1777339893948,
+    "lastDailyAt": 1777510601283,
     "lastWeeklyWeek": "2026-W18",
     "lastHealAt": 1775537129145,
-    "profileMasked": false,
+    "profileMasked": true,
     "inventory": {
       "ITM_006": 1,
       "ITM_009": 1,
-      "CREATION_POWDER": 1
+      "CREATION_POWDER": 1,
+      "PROFILE_MASK": 1
     },
     "equipment": {
       "core": "GER_004",
@@ -10733,12 +10742,12 @@
     "pvpWinStreak": 0,
     "gender": "Male",
     "companionId": 74,
-    "companionBond": 13,
+    "companionBond": 15,
     "achievements": [
       "first_catch"
     ],
     "loginStreak": 1,
-    "lastLoginDate": "2026-04-28",
+    "lastLoginDate": "2026-04-30",
     "battlesWon": 0,
     "totalHunts": 0,
     "totalMutations": 1,
@@ -10751,7 +10760,11 @@
       "autocatchRemaining": 0,
       "lastProDaily": 0,
       "lastHuntRefillAt": 0
-    }
+    },
+    "lastCmdAt": 1777511372091,
+    "bankBalance": 0,
+    "bankRegistered": false,
+    "lastWeeklyAt": 1777510604442
   },
   "112038919540887@lid": {
     "username": "‎𐙚┆₊៸៸ 🍰 ᵏⁱʳⁱⁱ  𓈒",
@@ -11200,7 +11213,7 @@
     "id": "243443360096505@lid",
     "level": 6,
     "xp": 493,
-    "lucons": 2600,
+    "lucons": 2820,
     "rank": "Trainee",
     "title": "",
     "intelligence": 34,
@@ -15097,11 +15110,38 @@
         "isCorrupted": true,
         "pe": 0,
         "corrupted": false
+      },
+      {
+        "moraId": 34,
+        "name": "Terragon",
+        "type": "Terra",
+        "rarity": "Epic",
+        "level": 1,
+        "xp": 0,
+        "hp": 0,
+        "maxHp": 91,
+        "pe": 0,
+        "corrupted": false,
+        "generation": 1,
+        "moves": [
+          "Earthquake",
+          "Quicksand Hold",
+          "Crush Bite",
+          "Duststorm"
+        ],
+        "stats": {
+          "atk": 88,
+          "def": 90,
+          "spd": 39,
+          "energy": 72
+        },
+        "energy": 72,
+        "maxEnergy": 72
       }
     ],
     "starterChosen": false,
     "createdAt": "2026-04-03T21:13:29.590Z",
-    "lastDailyAt": 1776156899527,
+    "lastDailyAt": 1778333377576,
     "lastWeeklyWeek": "2026-W16",
     "lastHealAt": 1776157389953,
     "profileMasked": false,
@@ -15152,8 +15192,8 @@
       "tamer_10",
       "tamer_25"
     ],
-    "loginStreak": 3,
-    "lastLoginDate": "2026-04-14",
+    "loginStreak": 1,
+    "lastLoginDate": "2026-05-09",
     "battlesWon": 0,
     "totalHunts": 0,
     "totalMutations": 0,
@@ -15173,7 +15213,11 @@
       "autocatchRemaining": 0,
       "lastProDaily": 0,
       "lastHuntRefillAt": 0
-    }
+    },
+    "lastCmdAt": 1778333385713,
+    "bankBalance": 0,
+    "bankRegistered": false,
+    "lastWeeklyAt": 1778333385713
   },
   "huntEnergy": 192,
   "281410720014462@lid": {
@@ -31611,7 +31655,7 @@
     "bankDepositTotal": 123
   },
   "93965797830698@lid": {
-    "username": null,
+    "username": "scum che",
     "id": "93965797830698@lid",
     "level": 1,
     "xp": 0,
@@ -31673,6 +31717,7 @@
       "autocatchRemaining": 0,
       "lastProDaily": 0,
       "lastHuntRefillAt": 0
-    }
+    },
+    "lastCmdAt": 1777510713582
   }
 }
