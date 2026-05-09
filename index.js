@@ -203,7 +203,9 @@ const PRIMORDIAL = {
 const DATA_DIR = path.join(__dirname, "data");
 
 const SETTINGS_FILE = path.join(DATA_DIR, "settings.json");
-const PLAYERS_FILE = path.join(DATA_DIR, "players.json");
+// Historical filename is capitalized. Railway/Linux is case-sensitive, while
+// Windows is not; using "players.json" makes the JSON fallback look empty.
+const PLAYERS_FILE = path.join(DATA_DIR, "Players.json");
 const BANS_FILE = path.join(DATA_DIR, "bans.json");
 const MORA_FILE = path.join(DATA_DIR, "mora.json");
 const AFK_FILE = path.join(DATA_DIR, "afk.json");
@@ -292,15 +294,14 @@ async function bootPlayers() {
   let players = await mongoDb.loadAllPlayers();
 
   if (players === null) {
-    // CRITICAL: Mongo connected but the find() failed even after retries.
-    // Mongo HAS the data — we just couldn't read it. DO NOT fall back to
-    // JSON (which on Railway is empty/stale after redeploy) because that
-    // would make every player "unregistered". Return empty + writes are
-    // already blocked by mongo.markDirty's bootLoadFailed guard.
+    const fallbackPlayers = loadJSON(PLAYERS_FILE, {});
+    // CRITICAL: Mongo connected but the read failed even after retries.
+    // Writes are blocked by mongo.markDirty's bootLoadFailed guard. Use the
+    // warm cache for reads so players do not appear unregistered.
     console.error("[boot] ⚠️  Mongo load failed. Bot is in READ-ONLY-FOR-MONGO mode.");
-    console.error("[boot] ⚠️  Restart Railway to retry. Players will appear unregistered until then.");
+    console.error(`[boot] ⚠️  Loaded ${Object.keys(fallbackPlayers).length} players from JSON warm cache.`);
     console.error("[boot] ⚠️  No saves will reach Mongo, so existing data is SAFE.");
-    return {};
+    return fallbackPlayers;
   }
 
   // Fall back to JSON file if MongoDB returned nothing (genuinely empty DB)

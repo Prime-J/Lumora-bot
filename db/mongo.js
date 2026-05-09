@@ -2,10 +2,14 @@ const mongoose = require("mongoose");
 
 // MongoDB connection settings
 const MONGODB_URI = process.env.MONGODB_URI || "";
-console.log("[mongo] MONGODB_URI env var:", process.env.MONGODB_URI);
+console.log("[mongo] MONGODB_URI env var:", MONGODB_URI ? "[set]" : "[missing]");
 
 const FLUSH_INTERVAL = 3000; // 3 seconds, batched writes
 const FLUSH_TIMEOUT = 5000; // 5 second timeout for graceful shutdown
+const CONNECT_TIMEOUT_MS = 45000;
+const SOCKET_TIMEOUT_MS = 180000;
+const SERVER_SELECTION_TIMEOUT_MS = 30000;
+const LOAD_MAX_TIME_MS = 120000;
 
 let connected = false;
 let bootLoadFailed = false; // CRITICAL safety: set true if initial load errored;
@@ -45,9 +49,11 @@ async function initMongo() {
 
   try {
     await mongoose.connect(MONGODB_URI, {
-      serverSelectionTimeoutMS: 15000,
-      socketTimeoutMS: 60000,   // bumped from 10s — initial find() needs longer
-      connectTimeoutMS: 30000,
+      serverSelectionTimeoutMS: SERVER_SELECTION_TIMEOUT_MS,
+      socketTimeoutMS: SOCKET_TIMEOUT_MS,
+      connectTimeoutMS: CONNECT_TIMEOUT_MS,
+      maxPoolSize: 5,
+      retryReads: true,
     });
     connected = true;
     console.log("[mongo] Connected to MongoDB Atlas");
@@ -72,11 +78,17 @@ async function loadAllPlayers() {
   const MAX_TRIES = 3;
   for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
     try {
-      // .lean() skips Mongoose hydration — much faster on large collections
-      // .maxTimeMS(60000) lets the server-side query run longer than 10s
-      const docs = await Player.find({}).maxTimeMS(60000).lean();
+      // Cursor loading avoids one giant array response timing out on slower
+      // Railway <-> Atlas links.
       const players = {};
-      for (const doc of docs) {
+      const cursor = Player.find({})
+        .select({ jid: 1, data: 1, _id: 0 })
+        .lean()
+        .batchSize(25)
+        .maxTimeMS(LOAD_MAX_TIME_MS)
+        .cursor();
+
+      for await (const doc of cursor) {
         players[doc.jid] = doc.data || {};
       }
       console.log(`[mongo] Loaded ${Object.keys(players).length} players from MongoDB (attempt ${attempt})`);
