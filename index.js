@@ -120,6 +120,7 @@ const miscSystem = require('./systems/misc');
 const arenaSystem = require('./systems/npcArena');
 const proSystem = require('./systems/pro');
 const moraCreationSystem = require('./systems/moraCreation');
+const cardsmithSystem = require('./systems/cardsmith');
 const raidsSystem = require('./systems/raids');
 const starSystem = require('./systems/star');
 const updatesSystem = require('./systems/updates');
@@ -156,6 +157,11 @@ const NEW_COMMANDS = [
   { name: ".creations",    section: "admin", blurb: "Owner: list pending Mora submissions",             addedAt: 1776067200000 },
   { name: ".approve-mora", section: "admin", blurb: "Owner: approve a creation + pay creator",          addedAt: 1776067200000 },
   { name: ".reject-mora",  section: "admin", blurb: "Owner: reject a pending creation",                 addedAt: 1776067200000 },
+  { name: ".cardsmith-help", section: "cards", blurb: "See all Cardsmith pipeline commands",            addedAt: Date.now() },
+  { name: ".card-add",       section: "cards", blurb: "Log a new card: anime | character | tier",       addedAt: Date.now() },
+  { name: ".card-list",      section: "cards", blurb: "Browse the card pipeline (filterable)",          addedAt: Date.now() },
+  { name: ".card-stage",     section: "cards", blurb: "Move a card to pic / gpt / approved / spawned",  addedAt: Date.now() },
+  { name: ".card-stats",     section: "cards", blurb: "Dashboard — totals by stage / tier / smith",     addedAt: Date.now() },
 ];
 function getActiveNewCommands() {
   const now = Date.now();
@@ -3899,17 +3905,28 @@ if (command === "choose") {
         const mora = findMora(moraList, query) || findMora(moraList, queryRaw);
         if (!mora) return sock.sendMessage(chatId, { text: `❌ Mora not found: *${queryRaw}*` });
 
-        // Canvas images disabled - user preference
+        const caption =
+          `🐉 *MORA INFO*\n\n` +
+          `🆔 ID: *${mora.id}*\n` +
+          `🔰 Name: *${mora.name}*\n` +
+          `⚡ Type: *${mora.type}*\n` +
+          `💠 Rarity: *${mora.rarity}*\n\n` +
+          `📖 *Description*\n${mora.description || "—"}\n`;
 
-        return sock.sendMessage(chatId, {
-          text:
-            `🐉 *MORA INFO*\n\n` +
-            `🆔 ID: *${mora.id}*\n` +
-            `🔰 Name: *${mora.name}*\n` +
-            `⚡ Type: *${mora.type}*\n` +
-            `💠 Rarity: *${mora.rarity}*\n\n` +
-            `📖 *Description*\n${mora.description || "—"}\n`,
-        });
+        // Try to send with sprite image; fall back to text-only if no image.
+        const sprite = moraImagePath(mora);
+        if (sprite) {
+          try {
+            const fs = require("fs");
+            return sock.sendMessage(chatId, {
+              image: fs.readFileSync(sprite),
+              caption,
+            }, { quoted: msg });
+          } catch (e) {
+            // fall through to text
+          }
+        }
+        return sock.sendMessage(chatId, { text: caption });
       }
 // --- OWNER GAUGE COMMANDS ---
 if (command === "set-gauge") {
@@ -4116,6 +4133,31 @@ if (command === "moracreation-on") {
     settingsModule.saveSettings(settings);
     return sock.sendMessage(chatId, { text: "✅ Mora Creation Labs *enabled*." });
 }
+
+// ─── MORA SPAWN TOGGLE (Owner only) ───────────
+if (command === "spawn-on" || command === "spawnon") {
+    if (!isOwner) return sock.sendMessage(chatId, { text: "🛑 Owner only." });
+    settings.features = settings.features || {};
+    settings.features.groupSpawnsEnabled = true;
+    const settingsModule = require("./lib/settings");
+    settingsModule.saveSettings(settings);
+    return sock.sendMessage(chatId, { text: "🌌 Wild Mora spawns *ENABLED* across all groups." });
+}
+if (command === "spawn-off" || command === "spawnoff") {
+    if (!isOwner) return sock.sendMessage(chatId, { text: "🛑 Owner only." });
+    settings.features = settings.features || {};
+    settings.features.groupSpawnsEnabled = false;
+    const settingsModule = require("./lib/settings");
+    settingsModule.saveSettings(settings);
+    return sock.sendMessage(chatId, { text: "🌑 Wild Mora spawns *DISABLED*. The wilds fall silent." });
+}
+if (command === "spawn-status" || command === "spawnstatus") {
+    if (!isOwner) return sock.sendMessage(chatId, { text: "🛑 Owner only." });
+    const on = settings?.features?.groupSpawnsEnabled !== false;
+    return sock.sendMessage(chatId, {
+        text: `🌌 *Wild Mora spawns:* ${on ? "✅ ENABLED" : "🌑 DISABLED"}\n_Toggle with_ *.spawn-on* / *.spawn-off*`,
+    });
+}
 if (command === "moracreation-off") {
     if (!isOwner) return sock.sendMessage(chatId, { text: "🛑 Owner only." });
     settings.moraCreationGroups = settings.moraCreationGroups || { enabled: true, allowed: [] };
@@ -4123,6 +4165,67 @@ if (command === "moracreation-off") {
     const settingsModule = require("./lib/settings");
     settingsModule.saveSettings(settings);
     return sock.sendMessage(chatId, { text: "✅ Mora Creation Labs *disabled*." });
+}
+
+// ─────────────────────────────────────────────
+// CARDSMITH — Anime card production tracker (systems/cardsmith.js)
+// ─────────────────────────────────────────────
+{
+    const cardsmithHelpers = { getMentionedJids, getRepliedJid, toUserJidFromArg };
+    if (command === "cardsmith-help" || command === "card-help" || command === "cards-help") {
+        return cardsmithSystem.cmdHelp(ctx, chatId, senderId, msg);
+    }
+    if (command === "cardsmith-setgroup") {
+        return cardsmithSystem.cmdSetGroup(ctx, chatId, senderId, msg);
+    }
+    if (command === "cardsmith-removegroup") {
+        return cardsmithSystem.cmdRemoveGroup(ctx, chatId, senderId, msg);
+    }
+    if (command === "add-cardsmith" || command === "addcardsmith") {
+        return cardsmithSystem.cmdAddSmith(ctx, chatId, senderId, msg, args, cardsmithHelpers);
+    }
+    if (command === "remove-cardsmith" || command === "removecardsmith") {
+        return cardsmithSystem.cmdRemoveSmith(ctx, chatId, senderId, msg, args, cardsmithHelpers);
+    }
+    if (command === "cardsmiths" || command === "cardsmith-roster") {
+        return cardsmithSystem.cmdRoster(ctx, chatId, senderId, msg);
+    }
+    if (command === "cardsmith-on") {
+        return cardsmithSystem.cmdToggle(ctx, chatId, senderId, msg, true);
+    }
+    if (command === "cardsmith-off") {
+        return cardsmithSystem.cmdToggle(ctx, chatId, senderId, msg, false);
+    }
+    if (command === "card-add" || command === "cardadd") {
+        return cardsmithSystem.cmdAdd(ctx, chatId, senderId, msg, args);
+    }
+    if (command === "card-list" || command === "cardlist" || command === "cards") {
+        return cardsmithSystem.cmdList(ctx, chatId, senderId, msg, args);
+    }
+    if (command === "card-mine" || command === "cardmine" || command === "mycards") {
+        return cardsmithSystem.cmdMine(ctx, chatId, senderId, msg);
+    }
+    if (command === "card-view" || command === "cardview" || command === "card") {
+        return cardsmithSystem.cmdView(ctx, chatId, senderId, msg, args);
+    }
+    if (command === "card-stage" || command === "cardstage") {
+        return cardsmithSystem.cmdStage(ctx, chatId, senderId, msg, args);
+    }
+    if (command === "card-assign" || command === "cardassign") {
+        return cardsmithSystem.cmdAssign(ctx, chatId, senderId, msg, args, cardsmithHelpers);
+    }
+    if (command === "card-price" || command === "cardprice") {
+        return cardsmithSystem.cmdPrice(ctx, chatId, senderId, msg, args);
+    }
+    if (command === "card-note" || command === "cardnote") {
+        return cardsmithSystem.cmdNote(ctx, chatId, senderId, msg, args);
+    }
+    if (command === "card-delete" || command === "carddelete" || command === "card-rm") {
+        return cardsmithSystem.cmdDelete(ctx, chatId, senderId, msg, args);
+    }
+    if (command === "card-stats" || command === "cardstats") {
+        return cardsmithSystem.cmdStats(ctx, chatId, senderId, msg);
+    }
 }
 
 // ─────────────────────────────────────────────
@@ -4408,7 +4511,57 @@ if (command === "buy-bm") {
           if (num >= 1 && num <= owned.length) chosen = owned[num - 1];
           else chosen = owned.find((m) => Number(m.moraId) === num) || null;
         } else {
-          chosen = owned.find((m) => String(m.name || "").toLowerCase() === String(queryRaw).trim().toLowerCase()) || null;
+          // NAME-BASED LOOKUP: gather ALL matches. If exactly one, drop into the
+          // single-mora detail view below. If multiple, show a picker list with sprite.
+          const nameQ = String(queryRaw).trim().toLowerCase();
+          const matches = owned
+            .map((m, i) => ({ m, i }))
+            .filter(({ m }) => String(m?.name || "").toLowerCase().includes(nameQ));
+
+          if (matches.length === 0) {
+            return sock.sendMessage(chatId, { text: `❌ No tamed Mora match *${queryRaw}*.` });
+          }
+          if (matches.length === 1) {
+            chosen = matches[0].m;
+          } else {
+            const partySet = new Set(
+              Array.isArray(p.party)
+                ? p.party.filter((x) => x !== null && x !== undefined)
+                : []
+            );
+            const lines = matches.map(({ m, i }) => {
+              const lv = m.level ?? 1;
+              const pe = Math.floor(m.pe || 0);
+              const inParty = partySet.has(i) ? " ⚔️ [PARTY]" : "";
+              const corrupt = m.corrupted ? " 🕷 CORRUPTED" : "";
+              return (
+                `${i + 1}️⃣ *${m.name}*${inParty}${corrupt}\n` +
+                `🆔 ID_${m.moraId} • Lv ${lv}\n` +
+                `❤️ ${m.hp}/${m.maxHp} • 🕷 PE ${pe}`
+              );
+            });
+
+            const caption =
+              `━━━━━━━━━━━━━━━━━━\n` +
+              `🐉 *YOUR ${String(queryRaw).toUpperCase()}s* (${matches.length})\n` +
+              `━━━━━━━━━━━━━━━━━━\n\n` +
+              lines.join(`\n\n──────────────────\n\n`) +
+              `\n\n━━━━━━━━━━━━━━━━━━\n` +
+              `Pick one with *.tamed <slot>* — e.g. *.tamed ${matches[0].i + 1}*\n` +
+              `Move into party with *.t2party <slot>*`;
+
+            const sprite = moraImagePath(matches[0].m);
+            if (sprite) {
+              try {
+                const fs = require("fs");
+                return sock.sendMessage(chatId, {
+                  image: fs.readFileSync(sprite),
+                  caption,
+                }, { quoted: msg });
+              } catch {}
+            }
+            return sock.sendMessage(chatId, { text: caption });
+          }
         }
 
         if (!chosen) return sock.sendMessage(chatId, { text: "❌ That Mora is not in your tamed list." });
@@ -4445,21 +4598,31 @@ if (command === "buy-bm") {
               .join("\n\n")
           : "🃏 (no moves saved yet)";
 
-        return sock.sendMessage(chatId, {
-          text:
-            `🗡️ *${String(chosen.name).toUpperCase()}* (ID_${chosen.moraId})\n\n` +
-            `⚡ Type: *${chosen.type || species?.type || "—"}*\n` +
-            `💠 Rarity: *${chosen.rarity || species?.rarity || "—"}*\n` +
-            `📈 Level: *${lv}*  •  ✨ XP: *${xpNow}/${need}*\n` +
-            `❤️ HP: *${chosen.hp}/${chosen.maxHp}*\n` +
-            `🕷 PE: *${Math.floor(chosen.pe || 0)}*\n\n` +
-            `📌 *STATS*\n` +
-            `⚔️ ATK: ${atk}   🛡️ DEF: ${def}\n` +
-            `💨 SPD: ${spd}   🔋 ENERGY: ${energy}\n\n` +
-            `🎴 *CURRENT MOVES*\n\n` +
-            moveBlocks +
-            `\n\n📖 *DESCRIPTION*\n${species?.description || "—"}\n`,
-        });
+        const detailCaption =
+          `🗡️ *${String(chosen.name).toUpperCase()}* (ID_${chosen.moraId})\n\n` +
+          `⚡ Type: *${chosen.type || species?.type || "—"}*\n` +
+          `💠 Rarity: *${chosen.rarity || species?.rarity || "—"}*\n` +
+          `📈 Level: *${lv}*  •  ✨ XP: *${xpNow}/${need}*\n` +
+          `❤️ HP: *${chosen.hp}/${chosen.maxHp}*\n` +
+          `🕷 PE: *${Math.floor(chosen.pe || 0)}*\n\n` +
+          `📌 *STATS*\n` +
+          `⚔️ ATK: ${atk}   🛡️ DEF: ${def}\n` +
+          `💨 SPD: ${spd}   🔋 ENERGY: ${energy}\n\n` +
+          `🎴 *CURRENT MOVES*\n\n` +
+          moveBlocks +
+          `\n\n📖 *DESCRIPTION*\n${species?.description || "—"}\n`;
+
+        const detailSprite = moraImagePath(chosen);
+        if (detailSprite) {
+          try {
+            const fs = require("fs");
+            return sock.sendMessage(chatId, {
+              image: fs.readFileSync(detailSprite),
+              caption: detailCaption,
+            }, { quoted: msg });
+          } catch {}
+        }
+        return sock.sendMessage(chatId, { text: detailCaption });
       }
 
       // ================= TAMED SEARCH =================

@@ -61,14 +61,17 @@ function normRarity(r) {
   return "common";
 }
 
+// v0.4.0 — Rare/Epic/Legendary/Mythical pulled WAY down so they feel earned again.
+// Old: common 50, uncommon 25, rare 10, epic 7, legendary 5, mythical 3
+// New: rare halved, epic ~1/3, legendary halved, mythical 1/3.
+// Common weight bumped to absorb the dropped weight share.
 const RARITY_WEIGHTS = {
-  common: 50,
+  common: 65,
   uncommon: 25,
-  rare: 10,
-  epic: 7,
-  legendary: 5,
-  mythical: 3,
-  
+  rare: 5,
+  epic: 2,
+  legendary: 1,
+  mythical: 1,
 };
 
 function weightedPick(list, weightFn) {

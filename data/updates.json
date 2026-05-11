@@ -1,31 +1,34 @@
 {
   "current": {
-    "version": "0.1.2",
-    "name": "Cross-Faction Raids",
-    "releasedAt": 1776067200000,
-    "notes": "Cross-faction raids, Kael the Riftwalker, faction treasuries, walls, the .donate command, Star (AI companion)."
+    "version": "0.3.0",
+    "name": "Battlegrounds",
+    "releasedAt": 1778976000000,
+    "notes": "🏹 Hunting Grounds — wild Mora encounters in dedicated groups.\n🏦 Banks & Alverah — store Lucons safely, daily / weekly taxes.\n🥷 Robbery — Snatch Glove with three tiers.\n📊 Ranks — rank cards, full ladder, rank-up reveal.\n💰 Wealth — bank + wallet + total + wealth leaderboard.\n🏅 Achievements — unlocks with rewards, equip on .rank.\n⚔️ Battlegrounds — faction wars, cross-faction skirmishes.\n🎭 Profile mask, lucon weight reduced on global leaderboard."
   },
   "pending": {
-    "version": "0.1.3",
-    "name": "The Banking Era",
+    "version": "0.4.0",
+    "name": "The Card Era",
     "stages": [
-      "🐛 Bug fixes — NPC arena uses party only, NPC AI sharpens (charges + switches), arena rewards rebalanced",
-      "🌲 Hunting — no mid-hunt healing, increased difficulty",
-      "⚖️ .submit-mora no longer rewards Lucons",
-      "🪦 'Rookie' tag laid to rest",
-      "🕒 Daily / Weekly timers fixed (real next-claim time)",
-      "🏦 BANKS — store Lucons safely, Alverah taxes daily/weekly claims by % of total wealth",
-      "🥷 ROBBERY — Snatch Glove (3 tiers: 5s / 3s / 2s defend windows). Defender's aura = damage on failed snatch.",
-      "📊 .rank — generated rank card (canvas)",
-      "📋 .ranks — full rank ladder",
-      "🎉 Rank-up reveal image",
-      "💰 .wealth — bank + wallet + total + your wealth-lb position",
-      "🏆 .wealth-lb — wealth leaderboard",
-      "🎭 Profile mask — sold in market, hides .profile from others",
-      "🏅 Achievements — unlock rewards + .equip-achievement to show on .rank",
-      "👑 Alverah — meet the Bank Manager (.main-bank)",
-      "📉 Lucon weight on global leaderboard reduced"
-    ]
+      "🎴 Anime Cards — collect tiered cards (T1–T5; T6 & S come later)",
+      "📺 First fandom: Jujutsu Kaisen. Naruto, One Piece, Bleach to follow.",
+      "⭐ Star — a sister bot dedicated to card management",
+      "🌐 Lumora Vault — internal website where cards are reviewed, launched, and tracked",
+      "🤝 .card-register — cardsmiths submit raw card images from WhatsApp",
+      "🚀 .card-launch — owner pushes finished cards live to the vault (owner-only)",
+      "💎 Card economy — sell, auction, and gift cards between players",
+      "🏆 Anime Collector Tiers — complete a full anime set, claim top-collector benefits",
+      "🎭 Mora Emojis — every Mora message gets its type/rarity emoji glyph",
+      "🎣 New Catch System — wild Mora encounter & taming flow refreshed from the ground up",
+      "🥷 Rob payouts raised — robbery actually pays now",
+      "🧤 Snatch Glove rework — no longer one-use. Glove is only lost when the robber is caught.",
+      "🌑 Corrupted Tamed Mora bite back — corruption now damages the tamer over time",
+      "🌫️ Mora spawn rebalance — legendaries / epics / rares are *truly* rare again",
+      "🎲 Random spawn levels — wild mora arrive at varied levels",
+      "💥 Underdog scaling — a low-level mora defeating a higher one gets a massive HP swing reward",
+      "❤️ .heal heals party mora only",
+      "🖼️ Battle scenes (preview) — pixel battle frames showing mora + HP bars in chat"
+    ],
+    "notes": "Cards arrive. The Vault opens. The Hunt is reborn."
   },
   "history": []
 }
