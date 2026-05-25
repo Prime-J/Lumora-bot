@@ -127,6 +127,7 @@ const updatesSystem = require('./systems/updates');
 const bankSystem = require('./systems/bank');
 const robberySystem = require('./systems/robbery');
 const ranksSystem = require('./systems/ranks');
+const shardSystem = require('./systems/shards');
 const { generateRankCard, generateRankUpCard } = require('./systems/rankCardCanvas');
 const { generateWealthCard, findWealthRank, buildWealthLb } = require('./systems/wealthCanvas');
 const { generateAlverahCard } = require('./systems/alverahCanvas');
@@ -1379,6 +1380,11 @@ function migratePlayers(players, moraList) {
     if (typeof p.totalHunts !== "number") { p.totalHunts = 0; changed = true; }
     if (typeof p.totalMutations !== "number") { p.totalMutations = 0; changed = true; }
 
+    // ── Shard / merge system (v0.5.0 rework) ─────────────────
+    if (!p.shards || typeof p.shards !== "object") { p.shards = {}; changed = true; }
+    if (!p.shardStorage || typeof p.shardStorage !== "object") { p.shardStorage = {}; changed = true; }
+    if (!("currentMerge" in p)) { p.currentMerge = null; changed = true; }
+
     if (!p.inventory || typeof p.inventory !== "object") { p.inventory = {}; changed = true; }
     if (!p.equipment || typeof p.equipment !== "object") {
       p.equipment = { core: null, charm: null, tool: null, relic: null, cloak: null, boots: null };
@@ -1896,6 +1902,7 @@ sock.ev.removeAllListeners("messages.upsert");
         regenWallIfDue,
         getWallLevelCapacity,
         addFactionPoints,
+        shardSystem,
       };
 
       if (isGroupJid(chatId) && settings.features.groupSpawnsEnabled !== false) {
@@ -2827,6 +2834,23 @@ if (command === "uptime") {
       }
       if (command === "consume") {
         return inventorySystem.cmdConsume(ctx, chatId, senderId, msg, args);
+      }
+
+      // ============================
+      // SHARD / MERGE SYSTEM (v0.5.0 rework)
+      // ============================
+      if (command === "shards" || command === "vault") {
+        return shardSystem.cmdShards(ctx, chatId, senderId, msg);
+      }
+      if (command === "awaken") {
+        return shardSystem.cmdAwaken(ctx, chatId, senderId, msg, args);
+      }
+      if (command === "shed" || command === "unmerge") {
+        return shardSystem.cmdShed(ctx, chatId, senderId, msg);
+      }
+      if (command === "merge") {
+        // Retired in v0.5.0 — soft-alias users back to .awaken
+        return shardSystem.cmdLegacyMerge(ctx, chatId, senderId, msg, args);
       }
       if (command === "gear") {
         return gearSystem.cmdGear(ctx, chatId, senderId, msg, args, {

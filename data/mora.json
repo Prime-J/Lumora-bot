@@ -4,6 +4,7 @@
     "name": "Nylon",
     "type": "Aqua",
     "rarity": "common",
+    "merge": "partial",
     "description": "A disciplined river guardian Mora. Nylon flows like water but strikes with calculated precision.",
     "baseStats": {
       "hp": 65,
@@ -83,6 +84,7 @@
     "name": "Thornel",
     "type": "Nature",
     "rarity": "common",
+    "merge": "partial",
     "description": "A razor-leaf predator clad in living armor. Its twin blade-arms slice with surgical precision.",
     "baseStats": {
       "hp": 58,
@@ -241,6 +243,7 @@
     "name": "Sparko",
     "type": "Volt",
     "rarity": "common",
+    "merge": "partial",
     "description": "A lightning-fast predator that overwhelms enemies with speed and electric bursts.",
     "baseStats": {
       "hp": 48,
@@ -1072,6 +1075,7 @@
     "name": "Voltrix",
     "type": "Volt",
     "rarity": "Uncommon",
+    "merge": "partial",
     "description": "A sharp-minded Volt Mora that stores charge in its core plates. Voltrix strikes fast, then punishes mistakes.",
     "baseStats": {
       "hp": 52,
@@ -3936,6 +3940,7 @@
     "name": "Eternyx",
     "type": "Cosmic",
     "rarity": "Legendary",
+    "merge": "full",
     "description": "A Mora formed from time energy itself. Eternyx distorts reality with every move.",
     "baseStats": {
       "hp": 95,
@@ -6822,6 +6827,7 @@
     "name": "Sky-Leviathan",
     "type": "Wind",
     "rarity": "Epic",
+    "merge": "partial",
     "description": "A massive serpent that swims through the air. Its presence changes the weather instantly.",
     "baseStats": {
       "hp": 130,
@@ -7065,6 +7071,7 @@
     "name": "Zovax",
     "type": "Void",
     "rarity": "Legendary",
+    "merge": "full",
     "description": "The First Crag. It is said Zovax was the very first entity to step through the Primordial Rift. Its body is made of shifting star-matter.",
     "baseStats": {
       "hp": 150,

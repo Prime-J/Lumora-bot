@@ -48,9 +48,16 @@ function clearWildBattle(chatId, senderId) {
 
 function getDisplayName(players, jid) {
   const p = players?.[jid];
-  return p?.username && String(p.username).trim()
+  const base = p?.username && String(p.username).trim()
     ? String(p.username).trim()
     : String(jid).split("@")[0];
+  // Apply merge prefix if active — `[Tideling] Romio`
+  try {
+    const shardSystem = require("./shards");
+    return shardSystem.getMergedDisplayName(p, base);
+  } catch {
+    return base;
+  }
 }
 
 function hpLine(hpBar, m) {
@@ -284,19 +291,58 @@ function chooseWildMove(species, wildMora, personality) {
   return moves[randInt(0, moves.length - 1)];
 }
 
-function buildMoveList(mora, species, battleMath) {
-  const moves = Array.isArray(mora?.moves) ? mora.moves : [];
-  if (!moves.length) return "No moves saved.";
+function buildMoveList(mora, species, battleMath, player = null, loadMora = null) {
+  const sections = [];
 
-  return moves.map((name, i) => {
-    const mv = getMoveData(species, name);
-    if (!mv) return `${i + 1}) *${name}* ⚠️ missing data`;
-    return (
-      `${i + 1}) *${name}*\n` +
-      `   💥 ${mv.power ?? 0}  🎯 ${mv.accuracy ?? 100}  🔋 ${battleMath.calcEnergyCost(mv)}\n` +
-      `   📝 ${mv.desc || ""}`
+  // ── ACTIVE MORA section (selectable in current wild combat) ─────
+  const moves = Array.isArray(mora?.moves) ? mora.moves : [];
+  if (moves.length) {
+    const lines = moves.map((name, i) => {
+      const mv = getMoveData(species, name);
+      if (!mv) return `${i + 1}) *${name}* ⚠️ missing data`;
+      return (
+        `${i + 1}) *${name}*\n` +
+        `   💥 ${mv.power ?? 0}  🎯 ${mv.accuracy ?? 100}  🔋 ${battleMath.calcEnergyCost(mv)}\n` +
+        `   📝 ${mv.desc || ""}`
+      );
+    });
+    sections.push(
+      `─── ACTIVE MORA: ${mora?.name || "—"} ───\n` + lines.join("\n\n")
     );
-  }).join("\n\n");
+  }
+
+  // ── MERGED section (preview only in v0.5.0) ─────────────────────
+  try {
+    if (player && loadMora) {
+      const shardSystem = require("./shards");
+      const merge = shardSystem.getCurrentMerge(player);
+      if (merge && Array.isArray(merge.moves) && merge.moves.length) {
+        const mergeSpecies =
+          loadMora().find((m) => Number(m.id) === Number(merge.moraId)) || null;
+        const tierTag =
+          merge.tier === shardSystem.TIER_FULL ? " 🔥FULL" : " ✨PARTIAL";
+        const lines = merge.moves.map((name, i) => {
+          const mv = mergeSpecies ? getMoveData(mergeSpecies, name) : null;
+          if (!mv) return `M${i + 1}) *${name}*`;
+          return (
+            `M${i + 1}) *${name}*\n` +
+            `   💥 ${mv.power ?? 0}  🎯 ${mv.accuracy ?? 100}\n` +
+            `   📝 ${mv.desc || ""}`
+          );
+        });
+        sections.push(
+          `─── MERGED: ${merge.name}${tierTag} ───\n` +
+          lines.join("\n\n") +
+          `\n\n_Merged-form combat ships in v0.5.x. For now, your active Mora fights._`
+        );
+      }
+    }
+  } catch (e) {
+    // ignore — display path must never throw
+  }
+
+  if (!sections.length) return "No moves available.";
+  return sections.join("\n\n");
 }
 
 function regenWildPartyEnergy(player, activeIdx) {
@@ -478,7 +524,7 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
       text:
         `🎴 *Choose your move*\n` +
         `Use: *.attack 1-5* or *.attack MoveName*\n\n` +
-        buildMoveList(playerMora, playerSpecies, battleMath)
+        buildMoveList(playerMora, playerSpecies, battleMath, player, ctx.loadMora)
     }, { quoted: msg });
   }
 
@@ -558,6 +604,21 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
     // ── Mutation decay + companion bond ──────────────────────
     decayMutations(player);
     if (player.companionId != null) player.companionBond = (player.companionBond || 0) + 1;
+
+    // ── Shard drop (v0.5.0 rework) ───────────────────────────
+    // If the wild Mora carried a `merge` flag in mora.json, roll for a
+    // shard crystallization. The drop is additive — taming still works.
+    try {
+      const shardSystem = require("./shards");
+      const wildSpecies = ctx.loadMora().find(
+        (x) => Number(x.id) === Number(state.wildMora.moraId)
+      );
+      const shardLog = shardSystem.dropShardOnDefeat(player, wildSpecies, { source: "defeat" });
+      if (shardLog) logs.push(shardLog);
+    } catch (e) {
+      // never break the defeat path because of a shard hiccup
+      console.log("shard drop error:", e?.message || e);
+    }
 
     // ── Mission hooks ─────────────────────────────────────────
     try {
