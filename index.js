@@ -128,6 +128,7 @@ const bankSystem = require('./systems/bank');
 const robberySystem = require('./systems/robbery');
 const ranksSystem = require('./systems/ranks');
 const shardSystem = require('./systems/shards');
+const questSystem = require('./systems/quests');
 const { generateRankCard, generateRankUpCard } = require('./systems/rankCardCanvas');
 const { generateWealthCard, findWealthRank, buildWealthLb } = require('./systems/wealthCanvas');
 const { generateAlverahCard } = require('./systems/alverahCanvas');
@@ -2852,6 +2853,23 @@ if (command === "uptime") {
         // Retired in v0.5.0 — soft-alias users back to .awaken
         return shardSystem.cmdLegacyMerge(ctx, chatId, senderId, msg, args);
       }
+      if (command === "trade") {
+        return shardSystem.cmdTrade(ctx, chatId, senderId, msg, args, {
+          getMentionedJids,
+        });
+      }
+      if (command === "storage" || command === "shardstorage") {
+        return shardSystem.cmdStorage(ctx, chatId, senderId, msg, args);
+      }
+      if (command === "quests") {
+        return questSystem.cmdQuests(ctx, chatId, senderId, msg);
+      }
+      if (command === "quest") {
+        return questSystem.cmdQuest(ctx, chatId, senderId, msg, args);
+      }
+      if (command === "styles") {
+        return questSystem.cmdStyles(ctx, chatId, senderId, msg);
+      }
       if (command === "gear") {
         return gearSystem.cmdGear(ctx, chatId, senderId, msg, args, {
           getMentionedJids,
@@ -4518,14 +4536,14 @@ if (command === "buy-bm") {
           return sock.sendMessage(chatId, {
             text:
               `━━━━━━━━━━━━━━━━━━\n` +
-              `🐉 *YOUR TAMED MORA*\n` +
+              `🐉 *YOUR TAMED MORA* _(legacy collection)_\n` +
               `━━━━━━━━━━━━━━━━━━\n\n` +
               lines.join(`\n\n──────────────────\n\n`) +
               `\n\n━━━━━━━━━━━━━━━━━━\n` +
-              `Tips:\n` +
+              `_💎 Combat now uses SHARDS, not party Mora. This list is your historical collection._\n` +
               `• *.tamed 1* to inspect a Mora\n` +
-              `• *.t2party 1 3 5* to move Mora into party\n` +
-              `• *.party* to view current party`,
+              `• *.shards* — your shard vault (used in combat)\n` +
+              `• *.awaken <name>* — merge with a shard`,
           });
         }
 
@@ -5449,9 +5467,27 @@ const profileCaption =
     streakLine +
     `🏆 Achievements: *${achCount}/${totalAch}*\n\n` +
 
-    `🐉 *M O R A*\n` +
-    `├ 🐾 Owned: *${moraCount}*\n` +
-    `└ ⭐ Main Mora: *${main?.name || "None"}*` +
+    `🌀 *M E R G E  S T A T E*\n` +
+    (() => {
+      const merge = p.currentMerge || null;
+      const shardCount = p.shards && typeof p.shards === "object"
+        ? Object.values(p.shards).reduce((a, b) => a + Number(b || 0), 0)
+        : 0;
+      if (merge) {
+        const tierTag = merge.tier === "full" ? "🔥 FULL" : merge.tier === "partial" ? "✨ PARTIAL" : "—";
+        return (
+          `├ 🌟 Active: *[${merge.name}]* (${tierTag})\n` +
+          `└ 💎 Shards in vault: *${shardCount}* (.shards)`
+        );
+      }
+      return (
+        `├ 🩶 Active: *Base form*\n` +
+        `└ 💎 Shards in vault: *${shardCount}* (.shards)`
+      );
+    })() + `\n\n` +
+    `🐉 *M O R A* _(legacy collection)_\n` +
+    `├ 🐾 Tamed: *${moraCount}*\n` +
+    `└ ⭐ Latest: *${main?.name || "None"}*` +
     (main ? ` (${main.type || "—"}) • Lv *${main.level ?? 1}*` : "");
         // Try to send visual profile card
         try {

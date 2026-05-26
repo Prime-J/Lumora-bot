@@ -1,6 +1,8 @@
 # Lumora WhatsApp Bot — Rework Design Doc
 
-*Living document. Shape-session: 2026-05-25. Rework targeting v0.5.0.*
+*Living document. Shape-session: 2026-05-25. Implementation: 2026-05-25 → 2026-05-26 (v0.5.0).*
+
+> **Status:** rework is shipped as a single bundled release. The carrier loop (shards + merge + player-vs-wild combat), trade, quests + 2 starter styles, and the legacy-collection treatment are all live. Real-money storage upgrades are the only piece explicitly carved out (payment infra dependency — see §10).
 
 This rework brings the bot in line with the Roblox design (see [LUMORA_GAME_PLAN.md](LUMORA_GAME_PLAN.md)) — the WhatsApp bot becomes the live prototype for the merge / shard loop, faction identity, and quest-driven style progression.
 
@@ -166,32 +168,36 @@ Catalog of fighting styles with movesets and unlock requirements. **Not required
 
 ---
 
-## 9. Build Order
+## 9. Build Order (revised mid-implementation)
 
-The user has chosen to **ship the rework with only base actions** (punch / block / dodge), and add styles + quests in a follow-up patch. This means v0.5.0 launch can be limited combat-wise — the **shard / merge / shed loop is the carrier experience**.
+Initial plan was a thin skeleton with patches to follow. Romio rejected that on 2026-05-25 (see [[bot-no-skeleton-first]]) and asked for the whole rework as one bundled release. The build order below reflects what actually shipped in v0.5.0:
 
-### v0.5.0 — Merge Skeleton (this rework)
-1. Data migrations: add `merge` flag to relevant Mora; add `shards` / `currentMerge` / `shardStorage` to Players.
-2. Shard drop on defeat (for `mergeable: true/partial/full` Mora).
-3. `.shards` / `.inventory` shard view.
-4. `.awaken <shard>` — shatter, set `currentMerge`, broadcast merge in chat.
-5. `.shed` — clear `currentMerge`.
-6. `.attack` rework — sectioned format, sources merge moves from `currentMerge`'s `moveset`, base-form fallback for unmerged players.
-7. Per-type storage cap enforced on shard drop.
-8. Retire / migrate old `.merge` and related commands.
+### v0.5.0 — Full Rework Bundle (shipped 2026-05-26)
+1. **Data migrations** — `shards`, `shardStorage`, `currentMerge`, `combatEnergy`, `combatMaxEnergy`, `styles`, `quests` on every Player; `merge` flag on all 101 Mora.
+2. **Shard drop on defeat** — additive to the existing post-defeat flow (80% defeat / 15% spawn).
+3. **Vault** — `.shards`, `.storage` (cap inspector + upgrade stub).
+4. **`.awaken <shard>`** — shatter, set `currentMerge`, status wipe, broadcast.
+5. **`.shed`** — clear `currentMerge`.
+6. **`.attack` rework** — sectioned format (BASE → STYLE → MERGED). Player IS the combatant; merge moves resolve damage via the merge-tier math.
+7. **Per-type storage cap** enforced on drop AND on trade-receive.
+8. **`.tame` retired in spirit** — no longer adds to `moraOwned`; gives stats + acknowledges the shard.
+9. **`.bind` / `.devour`** updated to player-level rewards (no party Mora required).
+10. **`.switch` retired** — points users to `.awaken`/`.shed`.
+11. **`.tamed` flagged as legacy collection** — header notes shards are the new combat currency.
+12. **P2P shard trade** — `.trade @user <yourShard> <theirShard>` + `.trade accept|reject|list` with 10-min TTL and atomic swap.
+13. **Quest engine + 2 starter styles** — `.quests`, `.quest accept <id>`, `.styles`. Wind Step + Sun Walk unlock from `first_breath` / `first_dawn`. Quest progress hook fires on every wild defeat.
+14. **Storage upgrade UI stub** — `.storage` lists caps; upgrade purchase blocked behind "coming soon" pending real-money payment integration.
+15. **Battle headers** — show player tier badge (🔥FULL / ✨PARTIAL / 🩶BASE) + name prefix `[MoraName] You`.
+16. **`.profile`** — new MERGE STATE section, MORA section flagged legacy.
+17. **Smoke test** — `node scripts/smoke_shards.js` walks the full shard loop end-to-end.
 
-### v0.5.1 — Trade & Storage Upgrades
-- Shard trade commands.
-- Storage upgrade purchase via Lucons.
-
-### v0.6.0 — Styles & Quest Engine
-- First quest engine. Starter quests grant fighting styles.
-- `data/styles.json` populated.
-- `.attack` style sections light up.
-
-### Later
+### Later (post-v0.5.0)
+- Real-money payment integration for storage upgrades.
 - Style upgrades, style mastery, combo systems.
 - More merge tiers / mutation mechanics.
+- Public shard market board.
+- More quests; faction-locked quest lines.
+- Migration path for legacy `moraOwned` arrays (convert to shards, or retire entirely).
 
 ---
 

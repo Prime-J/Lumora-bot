@@ -1,0 +1,20 @@
+{
+  "first_breath": {
+    "id": "first_breath",
+    "name": "First Breath",
+    "giver": "Wind Master Reva",
+    "lore": "Atop the cliff-temple, a thin figure breathes in time with the wind. \"You wish to step on air? First — prove you can survive on it.\"",
+    "requirement": { "kind": "winBattles", "count": 3 },
+    "reward": { "style": "wind_step", "lucons": 100 },
+    "completedFlavor": "Reva nods slowly. \"You moved when the wind moved. That is the first step.\" Wind Step is yours."
+  },
+  "first_dawn": {
+    "id": "first_dawn",
+    "name": "First Dawn",
+    "giver": "Sun Priestess Iyra",
+    "lore": "In the Sanctuary's open courtyard, Iyra waits at dawn. \"To walk the sun's path, you must first burn brightly enough to be seen by it.\"",
+    "requirement": { "kind": "winBattles", "count": 5 },
+    "reward": { "style": "sun_walk", "lucons": 150 },
+    "completedFlavor": "Iyra closes her eyes. \"The sun has marked you.\" Sun Walk is yours."
+  }
+}

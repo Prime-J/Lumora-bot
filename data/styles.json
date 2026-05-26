@@ -1,0 +1,26 @@
+{
+  "wind_step": {
+    "id": "wind_step",
+    "name": "Wind Step",
+    "type": "Wind",
+    "lore": "A fluid Lumorian discipline that bends momentum and air. Practitioners strike from impossible angles.",
+    "moves": [
+      { "name": "Gale Kick",   "power": 38, "accuracy": 95, "energyCost": 4, "desc": "A whipping kick carried on a gust of wind." },
+      { "name": "Sky Step",    "power": 28, "accuracy": 100, "energyCost": 5, "desc": "Leap upward — your next move comes from above. Cannot miss." },
+      { "name": "Cyclone Cut", "power": 62, "accuracy": 88, "energyCost": 8, "desc": "A spinning blade of compressed air." }
+    ],
+    "unlockQuest": "first_breath"
+  },
+  "sun_walk": {
+    "id": "sun_walk",
+    "name": "Sun Walk",
+    "type": "Solar",
+    "lore": "A radiant style taught only in the Sanctuary's inner courtyard. Each step burns its impression into the air.",
+    "moves": [
+      { "name": "Solar Step",  "power": 40, "accuracy": 95, "energyCost": 4, "desc": "A scorching forward stride." },
+      { "name": "Flare Palm",  "power": 32, "accuracy": 100, "energyCost": 5, "desc": "A bright palm-strike that dazzles." },
+      { "name": "Dawn Pillar", "power": 70, "accuracy": 85, "energyCost": 9, "desc": "Call down a column of solar fire." }
+    ],
+    "unlockQuest": "first_dawn"
+  }
+}

@@ -316,6 +316,55 @@ async function cmdShed(ctx, chatId, senderId, msg) {
   }, { quoted: msg });
 }
 
+// .storage [Mora] — upgrade shard storage for a specific Mora type.
+// Real-money payment infra isn't wired yet — stubbed as "coming soon".
+async function cmdStorage(ctx, chatId, senderId, msg, args = []) {
+  const { sock, players, loadMora } = ctx;
+  const player = players[senderId];
+  if (!player) {
+    return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  }
+  ensureShardFields(player);
+
+  const queryRaw = args.join(" ").trim();
+  if (!queryRaw) {
+    // List current per-type caps for shards the player has touched
+    const keys = new Set([
+      ...Object.keys(player.shards || {}),
+      ...Object.keys(player.shardStorage || {}),
+    ]);
+    const list = loadMora();
+    const lines = [...keys].map((k) => {
+      const sp = list.find((m) => String(m.id).toLowerCase() === k || String(m.name).toLowerCase() === k);
+      const name = sp?.name || k;
+      return `• *${name}* — cap *${getStorageCap(player, k)}*  (have ${getShardCount(player, k)})`;
+    });
+    return sock.sendMessage(chatId, {
+      text:
+        `🏦 *SHARD STORAGE*\n${DIVIDER}\n` +
+        (lines.length ? lines.join("\n") : "_No shard types touched yet._") +
+        `\n${DIVIDER}\n` +
+        `Default cap is *${DEFAULT_STORAGE_CAP}* per Mora type.\n` +
+        `💳 *Upgrade with:* *.storage <Mora>*\n` +
+        `_Real-money payment for upgrades is **coming soon** — feature gated until provider integration ships._`,
+    }, { quoted: msg });
+  }
+
+  const species = findSpeciesByKey(loadMora, queryRaw);
+  if (!species) {
+    return sock.sendMessage(chatId, { text: `❌ No Mora named *${queryRaw}*.` }, { quoted: msg });
+  }
+  const cap = getStorageCap(player, shardKey(species));
+  return sock.sendMessage(chatId, {
+    text:
+      `💳 *STORAGE UPGRADE — ${species.name}*\n${DIVIDER}\n` +
+      `Current cap: *${cap}* shard(s)\n` +
+      `Upgrade: *+1* per purchase\n` +
+      `Cost: _coming soon — real-money payment infra not yet integrated._\n${DIVIDER}\n` +
+      `_For now, every Mora is limited to ${DEFAULT_STORAGE_CAP} shard in your vault._`,
+  }, { quoted: msg });
+}
+
 // .merge — retired; soft-alias to .awaken for muscle memory
 async function cmdLegacyMerge(ctx, chatId, senderId, msg, args = []) {
   return ctx.sock.sendMessage(chatId, {
@@ -323,6 +372,197 @@ async function cmdLegacyMerge(ctx, chatId, senderId, msg, args = []) {
       `⚠️ *.merge* has been replaced.\n` +
       `Use *.awaken <shard>* to shatter a shard and merge.\n` +
       `Run *.shards* to see your vault.`,
+  }, { quoted: msg });
+}
+
+// ══════════════════════════════════════════════════════════════
+// P2P SHARD TRADE  (v0.5.0 rework — direct trade; market board later)
+// ══════════════════════════════════════════════════════════════
+
+const pendingTrades = new Map(); // recipientJid -> trade
+const TRADE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+function resolveTargetJid(arg, players, mentionedJids = []) {
+  if (mentionedJids && mentionedJids.length) return mentionedJids[0];
+  const num = String(arg || "").replace(/^@/, "").replace(/[^0-9]/g, "");
+  if (!num) return null;
+  return Object.keys(players).find((j) => j.startsWith(num)) || null;
+}
+
+async function cmdTrade(ctx, chatId, senderId, msg, args = [], opts = {}) {
+  const sub = String(args[0] || "").toLowerCase();
+  if (sub === "accept")                       return cmdTradeAccept(ctx, chatId, senderId, msg);
+  if (sub === "reject" || sub === "decline")  return cmdTradeReject(ctx, chatId, senderId, msg);
+  if (sub === "list"   || sub === "pending")  return cmdTradeList(ctx, chatId, senderId, msg);
+  if (!sub || sub === "help") {
+    return ctx.sock.sendMessage(chatId, {
+      text:
+        `🤝 *.trade* — shard exchange\n${DIVIDER}\n` +
+        `• *.trade @user <yourShard> <theirShard>* — propose a trade\n` +
+        `• *.trade accept* / *.trade reject* — answer an incoming offer\n` +
+        `• *.trade list* — view your pending incoming offer\n` +
+        `${DIVIDER}\n_Direct P2P only for now — public market board comes later._`,
+    }, { quoted: msg });
+  }
+  return cmdTradeOffer(ctx, chatId, senderId, msg, args, opts);
+}
+
+async function cmdTradeOffer(ctx, chatId, senderId, msg, args, opts = {}) {
+  const { sock, players, loadMora } = ctx;
+  const player = players[senderId];
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+
+  const targetJid = resolveTargetJid(args[0], players, opts.mentionedJids || (opts.getMentionedJids ? opts.getMentionedJids(msg) : []));
+  if (!targetJid || !players[targetJid]) {
+    return sock.sendMessage(chatId, {
+      text: `❌ Usage: *.trade @user <yourShard> <theirShard>*\nExample: *.trade @1234 Nylon Voltrix*`,
+    }, { quoted: msg });
+  }
+  if (targetJid === senderId) {
+    return sock.sendMessage(chatId, { text: "❌ You can't trade with yourself." }, { quoted: msg });
+  }
+
+  const myShardName    = args[1];
+  const theirShardName = args[2];
+  if (!myShardName || !theirShardName) {
+    return sock.sendMessage(chatId, {
+      text: `❌ Usage: *.trade @user <yourShard> <theirShard>*`,
+    }, { quoted: msg });
+  }
+
+  const mySpecies    = findSpeciesByKey(loadMora, myShardName);
+  const theirSpecies = findSpeciesByKey(loadMora, theirShardName);
+  if (!mySpecies)    return sock.sendMessage(chatId, { text: `❌ No Mora named *${myShardName}*.` }, { quoted: msg });
+  if (!theirSpecies) return sock.sendMessage(chatId, { text: `❌ No Mora named *${theirShardName}*.` }, { quoted: msg });
+
+  ensureShardFields(player);
+  ensureShardFields(players[targetJid]);
+
+  const myKey    = shardKey(mySpecies);
+  const theirKey = shardKey(theirSpecies);
+
+  if (getShardCount(player, myKey) < 1) {
+    return sock.sendMessage(chatId, { text: `❌ You don't have a *${mySpecies.name}* shard.` }, { quoted: msg });
+  }
+  if (getShardCount(players[targetJid], theirKey) < 1) {
+    return sock.sendMessage(chatId, { text: `❌ @${targetJid.split("@")[0]} doesn't have a *${theirSpecies.name}* shard.`, mentions: [targetJid] }, { quoted: msg });
+  }
+
+  pendingTrades.set(targetJid, {
+    from: senderId,
+    fromShardKey:  myKey,
+    fromShardName: mySpecies.name,
+    toShardKey:    theirKey,
+    toShardName:   theirSpecies.name,
+    chatId,
+    expiresAt: Date.now() + TRADE_TTL_MS,
+  });
+
+  return sock.sendMessage(chatId, {
+    text:
+      `🤝 *TRADE OFFER*\n${DIVIDER}\n` +
+      `@${senderId.split("@")[0]} offers a *${mySpecies.name}* shard\n` +
+      `↔ for @${targetJid.split("@")[0]}'s *${theirSpecies.name}* shard.\n${DIVIDER}\n` +
+      `Recipient: respond with *.trade accept* or *.trade reject*.\n` +
+      `Expires in 10 minutes.`,
+    mentions: [senderId, targetJid],
+  }, { quoted: msg });
+}
+
+async function cmdTradeAccept(ctx, chatId, senderId, msg) {
+  const { sock, players, savePlayers } = ctx;
+  const trade = pendingTrades.get(senderId);
+  if (!trade) {
+    return sock.sendMessage(chatId, { text: "❌ No pending trade for you." }, { quoted: msg });
+  }
+  if (Date.now() > trade.expiresAt) {
+    pendingTrades.delete(senderId);
+    return sock.sendMessage(chatId, { text: "❌ Trade expired." }, { quoted: msg });
+  }
+
+  const fromPlayer = players[trade.from];
+  const toPlayer   = players[senderId];
+  if (!fromPlayer || !toPlayer) {
+    pendingTrades.delete(senderId);
+    return sock.sendMessage(chatId, { text: "❌ Trade participants no longer valid." }, { quoted: msg });
+  }
+
+  ensureShardFields(fromPlayer);
+  ensureShardFields(toPlayer);
+
+  if (getShardCount(fromPlayer, trade.fromShardKey) < 1 ||
+      getShardCount(toPlayer,   trade.toShardKey)   < 1) {
+    pendingTrades.delete(senderId);
+    return sock.sendMessage(chatId, { text: "❌ Trade failed — one side no longer has the offered shard." }, { quoted: msg });
+  }
+
+  const fromIncomingCap = getStorageCap(fromPlayer, trade.toShardKey);
+  const toIncomingCap   = getStorageCap(toPlayer,   trade.fromShardKey);
+  const fromHas = getShardCount(fromPlayer, trade.toShardKey);
+  const toHas   = getShardCount(toPlayer,   trade.fromShardKey);
+
+  if (fromHas >= fromIncomingCap) {
+    pendingTrades.delete(senderId);
+    return sock.sendMessage(chatId, {
+      text: `❌ Trade failed — sender's vault is full for *${trade.toShardName}* (${fromHas}/${fromIncomingCap}).`,
+    }, { quoted: msg });
+  }
+  if (toHas >= toIncomingCap) {
+    pendingTrades.delete(senderId);
+    return sock.sendMessage(chatId, {
+      text: `❌ Trade failed — your vault is full for *${trade.fromShardName}* (${toHas}/${toIncomingCap}). Buy storage to accept.`,
+    }, { quoted: msg });
+  }
+
+  // Atomic swap
+  fromPlayer.shards[trade.fromShardKey] -= 1;
+  if (fromPlayer.shards[trade.fromShardKey] <= 0) delete fromPlayer.shards[trade.fromShardKey];
+  fromPlayer.shards[trade.toShardKey] = (fromPlayer.shards[trade.toShardKey] || 0) + 1;
+
+  toPlayer.shards[trade.toShardKey] -= 1;
+  if (toPlayer.shards[trade.toShardKey] <= 0) delete toPlayer.shards[trade.toShardKey];
+  toPlayer.shards[trade.fromShardKey] = (toPlayer.shards[trade.fromShardKey] || 0) + 1;
+
+  pendingTrades.delete(senderId);
+  savePlayers(players);
+
+  return sock.sendMessage(chatId, {
+    text:
+      `✅ *TRADE COMPLETE*\n${DIVIDER}\n` +
+      `@${trade.from.split("@")[0]}'s *${trade.fromShardName}* → @${senderId.split("@")[0]}\n` +
+      `@${senderId.split("@")[0]}'s *${trade.toShardName}* → @${trade.from.split("@")[0]}\n${DIVIDER}\n` +
+      `Both vaults updated.`,
+    mentions: [senderId, trade.from],
+  }, { quoted: msg });
+}
+
+async function cmdTradeReject(ctx, chatId, senderId, msg) {
+  const trade = pendingTrades.get(senderId);
+  if (!trade) {
+    return ctx.sock.sendMessage(chatId, { text: "❌ No pending trade." }, { quoted: msg });
+  }
+  pendingTrades.delete(senderId);
+  return ctx.sock.sendMessage(chatId, {
+    text: `🚫 *TRADE REJECTED*\n@${senderId.split("@")[0]} declined @${trade.from.split("@")[0]}'s offer.`,
+    mentions: [senderId, trade.from],
+  }, { quoted: msg });
+}
+
+async function cmdTradeList(ctx, chatId, senderId, msg) {
+  const trade = pendingTrades.get(senderId);
+  if (!trade) {
+    return ctx.sock.sendMessage(chatId, { text: "📭 No pending trade for you." }, { quoted: msg });
+  }
+  const expiresIn = Math.max(0, Math.floor((trade.expiresAt - Date.now()) / 60000));
+  return ctx.sock.sendMessage(chatId, {
+    text:
+      `📦 *PENDING TRADE*\n${DIVIDER}\n` +
+      `From: @${trade.from.split("@")[0]}\n` +
+      `They offer: *${trade.fromShardName}* shard\n` +
+      `They want: your *${trade.toShardName}* shard\n` +
+      `Expires in: *${expiresIn} min*\n${DIVIDER}\n` +
+      `Respond with *.trade accept* or *.trade reject*.`,
+    mentions: [trade.from],
   }, { quoted: msg });
 }
 
@@ -335,6 +575,8 @@ module.exports = {
   cmdAwaken,
   cmdShed,
   cmdLegacyMerge,
+  cmdTrade,
+  cmdStorage,
 
   // helpers used by other systems
   ensureShardFields,
@@ -349,6 +591,7 @@ module.exports = {
   shardKey,
   getShardCount,
   getStorageCap,
+  buildMergeSnapshot,
 
   // constants
   TIER_FULL,

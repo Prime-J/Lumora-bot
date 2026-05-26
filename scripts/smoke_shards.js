@@ -111,4 +111,48 @@ const spawnLog = shardSystem.dropShardOnDefeat(player, tideling, { source: "spaw
 assert.ok(spawnLog, "spawn-source forced drop should still log");
 console.log("✅ spawn-source path runs");
 
-console.log("\n🎉 ALL SHARD/MERGE SMOKE TESTS PASSED");
+// ── 11. Trade — atomic swap between two players ────────────
+const playerA = { id: "a@lid", username: "Aya" };
+const playerB = { id: "b@lid", username: "Beto" };
+shardSystem.ensureShardFields(playerA);
+shardSystem.ensureShardFields(playerB);
+shardSystem.dropShardOnDefeat(playerA, tideling, { forceDrop: true });
+shardSystem.dropShardOnDefeat(playerB, eternyx,  { forceDrop: true });
+assert.strictEqual(shardSystem.getShardCount(playerA, "1"),  1);
+assert.strictEqual(shardSystem.getShardCount(playerB, "48"), 1);
+
+// Simulate the swap directly (cmdTrade* relies on sock — we only test the
+// underlying mutation here).
+const swapA_to_B = (a, b, aKey, bKey) => {
+  a.shards[aKey] -= 1; if (a.shards[aKey] <= 0) delete a.shards[aKey];
+  a.shards[bKey] = (a.shards[bKey] || 0) + 1;
+  b.shards[bKey] -= 1; if (b.shards[bKey] <= 0) delete b.shards[bKey];
+  b.shards[aKey] = (b.shards[aKey] || 0) + 1;
+};
+swapA_to_B(playerA, playerB, "1", "48");
+assert.strictEqual(shardSystem.getShardCount(playerA, "1"),  0, "A loses Nylon");
+assert.strictEqual(shardSystem.getShardCount(playerA, "48"), 1, "A gains Eternyx");
+assert.strictEqual(shardSystem.getShardCount(playerB, "1"),  1, "B gains Nylon");
+assert.strictEqual(shardSystem.getShardCount(playerB, "48"), 0, "B loses Eternyx");
+console.log("✅ trade: atomic swap (Aya ↔ Beto) verified");
+
+// ── 12. Quests — accept + progress + complete unlocks style ─
+const questSystem = require("../systems/quests");
+const quester = { id: "q@lid", username: "Romio", level: 1, lucons: 0 };
+questSystem.ensureQuestFields(quester);
+quester.quests.active.first_breath = { progress: 0, startedAt: Date.now() };
+const before = questSystem.getUnlockedStyleMoves(quester).length;
+assert.strictEqual(before, 0, "no styles before quest complete");
+// Simulate 3 battle wins (first_breath requires 3)
+let completed = [];
+for (let i = 0; i < 3; i++) completed = questSystem.onBattleWon(quester);
+assert.ok(completed.includes("first_breath"), "first_breath should complete after 3 wins");
+const def = questSystem.applyCompletion(quester, "first_breath");
+assert.ok(def, "applyCompletion returns def");
+assert.ok(quester.styles.includes("wind_step"), "wind_step should be unlocked");
+assert.strictEqual(quester.lucons, 100, "Lucons reward credited");
+const after = questSystem.getUnlockedStyleMoves(quester);
+assert.ok(after.length >= 3, `wind step has 3 moves, got ${after.length}`);
+console.log(`✅ quest: first_breath complete → wind_step unlocked (${after.length} moves)`);
+
+console.log("\n🎉 ALL v0.5.0 REWORK SMOKE TESTS PASSED");

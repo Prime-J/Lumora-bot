@@ -318,6 +318,13 @@ function buildPlayerMoveset(player, loadMora) {
 
   const moves = BASE_ACTIONS.map((m) => ({ ...m }));
 
+  // ── Fighting-style moves (quest-unlocked) ────────────────────
+  try {
+    const questSystem = require("./quests");
+    const styleMoves = questSystem.getUnlockedStyleMoves(player) || [];
+    for (const mv of styleMoves) moves.push(mv);
+  } catch {}
+
   if (merge) {
     const sp = loadMora?.().find((m) => Number(m.id) === Number(merge.moraId));
     if (sp && sp.moves) {
@@ -345,21 +352,28 @@ function renderPlayerMoveset(moveset, player) {
   const shardSystem = require("./shards");
   const merge = shardSystem.getCurrentMerge(player);
 
-  const baseLines = [];
-  const mergeLines = [];
+  const buckets = { base: [], style: new Map(), merge: [] };
   moveset.forEach((m, i) => {
     const line =
       `${i + 1}) *${m.name}*\n` +
       `   💥 ${m.power}  🎯 ${m.accuracy}  🔋 ${m.energyCost}\n` +
       `   📝 ${m.desc || ""}`;
-    if (m.source === "merge") mergeLines.push(line); else baseLines.push(line);
+    if (m.source === "merge") buckets.merge.push(line);
+    else if (m.source === "style") {
+      const key = m.styleId || "_";
+      if (!buckets.style.has(key)) buckets.style.set(key, { name: m.styleName || key, lines: [] });
+      buckets.style.get(key).lines.push(line);
+    } else buckets.base.push(line);
   });
 
   const sections = [];
-  sections.push(`─── BASE ─── (always available)\n${baseLines.join("\n\n")}`);
-  if (mergeLines.length) {
+  sections.push(`─── BASE ─── (always available)\n${buckets.base.join("\n\n")}`);
+  for (const { name, lines } of buckets.style.values()) {
+    sections.push(`─── STYLE: ${name} ───\n${lines.join("\n\n")}`);
+  }
+  if (buckets.merge.length) {
     const tierTag = merge?.tier === shardSystem.TIER_FULL ? " 🔥FULL" : " ✨PARTIAL";
-    sections.push(`─── MERGED: ${merge.name}${tierTag} ───\n${mergeLines.join("\n\n")}`);
+    sections.push(`─── MERGED: ${merge.name}${tierTag} ───\n${buckets.merge.join("\n\n")}`);
   }
   return sections.join("\n\n");
 }
@@ -790,6 +804,25 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
     } catch (e) {
       // never break the defeat path because of a shard hiccup
       console.log("shard drop error:", e?.message || e);
+    }
+
+    // ── Quest progression hook (v0.5.0 rework) ───────────────
+    try {
+      const questSystem = require("./quests");
+      const finished = questSystem.onBattleWon(player) || [];
+      for (const qId of finished) {
+        const def = questSystem.applyCompletion(player, qId);
+        if (!def) continue;
+        const styleName = questSystem.loadStyles()[def.reward?.style]?.name || def.reward?.style;
+        logs.push(
+          `\n🏆 *QUEST COMPLETE — ${def.name}*\n` +
+          `_${def.completedFlavor || ""}_\n` +
+          (def.reward?.style ? `🥋 Style unlocked: *${styleName}*\n` : "") +
+          (def.reward?.lucons ? `💰 +${def.reward.lucons} Lucons` : "")
+        );
+      }
+    } catch (e) {
+      console.log("quest hook error:", e?.message || e);
     }
 
     // ── Mission hooks ─────────────────────────────────────────
