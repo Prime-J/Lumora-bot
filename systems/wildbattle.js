@@ -178,9 +178,14 @@ function pickFirstAliveIndex(party) {
   return -1;
 }
 
-function buildWildHeader(players, senderId, playerMora, wildMora, hpBar, state) {
+function buildWildHeader(players, senderId, playerCombatant, wildMora, hpBar, state) {
   const hunterName = getDisplayName(players, senderId);
   const label = pickWildBattleLabel(!!state.isCorrupted);
+
+  const tierBadge =
+    playerCombatant.mergeTier === "full"    ? "  🔥FULL"
+    : playerCombatant.mergeTier === "partial" ? "  ✨PARTIAL"
+    : "  🩶BASE";
 
   return (
     `${label}\n` +
@@ -188,8 +193,8 @@ function buildWildHeader(players, senderId, playerMora, wildMora, hpBar, state) 
     `🧾 *${hunterName}* vs *${wildMora.name}*\n` +
     `🎭 Wild Nature: *${state.personality}*\n` +
     (state.isCorrupted ? `☠ Corruption Class: *${state.corruptionClass || "Variant"}*\n` : "") +
-    `\n🟥 *${String(playerMora.name).toUpperCase()}* (Lv ${playerMora.level})\n` +
-    `${hpLine(hpBar, playerMora)}\n${energyLine(playerMora)}\n\n` +
+    `\n🟥 *${String(playerCombatant.name).toUpperCase()}*${tierBadge}  (Lv ${playerCombatant.level})\n` +
+    `${hpLine(hpBar, playerCombatant)}\n${energyLine(playerCombatant)}\n\n` +
     `🟪 *${String(wildMora.name).toUpperCase()}* (Lv ${wildMora.level})\n` +
     `${hpLine(hpBar, wildMora)}\n${energyLine(wildMora)}`
   );
@@ -232,6 +237,157 @@ function scaleWildOwnedMora(baseSpecies, level, statMultiplier = 1) {
     isCorrupted: !!baseSpecies.isCorrupted
   };
 }
+
+// ══════════════════════════════════════════════════════════════
+// SECTION — PLAYER-AS-COMBATANT (v0.5.0 rework)
+// In the rework, the PLAYER fights wild Mora directly (not a party Mora).
+// Helpers below virtualize the player into a "combatant" with stats so the
+// existing damage / typing math keeps working.
+// ══════════════════════════════════════════════════════════════
+
+const BASE_ACTIONS = [
+  { name: "Punch",  power: 18, accuracy: 95,  energyCost: 2, desc: "A plain fist strike.",                 source: "base" },
+  { name: "Block",  power: 0,  accuracy: 100, energyCost: 2, desc: "Brace — halves your NEXT incoming hit.", source: "base" },
+];
+
+function ensurePlayerCombatFields(player) {
+  if (!player || typeof player !== "object") return;
+  if (typeof player.combatMaxEnergy !== "number") player.combatMaxEnergy = 50;
+  if (typeof player.combatEnergy !== "number")    player.combatEnergy    = player.combatMaxEnergy;
+  player.combatMaxEnergy = clamp(player.combatMaxEnergy, 10, 999);
+  player.combatEnergy    = clamp(player.combatEnergy, 0, player.combatMaxEnergy);
+  if (typeof player.playerMaxHp !== "number") player.playerMaxHp = 100;
+  if (typeof player.playerHp !== "number")    player.playerHp    = player.playerMaxHp;
+}
+
+// Returns a virtual "combatant" representing the player in a wild fight.
+// Shape mirrors the Mora schema so calcDamage / chooseWildMove still work.
+function getPlayerCombatant(player, loadMora) {
+  ensurePlayerCombatFields(player);
+  const shardSystem = require("./shards");
+  const merge = shardSystem.getCurrentMerge(player);
+
+  const level   = Number(player.level || 1);
+  const aura    = Number(player.aura || 10);
+  const intel   = Number(player.intelligence || 5);
+
+  // Default = base form
+  let type = "Neutral";
+  let atk  = Math.floor(20 + aura * 0.6 + level * 1.5);
+  let def  = Math.floor(15 + intel * 0.4 + level * 1.2);
+  let spd  = Math.floor(20 + level * 1.0);
+  let name = (player.username || "You").trim();
+  let mergeTier = null;
+
+  if (merge) {
+    const sp = loadMora?.().find((m) => Number(m.id) === Number(merge.moraId));
+    type = sp?.type || merge.type || type;
+    mergeTier = merge.tier || null;
+    if (mergeTier === shardSystem.TIER_FULL && sp?.baseStats) {
+      // Full merge: take the Mora's stats outright (player HP still applies)
+      atk = Math.max(atk, Math.floor((Number(sp.baseStats.atk || atk) + level * 2)));
+      def = Math.max(def, Math.floor((Number(sp.baseStats.def || def) + level * 2)));
+      spd = Math.max(spd, Math.floor((Number(sp.baseStats.spd || spd) + level)));
+    } else {
+      // Partial merge: small boost over base, retain identity
+      atk = Math.floor(atk * 1.15);
+      def = Math.floor(def * 1.05);
+    }
+    name = `[${merge.name}] ${name}`;
+  }
+
+  return {
+    moraId: merge?.moraId ?? null,
+    name,
+    type,
+    level,
+    hp: player.playerHp,
+    maxHp: player.playerMaxHp,
+    energy: player.combatEnergy,
+    maxEnergy: player.combatMaxEnergy,
+    stats: { atk, def, spd, energy: player.combatMaxEnergy },
+    atk, def, spd,
+    mergeTier,
+  };
+}
+
+// Build the moveset the player can use this turn.
+function buildPlayerMoveset(player, loadMora) {
+  const shardSystem = require("./shards");
+  const merge = shardSystem.getCurrentMerge(player);
+
+  const moves = BASE_ACTIONS.map((m) => ({ ...m }));
+
+  if (merge) {
+    const sp = loadMora?.().find((m) => Number(m.id) === Number(merge.moraId));
+    if (sp && sp.moves) {
+      for (const mvName of (merge.moves || [])) {
+        const data = sp.moves[mvName];
+        if (!data) continue;
+        moves.push({
+          name: mvName,
+          power: Number(data.power || 0),
+          accuracy: Number(data.accuracy || 100),
+          energyCost: Math.max(3, Math.floor(Number(data.power || 0) / 8) + 3),
+          desc: data.desc || "",
+          source: "merge",
+          tier: merge.tier,
+          category: data.category,
+        });
+      }
+    }
+  }
+
+  return moves;
+}
+
+function renderPlayerMoveset(moveset, player) {
+  const shardSystem = require("./shards");
+  const merge = shardSystem.getCurrentMerge(player);
+
+  const baseLines = [];
+  const mergeLines = [];
+  moveset.forEach((m, i) => {
+    const line =
+      `${i + 1}) *${m.name}*\n` +
+      `   💥 ${m.power}  🎯 ${m.accuracy}  🔋 ${m.energyCost}\n` +
+      `   📝 ${m.desc || ""}`;
+    if (m.source === "merge") mergeLines.push(line); else baseLines.push(line);
+  });
+
+  const sections = [];
+  sections.push(`─── BASE ─── (always available)\n${baseLines.join("\n\n")}`);
+  if (mergeLines.length) {
+    const tierTag = merge?.tier === shardSystem.TIER_FULL ? " 🔥FULL" : " ✨PARTIAL";
+    sections.push(`─── MERGED: ${merge.name}${tierTag} ───\n${mergeLines.join("\n\n")}`);
+  }
+  return sections.join("\n\n");
+}
+
+function resolvePlayerMove(input, moveset) {
+  const q = String(input || "").trim().toLowerCase();
+  if (!q) return null;
+  if (/^\d+$/.test(q)) {
+    const n = Number(q);
+    return moveset[n - 1] || null;
+  }
+  return (
+    moveset.find((m) => m.name.toLowerCase() === q) ||
+    moveset.find((m) => m.name.toLowerCase().includes(q)) ||
+    null
+  );
+}
+
+// Regenerate the player's combat energy at the start of their turn.
+function regenPlayerCombatEnergy(player) {
+  ensurePlayerCombatFields(player);
+  const gain = Math.max(3, Math.floor(player.combatMaxEnergy * 0.12));
+  player.combatEnergy = clamp(player.combatEnergy + gain, 0, player.combatMaxEnergy);
+}
+
+// ══════════════════════════════════════════════════════════════
+// END player-as-combatant helpers
+// ══════════════════════════════════════════════════════════════
 
 function calcDamage(battleMath, attacker, defender, move, crit = false) {
   let dmg = battleMath.calcDamage({
@@ -393,14 +549,18 @@ async function startWildBattle(ctx, chatId, senderId, msg, options = {}) {
     return sock.sendMessage(chatId, { text: "⚠️ You already have an active wild battle." }, { quoted: msg });
   }
 
-  const party = getPlayerParty(player);
-  const activeIdx = pickFirstAliveIndex(party);
-  if (activeIdx === -1) {
-    return sock.sendMessage(chatId, { text: "❌ You have no unfainted Mora in your party." }, { quoted: msg });
+  // ── v0.5.0 rework: party Mora no longer required to enter combat.
+  // The PLAYER fights wild Mora directly. We still capture the legacy
+  // party-active-index for back-compat (-1 means "no party"), but combat
+  // doesn't read it.
+  ensurePlayerCombatFields(player);
+  if (Number(player.playerHp) <= 0) {
+    return sock.sendMessage(chatId, { text: "❌ You're knocked out. Heal first." }, { quoted: msg });
   }
-
-  const playerMora = party[activeIdx];
-  ensureEnergyFields(playerMora);
+  const party = getPlayerParty(player);
+  const activeIdx = pickFirstAliveIndex(party); // may be -1 in pure rework mode
+  const playerMora = activeIdx >= 0 ? party[activeIdx] : null;
+  if (playerMora) ensureEnergyFields(playerMora);
 
   const moraList = loadMora();
   const corruptionData = corruptionSystem.loadCorruptionData();
@@ -451,7 +611,7 @@ async function startWildBattle(ctx, chatId, senderId, msg, options = {}) {
     }
   }
 
-  const level = Math.max(1, Number(options.level || playerMora.level || 1));
+  const level = Math.max(1, Number(options.level || playerMora?.level || player.level || 1));
   const statMultiplier = Math.max(1, Number(options.statMultiplier || 1));
   const wildMora = scaleWildOwnedMora(wildSpecies, level, statMultiplier);
 
@@ -462,7 +622,7 @@ async function startWildBattle(ctx, chatId, senderId, msg, options = {}) {
     senderId,
     startedAt: Date.now(),
     playerActiveIndex: activeIdx,
-    playerMoraRefName: playerMora.name,
+    playerMoraRefName: playerMora?.name || null,
     playerTurn: true,
     isCorrupted,
     corruptionClass,
@@ -481,25 +641,25 @@ async function startWildBattle(ctx, chatId, senderId, msg, options = {}) {
 
   setWildBattle(chatId, senderId, state);
 
-  const header = buildWildHeader(players, senderId, playerMora, wildMora, hpBar, state);
+  const headerCombatant = getPlayerCombatant(player, loadMora);
+  const header = buildWildHeader(players, senderId, headerCombatant, wildMora, hpBar, state);
 
   return sock.sendMessage(chatId, {
     text:
       `${state.flavorIntro}\n\n` +
       `${header}\n\n` +
       `🎯 Commands:\n` +
-      `• *.attack 1-5*\n` +
-      `• *.switch 1-5*\n` +
-      `• *.charge*\n` +
-      `• *.run*\n` +
-      (state.allowCapture ? `• *.capture*\n` : "") +
-      (state.allowPurify ? `• *.purify*\n` : ""),
+      `• *.attack* — list moves & strike\n` +
+      `• *.charge* — focus, regain energy\n` +
+      `• *.run* — flee\n` +
+      (state.allowCapture ? `• *.capture* — attempt capture\n` : "") +
+      (state.allowPurify ? `• *.purify* — purify (Harmony only)\n` : ""),
     mentions: [senderId]
   }, { quoted: msg });
 }
 
 async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
-  const { sock, players, battleMath, hpBar, savePlayers, xpSystem } = ctx;
+  const { sock, players, battleMath, hpBar, savePlayers, xpSystem, loadMora } = ctx;
 
   const state = getWildBattle(chatId, senderId);
   if (!state) {
@@ -510,95 +670,107 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
   }
 
   const player = players[senderId];
-  const party = getPlayerParty(player);
-  const playerMora = party[state.playerActiveIndex];
-  if (!playerMora || isFainted(playerMora)) {
-    return sock.sendMessage(chatId, { text: "❌ Your active Mora cannot act. Use *.switch*." }, { quoted: msg });
+  if (!player) {
+    return sock.sendMessage(chatId, { text: "❌ Player not found. Use *.start*." }, { quoted: msg });
+  }
+  ensurePlayerCombatFields(player);
+
+  if (Number(player.playerHp) <= 0) {
+    return sock.sendMessage(chatId, { text: "❌ You're knocked out. Heal first." }, { quoted: msg });
   }
 
-  const playerSpecies = ctx.loadMora().find((x) => Number(x.id) === Number(playerMora.moraId));
+  // ── v0.5.0 rework: PLAYER is the combatant, not a party Mora ───
+  // Existing party-Mora references (state.playerActiveIndex etc.) are kept
+  // in state for compatibility with legacy battles but ignored in combat.
+  const playerCombatant = getPlayerCombatant(player, loadMora);
+  const moveset = buildPlayerMoveset(player, loadMora);
   const pickRaw = args.join(" ").trim();
 
   if (!pickRaw) {
     return sock.sendMessage(chatId, {
       text:
-        `🎴 *Choose your move*\n` +
-        `Use: *.attack 1-5* or *.attack MoveName*\n\n` +
-        buildMoveList(playerMora, playerSpecies, battleMath, player, ctx.loadMora)
+        `🎴 *Choose your action*\n` +
+        `Use: *.attack 1-${moveset.length}* or *.attack <move>*\n\n` +
+        renderPlayerMoveset(moveset, player)
     }, { quoted: msg });
   }
 
-  let moveName = null;
-  const moves = Array.isArray(playerMora.moves) ? playerMora.moves : [];
-
-  if (/^\d+$/.test(pickRaw)) {
-    const n = Number(pickRaw);
-    if (n < 1 || n > moves.length) {
-      return sock.sendMessage(chatId, { text: "❌ Invalid move number." }, { quoted: msg });
-    }
-    moveName = moves[n - 1];
-  } else {
-    const q = pickRaw.toLowerCase();
-    moveName =
-      moves.find((m) => String(m).toLowerCase() === q) ||
-      moves.find((m) => String(m).toLowerCase().includes(q)) ||
-      null;
+  const move = resolvePlayerMove(pickRaw, moveset);
+  if (!move) {
+    return sock.sendMessage(chatId, { text: "❌ Move not found. List actions with *.attack*." }, { quoted: msg });
   }
 
-  if (!moveName) {
-    return sock.sendMessage(chatId, { text: "❌ Move not found." }, { quoted: msg });
+  if (player.combatEnergy < move.energyCost) {
+    return sock.sendMessage(chatId, {
+      text: `❌ Not enough energy. Need ${move.energyCost}, you have *${player.combatEnergy}*.`,
+    }, { quoted: msg });
   }
 
-  const mv = getMoveData(playerSpecies, moveName);
-  if (!mv) {
-    return sock.sendMessage(chatId, { text: "❌ Move data missing in mora.json." }, { quoted: msg });
-  }
-
-  regenWildPartyEnergy(player, state.playerActiveIndex);
-
-  ensureEnergyFields(playerMora);
-  const cost = battleMath.calcEnergyCost(mv);
-  if (playerMora.energy < cost) {
-    return sock.sendMessage(chatId, { text: `❌ Not enough energy. Need ${cost}, you have ${playerMora.energy}.` }, { quoted: msg });
-  }
+  // Spend energy
+  player.combatEnergy = clamp(player.combatEnergy - move.energyCost, 0, player.combatMaxEnergy);
+  // Refresh combatant snapshot to reflect spent energy in the header later
+  playerCombatant.energy = player.combatEnergy;
 
   const logs = [];
+  const tag =
+    move.source === "merge"
+      ? (move.tier === "full" ? " 🔥" : " ✨")
+      : " 🩶";
 
-  playerMora.energy = clamp(playerMora.energy - cost, 0, playerMora.maxEnergy);
-
-  const hit = battleMath.checkHit(mv.accuracy ?? 100);
-  if (!hit) {
-    logs.push(`💨 @${String(senderId).split("@")[0]}'s *${playerMora.name}* used *${moveName}* and missed!`);
-  } else {
-    const crit = battleMath.rollCrit(10);
-    const res = calcDamage(battleMath, playerMora, state.wildMora, mv, crit);
-
-    // ── Rift Fury buff: +15% damage ──────────────────────────
-    let furyActive = false;
-    if (player.riftFury && Number(player.riftFury.battles) > 0) {
-      res.dmg = Math.floor(res.dmg * (1 + Number(player.riftFury.bonus || 0.15)));
-      player.riftFury.battles = Number(player.riftFury.battles) - 1;
-      if (player.riftFury.battles <= 0) delete player.riftFury;
-      furyActive = true;
-    }
-
-    state.wildMora.hp = clamp(Number(state.wildMora.hp || 0) - res.dmg, 0, Number(state.wildMora.maxHp || 1));
-
-    const effTxt =
-      res.mult >= 1.2 ? "  🔥*SUPER EFFECTIVE!*"
-      : res.mult <= 0.85 ? "  🥶*NOT VERY EFFECTIVE*"
-      : "";
-
+  // ── Status moves (Block) handled separately ─────────────────────
+  if (move.name === "Block") {
+    player.blockNextHit = true;
     logs.push(
-      `⚔️ @${String(senderId).split("@")[0]}'s *${playerMora.name}* used *${moveName}* and dealt *${res.dmg}* to wild *${state.wildMora.name}*` +
-      (crit ? "  ✨*CRIT!*" : "") +
-      effTxt +
-      (furyActive ? "  🔥*RIFT FURY!*" : "")
+      `🛡 @${String(senderId).split("@")[0]}${tag} braces — *Block* will halve the next incoming hit.`
     );
+  } else {
+    const hit = battleMath.checkHit(move.accuracy ?? 100);
+    if (!hit) {
+      logs.push(
+        `💨 @${String(senderId).split("@")[0]}${tag} used *${move.name}* and missed!`
+      );
+    } else {
+      const crit = battleMath.rollCrit(10);
+      const moveData = { power: move.power, accuracy: move.accuracy, category: move.category, type: playerCombatant.type };
+      const res = calcDamage(battleMath, playerCombatant, state.wildMora, moveData, crit);
+
+      // Rift Fury buff still applies
+      let furyActive = false;
+      if (player.riftFury && Number(player.riftFury.battles) > 0) {
+        res.dmg = Math.floor(res.dmg * (1 + Number(player.riftFury.bonus || 0.15)));
+        player.riftFury.battles = Number(player.riftFury.battles) - 1;
+        if (player.riftFury.battles <= 0) delete player.riftFury;
+        furyActive = true;
+      }
+
+      state.wildMora.hp = clamp(
+        Number(state.wildMora.hp || 0) - res.dmg,
+        0,
+        Number(state.wildMora.maxHp || 1)
+      );
+
+      const effTxt =
+        res.mult >= 1.2 ? "  🔥*SUPER EFFECTIVE!*"
+        : res.mult <= 0.85 ? "  🥶*NOT VERY EFFECTIVE*"
+        : "";
+
+      logs.push(
+        `⚔️ @${String(senderId).split("@")[0]}${tag} used *${move.name}* and dealt *${res.dmg}* to wild *${state.wildMora.name}*` +
+        (crit ? "  ✨*CRIT!*" : "") +
+        effTxt +
+        (furyActive ? "  🔥*RIFT FURY!*" : "")
+      );
+    }
   }
 
+  // playerMora/playerSpecies kept as null so the existing rewards path
+  // (which references playerMora) still resolves cleanly below.
+  const playerMora = playerCombatant;
+  const playerSpecies = null;
+
   if (isFainted(state.wildMora)) {
-    const moraRes = xpSystem.addMoraXp(playerMora, playerSpecies, state.rewards.moraXp);
+    // Mora XP only flows to a real Mora — skip in the rework (no party Mora).
+    const moraRes = { leveledUp: false, levelsGained: 0 };
     const playerRes = xpSystem.addPlayerXp(player, state.rewards.playerXp);
 
     // ── Mutation decay + companion bond ──────────────────────
@@ -642,9 +814,7 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
     } catch {}
 
     const xpLines =
-      `⭐ Mora XP +${state.rewards.moraXp}\n` +
       `🌟 Player XP +${state.rewards.playerXp}` +
-      (moraRes.leveledUp ? `\n🆙 Your Mora leveled up +${moraRes.levelsGained}!` : "") +
       (playerRes.leveledUp ? `\n🆙 You leveled up +${playerRes.levels}!` : "");
 
     // ── PURITY ORDER: post-defeat decision ─────────────────────
@@ -732,17 +902,27 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
     }, { quoted: msg });
   }
 
-  const wildLogs = await doWildTurn(ctx, player, playerMora, state, senderId);
+  // Regen player's combat energy at end of own turn
+  regenPlayerCombatEnergy(player);
+
+  const wildLogs = await doWildTurn(ctx, player, playerCombatant, state, senderId);
   logs.push(...wildLogs);
 
-  if (isFainted(playerMora)) {
+  // Flush damage back onto player — doWildTurn may write to either
+  // playerCombatant.hp (normal hit) or player.playerHp (corruption backlash),
+  // so take the lower of the two as the truth.
+  const combatantHp = Number(playerCombatant.hp || 0);
+  const directHp    = Number(player.playerHp || 0);
+  player.playerHp = clamp(Math.min(combatantHp, directHp), 0, Number(player.playerMaxHp || 100));
+
+  if (player.playerHp <= 0) {
     savePlayers(players);
     await finishWildBattle(chatId, senderId);
     return sock.sendMessage(chatId, {
       text:
         `${logs.join("\n")}\n\n` +
-        `☠ *YOUR MORA FAINTED*\n` +
-        `Wild *${state.wildMora.name}* overpowered your active Mora.`,
+        `☠ *YOU FAINTED*\n` +
+        `Wild *${state.wildMora.name}* overwhelmed you.`,
       mentions: [senderId]
     }, { quoted: msg });
   }
@@ -750,7 +930,9 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
   savePlayers(players);
   setWildBattle(chatId, senderId, state);
 
-  const header = buildWildHeader(players, senderId, playerMora, state.wildMora, hpBar, state);
+  // Refresh combatant snapshot for header (energy/HP may have changed)
+  const headerCombatant = getPlayerCombatant(player, loadMora);
+  const header = buildWildHeader(players, senderId, headerCombatant, state.wildMora, hpBar, state);
 
   return sock.sendMessage(chatId, {
     text: `${logs.join("\n")}\n\n${header}`,
@@ -850,55 +1032,18 @@ async function doWildTurn(ctx, player, playerMora, state, senderId) {
 }
 async function cmdWildSwitch(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, hpBar, savePlayers } = ctx;
+  // ── v0.5.0 rework: .switch is obsolete — no party Mora to switch to.
+  // The player is the combatant; to change form, use *.awaken <shard>* / *.shed*.
   const state = getWildBattle(chatId, senderId);
   if (!state) {
     return sock.sendMessage(chatId, { text: "❌ No active wild battle." }, { quoted: msg });
   }
-  if (state.pendingDecision) {
-    return sock.sendMessage(chatId, { text: "❌ The battle is over. Make your faction decision first." }, { quoted: msg });
-  }
-
-  const player = players[senderId];
-  const party = getPlayerParty(player);
-  const pickRaw = args.join(" ").trim();
-
-  if (!/^\d+$/.test(pickRaw)) {
-    const lines = [];
-    for (let i = 0; i < 5; i++) {
-      const m = party[i];
-      if (!m) {
-        lines.push(`${i + 1}) — empty —`);
-        continue;
-      }
-      ensureEnergyFields(m);
-      lines.push(`${i + 1}) ${m.name} • Lv ${m.level} • ❤️ ${m.hp}/${m.maxHp} • 🔋 ${m.energy}/${m.maxEnergy}`);
-    }
-    return sock.sendMessage(chatId, { text: `Use: *.switch 1-5*\n\n${lines.join("\n")}` }, { quoted: msg });
-  }
-
-  const slot = Number(pickRaw) - 1;
-  if (slot < 0 || slot > 4) {
-    return sock.sendMessage(chatId, { text: "❌ Invalid party slot." }, { quoted: msg });
-  }
-
-  const chosen = party[slot];
-  if (!chosen) {
-    return sock.sendMessage(chatId, { text: "❌ That slot is empty." }, { quoted: msg });
-  }
-  if (isFainted(chosen)) {
-    return sock.sendMessage(chatId, { text: "❌ You can’t switch to a fainted Mora." }, { quoted: msg });
-  }
-
-  regenWildPartyEnergy(player, state.playerActiveIndex);
-
-  state.playerActiveIndex = slot;
-  savePlayers(players);
-  setWildBattle(chatId, senderId, state);
-
-  const header = buildWildHeader(players, senderId, chosen, state.wildMora, hpBar, state);
   return sock.sendMessage(chatId, {
-    text: `🔁 @${String(senderId).split("@")[0]} switched to *${chosen.name}*!\n\n${header}`,
-    mentions: [senderId]
+    text:
+      `🔁 *.switch* is retired.\n\n` +
+      `In the rework, you ARE the combatant. To change your fighting form mid-encounter:\n` +
+      `• *.awaken <shard>* — shatter a shard, swap merge\n` +
+      `• *.shed* — return to base form`,
   }, { quoted: msg });
 }
 
@@ -1148,7 +1293,7 @@ function saveFactionPointsWild(data) {
 }
 
 async function cmdWildCharge(ctx, chatId, senderId, msg) {
-  const { sock, players, hpBar, savePlayers } = ctx;
+  const { sock, players, hpBar, savePlayers, loadMora } = ctx;
 
   const state = getWildBattle(chatId, senderId);
   if (!state) {
@@ -1159,34 +1304,36 @@ async function cmdWildCharge(ctx, chatId, senderId, msg) {
   }
 
   const player = players[senderId];
-  const party = getPlayerParty(player);
-  const playerMora = party[state.playerActiveIndex];
+  ensurePlayerCombatFields(player);
 
-  if (!playerMora || isFainted(playerMora)) {
-    return sock.sendMessage(chatId, { text: "❌ Your active Mora cannot charge right now." }, { quoted: msg });
+  if (Number(player.playerHp) <= 0) {
+    return sock.sendMessage(chatId, { text: "❌ You're knocked out — can't charge." }, { quoted: msg });
   }
 
-  regenWildPartyEnergy(player, state.playerActiveIndex);
-
-  ensureEnergyFields(playerMora);
-  const gain = Math.max(6, Math.floor(playerMora.maxEnergy * 0.22));
-  playerMora.energy = clamp(playerMora.energy + gain, 0, playerMora.maxEnergy);
+  // Big focused energy gain — spend turn for ~30% of max energy
+  const gain = Math.max(8, Math.floor(player.combatMaxEnergy * 0.30));
+  player.combatEnergy = clamp(player.combatEnergy + gain, 0, player.combatMaxEnergy);
 
   const logs = [
-    `🔋 @${String(senderId).split("@")[0]}'s *${playerMora.name}* focuses and restores *${gain}* energy!`
+    `🔋 @${String(senderId).split("@")[0]} focuses and restores *${gain}* energy!`
   ];
 
-  const wildLogs = await doWildTurn(ctx, player, playerMora, state, senderId);
+  const playerCombatant = getPlayerCombatant(player, loadMora);
+  const wildLogs = await doWildTurn(ctx, player, playerCombatant, state, senderId);
   logs.push(...wildLogs);
 
-  if (isFainted(playerMora)) {
+  const combatantHp = Number(playerCombatant.hp || 0);
+  const directHp    = Number(player.playerHp || 0);
+  player.playerHp = clamp(Math.min(combatantHp, directHp), 0, Number(player.playerMaxHp || 100));
+
+  if (player.playerHp <= 0) {
     savePlayers(players);
     await finishWildBattle(chatId, senderId);
     return sock.sendMessage(chatId, {
       text:
         `${logs.join("\n")}\n\n` +
-        `☠ *YOUR MORA FAINTED*\n` +
-        `Wild *${state.wildMora.name}* overpowered your active Mora.`,
+        `☠ *YOU FAINTED*\n` +
+        `Wild *${state.wildMora.name}* overwhelmed you.`,
       mentions: [senderId]
     }, { quoted: msg });
   }
@@ -1194,7 +1341,8 @@ async function cmdWildCharge(ctx, chatId, senderId, msg) {
   savePlayers(players);
   setWildBattle(chatId, senderId, state);
 
-  const header = buildWildHeader(players, senderId, playerMora, state.wildMora, hpBar, state);
+  const headerCombatant = getPlayerCombatant(player, loadMora);
+  const header = buildWildHeader(players, senderId, headerCombatant, state.wildMora, hpBar, state);
 
   return sock.sendMessage(chatId, {
     text: `${logs.join("\n")}\n\n${header}`,
@@ -1262,8 +1410,10 @@ async function cmdWildTame(ctx, chatId, senderId, msg) {
 
   const moraName = state.purifiedMoraName || state.wildMora?.name || "the Mora";
 
-  // Every branch except Purity's conscript actually captures the Mora and
-  // credits rewards, so .tame is no longer a cosmetic no-op.
+  // ── v0.5.0 rework: .tame no longer adds to moraOwned. The Mora's essence
+  // crystallized into a shard during the defeat (see shardSystem dropShardOnDefeat).
+  // .tame now grants flavor stats only — Tame Skill, plus Lucons/Resonance
+  // for non-Purity branches as before.
   let rewardsBlock = "";
   if (state.pendingDecision !== "purity") {
     const rarity = String(
@@ -1279,37 +1429,27 @@ async function cmdWildTame(ctx, chatId, senderId, msg) {
     player.lucons    = Number(player.lucons || 0) + gainLucons;
     player.resonance = Number(player.resonance || 0) + gainResonance;
 
-    if (!Array.isArray(player.moraOwned)) player.moraOwned = [];
-    const capturedMora = {
-      ...state.wildMora,
-      isWild: false,
-      hp: state.wildMora?.maxHp || state.wildMora?.hp || 1,
-    };
-    player.moraOwned.push(capturedMora);
-
-    try { missionSystem.onMoraCaught(senderId, player.faction, capturedMora.type); } catch {}
-
     rewardsBlock =
       `\n💰 *+${gainLucons} Lucons* _(${rarity} rarity)_` +
-      `\n💠 *+${gainResonance} Resonance*` +
-      `\n🐾 *${moraName}* joins your collection!`;
+      `\n💠 *+${gainResonance} Resonance*`;
   }
 
   savePlayers(players);
   await finishWildBattle(chatId, senderId);
 
   const flavor = state.pendingDecision === "harmony_purify"
-    ? `The grateful *${moraName}* bonds with @${String(senderId).split("@")[0]}.\n_"A bond forged in light never breaks."_`
+    ? `The grateful *${moraName}* bonds with @${String(senderId).split("@")[0]} before dissolving into shard-light.\n_"A bond forged in light never breaks."_`
     : state.pendingDecision === "purity"
-      ? `@${String(senderId).split("@")[0]} disciplines *${moraName}* into submission.\n_"Even the wild can learn obedience."_`
-      : `@${String(senderId).split("@")[0]} earns the trust of *${moraName}*.\n_"Harmony is not conquest — it is communion."_`;
+      ? `@${String(senderId).split("@")[0]} disciplines *${moraName}* one last time before its essence crystallizes.\n_"Even the wild can learn obedience."_`
+      : `@${String(senderId).split("@")[0]} earns the trust of *${moraName}* before its form dissolves into shard-light.\n_"Harmony is not conquest — it is communion."_`;
 
   return sock.sendMessage(chatId, {
     text:
-      `🤝 *TAMED*\n\n` +
+      `🤝 *BONDED*\n\n` +
       `${flavor}\n\n` +
       `🪢 *+${tameGain} Tame Skill*` +
-      rewardsBlock,
+      rewardsBlock +
+      `\n\n_💎 Its essence already crystallized into a shard during the fight — check your vault with *.shards*._`,
     mentions: [senderId]
   }, { quoted: msg });
 }
@@ -1442,18 +1582,12 @@ async function cmdWildDevour(ctx, chatId, senderId, msg) {
   }
 
   const player = players[senderId];
-  const party = getPlayerParty(player);
-  const activeMora = party[state.playerActiveIndex];
 
-  // PE gain: 5 + level/5, capped at 15
+  // ── v0.5.0 rework: PE is now a player-level stat (player.riftPE).
   const wildLevel = Number(state.wildMora?.level || 1);
   const peGain = Math.min(15, 5 + Math.floor(wildLevel / 5));
+  player.riftPE = Math.min(100, Number(player.riftPE || 0) + peGain);
 
-  if (activeMora) {
-    activeMora.pe = Math.min(100, Number(activeMora.pe || 0) + peGain);
-  }
-
-  // Intelligence gain (scales with rarity, same as Purity fortify)
   const rarity = String(state.wildSpecies?.rarity || state.wildMora?.rarity || "common").toLowerCase();
   const intGain = getRewards(rarity).intelligence;
   player.intelligence = (player.intelligence || 0) + intGain;
@@ -1462,8 +1596,8 @@ async function cmdWildDevour(ctx, chatId, senderId, msg) {
   fp.rift = (fp.rift || 0) + 5;
   saveFactionPointsWild(fp);
 
-  const peWarning = activeMora && Number(activeMora.pe || 0) >= 80
-    ? `\n⚠️ *WARNING:* ${activeMora.name}'s PE is now *${activeMora.pe}*! Overflow danger!`
+  const peWarning = player.riftPE >= 80
+    ? `\n⚠️ *WARNING:* your Rift PE is now *${player.riftPE}*! Overflow danger!`
     : "";
 
   savePlayers(players);
@@ -1472,9 +1606,9 @@ async function cmdWildDevour(ctx, chatId, senderId, msg) {
   return sock.sendMessage(chatId, {
     text:
       `🩸 *DEVOURED*\n\n` +
-      `@${String(senderId).split("@")[0]}'s *${activeMora?.name || "Mora"}* absorbs the dying energy of *${state.wildMora.name}*.\n` +
-      `Raw power floods through the Rift bond.\n\n` +
-      `🕷 *+${peGain} Primordial Energy*\n` +
+      `@${String(senderId).split("@")[0]} absorbs the dying energy of *${state.wildMora.name}*.\n` +
+      `Raw power floods through your Rift bond.\n\n` +
+      `🕷 *+${peGain} Primordial Energy* _(Rift PE: ${player.riftPE})_\n` +
       `🧠 *+${intGain} Intelligence* _(${rarity} rarity)_\n` +
       `🔥 *+5 Faction Points* for Rift Seekers` +
       peWarning + `\n\n` +
@@ -1492,49 +1626,37 @@ async function cmdWildBind(ctx, chatId, senderId, msg) {
   }
 
   const player = players[senderId];
-  const party = getPlayerParty(player);
-  const activeMora = party[state.playerActiveIndex];
+  ensurePlayerCombatFields(player);
 
   const bindChance = 0.30;
   const success = Math.random() < bindChance;
 
   if (!success) {
-    // Backlash: active Mora takes 15% maxHP damage
-    if (activeMora && !isFainted(activeMora)) {
-      const backlashDmg = Math.max(5, Math.floor(Number(activeMora.maxHp || 1) * 0.15));
-      activeMora.hp = Math.max(0, Number(activeMora.hp || 0) - backlashDmg);
-      savePlayers(players);
-      await finishWildBattle(chatId, senderId);
-
-      return sock.sendMessage(chatId, {
-        text:
-          `⛓ *BIND FAILED!*\n\n` +
-          `The Rift chains shatter! *${state.wildMora.name}*'s dying rage lashes back!\n\n` +
-          `💥 *${activeMora.name}* takes *${backlashDmg} backlash damage!*\n` +
-          (isFainted(activeMora) ? `☠ *${activeMora.name} FAINTED from the backlash!*\n` : "") +
-          `\n_"Chaos obeys no one. Not even you."_`,
-        mentions: [senderId]
-      }, { quoted: msg });
-    }
-
+    // ── v0.5.0 rework: backlash hits the PLAYER directly (no active Mora).
+    const backlashDmg = Math.max(5, Math.floor(Number(player.playerMaxHp || 100) * 0.10));
+    player.playerHp = Math.max(0, Number(player.playerHp || 100) - backlashDmg);
     savePlayers(players);
     await finishWildBattle(chatId, senderId);
+
     return sock.sendMessage(chatId, {
-      text: `⛓ *BIND FAILED!*\n\nThe Rift chains dissolve. *${state.wildMora.name}* fades into nothing.`,
+      text:
+        `⛓ *BIND FAILED!*\n\n` +
+        `The Rift chains shatter! *${state.wildMora.name}*'s dying rage lashes back!\n\n` +
+        `💥 *You* take *${backlashDmg} backlash damage!*\n` +
+        (player.playerHp <= 0 ? `☠ *You FAINTED from the backlash!*\n` : "") +
+        `\n_"Chaos obeys no one. Not even you."_`,
       mentions: [senderId]
     }, { quoted: msg });
   }
 
-  // Success: add corrupted Mora to party
-  if (!Array.isArray(player.moraOwned)) player.moraOwned = [];
-  const boundMora = {
-    ...state.wildMora,
-    isWild: false,
-    corrupted: true,
-    boundByRift: true,
-    pe: Math.min(100, Number(state.wildMora.pe || 0) + 10),
-  };
-  player.moraOwned.push(boundMora);
+  // ── v0.5.0 rework: .bind no longer adds to moraOwned. Successful bind
+  // marks the dropped shard as CORRUPTED (deal-more-damage variant) — but
+  // the actual shard inventory entry still belongs to the shard system.
+  // For the skeleton this is flavor only; corruption effect lands with the
+  // merged-form combat rewrite.
+  player.intelligence = (player.intelligence || 0) + 2;
+  const peGain = 8;
+  player.riftPE = (player.riftPE || 0) + peGain;
 
   savePlayers(players);
   await finishWildBattle(chatId, senderId);
@@ -1543,8 +1665,9 @@ async function cmdWildBind(ctx, chatId, senderId, msg) {
     text:
       `⛓ *RIFT BOUND!*\n\n` +
       `@${String(senderId).split("@")[0]} forced *${state.wildMora.name}* into servitude using raw Rift chains!\n\n` +
-      `☠ Added as *CORRUPTED MORA* to your collection.\n` +
-      `⚠️ _Corrupted Mora deal more damage but are unstable._\n\n` +
+      `☠ The dying Mora's shard pulses with *corruption* — its essence will fuel a darker merge.\n` +
+      `🩸 *+${peGain} Rift PE*  🧠 *+2 Intelligence*\n` +
+      `⚠️ _Corrupted shards deal more damage but are unstable._\n\n` +
       `_"The bold don't ask permission. They take."_`,
     mentions: [senderId]
   }, { quoted: msg });

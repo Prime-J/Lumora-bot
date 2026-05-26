@@ -164,6 +164,7 @@
     "name": "Terron",
     "type": "Terra",
     "rarity": "common",
+    "merge": "partial",
     "description": "A stone-armored defender that endures heavy blows and retaliates with crushing force.",
     "baseStats": {
       "hp": 70,
@@ -323,6 +324,7 @@
     "name": "Emberu",
     "type": "Flame",
     "rarity": "common",
+    "merge": "partial",
     "description": "A blazing warrior Mora that grows stronger as battle intensity rises.",
     "baseStats": {
       "hp": 52,
@@ -402,6 +404,7 @@
     "name": "Glacyn",
     "type": "Frost",
     "rarity": "Uncommon",
+    "merge": "partial",
     "description": "A silent frost hunter that slows enemies before delivering fatal precision.",
     "baseStats": {
       "hp": 58,
@@ -472,6 +475,7 @@
     "name": "Umbrake",
     "type": "Shadow",
     "rarity": "Uncommon",
+    "merge": "partial",
     "description": "A lurking shadow Mora that weakens enemies before striking from darkness.",
     "baseStats": {
       "hp": 50,
@@ -542,6 +546,7 @@
     "name": "Torrivine",
     "type": "Nature",
     "rarity": "Uncommon",
+    "merge": "partial",
     "description": "A jungle brute that traps foes before overwhelming them.",
     "baseStats": {
       "hp": 60,
@@ -603,6 +608,7 @@
     "name": "Pyrraptor",
     "type": "Flame",
     "rarity": "Uncommon",
+    "merge": "partial",
     "description": "A feral fire beast that attacks in rapid bursts.",
     "baseStats": {
       "hp": 50,
@@ -664,6 +670,7 @@
     "name": "Zephyra",
     "type": "Wind",
     "rarity": "Uncommon",
+    "merge": "partial",
     "description": "A swift aerial Mora that controls the battlefield with wind currents.",
     "baseStats": {
       "hp": 48,
@@ -725,6 +732,7 @@
     "name": "Brinlock",
     "type": "Aqua",
     "rarity": "Common",
+    "merge": "partial",
     "description": "A calm shoreline Mora that fights with steady rhythm. Brinlock wins by wearing foes down like waves on stone.",
     "baseStats": {
       "hp": 56,
@@ -795,6 +803,7 @@
     "name": "Kindrel",
     "type": "Flame",
     "rarity": "Common",
+    "merge": "partial",
     "description": "A small ember spirit Mora that brightens when challenged. Kindrel fights with quick sparks and playful feints.",
     "baseStats": {
       "hp": 50,
@@ -865,6 +874,7 @@
     "name": "Pebbrum",
     "type": "Terra",
     "rarity": "Common",
+    "merge": "partial",
     "description": "A sturdy pebble-backed Mora that never rushes. Pebbrum builds momentum and hits like a rolling stone.",
     "baseStats": {
       "hp": 60,
@@ -935,6 +945,7 @@
     "name": "Gustling",
     "type": "Wind",
     "rarity": "Common",
+    "merge": "partial",
     "description": "A breezy scout Mora that dances through gaps in defense. Gustling fights with sharp gusts and sudden turns.",
     "baseStats": {
       "hp": 48,
@@ -1005,6 +1016,7 @@
     "name": "Noctik",
     "type": "Shadow",
     "rarity": "Common",
+    "merge": "partial",
     "description": "A dusk-stalker Mora that prefers misdirection over brute force. Noctik weakens targets before finishing cleanly.",
     "baseStats": {
       "hp": 52,
@@ -1146,6 +1158,7 @@
     "name": "Frosten",
     "type": "Frost",
     "rarity": "Uncommon",
+    "merge": "partial",
     "description": "A disciplined frost sentinel Mora. Frosten slows enemies with cold pressure, then locks them down with clean hits.",
     "baseStats": {
       "hp": 60,
@@ -1216,6 +1229,7 @@
     "name": "Briarhorn",
     "type": "Nature",
     "rarity": "Uncommon",
+    "merge": "partial",
     "description": "A forest charger Mora that turns defense into offense. Briarhorn grows tougher each time it’s challenged.",
     "baseStats": {
       "hp": 62,
@@ -1286,6 +1300,7 @@
     "name": "Cindrake",
     "type": "Flame",
     "rarity": "Uncommon",
+    "merge": "partial",
     "description": "A young drake Mora that fights with controlled heat. Cindrake is relentless once it smells weakness.",
     "baseStats": {
       "hp": 58,
@@ -1356,6 +1371,7 @@
     "name": "Dunebral",
     "type": "Terra",
     "rarity": "Uncommon",
+    "merge": "partial",
     "description": "A desert-wanderer Mora with stone plates and sharp instincts. Dunebral controls the fight by slowing and breaking defenses.",
     "baseStats": {
       "hp": 66,
@@ -1426,6 +1442,7 @@
     "name": "Flarion",
     "type": "Flame",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A blazing flame fox Mora that grows fiercer as battle intensifies.",
     "baseStats": {
       "hp": 62,
@@ -1522,6 +1539,7 @@
     "name": "Terravex",
     "type": "Terra",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A rock gorilla Mora that smashes through defenses.",
     "baseStats": {
       "hp": 78,
@@ -1615,6 +1633,7 @@
     "name": "Aquarion",
     "type": "Aqua",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A sleek water serpent Mora that overwhelms with tides.",
     "baseStats": {
       "hp": 70,
@@ -1708,6 +1727,7 @@
     "name": "Thornex",
     "type": "Nature",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A towering plant lizard Mora that dominates with overwhelming vines.",
     "baseStats": {
       "hp": 74,
@@ -1801,6 +1821,7 @@
     "name": "Umbrix",
     "type": "Shadow",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A shadow beast Mora that weakens foes before striking lethally.",
     "baseStats": {
       "hp": 66,
@@ -1894,6 +1915,7 @@
     "name": "Ignix",
     "type": "Flame",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A fierce fire lizard Mora that fights with burning precision.",
     "baseStats": {
       "hp": 68,
@@ -1987,6 +2009,7 @@
     "name": "Frostel",
     "type": "Frost",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "An ice fox Mora that freezes momentum and finishes with clean precision.",
     "baseStats": {
       "hp": 66,
@@ -2080,6 +2103,7 @@
     "name": "Stormix",
     "type": "Wind",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A storm-bird Mora that mixes wind pressure with crackling static.",
     "baseStats": {
       "hp": 62,
@@ -2173,6 +2197,7 @@
     "name": "Drakonis",
     "type": "Dragon",
     "rarity": "Epic",
+    "merge": "partial",
     "description": "A winged dragon Mora with glowing scales, feared for raw dominance.",
     "baseStats": {
       "hp": 82,
@@ -2266,6 +2291,7 @@
     "name": "Pyrix",
     "type": "Flame",
     "rarity": "Epic",
+    "merge": "partial",
     "description": "A fire lion Mora that grows more dangerous the longer the battle lasts.",
     "baseStats": {
       "hp": 78,
@@ -2359,6 +2385,7 @@
     "name": "Cryovex",
     "type": "Frost",
     "rarity": "Epic",
+    "merge": "partial",
     "description": "An ice dragon Mora that crushes rhythm and locks enemies in cold control.",
     "baseStats": {
       "hp": 80,
@@ -2452,6 +2479,7 @@
     "name": "Voltaris",
     "type": "Volt",
     "rarity": "Epic",
+    "merge": "partial",
     "description": "A lightning dragon Mora that punishes slow reactions with brutal surges.",
     "baseStats": {
       "hp": 76,
@@ -2545,6 +2573,7 @@
     "name": "Floravex",
     "type": "Nature",
     "rarity": "Epic",
+    "merge": "partial",
     "description": "A giant tree beast Mora that crushes opponents under living wood and roots.",
     "baseStats": {
       "hp": 86,
@@ -2638,6 +2667,7 @@
     "name": "Terragon",
     "type": "Terra",
     "rarity": "Epic",
+    "merge": "partial",
     "description": "A rock dragon Mora that turns the ground itself into a weapon.",
     "baseStats": {
       "hp": 88,
@@ -2731,6 +2761,7 @@
     "name": "Luxar",
     "type": "Light",
     "rarity": "Epic",
+    "merge": "partial",
     "description": "A winged light guardian Mora that overwhelms foes with radiant pressure.",
     "baseStats": {
       "hp": 74,
@@ -2824,6 +2855,7 @@
     "name": "Nocturn",
     "type": "Shadow",
     "rarity": "Epic",
+    "merge": "partial",
     "description": "A dark-winged Mora that strikes from above and vanishes into void mist.",
     "baseStats": {
       "hp": 78,
@@ -2917,6 +2949,7 @@
     "name": "Aquavex",
     "type": "Aqua",
     "rarity": "Epic",
+    "merge": "partial",
     "description": "A colossal ocean serpent Mora that commands crushing tidal force.",
     "baseStats": {
       "hp": 90,
@@ -3010,6 +3043,7 @@
     "name": "Infernos",
     "type": "Flame",
     "rarity": "Epic",
+    "merge": "partial",
     "description": "A lava titan Mora that turns the battlefield into molten ruin.",
     "baseStats": {
       "hp": 92,
@@ -3103,6 +3137,7 @@
     "name": "Abyssor",
     "type": "Shadow",
     "rarity": "Legendary",
+    "merge": "full",
     "description": "A giant void Mora with crimson eyes that devours light and hope.",
     "baseStats": {
       "hp": 95,
@@ -3196,6 +3231,7 @@
     "name": "Celestion",
     "type": "Cosmic",
     "rarity": "Legendary",
+    "merge": "full",
     "description": "A star-powered Mora with a galaxy body. Reality bends around its orbit.",
     "baseStats": {
       "hp": 88,
@@ -3289,6 +3325,7 @@
     "name": "Ignivar",
     "type": "Flame",
     "rarity": "Legendary",
+    "merge": "full",
     "description": "A massive fire dragon Mora whose wings scorch the sky itself.",
     "baseStats": {
       "hp": 96,
@@ -3382,6 +3419,7 @@
     "name": "Terralord",
     "type": "Terra",
     "rarity": "Legendary",
+    "merge": "full",
     "description": "A giant stone titan Mora that commands tectonic destruction.",
     "baseStats": {
       "hp": 110,
@@ -3475,6 +3513,7 @@
     "name": "Voltaris Prime",
     "type": "Volt",
     "rarity": "Legendary",
+    "merge": "full",
     "description": "The pure lightning ascension of Voltaris, condensed into raw voltage form.",
     "baseStats": {
       "hp": 88,
@@ -3568,6 +3607,7 @@
     "name": "Luminary",
     "type": "Light",
     "rarity": "Legendary",
+    "merge": "full",
     "description": "An angelic Mora with radiant wings that blinds enemies with divine brilliance.",
     "baseStats": {
       "hp": 90,
@@ -3661,6 +3701,7 @@
     "name": "Noctyra",
     "type": "Shadow",
     "rarity": "Legendary",
+    "merge": "full",
     "description": "The Queen of Shadows, ruler of the deepest void dominion.",
     "baseStats": {
       "hp": 94,
@@ -3754,6 +3795,7 @@
     "name": "Aquatyr",
     "type": "Aqua",
     "rarity": "Legendary",
+    "merge": "full",
     "description": "A colossal ocean titan Mora that commands crushing tidal authority.",
     "baseStats": {
       "hp": 108,
@@ -3847,6 +3889,7 @@
     "name": "Drakoryx",
     "type": "Dragon",
     "rarity": "Legendary",
+    "merge": "full",
     "description": "The Dragon King Mora whose roar bends the battlefield to its will.",
     "baseStats": {
       "hp": 100,
@@ -4034,6 +4077,7 @@
     "name": "Omnaris",
     "type": "Omni",
     "rarity": "Legendary",
+    "merge": "full",
     "description": "A Mora containing all elemental forces in unstable balance.",
     "baseStats": {
       "hp": 100,
@@ -4127,6 +4171,7 @@
     "name": "Aetherion",
     "type": "Light",
     "rarity": "Legendary",
+    "merge": "full",
     "description": "A radiant supreme guardian Mora that channels celestial harmony.",
     "baseStats": {
       "hp": 102,
@@ -4220,6 +4265,7 @@
     "name": "Bup",
     "type": "Aqua",
     "rarity": "Common",
+    "merge": "partial",
     "description": "A bubbly amphibious Mora. It inflates its cheeks to absorb impacts before spitting water back.",
     "baseStats": {
       "hp": 55,
@@ -4281,6 +4327,7 @@
     "name": "Sproutlet",
     "type": "Nature",
     "rarity": "Common",
+    "merge": "partial",
     "description": "A walking seedling Mora that thrives in sunlight. Its roots are surprisingly strong.",
     "baseStats": {
       "hp": 60,
@@ -4342,6 +4389,7 @@
     "name": "Dustmite",
     "type": "Terra",
     "rarity": "Common",
+    "merge": "partial",
     "description": "A tiny, rock-covered scavenger Mora. It easily blends into rocky terrain to ambush prey.",
     "baseStats": {
       "hp": 50,
@@ -4403,6 +4451,7 @@
     "name": "Staticbug",
     "type": "Volt",
     "rarity": "Common",
+    "merge": "partial",
     "description": "A sparking insectoid Mora. It rubs its legs together to generate tiny but painful shocks.",
     "baseStats": {
       "hp": 40,
@@ -4464,6 +4513,7 @@
     "name": "Ashling",
     "type": "Flame",
     "rarity": "Common",
+    "merge": "partial",
     "description": "A crawling coal Mora that leaves a trail of soot. Its body temperature spikes when threatened.",
     "baseStats": {
       "hp": 48,
@@ -4525,6 +4575,7 @@
     "name": "Flurrybat",
     "type": "Frost",
     "rarity": "Common",
+    "merge": "partial",
     "description": "A snowy bat Mora that freezes the moisture in the air to create icy projectiles.",
     "baseStats": {
       "hp": 45,
@@ -4586,6 +4637,7 @@
     "name": "Gloomtail",
     "type": "Shadow",
     "rarity": "Common",
+    "merge": "partial",
     "description": "A shadowy rat Mora. It hides in the darkest corners and steals energy from unsuspecting prey.",
     "baseStats": {
       "hp": 42,
@@ -4647,6 +4699,7 @@
     "name": "Breezefluff",
     "type": "Wind",
     "rarity": "Common",
+    "merge": "partial",
     "description": "A floating dandelion-like Mora. It rides the wind to escape predators.",
     "baseStats": {
       "hp": 50,
@@ -4708,6 +4761,7 @@
     "name": "Puddlekin",
     "type": "Aqua",
     "rarity": "Common",
+    "merge": "partial",
     "description": "A living droplet Mora. It is very hard to grasp and slips out of danger easily.",
     "baseStats": {
       "hp": 65,
@@ -4769,6 +4823,7 @@
     "name": "Twiggy",
     "type": "Nature",
     "rarity": "Common",
+    "merge": "partial",
     "description": "A stick-insect Mora. It perfectly mimics a dry branch until it strikes.",
     "baseStats": {
       "hp": 45,
@@ -4830,6 +4885,7 @@
     "name": "Gravelback",
     "type": "Terra",
     "rarity": "Uncommon",
+    "merge": "partial",
     "description": "A sturdy badger-like Mora with a rocky carapace. It charges headfirst into danger.",
     "baseStats": {
       "hp": 65,
@@ -4891,6 +4947,7 @@
     "name": "Joltwing",
     "type": "Volt",
     "rarity": "Uncommon",
+    "merge": "partial",
     "description": "A charged bird Mora. The friction of its feathers creates thunderclaps.",
     "baseStats": {
       "hp": 55,
@@ -4952,6 +5009,7 @@
     "name": "Scorchmane",
     "type": "Flame",
     "rarity": "Uncommon",
+    "merge": "partial",
     "description": "A fiery hyena Mora that travels in packs. Its laughter sounds like crackling flames.",
     "baseStats": {
       "hp": 60,
@@ -5013,6 +5071,7 @@
     "name": "Frostfang",
     "type": "Frost",
     "rarity": "Uncommon",
+    "merge": "partial",
     "description": "An icy wolf Mora. It hunts relentlessly across frozen tundras.",
     "baseStats": {
       "hp": 62,
@@ -5074,6 +5133,7 @@
     "name": "Duskprowl",
     "type": "Shadow",
     "rarity": "Uncommon",
+    "merge": "partial",
     "description": "A shadowy panther Mora that is virtually invisible at night.",
     "baseStats": {
       "hp": 58,
@@ -5135,6 +5195,7 @@
     "name": "Obsidihorn",
     "type": "Terra",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A massive beetle-like Mora with a horn made of volcanic glass. It is nearly impervious to physical strikes.",
     "baseStats": {
       "hp": 85,
@@ -5189,6 +5250,7 @@
     "name": "Valtopher",
     "type": "Volt",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A sleek, electric feline that moves like a bolt of lightning. It leaves ozone-scented air in its wake.",
     "baseStats": {
       "hp": 65,
@@ -5243,6 +5305,7 @@
     "name": "Florageist",
     "type": "Nature",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A mystical deer Mora draped in bioluminescent moss. It can vanish into thin air by mimicking shadows.",
     "baseStats": {
       "hp": 80,
@@ -5297,6 +5360,7 @@
     "name": "Pyre-Griffin",
     "type": "Flame",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A majestic winged beast whose feathers burn with a blue flame. It rules the volcanic peaks.",
     "baseStats": {
       "hp": 75,
@@ -5351,6 +5415,7 @@
     "name": "Abyss-Lurk",
     "type": "Shadow",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A multi-eyed serpent that lives in the deepest rifts. It feeds on the fear of its prey.",
     "baseStats": {
       "hp": 90,
@@ -5405,6 +5470,7 @@
     "name": "Glacier-Rex",
     "type": "Frost",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "An ancient reptilian Mora frozen in ice for eons. Its breath can turn a forest into a tundra.",
     "baseStats": {
       "hp": 100,
@@ -5459,6 +5525,7 @@
     "name": "Tidal-Serpent",
     "type": "Aqua",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A long, graceful sea serpent that controls the tides. Sailors believe seeing one brings storms.",
     "baseStats": {
       "hp": 85,
@@ -5513,6 +5580,7 @@
     "name": "Aero-Drakon",
     "type": "Wind",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A dragon-like Mora that lacks scales, covered instead in streamlined feathers.",
     "baseStats": {
       "hp": 70,
@@ -5567,6 +5635,7 @@
     "name": "Iron-Sentinel",
     "type": "Terra",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A Mora that looks like a living statue. It was built by ancient civilizations to guard temples.",
     "baseStats": {
       "hp": 90,
@@ -5621,6 +5690,7 @@
     "name": "Nebula-Wisp",
     "type": "Void",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A floating orb of starlight. It doesn't seem to belong to this world.",
     "baseStats": {
       "hp": 60,
@@ -5675,6 +5745,7 @@
     "name": "Magma-Tortoise",
     "type": "Flame",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "Its shell is a miniature volcano. It moves slowly but can erupt at any moment.",
     "baseStats": {
       "hp": 110,
@@ -5729,6 +5800,7 @@
     "name": "Crag-Goat",
     "type": "Terra",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A nimble climber that can stand on near-vertical cliffs. Its head is harder than diamonds.",
     "baseStats": {
       "hp": 75,
@@ -5783,6 +5855,7 @@
     "name": "Spectral-Raven",
     "type": "Shadow",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A messenger of the abyss. Its caw is said to be an omen of bad luck.",
     "baseStats": {
       "hp": 65,
@@ -5837,6 +5910,7 @@
     "name": "Venom-Spire",
     "type": "Nature",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A predatory plant Mora that lures insects with a sweet scent before injecting neurotoxins.",
     "baseStats": {
       "hp": 85,
@@ -5891,6 +5965,7 @@
     "name": "Spark-Core",
     "type": "Volt",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A floating mechanical Mora that seems to be powered by an infinite battery.",
     "baseStats": {
       "hp": 70,
@@ -5945,6 +6020,7 @@
     "name": "Crag-Titan",
     "type": "Terra",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A walking mountain. Its steps cause tremors that can be felt for miles.",
     "baseStats": {
       "hp": 115,
@@ -6017,6 +6093,7 @@
     "name": "Storm-Herald",
     "type": "Volt",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A bird-like Mora that lives within lightning clouds. It only descends during the fiercest storms.",
     "baseStats": {
       "hp": 75,
@@ -6089,6 +6166,7 @@
     "name": "Blight-Bloom",
     "type": "Nature",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A beautiful flower with a deadly secret. Its pollen causes vivid hallucinations.",
     "baseStats": {
       "hp": 90,
@@ -6161,6 +6239,7 @@
     "name": "Cinder-Drake",
     "type": "Flame",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A wingless dragon that swims in magma. Its scales are harder than steel.",
     "baseStats": {
       "hp": 95,
@@ -6233,6 +6312,7 @@
     "name": "Phantom-Stalker",
     "type": "Shadow",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A lean, ghostly canine that tracks its prey through their dreams.",
     "baseStats": {
       "hp": 70,
@@ -6305,6 +6385,7 @@
     "name": "Frost-Warden",
     "type": "Frost",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A humanoid Mora made of permafrost. It guards the gates of the Ice Kingdom.",
     "baseStats": {
       "hp": 100,
@@ -6377,6 +6458,7 @@
     "name": "Vortex-Manta",
     "type": "Aqua",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A floating ray that creates whirlpools in the sky to trap its avian prey.",
     "baseStats": {
       "hp": 85,
@@ -6449,6 +6531,7 @@
     "name": "Cloud-Whale",
     "type": "Wind",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A colossal Mora that drifts through the stratosphere. It is often mistaken for a storm cloud.",
     "baseStats": {
       "hp": 150,
@@ -6521,6 +6604,7 @@
     "name": "Cyber-Byte",
     "type": "Volt",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "A Mora that exists half in the digital world. It can manipulate data to its advantage.",
     "baseStats": {
       "hp": 70,
@@ -6593,6 +6677,7 @@
     "name": "Gem-Tortoise",
     "type": "Terra",
     "rarity": "Rare",
+    "merge": "partial",
     "description": "Its shell is encrusted with rare diamonds. It is highly valued by treasure hunters.",
     "baseStats": {
       "hp": 100,
@@ -6665,6 +6750,7 @@
     "name": "Infernal-Centaur",
     "type": "Flame",
     "rarity": "Epic",
+    "merge": "partial",
     "description": "A warrior Mora that leaves a trail of burning hoofprints. It carries a lance forged in the planet's core.",
     "baseStats": {
       "hp": 105,
@@ -6746,6 +6832,7 @@
     "name": "Abyssal-Hydra",
     "type": "Shadow",
     "rarity": "Epic",
+    "merge": "partial",
     "description": "Each of its three heads has a different personality and a different way of killing.",
     "baseStats": {
       "hp": 120,
@@ -6909,6 +6996,7 @@
     "name": "Primal-Golem",
     "type": "Terra",
     "rarity": "Epic",
+    "merge": "partial",
     "description": "The first Mora ever created from the earth. It contains the raw energy of the planet.",
     "baseStats": {
       "hp": 140,
@@ -6990,6 +7078,7 @@
     "name": "Tesla-Dragon",
     "type": "Volt",
     "rarity": "Epic",
+    "merge": "partial",
     "description": "A mechanical dragon powered by a miniature sun. It generates a magnetic field that disrupts electronics.",
     "baseStats": {
       "hp": 100,
@@ -7162,6 +7251,7 @@
     "name": "Ruvon",
     "type": "Flame",
     "rarity": "Legendary",
+    "merge": "full",
     "description": "The Core Burner. Ruvon lives in the deepest layer of Lumora's core, keeping the planet's heat stable with its Rift-fire feathers.",
     "baseStats": {
       "hp": 110,
@@ -7252,6 +7342,7 @@
     "name": "Belo",
     "type": "Nature",
     "rarity": "Legendary",
+    "merge": "full",
     "description": "The World Root. Belo's antlers are actually the branches of a tree that existed before the sky cracked. It heals the land wherever it walks.",
     "baseStats": {
       "hp": 200,
@@ -7342,6 +7433,7 @@
     "name": "Kaza",
     "type": "Wind",
     "rarity": "Legendary",
+    "merge": "full",
     "description": "The Sky Splitter. Kaza was born from the wind that rushed out of the crack in the sky. It moves so fast it appears to be in two places at once.",
     "baseStats": {
       "hp": 100,
@@ -7432,6 +7524,7 @@
     "name": "Nira",
     "type": "Aqua",
     "rarity": "Legendary",
+    "merge": "full",
     "description": "The Ocean Mind. Nira's body is composed of Primordial Water. It is said to contain the memories of everyone who has ever lived in Lumora.",
     "baseStats": {
       "hp": 130,
@@ -7522,6 +7615,7 @@
     "name": "Pyronyx",
     "type": "Nature",
     "rarity": "legendary",
+    "merge": "full",
     "description": "A magma-born Mora with a blazing core, growing stronger in heat and leaving scorched ground behind",
     "baseStats": {
       "hp": 277,

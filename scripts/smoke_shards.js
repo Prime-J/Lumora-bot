@@ -37,12 +37,12 @@ console.log("✅ schema migration: shards={}, shardStorage={}, currentMerge=null
 // ── 2. Mergeable detection ──────────────────────────────────
 const tideling = findByName("Nylon"); // tagged partial
 const eternyx  = findByName("Eternyx"); // tagged full
-const nonMerge = moraList.find((m) => !m.merge);
+const syntheticNonMerge = { id: 999, name: "TestSpecies", rarity: "common" }; // no merge field
 assert.ok(tideling && shardSystem.isMergeable(tideling), "Nylon should be mergeable");
 assert.strictEqual(shardSystem.getMergeTier(tideling), "partial");
 assert.strictEqual(shardSystem.getMergeTier(eternyx), "full");
-assert.ok(!shardSystem.isMergeable(nonMerge), `${nonMerge.name} should NOT be mergeable`);
-console.log(`✅ mergeable detection: Nylon=partial, Eternyx=full, ${nonMerge.name}=none`);
+assert.ok(!shardSystem.isMergeable(syntheticNonMerge), "Species without merge field should NOT be mergeable");
+console.log(`✅ mergeable detection: Nylon=partial, Eternyx=full, synthetic=none`);
 
 // ── 3. Drop (forced) ────────────────────────────────────────
 const dropLog = shardSystem.dropShardOnDefeat(player, tideling, { forceDrop: true });
