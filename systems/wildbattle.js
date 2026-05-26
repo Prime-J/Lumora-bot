@@ -186,6 +186,7 @@ function buildWildHeader(players, senderId, playerCombatant, wildMora, hpBar, st
     playerCombatant.mergeTier === "full"    ? "  🔥FULL"
     : playerCombatant.mergeTier === "partial" ? "  ✨PARTIAL"
     : "  🩶BASE";
+  const corrBadge = playerCombatant.corrupted ? "  ☠CORRUPTED" : "";
 
   return (
     `${label}\n` +
@@ -193,7 +194,7 @@ function buildWildHeader(players, senderId, playerCombatant, wildMora, hpBar, st
     `🧾 *${hunterName}* vs *${wildMora.name}*\n` +
     `🎭 Wild Nature: *${state.personality}*\n` +
     (state.isCorrupted ? `☠ Corruption Class: *${state.corruptionClass || "Variant"}*\n` : "") +
-    `\n🟥 *${String(playerCombatant.name).toUpperCase()}*${tierBadge}  (Lv ${playerCombatant.level})\n` +
+    `\n🟥 *${String(playerCombatant.name).toUpperCase()}*${tierBadge}${corrBadge}  (Lv ${playerCombatant.level})\n` +
     `${hpLine(hpBar, playerCombatant)}\n${energyLine(playerCombatant)}\n\n` +
     `🟪 *${String(wildMora.name).toUpperCase()}* (Lv ${wildMora.level})\n` +
     `${hpLine(hpBar, wildMora)}\n${energyLine(wildMora)}`
@@ -308,6 +309,7 @@ function getPlayerCombatant(player, loadMora) {
     stats: { atk, def, spd, energy: player.combatMaxEnergy },
     atk, def, spd,
     mergeTier,
+    corrupted: !!merge?.corrupted,
   };
 }
 
@@ -731,14 +733,30 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
       ? (move.tier === "full" ? " 🔥" : " ✨")
       : " 🩶";
 
-  // ── Status moves (Block) handled separately ─────────────────────
-  if (move.name === "Block") {
-    player.blockNextHit = true;
+  // ── Pure-status moves (no damage) handled first ─────────────────
+  const isPureStatus = move.power === 0 && (move.selfHeal || move.brace);
+  if (move.name === "Block" || isPureStatus) {
+    const fxLines = [];
+    if (move.brace || move.name === "Block") {
+      player.blockNextHit = true;
+      if (move.counter) player.counterDamage = Number(move.counter);
+      fxLines.push(`🛡 braces — next incoming hit halved` +
+        (move.counter ? ` AND counter-strikes for *${move.counter}*` : ""));
+    }
+    if (move.selfHeal) {
+      const heal = Number(move.selfHeal);
+      const before = Number(player.playerHp || 0);
+      player.playerHp = clamp(before + heal, 0, Number(player.playerMaxHp || 100));
+      playerCombatant.hp = player.playerHp;
+      const actual = player.playerHp - before;
+      fxLines.push(`💚 restores *${actual}* HP _(now ${player.playerHp}/${player.playerMaxHp})_`);
+    }
     logs.push(
-      `🛡 @${String(senderId).split("@")[0]}${tag} braces — *Block* will halve the next incoming hit.`
+      `✨ @${String(senderId).split("@")[0]}${tag} used *${move.name}*\n   ${fxLines.join("\n   ")}`
     );
   } else {
-    const hit = battleMath.checkHit(move.accuracy ?? 100);
+    // neverMisses moves bypass the hit roll
+    const hit = move.neverMisses ? true : battleMath.checkHit(move.accuracy ?? 100);
     if (!hit) {
       logs.push(
         `💨 @${String(senderId).split("@")[0]}${tag} used *${move.name}* and missed!`
@@ -748,6 +766,13 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
       const moveData = { power: move.power, accuracy: move.accuracy, category: move.category, type: playerCombatant.type };
       const res = calcDamage(battleMath, playerCombatant, state.wildMora, moveData, crit);
 
+      // Energy-restore effect (Void Drain): refund some combat energy on hit
+      if (move.energyRestore) {
+        const refund = Number(move.energyRestore);
+        player.combatEnergy = clamp(player.combatEnergy + refund, 0, player.combatMaxEnergy);
+        playerCombatant.energy = player.combatEnergy;
+      }
+
       // Rift Fury buff still applies
       let furyActive = false;
       if (player.riftFury && Number(player.riftFury.battles) > 0) {
@@ -755,6 +780,15 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
         player.riftFury.battles = Number(player.riftFury.battles) - 1;
         if (player.riftFury.battles <= 0) delete player.riftFury;
         furyActive = true;
+      }
+
+      // ── Corrupted merge: +25% damage on merge moves ─────────
+      const shardSystemRef = require("./shards");
+      const mergeRef = shardSystemRef.getCurrentMerge(player);
+      let corruptedActive = false;
+      if (mergeRef?.corrupted && move.source === "merge") {
+        res.dmg = Math.floor(res.dmg * (1 + shardSystemRef.CORRUPTED_DMG_BONUS));
+        corruptedActive = true;
       }
 
       state.wildMora.hp = clamp(
@@ -772,8 +806,22 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
         `⚔️ @${String(senderId).split("@")[0]}${tag} used *${move.name}* and dealt *${res.dmg}* to wild *${state.wildMora.name}*` +
         (crit ? "  ✨*CRIT!*" : "") +
         effTxt +
-        (furyActive ? "  🔥*RIFT FURY!*" : "")
+        (furyActive ? "  🔥*RIFT FURY!*" : "") +
+        (corruptedActive ? "  ☠*CORRUPTED!*" : "")
       );
+
+      // ── Instability backlash chance for corrupted merges ────
+      if (mergeRef?.corrupted && Math.random() < shardSystemRef.CORRUPTED_BACKLASH_PCT) {
+        const backlash = Math.max(
+          3,
+          Math.floor(Number(player.playerMaxHp || 100) * shardSystemRef.CORRUPTED_BACKLASH_FRAC)
+        );
+        player.playerHp = Math.max(0, Number(player.playerHp || 0) - backlash);
+        playerCombatant.hp = player.playerHp;
+        logs.push(
+          `☠ The corruption recoils — you take *${backlash}* instability damage!`
+        );
+      }
     }
   }
 
@@ -1048,6 +1096,24 @@ async function doWildTurn(ctx, player, playerMora, state, senderId) {
   const crit = battleMath.rollCrit(8);
   const res = calcDamage(battleMath, state.wildMora, playerMora, choice.data, crit);
 
+  // ── Brace / counter from previous turn (Block, Iron Stance) ──────
+  let braceHalved = false;
+  let counterDealt = 0;
+  if (player.blockNextHit) {
+    res.dmg = Math.floor(res.dmg / 2);
+    braceHalved = true;
+    delete player.blockNextHit;
+    if (Number(player.counterDamage) > 0) {
+      counterDealt = Number(player.counterDamage);
+      state.wildMora.hp = clamp(
+        Number(state.wildMora.hp || 0) - counterDealt,
+        0,
+        Number(state.wildMora.maxHp || 1)
+      );
+      delete player.counterDamage;
+    }
+  }
+
   playerMora.hp = clamp(Number(playerMora.hp || 0) - res.dmg, 0, Number(playerMora.maxHp || 1));
 
   const effTxt =
@@ -1058,8 +1124,12 @@ async function doWildTurn(ctx, player, playerMora, state, senderId) {
   logs.push(
     `☠ Wild *${state.wildMora.name}* used *${choice.name}* and dealt *${res.dmg}* to *${playerMora.name}*` +
     (crit ? "  ✨*CRIT!*" : "") +
-    effTxt
+    effTxt +
+    (braceHalved ? "  🛡*BRACED — halved!*" : "")
   );
+  if (counterDealt) {
+    logs.push(`⚔️ *Counter!* — your brace strikes back for *${counterDealt}* damage.`);
+  }
 
   return logs;
 }
@@ -1682,14 +1752,23 @@ async function cmdWildBind(ctx, chatId, senderId, msg) {
     }, { quoted: msg });
   }
 
-  // ── v0.5.0 rework: .bind no longer adds to moraOwned. Successful bind
-  // marks the dropped shard as CORRUPTED (deal-more-damage variant) — but
-  // the actual shard inventory entry still belongs to the shard system.
-  // For the skeleton this is flavor only; corruption effect lands with the
-  // merged-form combat rewrite.
+  // ── v0.5.0 rework: .bind drops a CORRUPTED shard variant + stats.
   player.intelligence = (player.intelligence || 0) + 2;
   const peGain = 8;
   player.riftPE = (player.riftPE || 0) + peGain;
+
+  // Drop the corrupted shard
+  let shardLog = "";
+  try {
+    const shardSystem = require("./shards");
+    const wildSpecies = ctx.loadMora?.().find(
+      (x) => Number(x.id) === Number(state.wildMora.moraId)
+    );
+    const dropMsg = shardSystem.dropCorruptedShard(player, wildSpecies);
+    if (dropMsg) shardLog = `\n${dropMsg}`;
+  } catch (e) {
+    console.log("corrupted shard drop error:", e?.message || e);
+  }
 
   savePlayers(players);
   await finishWildBattle(chatId, senderId);
@@ -1698,9 +1777,8 @@ async function cmdWildBind(ctx, chatId, senderId, msg) {
     text:
       `⛓ *RIFT BOUND!*\n\n` +
       `@${String(senderId).split("@")[0]} forced *${state.wildMora.name}* into servitude using raw Rift chains!\n\n` +
-      `☠ The dying Mora's shard pulses with *corruption* — its essence will fuel a darker merge.\n` +
-      `🩸 *+${peGain} Rift PE*  🧠 *+2 Intelligence*\n` +
-      `⚠️ _Corrupted shards deal more damage but are unstable._\n\n` +
+      `🩸 *+${peGain} Rift PE*  🧠 *+2 Intelligence*` +
+      shardLog + `\n\n` +
       `_"The bold don't ask permission. They take."_`,
     mentions: [senderId]
   }, { quoted: msg });

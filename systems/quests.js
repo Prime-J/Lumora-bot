@@ -51,7 +51,10 @@ function getUnlockedStyleMoves(player) {
     const st = styles[id];
     if (!st) continue;
     for (const mv of (st.moves || [])) {
+      // Spread mv first so opt-in effect fields (selfHeal/brace/counter/
+      // energyRestore) pass through to the combat handler.
       out.push({
+        ...mv,
         name: mv.name,
         power: Number(mv.power || 0),
         accuracy: Number(mv.accuracy || 100),
@@ -101,6 +104,12 @@ function applyCompletion(player, questId) {
   }
   if (rewards.lucons) {
     player.lucons = Number(player.lucons || 0) + Number(rewards.lucons);
+  }
+  if (rewards.riftPE) {
+    player.riftPE = Math.min(100, Number(player.riftPE || 0) + Number(rewards.riftPE));
+  }
+  if (rewards.intelligence) {
+    player.intelligence = Number(player.intelligence || 0) + Number(rewards.intelligence);
   }
   return def;
 }

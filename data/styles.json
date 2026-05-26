@@ -3,10 +3,11 @@
     "id": "wind_step",
     "name": "Wind Step",
     "type": "Wind",
+    "faction": null,
     "lore": "A fluid Lumorian discipline that bends momentum and air. Practitioners strike from impossible angles.",
     "moves": [
       { "name": "Gale Kick",   "power": 38, "accuracy": 95, "energyCost": 4, "desc": "A whipping kick carried on a gust of wind." },
-      { "name": "Sky Step",    "power": 28, "accuracy": 100, "energyCost": 5, "desc": "Leap upward — your next move comes from above. Cannot miss." },
+      { "name": "Sky Step",    "power": 28, "accuracy": 100, "energyCost": 5, "neverMisses": true, "desc": "Leap upward — your next move comes from above. Cannot miss." },
       { "name": "Cyclone Cut", "power": 62, "accuracy": 88, "energyCost": 8, "desc": "A spinning blade of compressed air." }
     ],
     "unlockQuest": "first_breath"
@@ -15,6 +16,7 @@
     "id": "sun_walk",
     "name": "Sun Walk",
     "type": "Solar",
+    "faction": null,
     "lore": "A radiant style taught only in the Sanctuary's inner courtyard. Each step burns its impression into the air.",
     "moves": [
       { "name": "Solar Step",  "power": 40, "accuracy": 95, "energyCost": 4, "desc": "A scorching forward stride." },
@@ -22,5 +24,44 @@
       { "name": "Dawn Pillar", "power": 70, "accuracy": 85, "energyCost": 9, "desc": "Call down a column of solar fire." }
     ],
     "unlockQuest": "first_dawn"
+  },
+  "tide_veil": {
+    "id": "tide_veil",
+    "name": "Tide Veil",
+    "type": "Aqua",
+    "faction": "harmony",
+    "lore": "Harmony's defensive water form, taught by the Sanctuary's tide-keepers. Strikes ride the rhythm of breath and current.",
+    "moves": [
+      { "name": "Mending Wave", "power": 0,  "accuracy": 100, "energyCost": 6, "selfHeal": 18, "desc": "A soft wave — restores 18 HP to yourself instead of dealing damage." },
+      { "name": "Ripple Strike", "power": 35, "accuracy": 95, "energyCost": 4, "desc": "A flowing palm-strike that washes back." },
+      { "name": "Drown Press", "power": 58, "accuracy": 90, "energyCost": 7, "desc": "A heavy press of compressed water; slows the target." }
+    ],
+    "unlockQuest": "tides_of_sanctuary"
+  },
+  "bone_crush": {
+    "id": "bone_crush",
+    "name": "Bone Crush",
+    "type": "Stone",
+    "faction": "purity",
+    "lore": "The Purity Order's strike-discipline: no flourish, no waste. Every motion ends in a fracture.",
+    "moves": [
+      { "name": "Bone Hammer", "power": 50, "accuracy": 92, "energyCost": 5, "desc": "A heavy overhead strike." },
+      { "name": "Iron Stance", "power": 0,  "accuracy": 100, "energyCost": 4, "brace": true, "counter": 20, "desc": "Brace — next incoming hit halved AND counter-strikes for 20 damage." },
+      { "name": "Pillar Drop", "power": 75, "accuracy": 82, "energyCost": 9, "desc": "A devastating overhead — slow but crushing." }
+    ],
+    "unlockQuest": "oath_of_iron"
+  },
+  "void_sever": {
+    "id": "void_sever",
+    "name": "Void Sever",
+    "type": "Void",
+    "faction": "rift",
+    "lore": "Rift-tongue carving. Each strike pulls a thread of substance out of the world and consumes it.",
+    "moves": [
+      { "name": "Sever Line",  "power": 42, "accuracy": 95, "energyCost": 5, "desc": "A clean cut across nothing — that takes something with it." },
+      { "name": "Void Drain",  "power": 30, "accuracy": 100, "energyCost": 5, "energyRestore": 6, "desc": "Drain energy — deal 30 damage AND restore 6 of your own combat energy." },
+      { "name": "Null Eclipse", "power": 80, "accuracy": 80, "energyCost": 10, "desc": "Collapse a sliver of the void onto your target." }
+    ],
+    "unlockQuest": "void_initiation"
   }
 }

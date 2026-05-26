@@ -5475,8 +5475,9 @@ const profileCaption =
         : 0;
       if (merge) {
         const tierTag = merge.tier === "full" ? "🔥 FULL" : merge.tier === "partial" ? "✨ PARTIAL" : "—";
+        const corrTag = merge.corrupted ? "  ☠ CORRUPTED" : "";
         return (
-          `├ 🌟 Active: *[${merge.name}]* (${tierTag})\n` +
+          `├ 🌟 Active: *[${merge.name}]* (${tierTag})${corrTag}\n` +
           `└ 💎 Shards in vault: *${shardCount}* (.shards)`
         );
       }

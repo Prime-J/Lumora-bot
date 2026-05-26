@@ -19,6 +19,16 @@ const DROP_RATE_SPAWN_CLAIM = 0.15;
 // Default per-type storage cap; storage upgrades raise this per Mora.
 const DEFAULT_STORAGE_CAP = 1;
 
+// Corrupted shard variant — produced by Rift Seekers' .bind. Stored under
+// the same shard map with a "@corrupted" suffix on the key so caps stay
+// per-variant. Awakening a corrupted shard applies the corruption modifier:
+//   +CORRUPTED_DMG_BONUS  damage on every move
+//   CORRUPTED_BACKLASH_PCT chance per turn of self-damage from instability.
+const CORRUPTED_SUFFIX        = "@corrupted";
+const CORRUPTED_DMG_BONUS     = 0.25;  // +25%
+const CORRUPTED_BACKLASH_PCT  = 0.10;  // 10% per move
+const CORRUPTED_BACKLASH_FRAC = 0.06;  // 6% of player maxHp when triggered
+
 // ══════════════════════════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════════════════════════
@@ -29,11 +39,21 @@ function ensureShardFields(player) {
   if (!("currentMerge" in player)) player.currentMerge = null;
 }
 
-function shardKey(species) {
+function shardKey(species, opts = {}) {
   // species can be the mora.json entry or a name string — normalize to lowercase id-or-name
   if (!species) return null;
-  if (typeof species === "string") return species.toLowerCase();
-  return String(species.id ?? species.name ?? "").toLowerCase();
+  const base = typeof species === "string"
+    ? species.toLowerCase()
+    : String(species.id ?? species.name ?? "").toLowerCase();
+  return opts.corrupted ? `${base}${CORRUPTED_SUFFIX}` : base;
+}
+
+function isCorruptedKey(key) {
+  return typeof key === "string" && key.endsWith(CORRUPTED_SUFFIX);
+}
+
+function stripCorrupted(key) {
+  return isCorruptedKey(key) ? key.slice(0, -CORRUPTED_SUFFIX.length) : key;
 }
 
 function getMergeTier(species) {
@@ -61,12 +81,36 @@ function getShardCount(player, key) {
 function findSpeciesByKey(loadMora, key) {
   if (!key) return null;
   const list = loadMora();
-  const q = String(key).toLowerCase();
+  const q = stripCorrupted(String(key).toLowerCase());
   return list.find(
     (m) =>
       String(m.id).toLowerCase() === q ||
       String(m.name).toLowerCase() === q ||
       String(m.name).toLowerCase().includes(q)
+  );
+}
+
+// Drop a corrupted variant — used by Rift's .bind on success.
+// Cap-aware just like normal drops; returns a log line.
+function dropCorruptedShard(player, species) {
+  if (!isMergeable(species)) return null;
+  ensureShardFields(player);
+
+  const key = shardKey(species, { corrupted: true });
+  const cap = getStorageCap(player, key);
+  const have = getShardCount(player, key);
+
+  if (have >= cap) {
+    return (
+      `☠ A *corrupted ${species.name}* shard tried to crystallize — ` +
+      `but your vault is full (*${have}/${cap}*). Buy +1 storage to keep more.`
+    );
+  }
+
+  player.shards[key] = have + 1;
+  return (
+    `☠ A *CORRUPTED ${species.name}* shard pulses into your vault!\n` +
+    `   Awaken with *.awaken corrupted ${species.name.toLowerCase()}* — +25% damage, but unstable.`
   );
 }
 
@@ -148,7 +192,7 @@ function clearMergeStatusEffects(player) {
 
 // Build the merge snapshot stored on the player. Captures what we need to
 // render & resolve moves without re-reading mora.json each time.
-function buildMergeSnapshot(species) {
+function buildMergeSnapshot(species, opts = {}) {
   const tier = getMergeTier(species);
   const moveNames = species.moves ? Object.keys(species.moves) : [];
   return {
@@ -157,6 +201,7 @@ function buildMergeSnapshot(species) {
     type: species.type || null,
     tier, // "full" | "partial"
     moves: moveNames,
+    corrupted: !!opts.corrupted,
     awakenedAt: Date.now(),
   };
 }
@@ -189,16 +234,19 @@ async function cmdShards(ctx, chatId, senderId, msg) {
   } else {
     const list = ctx.loadMora();
     const lines = entries.map(([key, count], i) => {
+      const corrupted = isCorruptedKey(key);
+      const baseKey = stripCorrupted(key);
       const sp = list.find(
         (m) =>
-          String(m.id).toLowerCase() === key ||
-          String(m.name).toLowerCase() === key
+          String(m.id).toLowerCase() === baseKey ||
+          String(m.name).toLowerCase() === baseKey
       );
-      const name = sp?.name || key;
+      const name = sp?.name || baseKey;
       const tier = sp ? getMergeTier(sp) : null;
-      const tag  = tier === TIER_FULL ? " 🔥FULL" : tier === TIER_PARTIAL ? " ✨PARTIAL" : "";
+      const tierTag = tier === TIER_FULL ? " 🔥FULL" : tier === TIER_PARTIAL ? " ✨PARTIAL" : "";
+      const corrTag = corrupted ? " ☠CORRUPTED" : "";
       const cap  = getStorageCap(player, key);
-      return `${i + 1}. *${name}*${tag}  ×${count}/${cap}`;
+      return `${i + 1}. *${name}*${tierTag}${corrTag}  ×${count}/${cap}`;
     });
     body =
       `💎 *YOUR SHARD VAULT*\n${DIVIDER}\n` +
@@ -222,12 +270,20 @@ async function cmdAwaken(ctx, chatId, senderId, msg, args = []) {
   }
   ensureShardFields(player);
 
-  const queryRaw = args.join(" ").trim();
+  const tokens = args.map((a) => String(a).trim()).filter(Boolean);
+  // Support: ".awaken Nylon", ".awaken corrupted Nylon", ".awaken Nylon corrupted"
+  let wantCorrupted = false;
+  const filtered = tokens.filter((t) => {
+    if (t.toLowerCase() === "corrupted") { wantCorrupted = true; return false; }
+    return true;
+  });
+  const queryRaw = filtered.join(" ").trim();
+
   if (!queryRaw) {
     return sock.sendMessage(chatId, {
       text:
-        `🌀 *Usage:* *.awaken <shard name>*\n` +
-        `Example: *.awaken Tideling*\n\n` +
+        `🌀 *Usage:* *.awaken <shard name>* [corrupted]\n` +
+        `Examples: *.awaken Tideling*  •  *.awaken corrupted Nylon*\n\n` +
         `View your vault with *.shards*.`,
     }, { quoted: msg });
   }
@@ -242,11 +298,12 @@ async function cmdAwaken(ctx, chatId, senderId, msg, args = []) {
     }, { quoted: msg });
   }
 
-  const key = shardKey(species);
+  const key = shardKey(species, { corrupted: wantCorrupted });
   const have = getShardCount(player, key);
   if (have < 1) {
+    const variantLabel = wantCorrupted ? `corrupted *${species.name}*` : `*${species.name}*`;
     return sock.sendMessage(chatId, {
-      text: `❌ You don't have a *${species.name}* shard. Defeat one in the wild first.`,
+      text: `❌ You don't have a ${variantLabel} shard. Defeat one in the wild first.`,
     }, { quoted: msg });
   }
 
@@ -256,7 +313,7 @@ async function cmdAwaken(ctx, chatId, senderId, msg, args = []) {
 
   const previous = getCurrentMerge(player);
   clearMergeStatusEffects(player);
-  player.currentMerge = buildMergeSnapshot(species);
+  player.currentMerge = buildMergeSnapshot(species, { corrupted: wantCorrupted });
 
   savePlayers(players);
 
@@ -266,6 +323,11 @@ async function cmdAwaken(ctx, chatId, senderId, msg, args = []) {
       ? `🔥 *FULL MERGE* — you ARE the ${species.name}.`
       : `✨ *PARTIAL MERGE* — you keep your form, gain its moveset.`;
 
+  const corruptionLine = wantCorrupted
+    ? `\n☠ *CORRUPTED* — +${Math.round(CORRUPTED_DMG_BONUS * 100)}% damage,` +
+      ` ${Math.round(CORRUPTED_BACKLASH_PCT * 100)}% chance of instability backlash per move.`
+    : "";
+
   const transition = previous
     ? `🌪 The *${previous.name}* form shatters and reforms…\n`
     : `🌟 The crystal shatters…\n`;
@@ -273,12 +335,12 @@ async function cmdAwaken(ctx, chatId, senderId, msg, args = []) {
   return sock.sendMessage(chatId, {
     text:
       `${transition}` +
-      `💠 *AWAKENING — ${species.name}*\n${DIVIDER}\n` +
-      `${tierLine}\n` +
+      `💠 *AWAKENING — ${species.name}${wantCorrupted ? " ☠" : ""}*\n${DIVIDER}\n` +
+      `${tierLine}${corruptionLine}\n` +
       (species.description ? `\n_${species.description}_\n` : "") +
       `${DIVIDER}\n` +
       `🎴 Moveset gained: ${player.currentMerge.moves.map((m) => `*${m}*`).join(", ") || "_none_"}\n` +
-      `\n💎 Shards of *${species.name}* remaining: *${player.shards[key] || 0}*\n` +
+      `\n💎 ${wantCorrupted ? "Corrupted s" : "S"}hards of *${species.name}* remaining: *${player.shards[key] || 0}*\n` +
       `_All previous buffs and debuffs were wiped clean._\n` +
       `\nUse *.attack* to see your full moveset  •  *.shed* to revert.`,
     mentions: [senderId],
@@ -581,6 +643,7 @@ module.exports = {
   // helpers used by other systems
   ensureShardFields,
   dropShardOnDefeat,
+  dropCorruptedShard,
   getCurrentMerge,
   isMerged,
   getMergedDisplayName,
@@ -589,6 +652,8 @@ module.exports = {
   isMergeable,
   getMergeTier,
   shardKey,
+  isCorruptedKey,
+  stripCorrupted,
   getShardCount,
   getStorageCap,
   buildMergeSnapshot,
@@ -599,4 +664,8 @@ module.exports = {
   DEFAULT_STORAGE_CAP,
   DROP_RATE_DEFEAT,
   DROP_RATE_SPAWN_CLAIM,
+  CORRUPTED_SUFFIX,
+  CORRUPTED_DMG_BONUS,
+  CORRUPTED_BACKLASH_PCT,
+  CORRUPTED_BACKLASH_FRAC,
 };

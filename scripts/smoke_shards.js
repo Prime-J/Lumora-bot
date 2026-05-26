@@ -155,4 +155,48 @@ const after = questSystem.getUnlockedStyleMoves(quester);
 assert.ok(after.length >= 3, `wind step has 3 moves, got ${after.length}`);
 console.log(`✅ quest: first_breath complete → wind_step unlocked (${after.length} moves)`);
 
-console.log("\n🎉 ALL v0.5.0 REWORK SMOKE TESTS PASSED");
+// ── 13. Corrupted shards — drop, awaken, snapshot ──────────
+const corrupter = { id: "c@lid", username: "Kael" };
+shardSystem.ensureShardFields(corrupter);
+const corrLog = shardSystem.dropCorruptedShard(corrupter, tideling);
+assert.ok(corrLog && corrLog.includes("CORRUPTED"), "should log corrupted drop");
+const corrKey = shardSystem.shardKey(tideling, { corrupted: true });
+assert.strictEqual(shardSystem.getShardCount(corrupter, corrKey), 1, "corrupted shard counted");
+assert.ok(shardSystem.isCorruptedKey(corrKey), "key recognized as corrupted");
+assert.strictEqual(shardSystem.stripCorrupted(corrKey), "1", "strip yields base key");
+// Normal and corrupted live in separate slots — cap of 1 each
+shardSystem.dropShardOnDefeat(corrupter, tideling, { forceDrop: true });
+assert.strictEqual(shardSystem.getShardCount(corrupter, "1"), 1, "normal Nylon also present");
+assert.strictEqual(shardSystem.getShardCount(corrupter, corrKey), 1, "corrupted slot untouched");
+// Awaken the corrupted variant — snapshot should carry corrupted=true
+const snap = shardSystem.buildMergeSnapshot(tideling, { corrupted: true });
+assert.strictEqual(snap.corrupted, true, "snapshot should be corrupted");
+console.log(`✅ corrupted shards: drop, separate cap, snapshot all working`);
+
+// ── 14. Catalog expansion — 5 styles, 6 quests ─────────────
+const styles = questSystem.loadStyles();
+const quests = questSystem.loadQuests();
+assert.strictEqual(Object.keys(styles).length, 5, "5 styles expected");
+assert.strictEqual(Object.keys(quests).length, 6, "6 quests expected");
+assert.ok(styles.tide_veil && styles.bone_crush && styles.void_sever, "faction styles present");
+console.log(`✅ catalog: ${Object.keys(styles).length} styles, ${Object.keys(quests).length} quests`);
+
+// ── 15. Effect-field passthrough on style moves ────────────
+const harmPlayer = { id: "h@lid", username: "Solen", level: 1, styles: ["tide_veil"], quests: { active: {}, completed: [] } };
+questSystem.ensureQuestFields(harmPlayer);
+const harmMoves = questSystem.getUnlockedStyleMoves(harmPlayer);
+const mendingWave = harmMoves.find((m) => m.name === "Mending Wave");
+assert.ok(mendingWave, "Mending Wave is in moveset");
+assert.strictEqual(mendingWave.selfHeal, 18, "selfHeal passed through");
+const ironStance = questSystem.getUnlockedStyleMoves({
+  ...harmPlayer, styles: ["bone_crush"],
+}).find((m) => m.name === "Iron Stance");
+assert.strictEqual(ironStance.brace, true, "brace passed through");
+assert.strictEqual(ironStance.counter, 20, "counter passed through");
+const voidDrain = questSystem.getUnlockedStyleMoves({
+  ...harmPlayer, styles: ["void_sever"],
+}).find((m) => m.name === "Void Drain");
+assert.strictEqual(voidDrain.energyRestore, 6, "energyRestore passed through");
+console.log("✅ style effect fields: selfHeal/brace/counter/energyRestore all surface");
+
+console.log("\n🎉 ALL v0.5.0 REWORK SMOKE TESTS PASSED (15 checks)");
