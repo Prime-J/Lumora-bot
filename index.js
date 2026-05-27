@@ -5706,7 +5706,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
         return sock.sendMessage(chatId, {
           text:
             `hey hey welcome........glad you're here bro 🌌\n\n` +
-            `alright so let me walk you through everything real quick........don't worry it's simple once you get the hang of it\n\n` +
+            `big heads up — Lumora got REWORKED recently........combat is totally different now........you don't send mora to fight like before, you literally BECOME them........read on, it's wild 💎\n\n` +
 
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
             `*STEP 1 — SET YOURSELF UP*\n` +
@@ -5714,77 +5714,106 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
             `first things first........type *.start* to create your profile\n\n` +
             `then give yourself a name:\n` +
             `*.set-username YourName*\n\n` +
-            `and set your profile icon (pick a number 1-20):\n` +
+            `set your profile icon (pick a number 1-20):\n` +
             `*.set-icon 1*\n\n` +
-            `you can also set your gender if you want:\n` +
+            `and your gender if you want:\n` +
             `*.gender male* or *.gender female*\n\n` +
             `cool........you're officially a Lumorian now 💪\n\n` +
 
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
             `*STEP 2 — JOIN A FACTION*\n` +
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `so Lumora has 3 factions........each one gives you different perks:\n\n` +
-            `🌿 *Harmony* — the balanced ones........protectors........+5% catch bonus\n` +
-            `⚔️ *Purity* — the warriors........disciplined........+10% PvP damage\n` +
-            `🕶️ *Rift* — the chaotic ones........risky but powerful........15% chance to double aura\n\n` +
-            `just join your faction's group chat and you're in........ask an admin for the links\n\n` +
+            `Lumora has 3 factions........each one shapes how you play:\n\n` +
+            `🌿 *Harmony* — balanced........heals........+5% catch bonus\n` +
+            `⚔️ *Purity* — disciplined........heavy strikes........+10% PvP damage\n` +
+            `🕶️ *Rift* — chaotic........corruption-touched........15% double aura chance\n\n` +
+            `join your faction's group chat and you're in........ask an admin for links\n\n` +
 
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-            `*STEP 3 — GET YOUR FIRST MORA*\n` +
+            `*STEP 3 — THE MERGE LOOP (THIS IS THE GAME NOW)*\n` +
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `mora are your creatures........your fighters........your squad\n\n` +
-            `once you join a faction you'll get 2 starter options........pick one with:\n` +
-            `*.choose 1* or *.choose 2*\n\n` +
-            `check your mora anytime with *.party*\n` +
-            `want details on a specific mora? *.mora <name>*\n\n` +
+            `okay listen........this is the whole thing\n\n` +
+            `when you defeat a wild mora it drops a *SHARD* (a crystal of its essence)\n` +
+            `that shard goes into your *vault*........check it anytime with *.shards*\n\n` +
+            `to fight, you *shatter* a shard and *merge* with that mora:\n` +
+            `*.awaken Nylon* — you literally become Nylon, full moveset, full vibes\n` +
+            `*.shed* — go back to your normal self (base form)\n\n` +
+            `the merge sticks........you stay merged until you awaken a different shard or shed\n\n` +
+            `two merge tiers:\n` +
+            `  🔥 *FULL* — you ARE the mora, full stats\n` +
+            `  ✨ *PARTIAL* — your stats, their moveset\n\n` +
+            `also........you can only hold *1* shard of each mora type by default........buy storage to hold more (coming soon)\n\n` +
 
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
             `*STEP 4 — GO HUNTING*\n` +
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `this is where it gets fun........\n\n` +
-            `type *.map* to see all the terrains you can explore\n` +
-            `then travel to one: *.travel forest easy*\n` +
-            `now hunt for wild mora: *.hunt*\n\n` +
-            `a wild mora shows up........you battle it with *.attack 1* (or 2, 3, 4 for different moves)\n` +
-            `once you beat it you get 3 choices........tame it, release it, or send it to the sanctuary\n\n` +
-            `when you're done exploring........type *.return* to go back\n\n` +
+            `*.map* to see terrains........*.travel forest easy* to go somewhere........*.hunt* to find wild mora\n\n` +
+            `a wild mora shows up........you fight it AS YOURSELF (not your party — that's old):\n` +
+            `*.attack* — see your moveset........*.attack 1* — fire move 1\n` +
+            `*.charge* — focus, restore combat energy\n` +
+            `*.run* — flee\n\n` +
+            `your base form has *Punch* and *Block*........that's it until you unlock styles or merge\n\n` +
+            `when you win you get a shard drop (80% chance) PLUS faction-flavored choices:\n` +
+            `  *.tame* / *.release* / *.sanctuary* (Harmony)\n` +
+            `  *.execute* / *.conscript* / *.fortify* (Purity)\n` +
+            `  *.devour* / *.bind* / *.harvest* (Rift)\n\n` +
+            `🕶️ *Rift heads listen* — *.bind* drops a *CORRUPTED* shard.\n` +
+            `corrupted = +25% damage when merged, but 10% chance of self-damage per move........high risk\n` +
+            `awaken it with *.awaken corrupted Nylon*\n\n` +
+            `*.return* to head back when you're done exploring\n\n` +
 
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-            `*STEP 5 — BATTLE OTHER PLAYERS*\n` +
+            `*STEP 5 — UNLOCK FIGHTING STYLES (QUESTS)*\n` +
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `this is the real deal........\n\n` +
-            `challenge someone: *.battle @player*\n` +
-            `they accept with *.accept*\n\n` +
-            `in battle you can:\n` +
-            `  *.attack 1-4* — use a move\n` +
-            `  *.switch 1-5* — swap your active mora\n` +
-            `  *.charge* — power up for next hit\n` +
-            `  *.forfeit* — if it's not going well lol\n\n` +
-            `winning gives you aura and XP........and bragging rights obviously\n\n` +
+            `merge moves come from shards........but you can ALSO unlock permanent fighting styles via quests\n\n` +
+            `*.quests* — see what's available\n` +
+            `*.quest accept first_breath* — accept one\n` +
+            `*.styles* — view all 5 styles\n\n` +
+            `each style adds 3 moves to your *.attack* list permanently........no merge needed\n` +
+            `current styles:\n` +
+            `  🌬️ *Wind Step* (unaligned) — fast, never-miss leaps\n` +
+            `  ☀️ *Sun Walk* (unaligned) — radiant strikes\n` +
+            `  🌊 *Tide Veil* (Harmony) — Mending Wave heals you mid-fight\n` +
+            `  🗿 *Bone Crush* (Purity) — Iron Stance brace + counter\n` +
+            `  🕳️ *Void Sever* (Rift) — Void Drain refunds energy on hit\n\n` +
 
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-            `*STEP 6 — DAILY STUFF*\n` +
+            `*STEP 6 — TRADE SHARDS WITH PLAYERS*\n` +
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `don't forget to claim your free stuff every day:\n` +
-            `*.daily* — daily Lucons (keep your streak going for bonus!)\n` +
+            `got a duplicate? want a rare one someone else has? *.trade* exists\n\n` +
+            `*.trade @user Nylon Voltrix* — offer your Nylon for their Voltrix\n` +
+            `*.trade accept* / *.trade reject* — answer an incoming offer\n` +
+            `*.trade list* — see your pending offer\n\n` +
+            `offers expire in 10 min........the swap is atomic, no shenanigans\n\n` +
+
+            `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            `*STEP 7 — DAILY STUFF*\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+            `claim your free stuff every day:\n` +
+            `*.daily* — daily Lucons (keep your streak for bonuses!)\n` +
             `*.weekly* — bigger weekly reward\n\n` +
-            `spend Lucons at the *.market* on items, gear, and mutation shards\n\n` +
+            `spend Lucons at the *.market* on items, gear, and shards\n\n` +
 
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
             `*QUICK REFERENCE*\n` +
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `*.profile* — see your stats and rank\n` +
-            `*.party* — your mora squad\n` +
-            `*.companion <mora>* — set your ride-or-die mora\n` +
-            `*.mutate* — temporarily boost your companion\n` +
-            `*.achievements* — check your titles\n` +
-            `*.heal* — heal all your mora\n` +
+            `*.profile* — your stats, rank, AND current merge state\n` +
+            `*.shards* — your shard vault (the new combat currency)\n` +
+            `*.awaken <name>* — merge with a shard\n` +
+            `*.shed* — return to base form\n` +
+            `*.attack* — see your full moveset (base + styles + merge)\n` +
+            `*.storage [Mora]* — check shard caps (upgrades coming soon)\n` +
+            `*.quests* / *.quest accept <id>* / *.styles* — unlock movesets\n` +
+            `*.trade @user A B* — swap shards\n` +
+            `*.tamed* — your *legacy* mora collection (pre-rework)\n` +
+            `*.heal* — heal yourself\n` +
             `*.lb* — leaderboard\n` +
             `*.help* — full command list\n\n` +
 
-            `that's basically it bro........you'll figure out the rest as you play\n\n` +
+            `that's basically it bro........the merge loop is the heart of it now\n` +
+            `defeat → shard → awaken → fight → swap when you find better → trade what you don't need\n\n` +
             `if something's confusing just ask in the group........or type *.help* for every command\n\n` +
-            `now go out there and build your legacy 🔥`,
+            `now go out there and shatter some crystals 💎🔥`,
         }, { quoted: msg });
       }
 
