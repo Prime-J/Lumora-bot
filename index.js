@@ -129,6 +129,9 @@ const robberySystem = require('./systems/robbery');
 const ranksSystem = require('./systems/ranks');
 const shardSystem = require('./systems/shards');
 const questSystem = require('./systems/quests');
+const statSystem  = require('./systems/stats');
+const apologySystem = require('./systems/apology');
+const scrollSystem  = require('./systems/scrolls');
 const { generateRankCard, generateRankUpCard } = require('./systems/rankCardCanvas');
 const { generateWealthCard, findWealthRank, buildWealthLb } = require('./systems/wealthCanvas');
 const { generateAlverahCard } = require('./systems/alverahCanvas');
@@ -1386,6 +1389,20 @@ function migratePlayers(players, moraList) {
     if (!p.shardStorage || typeof p.shardStorage !== "object") { p.shardStorage = {}; changed = true; }
     if (!("currentMerge" in p)) { p.currentMerge = null; changed = true; }
 
+    // ── Stat-point system (v0.6.0) ───────────────────────────
+    if (!p.stats || typeof p.stats !== "object") {
+      p.stats = { melee: 0, mora: 0, vit: 0, speed: 0, def: 0 };
+      changed = true;
+    } else {
+      for (const k of ["melee","mora","vit","speed","def"]) {
+        if (typeof p.stats[k] !== "number") { p.stats[k] = 0; changed = true; }
+      }
+    }
+    if (typeof p.statPoints !== "number") { p.statPoints = 0; changed = true; }
+    if (!p.scrolls || typeof p.scrolls !== "object") { p.scrolls = {}; changed = true; }
+    if (!p.quests || typeof p.quests !== "object") { p.quests = { active: {}, completed: [] }; changed = true; }
+    if (!Array.isArray(p.styles)) { p.styles = []; changed = true; }
+
     if (!p.inventory || typeof p.inventory !== "object") { p.inventory = {}; changed = true; }
     if (!p.equipment || typeof p.equipment !== "object") {
       p.equipment = { core: null, charm: null, tool: null, relic: null, cloak: null, boots: null };
@@ -1904,6 +1921,7 @@ sock.ev.removeAllListeners("messages.upsert");
         getWallLevelCapacity,
         addFactionPoints,
         shardSystem,
+        statSystem,
       };
 
       if (isGroupJid(chatId) && settings.features.groupSpawnsEnabled !== false) {
@@ -2869,6 +2887,24 @@ if (command === "uptime") {
       }
       if (command === "styles") {
         return questSystem.cmdStyles(ctx, chatId, senderId, msg);
+      }
+      if (command === "stats" || command === "stat") {
+        return statSystem.cmdStats(ctx, chatId, senderId, msg, args);
+      }
+      if (command === "invest") {
+        return statSystem.cmdStatsInvest(ctx, chatId, senderId, msg, args);
+      }
+      if (command === "gift" || command === "apology") {
+        return apologySystem.cmdGift(ctx, chatId, senderId, msg, args);
+      }
+      if (command === "scrolls") {
+        return scrollSystem.cmdScrolls(ctx, chatId, senderId, msg);
+      }
+      if (command === "open") {
+        return scrollSystem.cmdOpen(ctx, chatId, senderId, msg, args);
+      }
+      if (command === "whisper") {
+        return questSystem.cmdWhisper(ctx, chatId, senderId, msg, args);
       }
       if (command === "gear") {
         return gearSystem.cmdGear(ctx, chatId, senderId, msg, args, {
@@ -5763,22 +5799,40 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
             `*.return* to head back when you're done exploring\n\n` +
 
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-            `*STEP 5 — UNLOCK FIGHTING STYLES (QUESTS)*\n` +
+            `*STEP 5 — STAT POINTS (LEVEL UP TO GROW)*\n` +
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `merge moves come from shards........but you can ALSO unlock permanent fighting styles via quests\n\n` +
-            `*.quests* — see what's available\n` +
-            `*.quest accept first_breath* — accept one\n` +
-            `*.styles* — view all 5 styles\n\n` +
-            `each style adds 3 moves to your *.attack* list permanently........no merge needed\n` +
+            `every level up gives you *3 stat points*........you choose where they go\n\n` +
+            `5 categories, all matter:\n` +
+            `  ⚔️ *Melee* — more damage on base/style hits\n` +
+            `  🌀 *Mora* — more damage on merge hits (the mora's power within you)\n` +
+            `  ❤️ *Vit* — more max HP\n` +
+            `  💨 *Speed* — dodge chance (cap 50%)\n` +
+            `  🛡 *Def* — flat damage reduction taken\n\n` +
+            `*.stats* — view your spread + unspent points\n` +
+            `*.stats invest mora 3* — drop 3 points into Mora\n\n` +
+            `pick a build........glass-cannon mora? tanky vit/def? speedy dodger? up to you\n\n` +
+
+            `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            `*STEP 6 — SCROLLS & QUESTS (UNLOCK STYLES)*\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+            `merge moves come from shards........but PERMANENT fighting styles come from quests\n\n` +
+            `quests are discovered by *SCROLLS* you find while hunting\n` +
+            `each scroll grants a specific quest when you open it\n\n` +
+            `*.scrolls* — what's in your scroll inventory\n` +
+            `*.open Windworn* — read it, +1 Intelligence, quest auto-accepts\n` +
+            `*.quests* — see what's active\n` +
+            `*.styles* — view all 5 unlockable styles\n\n` +
             `current styles:\n` +
             `  🌬️ *Wind Step* (unaligned) — fast, never-miss leaps\n` +
             `  ☀️ *Sun Walk* (unaligned) — radiant strikes\n` +
             `  🌊 *Tide Veil* (Harmony) — Mending Wave heals you mid-fight\n` +
             `  🗿 *Bone Crush* (Purity) — Iron Stance brace + counter\n` +
             `  🕳️ *Void Sever* (Rift) — Void Drain refunds energy on hit\n\n` +
+            `bigger scrolls (epic, legendary) start LONG QUESTS with chained steps........meet NPCs, prove yourself, etc\n` +
+            `when those quests need you to find someone special, the bot will *DM you the hidden command* — keep an eye on your private chat\n\n` +
 
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-            `*STEP 6 — TRADE SHARDS WITH PLAYERS*\n` +
+            `*STEP 7 — TRADE SHARDS WITH PLAYERS*\n` +
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
             `got a duplicate? want a rare one someone else has? *.trade* exists\n\n` +
             `*.trade @user Nylon Voltrix* — offer your Nylon for their Voltrix\n` +
@@ -5787,7 +5841,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
             `offers expire in 10 min........the swap is atomic, no shenanigans\n\n` +
 
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-            `*STEP 7 — DAILY STUFF*\n` +
+            `*STEP 8 — DAILY STUFF*\n` +
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
             `claim your free stuff every day:\n` +
             `*.daily* — daily Lucons (keep your streak for bonuses!)\n` +
@@ -5803,8 +5857,11 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
             `*.shed* — return to base form\n` +
             `*.attack* — see your full moveset (base + styles + merge)\n` +
             `*.storage [Mora]* — check shard caps (upgrades coming soon)\n` +
+            `*.stats* / *.stats invest <cat> <n>* — distribute level-up points\n` +
+            `*.scrolls* / *.open <name>* — discover and read quest scrolls\n` +
             `*.quests* / *.quest accept <id>* / *.styles* — unlock movesets\n` +
             `*.trade @user A B* — swap shards\n` +
+            `*.gift* — check your post-wipe apology gift (claimable 48d after launch)\n` +
             `*.tamed* — your *legacy* mora collection (pre-rework)\n` +
             `*.heal* — heal yourself\n` +
             `*.lb* — leaderboard\n` +

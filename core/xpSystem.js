@@ -194,11 +194,21 @@ function addPlayerXp(player, amount) {
     } catch {}
   }
 
+  // v0.6.0 — grant stat points for each level gained.
+  let statPointsGranted = 0;
+  if (levels > 0) {
+    try {
+      const stats = require("../systems/stats");
+      statPointsGranted = stats.grantPointsForLevels(player, levels);
+    } catch {}
+  }
+
   return {
     leveledUp: levels > 0,
     levels,
     actualGain: gain,
     rankUp,
+    statPointsGranted,
   };
 }
 

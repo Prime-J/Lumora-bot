@@ -1,0 +1,58 @@
+{
+  "windworn_scroll": {
+    "id": "windworn_scroll",
+    "name": "Windworn Scroll",
+    "rarity": "common",
+    "dropWeight": 35,
+    "lore": "Edges frayed by wind, ink faded but legible. Signed by R.",
+    "grantsQuest": "first_breath"
+  },
+  "dawn_etched_scroll": {
+    "id": "dawn_etched_scroll",
+    "name": "Dawn-Etched Scroll",
+    "rarity": "common",
+    "dropWeight": 25,
+    "lore": "Letters seem to glow faintly when held to morning light.",
+    "grantsQuest": "first_dawn"
+  },
+  "tide_sealed_scroll": {
+    "id": "tide_sealed_scroll",
+    "name": "Tide-Sealed Scroll",
+    "rarity": "rare",
+    "dropWeight": 14,
+    "lore": "Wrapped in oilcloth, smells faintly of salt. Sanctuary mark on the seal.",
+    "grantsQuest": "tides_of_sanctuary"
+  },
+  "iron_seal_scroll": {
+    "id": "iron_seal_scroll",
+    "name": "Iron-Seal Scroll",
+    "rarity": "rare",
+    "dropWeight": 14,
+    "lore": "Pressed shut with a black wax seal stamped with a closed fist.",
+    "grantsQuest": "oath_of_iron"
+  },
+  "void_etched_scroll": {
+    "id": "void_etched_scroll",
+    "name": "Void-Etched Scroll",
+    "rarity": "rare",
+    "dropWeight": 10,
+    "lore": "The text shifts when you're not looking at it directly.",
+    "grantsQuest": "void_initiation"
+  },
+  "broken_communion_scroll": {
+    "id": "broken_communion_scroll",
+    "name": "Broken Communion Scroll",
+    "rarity": "epic",
+    "dropWeight": 4,
+    "lore": "Half the page is missing. The remaining half writhes when held.",
+    "grantsQuest": "broken_communion"
+  },
+  "first_keepers_scroll": {
+    "id": "first_keepers_scroll",
+    "name": "First Keeper's Scroll",
+    "rarity": "legendary",
+    "dropWeight": 1,
+    "lore": "Heavier than it should be. Three sigils glow when held: a moon, a leaf, a chain.",
+    "grantsQuest": "the_first_keeper"
+  }
+}

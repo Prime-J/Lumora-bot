@@ -78,13 +78,116 @@ function onBattleWon(player) {
 
   for (const [qId, active] of Object.entries(player.quests.active)) {
     const def = quests[qId];
-    if (!def || def.requirement?.kind !== "winBattles") continue;
-    active.progress = Number(active.progress || 0) + 1;
-    if (active.progress >= Number(def.requirement.count || 1)) {
-      completed.push(qId);
+    if (!def) continue;
+    const req = def.requirement || {};
+
+    // Top-level winBattles
+    if (req.kind === "winBattles") {
+      active.progress = Number(active.progress || 0) + 1;
+      if (active.progress >= Number(req.count || 1)) completed.push(qId);
+      continue;
+    }
+
+    // chain — bump the first incomplete winBattles step (only after earlier
+    // steps complete in order)
+    if (req.kind === "chain" && Array.isArray(req.steps)) {
+      active.stepProgress = active.stepProgress || {};
+      for (let i = 0; i < req.steps.length; i++) {
+        const st = req.steps[i];
+        const done = !!active.stepProgress[i];
+        if (done) continue;
+        if (st.kind !== "winBattles") break; // gated until earlier non-battle step done
+        const cur = Number(active.stepProgress[`${i}_count`] || 0) + 1;
+        active.stepProgress[`${i}_count`] = cur;
+        if (cur >= Number(st.count || 1)) active.stepProgress[i] = true;
+        break; // only one battle counted per win
+      }
+      if (allStepsDone(req.steps, active)) completed.push(qId);
     }
   }
-  return completed; // caller is responsible for rewarding + messaging
+  return completed;
+}
+
+// Mark an NPC-meet step as complete for any active quest whose next pending
+// step matches the npc. Called by the hidden `.whisper <npc>` command.
+function onNpcMeet(player, npcName) {
+  ensureQuestFields(player);
+  const quests = loadQuests();
+  const advanced = [];
+  const completed = [];
+
+  for (const [qId, active] of Object.entries(player.quests.active)) {
+    const def = quests[qId];
+    if (!def) continue;
+    const req = def.requirement || {};
+    if (req.kind !== "chain" || !Array.isArray(req.steps)) continue;
+
+    active.stepProgress = active.stepProgress || {};
+    for (let i = 0; i < req.steps.length; i++) {
+      const st = req.steps[i];
+      if (active.stepProgress[i]) continue;
+      if (st.kind !== "meetNpc") break; // gated
+      if (String(st.npc).toLowerCase() === String(npcName).toLowerCase()) {
+        active.stepProgress[i] = true;
+        advanced.push({ qId, def, stepIdx: i, step: st });
+        break;
+      } else {
+        // wrong npc for the next pending step — don't skip ahead
+        break;
+      }
+    }
+    if (allStepsDone(req.steps, active)) completed.push(qId);
+  }
+  return { advanced, completed };
+}
+
+function allStepsDone(steps, active) {
+  const sp = active.stepProgress || {};
+  for (let i = 0; i < steps.length; i++) {
+    if (!sp[i]) return false;
+  }
+  return true;
+}
+
+// Render a single quest's detail block for messages (used by .quest, .open).
+function renderQuestDetail(def) {
+  if (!def) return "_(missing quest)_";
+  const styles = loadStyles();
+  const lines = [
+    `📜 *${def.name}*  —  ${def.giver || "Unknown"}`,
+    `_${def.lore || ""}_`,
+    ``,
+    `🎯 *Requirements:*`,
+  ];
+  const req = def.requirement || {};
+  if (req.kind === "winBattles") {
+    lines.push(`  • Win *${req.count}* battles`);
+  } else if (req.kind === "chain" && Array.isArray(req.steps)) {
+    req.steps.forEach((st, i) => {
+      const label =
+        st.label ||
+        (st.kind === "meetNpc"   ? `Meet ${st.npc}` :
+         st.kind === "winBattles" ? `Win ${st.count} battles` :
+         st.kind === "deliverItem" ? `Deliver ${st.item} to ${st.to}` :
+         st.kind);
+      const hint = st.hint ? `\n     _${st.hint}_` : "";
+      lines.push(`  ${i + 1}. ${label}${hint}`);
+    });
+  } else {
+    lines.push(`  • ${req.kind || "unspecified"}`);
+  }
+
+  lines.push(``);
+  const rewards = [];
+  if (def.reward?.style) {
+    const sn = styles[def.reward.style]?.name || def.reward.style;
+    rewards.push(`🥋 Unlock *${sn}*`);
+  }
+  if (def.reward?.lucons) rewards.push(`💰 ${def.reward.lucons} Lucons`);
+  if (def.reward?.riftPE) rewards.push(`🩸 +${def.reward.riftPE} Rift PE`);
+  if (def.reward?.intelligence) rewards.push(`🧠 +${def.reward.intelligence} Intelligence`);
+  lines.push(`🎁 *Reward:* ${rewards.join(" • ") || "—"}`);
+  return lines.join("\n");
 }
 
 // Internal: apply rewards for a finished quest.
@@ -249,15 +352,84 @@ async function cmdStyles(ctx, chatId, senderId, msg) {
   }, { quoted: msg });
 }
 
+// ══════════════════════════════════════════════════════════════
+// HIDDEN COMMANDS  (DM-revealed when a scroll is opened)
+// ══════════════════════════════════════════════════════════════
+async function cmdWhisper(ctx, chatId, senderId, msg, args = []) {
+  const { sock, players, savePlayers } = ctx;
+  const player = players[senderId];
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  ensureQuestFields(player);
+
+  const npcRaw = args.join(" ").trim();
+  if (!npcRaw) {
+    return sock.sendMessage(chatId, { text: `Whisper to whom? Try *.whisper <npc>*.` }, { quoted: msg });
+  }
+
+  // Verify the NPC is part of an active quest's hiddenCommands AND matches
+  // a pending meetNpc step. Both gates must pass.
+  const quests = loadQuests();
+  let matchedDef = null;
+  for (const qId of Object.keys(player.quests.active)) {
+    const def = quests[qId];
+    if (!def?.hiddenCommands) continue;
+    const npcKey = Object.keys(def.hiddenCommands).find(
+      (k) => k.toLowerCase() === npcRaw.toLowerCase()
+    );
+    if (npcKey) { matchedDef = { def, npc: npcKey, info: def.hiddenCommands[npcKey] }; break; }
+  }
+  if (!matchedDef) {
+    return sock.sendMessage(chatId, {
+      text: `🌫 No one answers. The name dissolves in the air.`,
+    }, { quoted: msg });
+  }
+
+  const { advanced, completed } = onNpcMeet(player, matchedDef.npc);
+  savePlayers(players);
+
+  const lines = [];
+  if (advanced.length) {
+    lines.push(`🌟 *${matchedDef.npc}* meets your gaze.`);
+    lines.push(`> _"${matchedDef.info.phrase}"_`);
+    lines.push(``);
+    for (const a of advanced) {
+      lines.push(`📜 *${a.def.name}* — step ${a.stepIdx + 1} complete: ${a.step.label || `Meet ${a.step.npc}`}`);
+    }
+  } else {
+    lines.push(`*${matchedDef.npc}* nods, but the moment passes — that step is already done or not yet open.`);
+  }
+
+  // Auto-apply completions
+  for (const qId of completed) {
+    const def = applyCompletion(player, qId);
+    if (def) {
+      const styleName = loadStyles()[def.reward?.style]?.name || def.reward?.style;
+      lines.push(``);
+      lines.push(`🏆 *QUEST COMPLETE — ${def.name}*`);
+      lines.push(`_${def.completedFlavor || ""}_`);
+      if (def.reward?.style)        lines.push(`🥋 Style unlocked: *${styleName}*`);
+      if (def.reward?.lucons)       lines.push(`💰 +${def.reward.lucons} Lucons`);
+      if (def.reward?.intelligence) lines.push(`🧠 +${def.reward.intelligence} Intelligence`);
+      if (def.reward?.riftPE)       lines.push(`🩸 +${def.reward.riftPE} Rift PE`);
+    }
+  }
+  savePlayers(players);
+
+  return sock.sendMessage(chatId, { text: lines.join("\n") }, { quoted: msg });
+}
+
 module.exports = {
   // commands
   cmdQuests,
   cmdQuest,
   cmdStyles,
+  cmdWhisper,
 
   // hooks
   onBattleWon,
+  onNpcMeet,
   applyCompletion,
+  renderQuestDetail,
 
   // helpers
   ensureQuestFields,

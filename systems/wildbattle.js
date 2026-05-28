@@ -782,6 +782,17 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
         furyActive = true;
       }
 
+      // ── Stat-point bonuses (v0.6.0) ─────────────────────────
+      // Melee buffs base + style moves; Mora buffs merge moves.
+      try {
+        const statSys = require("./stats");
+        if (move.source === "merge") {
+          res.dmg += statSys.moraDamageBonus(player);
+        } else {
+          res.dmg += statSys.meleeDamageBonus(player);
+        }
+      } catch {}
+
       // ── Corrupted merge: +25% damage on merge moves ─────────
       const shardSystemRef = require("./shards");
       const mergeRef = shardSystemRef.getCurrentMerge(player);
@@ -852,6 +863,18 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
     } catch (e) {
       // never break the defeat path because of a shard hiccup
       console.log("shard drop error:", e?.message || e);
+    }
+
+    // ── Scroll drop (v0.6.0) ─────────────────────────────────
+    try {
+      const scrollSystem = require("./scrolls");
+      const sc = scrollSystem.maybeDropScroll(player);
+      if (sc) {
+        const icon = sc.rarity === "legendary" ? "🌟" : sc.rarity === "epic" ? "💎" : sc.rarity === "rare" ? "✨" : "📜";
+        logs.push(`${icon} You find a *${sc.name}* (${sc.rarity}) tucked in the brush. Open with *.open ${sc.name}*.`);
+      }
+    } catch (e) {
+      console.log("scroll drop error:", e?.message || e);
     }
 
     // ── Quest progression hook (v0.5.0 rework) ───────────────
@@ -1093,8 +1116,30 @@ async function doWildTurn(ctx, player, playerMora, state, senderId) {
     return logs;
   }
 
+  // ── Speed dodge check (v0.6.0) ──────────────────────────────────
+  let dodged = false;
+  try {
+    const statSys = require("./stats");
+    if (Math.random() < statSys.dodgeChance(player)) dodged = true;
+  } catch {}
+  if (dodged) {
+    logs.push(
+      `💨 You dodge wild *${state.wildMora.name}*'s *${choice.name}*!`
+    );
+    return logs;
+  }
+
   const crit = battleMath.rollCrit(8);
   const res = calcDamage(battleMath, state.wildMora, playerMora, choice.data, crit);
+
+  // ── Defense flat reduction (v0.6.0) ─────────────────────────────
+  try {
+    const statSys = require("./stats");
+    const reduction = statSys.defenseReduction(player);
+    if (reduction > 0) {
+      res.dmg = Math.max(1, Math.floor(res.dmg - reduction));
+    }
+  } catch {}
 
   // ── Brace / counter from previous turn (Block, Iron Stance) ──────
   let braceHalved = false;

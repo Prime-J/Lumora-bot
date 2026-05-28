@@ -58,5 +58,28 @@
     "requirement": { "kind": "winBattles", "count": 10 },
     "reward": { "lucons": 350, "riftPE": 25 },
     "completedFlavor": "Kael nods. The shards in your vault hum more loudly now. You feel the Rift watching back."
+  },
+  "the_first_keeper": {
+    "id": "the_first_keeper",
+    "name": "The First Keeper",
+    "giver": "Unknown",
+    "faction": null,
+    "lore": "The scroll names no giver. Just three figures and three trials: a Reader by the cliff, a Smith in the iron yard, a Veiled One past the rift gate. Walk all three. Speak the words none of them taught you out loud.",
+    "requirement": {
+      "kind": "chain",
+      "steps": [
+        { "kind": "meetNpc",     "npc": "Reva",  "label": "Find Wind Master Reva at the cliff-temple",      "hint": "Hidden command will be DM'd when you accept." },
+        { "kind": "meetNpc",     "npc": "Vance", "label": "Find Hierarch Vance in the iron yard",          "hint": "Speak the right word at the right place." },
+        { "kind": "meetNpc",     "npc": "Kael",  "label": "Find Rift-Tongue Kael past the rift gate",       "hint": "He answers to a name he never gave." },
+        { "kind": "winBattles",  "count": 5,    "label": "Survive 5 wild battles after meeting all three" }
+      ]
+    },
+    "reward": { "lucons": 1000, "intelligence": 10 },
+    "hiddenCommands": {
+      "Reva":  { "cmd": "whisper reva",  "phrase": "The wind remembers what was promised." },
+      "Vance": { "cmd": "whisper vance", "phrase": "I am the blade, not the hand." },
+      "Kael":  { "cmd": "whisper kael",  "phrase": "I have not come to ask." }
+    },
+    "completedFlavor": "The three figures meet you on a road that wasn't there yesterday. They say nothing. The scroll dissolves. You feel — older."
   }
 }

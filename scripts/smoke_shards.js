@@ -177,7 +177,7 @@ console.log(`✅ corrupted shards: drop, separate cap, snapshot all working`);
 const styles = questSystem.loadStyles();
 const quests = questSystem.loadQuests();
 assert.strictEqual(Object.keys(styles).length, 5, "5 styles expected");
-assert.strictEqual(Object.keys(quests).length, 6, "6 quests expected");
+assert.strictEqual(Object.keys(quests).length, 7, "7 quests expected");
 assert.ok(styles.tide_veil && styles.bone_crush && styles.void_sever, "faction styles present");
 console.log(`✅ catalog: ${Object.keys(styles).length} styles, ${Object.keys(quests).length} quests`);
 
@@ -199,4 +199,85 @@ const voidDrain = questSystem.getUnlockedStyleMoves({
 assert.strictEqual(voidDrain.energyRestore, 6, "energyRestore passed through");
 console.log("✅ style effect fields: selfHeal/brace/counter/energyRestore all surface");
 
-console.log("\n🎉 ALL v0.5.0 REWORK SMOKE TESTS PASSED (15 checks)");
+// ── 16. Stats: invest, derived bonuses, vitality healing ───
+const statSystem = require("../systems/stats");
+const stPlayer = { id: "st@lid", username: "Stater", level: 1, playerHp: 100, playerMaxHp: 100 };
+statSystem.ensureStatFields(stPlayer);
+statSystem.grantPointsForLevels(stPlayer, 3);
+assert.strictEqual(stPlayer.statPoints, 9, "3 levels = 9 points");
+// Invest 3 vit → +15 maxHP + heal
+stPlayer.stats.vit = 3;
+statSystem.applyVitInvest(stPlayer, 3);
+assert.strictEqual(stPlayer.playerMaxHp, 115, "vit raises maxHp");
+assert.strictEqual(stPlayer.playerHp, 115, "vit heals to new max");
+// Damage bonuses
+stPlayer.stats.melee = 5;
+stPlayer.stats.mora  = 7;
+assert.strictEqual(statSystem.meleeDamageBonus(stPlayer), 10, "melee=5 → +10 dmg");
+assert.strictEqual(statSystem.moraDamageBonus(stPlayer),  14, "mora=7 → +14 dmg");
+// Dodge cap
+stPlayer.stats.speed = 100;
+assert.strictEqual(statSystem.dodgeChance(stPlayer), 0.5, "speed dodge caps at 50%");
+console.log("✅ stats: grant/invest/derived bonuses/vit heal/dodge cap all working");
+
+// ── 17. Apology gift: gate, eligibility, claim ─────────────
+const apologySystem = require("../systems/apology");
+assert.ok(typeof apologySystem.isApologyOpen === "function");
+assert.ok(typeof apologySystem.getApologyAvailableAt() === "number");
+const giftablesList = apologySystem.getGiftableShards(loadMora);
+assert.ok(giftablesList.length > 0, "should have rare/epic mergeable shards in mora.json");
+console.log(`✅ apology gift: ${giftablesList.length} giftable shards, gate logic present`);
+
+// ── 18. Scrolls: catalog, drop hook, open flow ─────────────
+const scrollSystem = require("../systems/scrolls");
+const cat = scrollSystem.loadScrolls();
+assert.ok(Object.keys(cat).length >= 7, "scroll catalog has 7+ entries");
+const scPlayer = { id: "sc@lid", username: "Reader", level: 1, intelligence: 0, quests: { active: {}, completed: [] }, styles: [] };
+scrollSystem.ensureScrollFields(scPlayer);
+// Force-add a scroll then verify open flow (without actually calling cmdOpen — no sock)
+scPlayer.scrolls["windworn_scroll"] = 1;
+const linked = cat.windworn_scroll;
+assert.strictEqual(linked.grantsQuest, "first_breath", "scroll links to first_breath");
+console.log(`✅ scrolls: ${Object.keys(cat).length} in catalog, scroll→quest mapping intact`);
+
+// ── 19. Chained quest: progression via NPC meet + battles ───
+const chainPlayer = { id: "ch@lid", username: "Pilgrim", level: 1, lucons: 0, intelligence: 0 };
+questSystem.ensureQuestFields(chainPlayer);
+chainPlayer.quests.active.the_first_keeper = { progress: 0, startedAt: Date.now(), stepProgress: {} };
+const tfkDef = questSystem.loadQuests().the_first_keeper;
+assert.ok(tfkDef && tfkDef.requirement.kind === "chain", "the_first_keeper is a chain quest");
+assert.strictEqual(tfkDef.requirement.steps.length, 4, "4 chain steps");
+// Meet Reva (step 0)
+let r = questSystem.onNpcMeet(chainPlayer, "Reva");
+assert.strictEqual(r.advanced.length, 1, "Reva meet advances");
+// Meet Vance (step 1)
+r = questSystem.onNpcMeet(chainPlayer, "Vance");
+assert.strictEqual(r.advanced.length, 1, "Vance meet advances");
+// Try to meet a non-pending NPC out of order — should NOT advance
+r = questSystem.onNpcMeet(chainPlayer, "Solen");
+assert.strictEqual(r.advanced.length, 0, "Solen doesn't match next pending step");
+// Meet Kael (step 2)
+r = questSystem.onNpcMeet(chainPlayer, "Kael");
+assert.strictEqual(r.advanced.length, 1, "Kael meet advances");
+// Now 5 battle wins for step 3
+let chainCompleted = [];
+for (let i = 0; i < 5; i++) chainCompleted = questSystem.onBattleWon(chainPlayer);
+assert.ok(chainCompleted.includes("the_first_keeper"), "chain quest completes after final step");
+const tfkDone = questSystem.applyCompletion(chainPlayer, "the_first_keeper");
+assert.ok(tfkDone, "applyCompletion returns def");
+assert.strictEqual(chainPlayer.lucons, 1000, "1000 lucons reward");
+assert.strictEqual(chainPlayer.intelligence, 10, "10 intelligence reward");
+console.log("✅ chained quest: 4-step the_first_keeper completes via meetNpc + winBattles");
+
+// ── 20. xpSystem auto-grants stat points on level up ───────
+const xpSystem = require("../core/xpSystem");
+const xpPlayer = { username: "Climber", level: 1, xp: 0 };
+statSystem.ensureStatFields(xpPlayer);
+// Dump enough XP to level up at least once
+const res = xpSystem.addPlayerXp(xpPlayer, 500);
+assert.ok(res.leveledUp, "should level up");
+assert.ok(res.statPointsGranted >= 3, `should grant ≥3 stat points, got ${res.statPointsGranted}`);
+assert.strictEqual(xpPlayer.statPoints, res.statPointsGranted, "player.statPoints matches grant");
+console.log(`✅ xpSystem → stat points: leveled ${res.levels}x → +${res.statPointsGranted} points`);
+
+console.log("\n🎉 ALL v0.6.0 SMOKE TESTS PASSED (20 checks)");
