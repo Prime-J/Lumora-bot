@@ -427,6 +427,190 @@ async function cmdStorage(ctx, chatId, senderId, msg, args = []) {
   }, { quoted: msg });
 }
 
+// ══════════════════════════════════════════════════════════════
+// FACTION RITES — Purify (Harmony) + Destroy (Purity)
+// Closes the 3-faction corruption loop:
+//   • Rift creates corrupted shards via .bind
+//   • Harmony PURIFIES them back into normal shards (.purify)
+//   • Purity DESTROYS them for Resonance + faction points (.destroy)
+// ══════════════════════════════════════════════════════════════
+
+const PURIFY_LUCONS_COST   = 100;
+const DESTROY_RESONANCE    = 3;
+const DESTROY_FACTION_PTS  = 5;
+
+// .purify <shard> — Harmony rite, costs Lucons
+async function cmdPurify(ctx, chatId, senderId, msg, args = []) {
+  const { sock, players, savePlayers, loadMora } = ctx;
+  const player = players[senderId];
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  ensureShardFields(player);
+
+  if (player.faction !== "harmony") {
+    return sock.sendMessage(chatId, {
+      text: `❌ *.purify* is a Harmony rite. Only Harmony adherents can perform it.\n_Your faction: ${player.faction || "none"}_`,
+    }, { quoted: msg });
+  }
+
+  const queryRaw = args.join(" ").trim();
+  if (!queryRaw) {
+    // List corrupted shards in vault
+    const corrEntries = Object.entries(player.shards).filter(
+      ([k, n]) => Number(n) > 0 && isCorruptedKey(k)
+    );
+    if (!corrEntries.length) {
+      return sock.sendMessage(chatId, {
+        text:
+          `🌿 *.purify*\n${DIVIDER}\n` +
+          `_You have no corrupted shards to purify._\n${DIVIDER}\n` +
+          `Cost per purification: *${PURIFY_LUCONS_COST} Lucons*\n` +
+          `Effect: converts a corrupted shard back into a normal one.`,
+      }, { quoted: msg });
+    }
+    const list = loadMora();
+    const lines = corrEntries.map(([k, n], i) => {
+      const baseKey = stripCorrupted(k);
+      const sp = list.find((m) => String(m.id).toLowerCase() === baseKey);
+      return `${i + 1}. ☠ *${sp?.name || baseKey}*  ×${n}`;
+    });
+    return sock.sendMessage(chatId, {
+      text:
+        `🌿 *PURIFY — Harmony Rite*\n${DIVIDER}\n` +
+        `Corrupted shards in your vault:\n` +
+        lines.join("\n") + `\n${DIVIDER}\n` +
+        `*.purify <name>* to cleanse one. Cost: *${PURIFY_LUCONS_COST} Lucons*.`,
+    }, { quoted: msg });
+  }
+
+  const species = findSpeciesByKey(loadMora, queryRaw);
+  if (!species) {
+    return sock.sendMessage(chatId, { text: `❌ No Mora named *${queryRaw}*.` }, { quoted: msg });
+  }
+
+  const corrKey = shardKey(species, { corrupted: true });
+  if (getShardCount(player, corrKey) < 1) {
+    return sock.sendMessage(chatId, {
+      text: `❌ You don't have a *corrupted ${species.name}* shard.`,
+    }, { quoted: msg });
+  }
+
+  if (Number(player.lucons || 0) < PURIFY_LUCONS_COST) {
+    return sock.sendMessage(chatId, {
+      text: `❌ Purification costs *${PURIFY_LUCONS_COST} Lucons*. You have *${player.lucons || 0}*.`,
+    }, { quoted: msg });
+  }
+
+  // Check normal-variant cap BEFORE consuming the corrupted shard
+  const normalKey = shardKey(species);
+  const normalCap = getStorageCap(player, normalKey);
+  const normalHave = getShardCount(player, normalKey);
+  if (normalHave >= normalCap) {
+    return sock.sendMessage(chatId, {
+      text:
+        `❌ Your normal *${species.name}* vault is full (*${normalHave}/${normalCap}*). ` +
+        `Use the shard or upgrade storage first.`,
+    }, { quoted: msg });
+  }
+
+  // Convert
+  player.lucons = Number(player.lucons) - PURIFY_LUCONS_COST;
+  player.shards[corrKey] -= 1;
+  if (player.shards[corrKey] <= 0) delete player.shards[corrKey];
+  player.shards[normalKey] = normalHave + 1;
+  savePlayers(players);
+
+  return sock.sendMessage(chatId, {
+    text:
+      `🌿 *PURIFIED*\n${DIVIDER}\n` +
+      `The corruption sloughs off in a slow rinse of light.\n` +
+      `☠ *Corrupted ${species.name}* → 💎 *${species.name}*\n${DIVIDER}\n` +
+      `💰 -${PURIFY_LUCONS_COST} Lucons _(now ${player.lucons})_\n` +
+      `_"What was broken can flow whole again."_`,
+  }, { quoted: msg });
+}
+
+// .destroy <shard> — Purity rite, free, grants Resonance + faction points
+async function cmdDestroy(ctx, chatId, senderId, msg, args = []) {
+  const { sock, players, savePlayers, loadMora } = ctx;
+  const player = players[senderId];
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  ensureShardFields(player);
+
+  if (player.faction !== "purity") {
+    return sock.sendMessage(chatId, {
+      text: `❌ *.destroy* is a Purity rite. Only Order members may shatter corrupted shards in judgment.\n_Your faction: ${player.faction || "none"}_`,
+    }, { quoted: msg });
+  }
+
+  const queryRaw = args.join(" ").trim();
+  if (!queryRaw) {
+    const corrEntries = Object.entries(player.shards).filter(
+      ([k, n]) => Number(n) > 0 && isCorruptedKey(k)
+    );
+    if (!corrEntries.length) {
+      return sock.sendMessage(chatId, {
+        text:
+          `🗡 *.destroy*\n${DIVIDER}\n` +
+          `_You have no corrupted shards to destroy._\n${DIVIDER}\n` +
+          `Reward per shard: *+${DESTROY_RESONANCE} Resonance*, *+${DESTROY_FACTION_PTS}* Purity faction points.`,
+      }, { quoted: msg });
+    }
+    const list = loadMora();
+    const lines = corrEntries.map(([k, n], i) => {
+      const baseKey = stripCorrupted(k);
+      const sp = list.find((m) => String(m.id).toLowerCase() === baseKey);
+      return `${i + 1}. ☠ *${sp?.name || baseKey}*  ×${n}`;
+    });
+    return sock.sendMessage(chatId, {
+      text:
+        `🗡 *DESTROY — Purity Rite*\n${DIVIDER}\n` +
+        `Corrupted shards in your vault:\n` +
+        lines.join("\n") + `\n${DIVIDER}\n` +
+        `*.destroy <name>* to shatter one. Free. _The Order does not bargain with corruption._`,
+    }, { quoted: msg });
+  }
+
+  const species = findSpeciesByKey(loadMora, queryRaw);
+  if (!species) {
+    return sock.sendMessage(chatId, { text: `❌ No Mora named *${queryRaw}*.` }, { quoted: msg });
+  }
+
+  const corrKey = shardKey(species, { corrupted: true });
+  if (getShardCount(player, corrKey) < 1) {
+    return sock.sendMessage(chatId, {
+      text: `❌ You don't have a *corrupted ${species.name}* shard.`,
+    }, { quoted: msg });
+  }
+
+  // Consume + reward
+  player.shards[corrKey] -= 1;
+  if (player.shards[corrKey] <= 0) delete player.shards[corrKey];
+  player.resonance = Number(player.resonance || 0) + DESTROY_RESONANCE;
+
+  // Update faction points (file-based, same as wildbattle's faction events)
+  let factionPtsLine = "";
+  try {
+    const fs = require("fs");
+    const path = require("path");
+    const f = path.join(__dirname, "..", "data", "faction_points.json");
+    const fp = JSON.parse(fs.readFileSync(f, "utf8"));
+    fp.purity = (fp.purity || 0) + DESTROY_FACTION_PTS;
+    fs.writeFileSync(f, JSON.stringify(fp, null, 2));
+    factionPtsLine = `\n⚔️ *+${DESTROY_FACTION_PTS}* Purity faction points`;
+  } catch {}
+
+  savePlayers(players);
+
+  return sock.sendMessage(chatId, {
+    text:
+      `🗡 *DESTROYED*\n${DIVIDER}\n` +
+      `☠ *Corrupted ${species.name}* — shattered in judgment.\n${DIVIDER}\n` +
+      `💠 *+${DESTROY_RESONANCE} Resonance*` +
+      factionPtsLine + `\n` +
+      `_"The Order does not tolerate what cannot be cleansed."_`,
+  }, { quoted: msg });
+}
+
 // .merge — retired; soft-alias to .awaken for muscle memory
 async function cmdLegacyMerge(ctx, chatId, senderId, msg, args = []) {
   return ctx.sock.sendMessage(chatId, {
@@ -639,6 +823,8 @@ module.exports = {
   cmdLegacyMerge,
   cmdTrade,
   cmdStorage,
+  cmdPurify,
+  cmdDestroy,
 
   // helpers used by other systems
   ensureShardFields,
@@ -668,4 +854,7 @@ module.exports = {
   CORRUPTED_DMG_BONUS,
   CORRUPTED_BACKLASH_PCT,
   CORRUPTED_BACKLASH_FRAC,
+  PURIFY_LUCONS_COST,
+  DESTROY_RESONANCE,
+  DESTROY_FACTION_PTS,
 };

@@ -2879,6 +2879,18 @@ if (command === "uptime") {
       if (command === "storage" || command === "shardstorage") {
         return shardSystem.cmdStorage(ctx, chatId, senderId, msg, args);
       }
+      if (command === "purify") {
+        // The wild-battle Harmony rite (.purify on a defeated Mora) ALSO uses
+        // this command. If there's a pending wild-battle decision for this
+        // player, fall through so the wildbattle dispatcher catches it.
+        const wbState = wildBattleSystem.getWildBattle?.(chatId, senderId);
+        if (!wbState?.pendingDecision) {
+          return shardSystem.cmdPurify(ctx, chatId, senderId, msg, args);
+        }
+      }
+      if (command === "destroy") {
+        return shardSystem.cmdDestroy(ctx, chatId, senderId, msg, args);
+      }
       if (command === "quests") {
         return questSystem.cmdQuests(ctx, chatId, senderId, msg);
       }
@@ -5830,6 +5842,12 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
             `  🕳️ *Void Sever* (Rift) — Void Drain refunds energy on hit\n\n` +
             `bigger scrolls (epic, legendary) start LONG QUESTS with chained steps........meet NPCs, prove yourself, etc\n` +
             `when those quests need you to find someone special, the bot will *DM you the hidden command* — keep an eye on your private chat\n\n` +
+            `🔥 *FACTION RITES ON CORRUPTED SHARDS*\n` +
+            `your faction gets a unique verb for the corrupted shards floating around:\n` +
+            `  🌿 *Harmony* — *.purify <shard>* cleans a corrupted shard back to normal (costs 100 Lucons)\n` +
+            `  🗡 *Purity* — *.destroy <shard>* shatters it for Resonance + faction points (free, no salvage)\n` +
+            `  🕶️ *Rift* — *.bind* during a fight CREATES corrupted shards from defeated mora\n` +
+            `the three rites make the corruption loop go round\n\n` +
 
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
             `*STEP 7 — TRADE SHARDS WITH PLAYERS*\n` +
@@ -5861,6 +5879,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
             `*.scrolls* / *.open <name>* — discover and read quest scrolls\n` +
             `*.quests* / *.quest accept <id>* / *.styles* — unlock movesets\n` +
             `*.trade @user A B* — swap shards\n` +
+            `*.purify <shard>* (Harmony) / *.destroy <shard>* (Purity) — faction rites on corrupted shards\n` +
             `*.gift* — check your post-wipe apology gift (claimable 48d after launch)\n` +
             `*.tamed* — your *legacy* mora collection (pre-rework)\n` +
             `*.heal* — heal yourself\n` +

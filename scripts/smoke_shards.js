@@ -280,4 +280,37 @@ assert.ok(res.statPointsGranted >= 3, `should grant ≥3 stat points, got ${res.
 assert.strictEqual(xpPlayer.statPoints, res.statPointsGranted, "player.statPoints matches grant");
 console.log(`✅ xpSystem → stat points: leveled ${res.levels}x → +${res.statPointsGranted} points`);
 
-console.log("\n🎉 ALL v0.6.0 SMOKE TESTS PASSED (20 checks)");
+// ── 21. Purify (Harmony) — corrupted → normal, cap-aware ───
+const harmonist = { id: "ha@lid", username: "Solen", faction: "harmony", lucons: 500 };
+shardSystem.ensureShardFields(harmonist);
+shardSystem.dropCorruptedShard(harmonist, tideling);
+const corrKeyP = shardSystem.shardKey(tideling, { corrupted: true });
+const normalKey = shardSystem.shardKey(tideling);
+assert.strictEqual(shardSystem.getShardCount(harmonist, corrKeyP), 1);
+assert.strictEqual(shardSystem.getShardCount(harmonist, normalKey), 0);
+// Simulate cmdPurify body (no sock) — drain Lucons, swap variants
+const cost = shardSystem.PURIFY_LUCONS_COST;
+harmonist.lucons -= cost;
+harmonist.shards[corrKeyP] -= 1;
+if (harmonist.shards[corrKeyP] <= 0) delete harmonist.shards[corrKeyP];
+harmonist.shards[normalKey] = (harmonist.shards[normalKey] || 0) + 1;
+assert.strictEqual(shardSystem.getShardCount(harmonist, corrKeyP), 0, "corrupted gone");
+assert.strictEqual(shardSystem.getShardCount(harmonist, normalKey), 1, "normal added");
+assert.strictEqual(harmonist.lucons, 500 - cost, "lucons drained");
+console.log(`✅ purify: corrupted Nylon → normal Nylon (cost ${cost} Lucons)`);
+
+// ── 22. Destroy (Purity) — corrupted → Resonance ───────────
+const puritan = { id: "pu@lid", username: "Vance", faction: "purity", resonance: 0 };
+shardSystem.ensureShardFields(puritan);
+shardSystem.dropCorruptedShard(puritan, eternyx);
+const corrKeyD = shardSystem.shardKey(eternyx, { corrupted: true });
+assert.strictEqual(shardSystem.getShardCount(puritan, corrKeyD), 1);
+// Simulate cmdDestroy body
+puritan.shards[corrKeyD] -= 1;
+if (puritan.shards[corrKeyD] <= 0) delete puritan.shards[corrKeyD];
+puritan.resonance += shardSystem.DESTROY_RESONANCE;
+assert.strictEqual(shardSystem.getShardCount(puritan, corrKeyD), 0, "corrupted gone");
+assert.strictEqual(puritan.resonance, shardSystem.DESTROY_RESONANCE, "Resonance granted");
+console.log(`✅ destroy: corrupted Eternyx → +${shardSystem.DESTROY_RESONANCE} Resonance`);
+
+console.log("\n🎉 ALL v0.6.1 SMOKE TESTS PASSED (22 checks)");
