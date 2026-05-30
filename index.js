@@ -132,6 +132,7 @@ const questSystem = require('./systems/quests');
 const statSystem  = require('./systems/stats');
 const apologySystem = require('./systems/apology');
 const scrollSystem  = require('./systems/scrolls');
+const autoRaidSystem = require('./systems/autoRaid');
 const { generateRankCard, generateRankUpCard } = require('./systems/rankCardCanvas');
 const { generateWealthCard, findWealthRank, buildWealthLb } = require('./systems/wealthCanvas');
 const { generateAlverahCard } = require('./systems/alverahCanvas');
@@ -2918,6 +2919,16 @@ if (command === "uptime") {
       if (command === "whisper") {
         return questSystem.cmdWhisper(ctx, chatId, senderId, msg, args);
       }
+      // ── Auto-raids (v0.7.0) ─────────────────────────────────
+      if (command === "respond") {
+        return autoRaidSystem.cmdRespond(ctx, chatId, senderId, msg, args);
+      }
+      if (command === "engage") {
+        return autoRaidSystem.cmdEngage(ctx, chatId, senderId, msg);
+      }
+      if (command === "raid-status" || command === "raidstatus") {
+        return autoRaidSystem.cmdRaidStatus(ctx, chatId, senderId, msg);
+      }
       if (command === "gear") {
         return gearSystem.cmdGear(ctx, chatId, senderId, msg, args, {
           getMentionedJids,
@@ -5098,6 +5109,8 @@ if (command === "buy-bm") {
       // ================= RAIDS =================
       try { await raidsSystem.tickRaid(ctx); } catch (e) { console.log("[tickRaid]", e?.message || e); }
       try { raidsSystem.tickKael(ctx); } catch (e) { console.log("[tickKael]", e?.message || e); }
+      // v0.7.0 auto-raids: piggyback on every message tick (cheap state read)
+      try { await autoRaidSystem.tickAutoRaid(ctx); } catch (e) { console.log("[tickAutoRaid]", e?.message || e); }
 
       if (command === "summon-kael" || command === "summonkael") {
         return raidsSystem.cmdSummonKael(ctx, chatId, senderId, msg);

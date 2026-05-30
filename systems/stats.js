@@ -12,7 +12,7 @@
 
 const DIVIDER = "━━━━━━━━━━━━━━━━━━━━━━━━━";
 
-// Point grant per level up
+// Point grant per level up (decided 2026-05-28: 3/level, max player level 100)
 const POINTS_PER_LEVEL = 3;
 
 // Per-point effect magnitudes (kept here so combat code references one source)

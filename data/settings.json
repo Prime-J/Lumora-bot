@@ -18,7 +18,8 @@
   "huntingGroups": {
     "enabled": true,
     "allowed": [
-      "120363408860967993@g.us"
+      "120363408860967993@g.us",
+      "120363427706945701@g.us"
     ]
   },
   "marketGroups": {
@@ -37,5 +38,19 @@
   "moraCreationGroups": {
     "enabled": true,
     "allowed": []
+  },
+  "factionGroups": {
+    "harmony": null,
+    "purity": null,
+    "rift": null
+  },
+  "autoRaid": {
+    "enabled": false,
+    "spawnMinHours": 4,
+    "spawnMaxHours": 10,
+    "responseWindowMin": 5,
+    "raidDurationMin": 30,
+    "cooldownHours": 24,
+    "lastResolvedAt": 0
   }
 }

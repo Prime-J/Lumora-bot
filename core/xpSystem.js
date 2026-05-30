@@ -152,9 +152,13 @@ function addMoraXp(ownedMora, species, amount) {
 // PLAYER XP SYSTEM
 // ----------------------------
 
+// v0.7.0 rebalance: linear curve. Roughly ~20-30 hunts per level at any tier.
+// Level cap = 100. At 100, XP overflow is discarded and no further levels accrue.
+const MAX_PLAYER_LEVEL = 100;
 function playerXpToNextLevel(level) {
   const lv = Math.max(1, Number(level || 1));
-  return 60 + lv * lv * 20;
+  if (lv >= MAX_PLAYER_LEVEL) return Infinity;
+  return 100 * lv + 50;
 }
 
 function addPlayerXp(player, amount) {
@@ -173,15 +177,23 @@ function addPlayerXp(player, amount) {
   if (typeof player.level !== "number") player.level = 1;
 
   const oldLevel = player.level;
+
+  // Already at cap — discard the XP entirely so it doesn't pool.
+  if (player.level >= MAX_PLAYER_LEVEL) {
+    player.xp = 0;
+    return { leveledUp: false, levels: 0, actualGain: 0, rankUp: null, statPointsGranted: 0 };
+  }
+
   player.xp += gain;
 
   let levels = 0;
-
-  while (player.xp >= playerXpToNextLevel(player.level)) {
+  while (player.level < MAX_PLAYER_LEVEL && player.xp >= playerXpToNextLevel(player.level)) {
     player.xp -= playerXpToNextLevel(player.level);
     player.level += 1;
     levels++;
   }
+  // At cap — drain any leftover XP so the bar isn't stuck stuffed.
+  if (player.level >= MAX_PLAYER_LEVEL) player.xp = 0;
 
   // 0.1.3 — rank-up detection. Returns rank info on the result so callers
   // (or the central tick) can fire the rank-up canvas reveal.
@@ -219,6 +231,7 @@ module.exports = {
 
   addPlayerXp,
   playerXpToNextLevel,
+  MAX_PLAYER_LEVEL,
 
   getBaseEnergy,
   getEnergyGrowth,
