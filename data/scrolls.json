@@ -39,13 +39,53 @@
     "lore": "The text shifts when you're not looking at it directly.",
     "grantsQuest": "void_initiation"
   },
+  "ember_tongue_scroll": {
+    "id": "ember_tongue_scroll",
+    "name": "Ember Tongue Scroll",
+    "rarity": "rare",
+    "dropWeight": 10,
+    "lore": "Charred along one edge, as if it had recently spoken.",
+    "grantsQuest": "rite_of_embers"
+  },
+  "shieldbearers_scroll": {
+    "id": "shieldbearers_scroll",
+    "name": "Shieldbearer's Scroll",
+    "rarity": "rare",
+    "dropWeight": 9,
+    "lore": "Bound with leather and a small iron buckle. Heavier than it should be.",
+    "grantsQuest": "vow_of_the_shield"
+  },
+  "caligo_vellum": {
+    "id": "caligo_vellum",
+    "name": "Caligo Vellum",
+    "rarity": "epic",
+    "dropWeight": 4,
+    "lore": "The vellum is darker than dye should make it. Reading it indoors feels colder than the room.",
+    "grantsQuest": "covenant_of_caligo"
+  },
+  "starlit_codex": {
+    "id": "starlit_codex",
+    "name": "Starlit Codex",
+    "rarity": "epic",
+    "dropWeight": 4,
+    "lore": "Pinpricks of light dot the cover. They aren't the same constellations twice.",
+    "grantsQuest": "starlit_passage"
+  },
   "broken_communion_scroll": {
     "id": "broken_communion_scroll",
     "name": "Broken Communion Scroll",
     "rarity": "epic",
-    "dropWeight": 4,
+    "dropWeight": 3,
     "lore": "Half the page is missing. The remaining half writhes when held.",
     "grantsQuest": "broken_communion"
+  },
+  "lumen_folio": {
+    "id": "lumen_folio",
+    "name": "Lumen Folio",
+    "rarity": "legendary",
+    "dropWeight": 1,
+    "lore": "Bound in pale leather. The pages give off their own faint light. When you open it, the room briefly forgets it has corners.",
+    "grantsQuest": "the_mercy_rising"
   },
   "first_keepers_scroll": {
     "id": "first_keepers_scroll",

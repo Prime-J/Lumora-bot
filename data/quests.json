@@ -5,8 +5,15 @@
     "giver": "Wind Master Reva",
     "faction": null,
     "lore": "Atop the cliff-temple, a thin figure breathes in time with the wind. \"You wish to step on air? First — prove you can survive on it.\"",
-    "requirement": { "kind": "winBattles", "count": 3 },
+    "requirement": {
+      "kind": "chain",
+      "steps": [
+        { "kind": "meetNpc",    "npc": "Reva", "label": "Find Wind Master Reva at the cliff-temple", "hint": "She answers only to the breath she taught you." },
+        { "kind": "winBattles", "count": 3,   "label": "Survive 3 wild battles after meeting her" }
+      ]
+    },
     "reward": { "style": "wind_step", "lucons": 100 },
+    "hiddenCommands": { "Reva": { "cmd": "whisper reva", "phrase": "The wind remembers what was promised." } },
     "completedFlavor": "Reva nods slowly. \"You moved when the wind moved. That is the first step.\" Wind Step is yours."
   },
   "first_dawn": {
@@ -15,8 +22,15 @@
     "giver": "Sun Priestess Iyra",
     "faction": null,
     "lore": "In the Sanctuary's open courtyard, Iyra waits at dawn. \"To walk the sun's path, you must first burn brightly enough to be seen by it.\"",
-    "requirement": { "kind": "winBattles", "count": 5 },
+    "requirement": {
+      "kind": "chain",
+      "steps": [
+        { "kind": "meetNpc",    "npc": "Iyra", "label": "Find Sun Priestess Iyra in the dawn courtyard", "hint": "She speaks only to those who can name the sun's first hour." },
+        { "kind": "winBattles", "count": 5,   "label": "Win 5 wild battles after she sees you" }
+      ]
+    },
     "reward": { "style": "sun_walk", "lucons": 150 },
+    "hiddenCommands": { "Iyra": { "cmd": "whisper iyra", "phrase": "I came in time for the burning." } },
     "completedFlavor": "Iyra closes her eyes. \"The sun has marked you.\" Sun Walk is yours."
   },
   "tides_of_sanctuary": {
@@ -25,8 +39,15 @@
     "giver": "Tide-Keeper Solen",
     "faction": "harmony",
     "lore": "By the Sanctuary's reflecting pool, Solen watches the water rise and fall. \"Harmony is not the absence of force. It is force that knows when to yield.\"",
-    "requirement": { "kind": "winBattles", "count": 6 },
+    "requirement": {
+      "kind": "chain",
+      "steps": [
+        { "kind": "meetNpc",    "npc": "Solen", "label": "Find Tide-Keeper Solen at the reflecting pool", "hint": "He recognizes only the hand that has learned to fold." },
+        { "kind": "winBattles", "count": 6,    "label": "Win 6 wild battles after he sees you" }
+      ]
+    },
     "reward": { "style": "tide_veil", "lucons": 180 },
+    "hiddenCommands": { "Solen": { "cmd": "whisper solen", "phrase": "I have learned to yield." } },
     "completedFlavor": "Solen touches the pool. The ripples follow you out. Tide Veil is yours."
   },
   "oath_of_iron": {
@@ -35,8 +56,15 @@
     "giver": "Hierarch Vance",
     "faction": "purity",
     "lore": "Vance does not look up from the whetstone. \"The Order does not teach. It tests. Bring me proof you can stand.\"",
-    "requirement": { "kind": "winBattles", "count": 7 },
+    "requirement": {
+      "kind": "chain",
+      "steps": [
+        { "kind": "meetNpc",    "npc": "Vance", "label": "Find Hierarch Vance in the iron yard", "hint": "He answers only to a phrase that costs the speaker something." },
+        { "kind": "winBattles", "count": 7,    "label": "Win 7 wild battles after Vance accepts you" }
+      ]
+    },
     "reward": { "style": "bone_crush", "lucons": 200 },
+    "hiddenCommands": { "Vance": { "cmd": "whisper vance", "phrase": "I am the blade, not the hand." } },
     "completedFlavor": "Vance hands you the whetstone. \"The Order recognizes you.\" Bone Crush is yours."
   },
   "void_initiation": {
@@ -45,8 +73,15 @@
     "giver": "Rift-Tongue Kael",
     "faction": "rift",
     "lore": "Kael speaks without moving his mouth. \"The Rift gives. It also takes. Are you prepared to lose pieces of yourself?\"",
-    "requirement": { "kind": "winBattles", "count": 8 },
+    "requirement": {
+      "kind": "chain",
+      "steps": [
+        { "kind": "meetNpc",    "npc": "Kael", "label": "Find Rift-Tongue Kael past the rift gate", "hint": "He answers to a name he never gave." },
+        { "kind": "winBattles", "count": 8,   "label": "Win 8 wild battles after Kael accepts you" }
+      ]
+    },
     "reward": { "style": "void_sever", "lucons": 220 },
+    "hiddenCommands": { "Kael": { "cmd": "whisper kael", "phrase": "I have not come to ask." } },
     "completedFlavor": "Kael smiles — somewhere behind his face. \"Now you can cut.\" Void Sever is yours."
   },
   "broken_communion": {
@@ -59,6 +94,91 @@
     "reward": { "lucons": 350, "riftPE": 25 },
     "completedFlavor": "Kael nods. The shards in your vault hum more loudly now. You feel the Rift watching back."
   },
+  "rite_of_embers": {
+    "id": "rite_of_embers",
+    "name": "Rite of Embers",
+    "giver": "Speaker Phlox",
+    "faction": null,
+    "lore": "Phlox kneels at a low brazier in a stone garden. The coal does not seem to need fuel. \"Tongue and fire are the same teacher,\" she says. \"Come closer.\"",
+    "requirement": {
+      "kind": "chain",
+      "steps": [
+        { "kind": "meetNpc",    "npc": "Phlox", "label": "Find Speaker Phlox at the stone-garden brazier", "hint": "She replies only to a word the speaker can feel in the throat." },
+        { "kind": "winBattles", "count": 5,    "label": "Win 5 wild battles after she accepts you" }
+      ]
+    },
+    "reward": { "style": "pyrolexis", "lucons": 200 },
+    "hiddenCommands": { "Phlox": { "cmd": "whisper phlox", "phrase": "The fire is already in my mouth." } },
+    "completedFlavor": "Phlox tilts her head once. The coal flares brighter. Pyrolexis is yours."
+  },
+  "vow_of_the_shield": {
+    "id": "vow_of_the_shield",
+    "name": "Vow of the Shield",
+    "giver": "Aspis the Quiet",
+    "faction": "harmony",
+    "lore": "Aspis stands in the lower colonnade where the Sanctuary meets the road. He carries a shield he has never set down. \"Defense is not retreat,\" he says without looking up. \"Defense is the place you will not let pass.\"",
+    "requirement": {
+      "kind": "chain",
+      "steps": [
+        { "kind": "meetNpc",    "npc": "Aspis", "label": "Find Aspis the Quiet in the lower colonnade", "hint": "Recognized only by those who name what they would die to keep behind them." },
+        { "kind": "winBattles", "count": 6,    "label": "Win 6 wild battles after his vigil accepts you" }
+      ]
+    },
+    "reward": { "style": "kataphraxis", "lucons": 240 },
+    "hiddenCommands": { "Aspis": { "cmd": "whisper aspis", "phrase": "I will not let it pass." } },
+    "completedFlavor": "Aspis lifts the shield by a hand's breadth and lowers it again. The vow is taken. Kataphraxis is yours."
+  },
+  "covenant_of_caligo": {
+    "id": "covenant_of_caligo",
+    "name": "Covenant of Caligo",
+    "giver": "Caligo",
+    "faction": "rift",
+    "lore": "There is a stretch of road that is colder than the rest. No one waits there during the day. At dusk, a thin figure named Caligo stands at its center. \"You wish to wear shadow,\" he says. \"You must first be willing to be one.\"",
+    "requirement": {
+      "kind": "chain",
+      "steps": [
+        { "kind": "meetNpc",    "npc": "Caligo", "label": "Find Caligo on the cold stretch of road at dusk", "hint": "He answers only when the speaker accepts being unseen." },
+        { "kind": "winBattles", "count": 10,    "label": "Win 10 wild battles in the dark after he covenants with you" }
+      ]
+    },
+    "reward": { "style": "tenebris", "lucons": 400, "intelligence": 3 },
+    "hiddenCommands": { "Caligo": { "cmd": "whisper caligo", "phrase": "Let me be unseen." } },
+    "completedFlavor": "Caligo nods, and the road forgets him. He does not look back at you. Tenebris is yours."
+  },
+  "starlit_passage": {
+    "id": "starlit_passage",
+    "name": "Starlit Passage",
+    "giver": "Selene the Wanderer",
+    "faction": null,
+    "lore": "Past the city wall, on a hill where the grass grows in slow circles, a woman called Selene walks the same loop nightly. \"The stars do not strike,\" she says. \"They arrive. There is a difference.\"",
+    "requirement": {
+      "kind": "chain",
+      "steps": [
+        { "kind": "meetNpc",    "npc": "Selene", "label": "Find Selene on the circular hill after sundown", "hint": "She replies only to those who have stopped trying to catch up with her." },
+        { "kind": "winBattles", "count": 10,    "label": "Win 10 wild battles after she walks beside you once" }
+      ]
+    },
+    "reward": { "style": "astrobolos", "lucons": 450, "intelligence": 3 },
+    "hiddenCommands": { "Selene": { "cmd": "whisper selene", "phrase": "I am no longer chasing." } },
+    "completedFlavor": "Selene continues her loop. After a step, you realize she has folded a piece of the night into your hand. Astrobolos is yours."
+  },
+  "the_mercy_rising": {
+    "id": "the_mercy_rising",
+    "name": "The Mercy Rising",
+    "giver": "Eleos",
+    "faction": "harmony",
+    "lore": "An old woman called Eleos sits in a garden the Sanctuary will not name. She tends plants that have already died, watering them anyway. \"You wish to rise,\" she says. \"To rise, you must first agree to be spent.\"",
+    "requirement": {
+      "kind": "chain",
+      "steps": [
+        { "kind": "meetNpc",    "npc": "Eleos", "label": "Find Eleos in the unnamed garden", "hint": "She greets only the bearer who is ready to give themselves." },
+        { "kind": "winBattles", "count": 12,    "label": "Win 12 wild battles after her blessing" }
+      ]
+    },
+    "reward": { "style": "anastasis", "lucons": 800, "intelligence": 8 },
+    "hiddenCommands": { "Eleos": { "cmd": "whisper eleos", "phrase": "Spend me." } },
+    "completedFlavor": "Eleos closes her eyes. The dead plants stir, just once, as if remembering. Anastasis is yours."
+  },
   "the_first_keeper": {
     "id": "the_first_keeper",
     "name": "The First Keeper",
@@ -68,10 +188,10 @@
     "requirement": {
       "kind": "chain",
       "steps": [
-        { "kind": "meetNpc",     "npc": "Reva",  "label": "Find Wind Master Reva at the cliff-temple",      "hint": "Hidden command will be DM'd when you accept." },
-        { "kind": "meetNpc",     "npc": "Vance", "label": "Find Hierarch Vance in the iron yard",          "hint": "Speak the right word at the right place." },
-        { "kind": "meetNpc",     "npc": "Kael",  "label": "Find Rift-Tongue Kael past the rift gate",       "hint": "He answers to a name he never gave." },
-        { "kind": "winBattles",  "count": 5,    "label": "Survive 5 wild battles after meeting all three" }
+        { "kind": "meetNpc",    "npc": "Reva",  "label": "Find Wind Master Reva at the cliff-temple",      "hint": "Hidden command will be DM'd when you accept." },
+        { "kind": "meetNpc",    "npc": "Vance", "label": "Find Hierarch Vance in the iron yard",          "hint": "Speak the right word at the right place." },
+        { "kind": "meetNpc",    "npc": "Kael",  "label": "Find Rift-Tongue Kael past the rift gate",       "hint": "He answers to a name he never gave." },
+        { "kind": "winBattles", "count": 5,    "label": "Survive 5 wild battles after meeting all three" }
       ]
     },
     "reward": { "lucons": 1000, "intelligence": 10 },

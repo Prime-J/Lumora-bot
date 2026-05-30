@@ -793,6 +793,20 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
         }
       } catch {}
 
+      // ── Style rarity buff (v0.6.2) ──────────────────────────
+      // Rarer fighting styles hit harder. Applied multiplicatively after
+      // the flat melee bonus so high-Melee builds compound well.
+      let rarityBuffPct = 0;
+      if (move.source === "style" && move.styleRarity) {
+        try {
+          const qs = require("./quests");
+          rarityBuffPct = qs.getRarityBuff(move.styleRarity);
+          if (rarityBuffPct > 0) {
+            res.dmg = Math.floor(res.dmg * (1 + rarityBuffPct));
+          }
+        } catch {}
+      }
+
       // ── Corrupted merge: +25% damage on merge moves ─────────
       const shardSystemRef = require("./shards");
       const mergeRef = shardSystemRef.getCurrentMerge(player);
@@ -813,12 +827,19 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
         : res.mult <= 0.85 ? "  🥶*NOT VERY EFFECTIVE*"
         : "";
 
+      const rarityTag =
+        rarityBuffPct >= 0.20 ? "  🌟*LEGENDARY!*"
+        : rarityBuffPct >= 0.10 ? "  💎*EPIC!*"
+        : rarityBuffPct >= 0.05 ? "  ✨*RARE!*"
+        : "";
+
       logs.push(
         `⚔️ @${String(senderId).split("@")[0]}${tag} used *${move.name}* and dealt *${res.dmg}* to wild *${state.wildMora.name}*` +
         (crit ? "  ✨*CRIT!*" : "") +
         effTxt +
         (furyActive ? "  🔥*RIFT FURY!*" : "") +
-        (corruptedActive ? "  ☠*CORRUPTED!*" : "")
+        (corruptedActive ? "  ☠*CORRUPTED!*" : "") +
+        rarityTag
       );
 
       // ── Instability backlash chance for corrupted merges ────

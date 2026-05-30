@@ -446,12 +446,7 @@ async function cmdPurify(ctx, chatId, senderId, msg, args = []) {
   if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
   ensureShardFields(player);
 
-  if (player.faction !== "harmony") {
-    return sock.sendMessage(chatId, {
-      text: `❌ *.purify* is a Harmony rite. Only Harmony adherents can perform it.\n_Your faction: ${player.faction || "none"}_`,
-    }, { quoted: msg });
-  }
-
+  // Faction is lore-flavored, not enforced — any player can perform the rite.
   const queryRaw = args.join(" ").trim();
   if (!queryRaw) {
     // List corrupted shards in vault
@@ -461,7 +456,7 @@ async function cmdPurify(ctx, chatId, senderId, msg, args = []) {
     if (!corrEntries.length) {
       return sock.sendMessage(chatId, {
         text:
-          `🌿 *.purify*\n${DIVIDER}\n` +
+          `🌿 *.purify*  _(Harmony rite — anyone may speak it)_\n${DIVIDER}\n` +
           `_You have no corrupted shards to purify._\n${DIVIDER}\n` +
           `Cost per purification: *${PURIFY_LUCONS_COST} Lucons*\n` +
           `Effect: converts a corrupted shard back into a normal one.`,
@@ -536,12 +531,7 @@ async function cmdDestroy(ctx, chatId, senderId, msg, args = []) {
   if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
   ensureShardFields(player);
 
-  if (player.faction !== "purity") {
-    return sock.sendMessage(chatId, {
-      text: `❌ *.destroy* is a Purity rite. Only Order members may shatter corrupted shards in judgment.\n_Your faction: ${player.faction || "none"}_`,
-    }, { quoted: msg });
-  }
-
+  // Faction is lore-flavored, not enforced — any player may shatter a corrupted shard.
   const queryRaw = args.join(" ").trim();
   if (!queryRaw) {
     const corrEntries = Object.entries(player.shards).filter(
@@ -550,7 +540,7 @@ async function cmdDestroy(ctx, chatId, senderId, msg, args = []) {
     if (!corrEntries.length) {
       return sock.sendMessage(chatId, {
         text:
-          `🗡 *.destroy*\n${DIVIDER}\n` +
+          `🗡 *.destroy*  _(Purity rite — anyone may perform it)_\n${DIVIDER}\n` +
           `_You have no corrupted shards to destroy._\n${DIVIDER}\n` +
           `Reward per shard: *+${DESTROY_RESONANCE} Resonance*, *+${DESTROY_FACTION_PTS}* Purity faction points.`,
       }, { quoted: msg });

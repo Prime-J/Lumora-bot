@@ -136,24 +136,29 @@ assert.strictEqual(shardSystem.getShardCount(playerB, "1"),  1, "B gains Nylon")
 assert.strictEqual(shardSystem.getShardCount(playerB, "48"), 0, "B loses Eternyx");
 console.log("✅ trade: atomic swap (Aya ↔ Beto) verified");
 
-// ── 12. Quests — accept + progress + complete unlocks style ─
+// ── 12. Chained quest: accept → meet NPC → battles → unlock style ─
 const questSystem = require("../systems/quests");
 const quester = { id: "q@lid", username: "Romio", level: 1, lucons: 0 };
 questSystem.ensureQuestFields(quester);
-quester.quests.active.first_breath = { progress: 0, startedAt: Date.now() };
+quester.quests.active.first_breath = { progress: 0, startedAt: Date.now(), stepProgress: {} };
 const before = questSystem.getUnlockedStyleMoves(quester).length;
 assert.strictEqual(before, 0, "no styles before quest complete");
-// Simulate 3 battle wins (first_breath requires 3)
-let completed = [];
+// Battles alone don't progress a chain — NPC meet is gating step 0
+let completed = questSystem.onBattleWon(quester);
+assert.ok(!completed.includes("first_breath"), "battles without meeting Reva shouldn't complete");
+// Now meet Reva to unlock step 0
+const meetRes = questSystem.onNpcMeet(quester, "Reva");
+assert.strictEqual(meetRes.advanced.length, 1, "Reva meet advances chain step 0");
+// Now win 3 battles
 for (let i = 0; i < 3; i++) completed = questSystem.onBattleWon(quester);
-assert.ok(completed.includes("first_breath"), "first_breath should complete after 3 wins");
+assert.ok(completed.includes("first_breath"), "first_breath should complete after meet + 3 wins");
 const def = questSystem.applyCompletion(quester, "first_breath");
 assert.ok(def, "applyCompletion returns def");
 assert.ok(quester.styles.includes("wind_step"), "wind_step should be unlocked");
 assert.strictEqual(quester.lucons, 100, "Lucons reward credited");
 const after = questSystem.getUnlockedStyleMoves(quester);
 assert.ok(after.length >= 3, `wind step has 3 moves, got ${after.length}`);
-console.log(`✅ quest: first_breath complete → wind_step unlocked (${after.length} moves)`);
+console.log(`✅ chain quest: meet Reva → win 3 → wind_step unlocked (${after.length} moves)`);
 
 // ── 13. Corrupted shards — drop, awaken, snapshot ──────────
 const corrupter = { id: "c@lid", username: "Kael" };
@@ -173,12 +178,13 @@ const snap = shardSystem.buildMergeSnapshot(tideling, { corrupted: true });
 assert.strictEqual(snap.corrupted, true, "snapshot should be corrupted");
 console.log(`✅ corrupted shards: drop, separate cap, snapshot all working`);
 
-// ── 14. Catalog expansion — 5 styles, 6 quests ─────────────
+// ── 14. Catalog expansion ──────────────────────────────────
 const styles = questSystem.loadStyles();
 const quests = questSystem.loadQuests();
-assert.strictEqual(Object.keys(styles).length, 5, "5 styles expected");
-assert.strictEqual(Object.keys(quests).length, 7, "7 quests expected");
+assert.strictEqual(Object.keys(styles).length, 10, "10 styles expected (5 original + 5 Greek/Latin)");
+assert.strictEqual(Object.keys(quests).length, 12, "12 quests expected");
 assert.ok(styles.tide_veil && styles.bone_crush && styles.void_sever, "faction styles present");
+assert.ok(styles.pyrolexis && styles.kataphraxis && styles.tenebris && styles.astrobolos && styles.anastasis, "new Greek/Latin styles present");
 console.log(`✅ catalog: ${Object.keys(styles).length} styles, ${Object.keys(quests).length} quests`);
 
 // ── 15. Effect-field passthrough on style moves ────────────
@@ -313,4 +319,59 @@ assert.strictEqual(shardSystem.getShardCount(puritan, corrKeyD), 0, "corrupted g
 assert.strictEqual(puritan.resonance, shardSystem.DESTROY_RESONANCE, "Resonance granted");
 console.log(`✅ destroy: corrupted Eternyx → +${shardSystem.DESTROY_RESONANCE} Resonance`);
 
-console.log("\n🎉 ALL v0.6.1 SMOKE TESTS PASSED (22 checks)");
+// ── 23. Style rarity field present + buff scaling ──────────
+assert.strictEqual(styles.wind_step.rarity,   "common",    "wind_step rarity");
+assert.strictEqual(styles.tide_veil.rarity,   "rare",      "tide_veil rarity");
+assert.strictEqual(styles.tenebris.rarity,    "epic",      "tenebris rarity");
+assert.strictEqual(styles.anastasis.rarity,   "legendary", "anastasis rarity");
+assert.strictEqual(questSystem.getRarityBuff("common"),    0.00, "common buff");
+assert.strictEqual(questSystem.getRarityBuff("rare"),      0.05, "rare buff");
+assert.strictEqual(questSystem.getRarityBuff("epic"),      0.12, "epic buff");
+assert.strictEqual(questSystem.getRarityBuff("legendary"), 0.22, "legendary buff");
+// styleRarity field surfaces on each move
+const rare1 = questSystem.getUnlockedStyleMoves({ styles: ["tide_veil"], quests: { active: {}, completed: [] } });
+assert.ok(rare1.every((m) => m.styleRarity === "rare"), "all tide_veil moves carry rare");
+const leg1 = questSystem.getUnlockedStyleMoves({ styles: ["anastasis"], quests: { active: {}, completed: [] } });
+assert.ok(leg1.every((m) => m.styleRarity === "legendary"), "all anastasis moves carry legendary");
+console.log(`✅ rarity buffs: common +0%, rare +5%, epic +12%, legendary +22% — fields surface on moves`);
+
+// ── 24. New style quests: chained, hidden commands ─────────
+const newQuests = ["rite_of_embers", "vow_of_the_shield", "covenant_of_caligo", "starlit_passage", "the_mercy_rising"];
+for (const qId of newQuests) {
+  const q = quests[qId];
+  assert.ok(q, `${qId} exists`);
+  assert.strictEqual(q.requirement.kind, "chain", `${qId} is chain`);
+  assert.ok(Array.isArray(q.requirement.steps) && q.requirement.steps.length >= 2, `${qId} has 2+ steps`);
+  assert.ok(q.hiddenCommands && Object.keys(q.hiddenCommands).length >= 1, `${qId} has hidden commands`);
+}
+// Existing style quests also converted to chain
+for (const qId of ["first_breath", "first_dawn", "tides_of_sanctuary", "oath_of_iron", "void_initiation"]) {
+  assert.strictEqual(quests[qId].requirement.kind, "chain", `${qId} converted to chain`);
+  assert.ok(quests[qId].hiddenCommands, `${qId} has hidden commands`);
+}
+console.log("✅ all 10 style quests now chained + each has hidden commands");
+
+// ── 25. Scrolls: 12 in catalog (7 original + 5 new), image helper degrades cleanly ─
+const scrollCat = scrollSystem.loadScrolls();
+assert.strictEqual(Object.keys(scrollCat).length, 12, "12 scrolls expected");
+assert.ok(scrollCat.ember_tongue_scroll && scrollCat.lumen_folio && scrollCat.shieldbearers_scroll, "new scrolls present");
+// image helper returns null when no asset exists
+assert.strictEqual(scrollSystem.scrollImagePath("windworn_scroll"), null, "no image file → null (graceful)");
+assert.strictEqual(scrollSystem.scrollImagePath("nonexistent_id"), null, "unknown id → null");
+console.log(`✅ scrolls: ${Object.keys(scrollCat).length} in catalog, image helper degrades gracefully`);
+
+// ── 26. New chain quest progression (rite_of_embers) ───────
+const fireQuester = { id: "f@lid", username: "Embra", level: 1, lucons: 0 };
+questSystem.ensureQuestFields(fireQuester);
+fireQuester.quests.active.rite_of_embers = { progress: 0, startedAt: Date.now(), stepProgress: {} };
+let r2 = questSystem.onNpcMeet(fireQuester, "Phlox");
+assert.strictEqual(r2.advanced.length, 1, "Phlox meet advances");
+let chainCompleted2 = [];
+for (let i = 0; i < 5; i++) chainCompleted2 = questSystem.onBattleWon(fireQuester);
+assert.ok(chainCompleted2.includes("rite_of_embers"), "rite_of_embers completes");
+questSystem.applyCompletion(fireQuester, "rite_of_embers");
+assert.ok(fireQuester.styles.includes("pyrolexis"), "pyrolexis unlocked");
+assert.strictEqual(fireQuester.lucons, 200, "lucons reward");
+console.log("✅ new style chain: Phlox → win 5 → Pyrolexis unlocked + 200 Lucons");
+
+console.log("\n🎉 ALL v0.6.2 SMOKE TESTS PASSED (26 checks)");

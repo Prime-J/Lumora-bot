@@ -3,6 +3,7 @@
     "id": "wind_step",
     "name": "Wind Step",
     "type": "Wind",
+    "rarity": "common",
     "faction": null,
     "lore": "A fluid Lumorian discipline that bends momentum and air. Practitioners strike from impossible angles.",
     "moves": [
@@ -16,6 +17,7 @@
     "id": "sun_walk",
     "name": "Sun Walk",
     "type": "Solar",
+    "rarity": "common",
     "faction": null,
     "lore": "A radiant style taught only in the Sanctuary's inner courtyard. Each step burns its impression into the air.",
     "moves": [
@@ -29,6 +31,7 @@
     "id": "tide_veil",
     "name": "Tide Veil",
     "type": "Aqua",
+    "rarity": "rare",
     "faction": "harmony",
     "lore": "Harmony's defensive water form, taught by the Sanctuary's tide-keepers. Strikes ride the rhythm of breath and current.",
     "moves": [
@@ -42,6 +45,7 @@
     "id": "bone_crush",
     "name": "Bone Crush",
     "type": "Stone",
+    "rarity": "rare",
     "faction": "purity",
     "lore": "The Purity Order's strike-discipline: no flourish, no waste. Every motion ends in a fracture.",
     "moves": [
@@ -55,6 +59,7 @@
     "id": "void_sever",
     "name": "Void Sever",
     "type": "Void",
+    "rarity": "rare",
     "faction": "rift",
     "lore": "Rift-tongue carving. Each strike pulls a thread of substance out of the world and consumes it.",
     "moves": [
@@ -63,5 +68,75 @@
       { "name": "Null Eclipse", "power": 80, "accuracy": 80, "energyCost": 10, "desc": "Collapse a sliver of the void onto your target." }
     ],
     "unlockQuest": "void_initiation"
+  },
+  "pyrolexis": {
+    "id": "pyrolexis",
+    "name": "Pyrolexis",
+    "type": "Fire",
+    "rarity": "rare",
+    "faction": null,
+    "lore": "From the Greek pyr (fire) and lexis (speech). A spoken-art discipline — every move is a syllable the world cannot ignore.",
+    "moves": [
+      { "name": "Logos Ardens",  "power": 36, "accuracy": 95, "energyCost": 4, "desc": "Latin: 'burning word'. A short utterance that ignites the air around the target." },
+      { "name": "Crepitus",      "power": 30, "accuracy": 100, "energyCost": 5, "neverMisses": true, "desc": "Latin: 'crackling'. Hisses across the gap and lands without fail." },
+      { "name": "Hekatombe",     "power": 72, "accuracy": 82, "energyCost": 9, "desc": "Greek: 'great fire-offering'. A roaring finisher — slow to speak, devastating to hear." }
+    ],
+    "unlockQuest": "rite_of_embers"
+  },
+  "kataphraxis": {
+    "id": "kataphraxis",
+    "name": "Kataphraxis",
+    "type": "Stone",
+    "rarity": "rare",
+    "faction": "harmony",
+    "lore": "From the Greek kataphraktos (fully armored). Harmony's heavy-plate counter-form, taught to those who would shield others before themselves.",
+    "moves": [
+      { "name": "Phalanx Step", "power": 34, "accuracy": 95, "energyCost": 4, "desc": "A measured advance behind raised guard." },
+      { "name": "Aegis Stance", "power": 0,  "accuracy": 100, "energyCost": 4, "brace": true, "counter": 25, "desc": "Greek: 'shield-stance'. Brace — next incoming hit halved AND counter-strikes for 25 damage." },
+      { "name": "Citadel",      "power": 0,  "accuracy": 100, "energyCost": 7, "selfHeal": 22, "desc": "Latin: 'small city, fortress'. Withdraw, brace, and restore 22 HP." }
+    ],
+    "unlockQuest": "vow_of_the_shield"
+  },
+  "tenebris": {
+    "id": "tenebris",
+    "name": "Tenebris",
+    "type": "Void",
+    "rarity": "epic",
+    "faction": "rift",
+    "lore": "Latin: tenebrae (darkness, gloom). A Rift-borne shadow art — quieter than Void Sever, hungrier.",
+    "moves": [
+      { "name": "Umbra Caedere", "power": 44, "accuracy": 95, "energyCost": 5, "desc": "Latin: 'to slay in shadow'. The strike arrives before the sound." },
+      { "name": "Noctis Vorax",  "power": 36, "accuracy": 100, "energyCost": 6, "selfHeal": 12, "desc": "Latin: 'night-devourer'. Bite that returns 12 HP to the caster." },
+      { "name": "Eclipsis",      "power": 92, "accuracy": 80, "energyCost": 11, "desc": "Latin: 'eclipse'. A finisher that briefly removes the target from the world." }
+    ],
+    "unlockQuest": "covenant_of_caligo"
+  },
+  "astrobolos": {
+    "id": "astrobolos",
+    "name": "Astrobolos",
+    "type": "Solar",
+    "rarity": "epic",
+    "faction": null,
+    "lore": "Greek: astrobolos (star-thrown, struck by stars). A celestial striking art — said to be taught beyond the rim of any temple.",
+    "moves": [
+      { "name": "Stella Cadens",   "power": 46, "accuracy": 92, "energyCost": 5, "desc": "Latin: 'falling star'. A ranged punch of compressed light." },
+      { "name": "Sidereum Ictus",  "power": 34, "accuracy": 100, "energyCost": 5, "neverMisses": true, "desc": "Latin: 'starry blow'. Cannot miss." },
+      { "name": "Nova Igne",       "power": 88, "accuracy": 82, "energyCost": 10, "desc": "Latin: 'with new fire'. The horizon briefly turns white." }
+    ],
+    "unlockQuest": "starlit_passage"
+  },
+  "anastasis": {
+    "id": "anastasis",
+    "name": "Anastasis",
+    "type": "Solar",
+    "rarity": "legendary",
+    "faction": "harmony",
+    "lore": "Greek: anastasis (rising, resurrection). The Sanctuary's most sacred discipline — taught to almost no one, and only after great loss.",
+    "moves": [
+      { "name": "Lux Lenis",      "power": 26, "accuracy": 100, "energyCost": 4, "selfHeal": 10, "neverMisses": true, "desc": "Latin: 'gentle light'. Deals quiet damage and returns 10 HP." },
+      { "name": "Velamen Sanans", "power": 0,  "accuracy": 100, "energyCost": 7, "selfHeal": 35, "desc": "Latin: 'healing veil'. Restore 35 HP." },
+      { "name": "Resurgentia",    "power": 105, "accuracy": 80, "energyCost": 12, "desc": "Latin: 'rising again'. A final, blinding strike — only spoken when the bearer is ready to spend all of themselves." }
+    ],
+    "unlockQuest": "the_mercy_rising"
   }
 }

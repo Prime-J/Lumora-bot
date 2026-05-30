@@ -17,6 +17,7 @@ const fs   = require("fs");
 const path = require("path");
 
 const DIVIDER = "━━━━━━━━━━━━━━━━━━━━━━━━━";
+const SCROLL_ASSETS_DIR = path.join(__dirname, "..", "assets", "scrolls");
 
 let _catalog = null;
 function loadScrolls() {
@@ -24,6 +25,18 @@ function loadScrolls() {
   const f = path.join(__dirname, "..", "data", "scrolls.json");
   try { _catalog = JSON.parse(fs.readFileSync(f, "utf-8")); } catch { _catalog = {}; }
   return _catalog;
+}
+
+// Return the absolute path to a scroll's image if it exists on disk.
+// Operator can drop PNGs at assets/scrolls/<id>.{png,jpg,jpeg,webp}.
+// Returns null if no image found — caller should fall back to text-only.
+function scrollImagePath(scrollId) {
+  if (!scrollId) return null;
+  for (const ext of ["png", "jpg", "jpeg", "webp"]) {
+    const p = path.join(SCROLL_ASSETS_DIR, `${scrollId}.${ext}`);
+    try { if (fs.existsSync(p)) return p; } catch {}
+  }
+  return null;
 }
 
 // Drop chance per hunt by scroll rarity. Tuned for ~5% total drop rate
@@ -40,8 +53,10 @@ function ensureScrollFields(player) {
   if (!player.scrolls || typeof player.scrolls !== "object") player.scrolls = {};
 }
 
-// Called from the hunt/wildbattle path. May return a scroll id if one
-// dropped, else null. Mutates the player inventory.
+// Called from the hunt/wildbattle path. May return a scroll if one
+// dropped, else null. Mutates the player inventory. Returned object
+// also carries `imagePath` (absolute path or null) for callers that
+// want to send the image alongside the drop message.
 function maybeDropScroll(player) {
   ensureScrollFields(player);
   const catalog = loadScrolls();
@@ -49,7 +64,7 @@ function maybeDropScroll(player) {
     const rate = RARITY_DROP_RATE[String(sc.rarity || "common").toLowerCase()] || 0;
     if (Math.random() < rate) {
       player.scrolls[sc.id] = Number(player.scrolls[sc.id] || 0) + 1;
-      return sc;
+      return { ...sc, imagePath: scrollImagePath(sc.id) };
     }
   }
   return null;
@@ -146,21 +161,23 @@ async function cmdOpen(ctx, chatId, senderId, msg, args = []) {
   const questId = scroll.grantsQuest;
   const questDef = questSystem.loadQuests()[questId];
 
-  let questBlock = "";
-  let dmBlock = "";
+  let questBlockForDm = "";
+  let alreadyMsg = "";
   let hiddenDmLines = [];
+  let chainGated = false;
 
   if (!questDef) {
-    questBlock = `_(scroll's linked quest "${questId}" is missing from data/quests.json)_`;
+    questBlockForDm = `_(scroll's linked quest "${questId}" is missing from data/quests.json)_`;
   } else if (player.quests.completed.includes(questId)) {
-    questBlock = `✓ You've already completed *${questDef.name}*. The scroll burns itself out.`;
+    alreadyMsg = `✓ You've already completed *${questDef.name}*. The scroll burns itself out.`;
   } else if (player.quests.active[questId]) {
-    questBlock = `📜 *${questDef.name}* is already in your quest log. Progress unchanged.`;
+    alreadyMsg = `📜 *${questDef.name}* is already in your quest log. Progress unchanged.`;
   } else {
-    player.quests.active[questId] = { progress: 0, startedAt: Date.now() };
-    questBlock = questSystem.renderQuestDetail(questDef);
+    player.quests.active[questId] = { progress: 0, startedAt: Date.now(), stepProgress: {} };
+    questBlockForDm = questSystem.renderQuestDetail(questDef);
+    chainGated = questDef.requirement?.kind === "chain";
 
-    // Hidden commands hint — DM them so they don't leak in the group
+    // Hidden commands hint
     if (questDef.hiddenCommands && typeof questDef.hiddenCommands === "object") {
       hiddenDmLines.push(`🔮 *Hidden commands unlocked for "${questDef.name}":*`);
       for (const [npc, info] of Object.entries(questDef.hiddenCommands)) {
@@ -172,25 +189,52 @@ async function cmdOpen(ctx, chatId, senderId, msg, args = []) {
 
   savePlayers(players);
 
-  // Try to DM hidden commands (best-effort — silent on failure)
-  if (hiddenDmLines.length) {
+  // ─── DM the full quest detail (+ hidden commands) to the player ───
+  // Group chat only sees a short tease. This keeps the quest text
+  // private and reduces spam in shared chats.
+  let dmSent = false;
+  if (questDef && !alreadyMsg) {
+    const dmText =
+      `📜 *${scroll.name}* — opened\n${DIVIDER}\n` +
+      `_${scroll.lore}_\n${DIVIDER}\n` +
+      `${questBlockForDm}` +
+      (hiddenDmLines.length ? `\n\n${hiddenDmLines.join("\n")}` : "");
     try {
-      await sock.sendMessage(senderId, { text: hiddenDmLines.join("\n") });
-      dmBlock = `\n📩 _Hidden commands DM'd to you — check your private chat._`;
+      await sock.sendMessage(senderId, { text: dmText });
+      dmSent = true;
     } catch {
-      // If DM fails (privacy settings etc.), inline them as a fallback
-      dmBlock = `\n${hiddenDmLines.join("\n")}`;
+      // DM blocked — we'll inline the quest in the group as a fallback
     }
   }
 
-  return sock.sendMessage(chatId, {
-    text:
-      `📜 *SCROLL OPENED — ${scroll.name}*\n${DIVIDER}\n` +
-      `_${scroll.lore}_\n` +
-      `🧠 *+1 Intelligence*  _(now ${player.intelligence})_\n${DIVIDER}\n` +
-      questBlock +
-      dmBlock,
-  }, { quoted: msg });
+  // ─── Group-chat message (short tease) + image if available ───
+  const imagePath = scrollImagePath(scroll.id);
+  const teaseText = alreadyMsg
+    ? `📜 *${scroll.name}*\n${alreadyMsg}`
+    : dmSent
+      ? `📜 *${scroll.name} — opened*\n` +
+        `🧠 *+1 Intelligence*  _(now ${player.intelligence})_\n` +
+        (chainGated
+          ? `_The quest log + hidden command have been DM'd to you. Check your private chat to begin._`
+          : `_Quest details DM'd to you. Check your private chat._`)
+      : // DM failed — print everything inline as the fallback
+        `📜 *SCROLL OPENED — ${scroll.name}*\n${DIVIDER}\n` +
+        `_${scroll.lore}_\n` +
+        `🧠 *+1 Intelligence*  _(now ${player.intelligence})_\n${DIVIDER}\n` +
+        questBlockForDm +
+        (hiddenDmLines.length ? `\n\n${hiddenDmLines.join("\n")}` : "");
+
+  if (imagePath) {
+    try {
+      return await sock.sendMessage(chatId, {
+        image: fs.readFileSync(imagePath),
+        caption: teaseText,
+      }, { quoted: msg });
+    } catch {
+      // image send failed — fall through to plain text
+    }
+  }
+  return sock.sendMessage(chatId, { text: teaseText }, { quoted: msg });
 }
 
 module.exports = {
@@ -200,5 +244,6 @@ module.exports = {
   ensureScrollFields,
   maybeDropScroll,
   findScrollByQuery,
+  scrollImagePath,
   RARITY_DROP_RATE,
 };

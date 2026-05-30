@@ -27,6 +27,18 @@ function loadStyles() {
 }
 function reloadCatalog() { _quests = null; _styles = null; }
 
+// ── Style rarity damage multiplier ──
+// Rarer styles hit slightly harder. Tunable here.
+const STYLE_RARITY_BUFF = {
+  common:    0.00,
+  rare:      0.05,
+  epic:      0.12,
+  legendary: 0.22,
+};
+function getRarityBuff(rarity) {
+  return Number(STYLE_RARITY_BUFF[String(rarity || "common").toLowerCase()] || 0);
+}
+
 // ── Per-player schema ──
 // p.quests = {
 //   active:    { questId: { progress: N, startedAt: ts } },
@@ -64,6 +76,7 @@ function getUnlockedStyleMoves(player) {
         styleId: id,
         styleName: st.name,
         styleType: st.type,
+        styleRarity: String(st.rarity || "common").toLowerCase(),
       });
     }
   }
@@ -437,4 +450,6 @@ module.exports = {
   loadQuests,
   loadStyles,
   reloadCatalog,
+  getRarityBuff,
+  STYLE_RARITY_BUFF,
 };
