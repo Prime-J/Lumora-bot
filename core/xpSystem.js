@@ -213,6 +213,13 @@ function addPlayerXp(player, amount) {
       const stats = require("../systems/stats");
       statPointsGranted = stats.grantPointsForLevels(player, levels);
     } catch {}
+    // v0.8.1 — combat-energy max gradually grows with level. +1 max
+    // stamina per level gained. If the bar was already full, top it off.
+    if (typeof player.combatMaxEnergy !== "number") player.combatMaxEnergy = 50;
+    if (typeof player.combatEnergy    !== "number") player.combatEnergy    = player.combatMaxEnergy;
+    const wasFull = player.combatEnergy >= player.combatMaxEnergy;
+    player.combatMaxEnergy += levels;
+    if (wasFull) player.combatEnergy = player.combatMaxEnergy;
   }
 
   return {

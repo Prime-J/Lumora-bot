@@ -214,8 +214,8 @@ assert.strictEqual(stPlayer.statPoints, 9, "3 levels = 9 points");
 // Invest 3 vit → +15 maxHP + heal
 stPlayer.stats.vit = 3;
 statSystem.applyVitInvest(stPlayer, 3);
-assert.strictEqual(stPlayer.playerMaxHp, 115, "vit raises maxHp");
-assert.strictEqual(stPlayer.playerHp, 115, "vit heals to new max");
+assert.strictEqual(stPlayer.playerMaxHp, 130, "vit raises maxHp (3 pts × 10 = +30)");
+assert.strictEqual(stPlayer.playerHp, 130, "vit heals to new max");
 // Damage bonuses
 stPlayer.stats.melee = 5;
 stPlayer.stats.mora  = 7;
@@ -547,4 +547,31 @@ assert.strictEqual(melPlayer.combatMaxEnergy, beforeMax + 10, "10 melee points �
 assert.strictEqual(melPlayer.combatEnergy, melPlayer.combatMaxEnergy, "energy refilled to new max");
 console.log("✅ melee → +1 combat-energy max per point (stamina scales with dedication)");
 
-console.log("\n🎉 ALL v0.8.0 SMOKE TESTS PASSED (35 checks)");
+// ── 36. Stat cap = 100 per stat ──────────────────────────
+assert.strictEqual(statSystem.PER_STAT_CAP, 100, "PER_STAT_CAP exported as 100");
+// ── 37. Vit per-point HP doubled to 10 ───────────────────
+const vitPlayer = { id: "v@lid", username: "Tank", level: 1, playerHp: 100, playerMaxHp: 100, statPoints: 50 };
+statSystem.ensureStatFields(vitPlayer);
+vitPlayer.stats.vit = 50;
+statSystem.applyVitInvest(vitPlayer, 50);
+assert.strictEqual(vitPlayer.playerMaxHp, 600, "50 Vit @ +10/pt → +500 HP (100 base + 500 = 600)");
+// At max Vit (100 pts): 100 base + 1000 = 1100
+const peakVit = { playerHp: 100, playerMaxHp: 100, stats: { vit: 0, melee: 0, mora: 0, speed: 0, def: 0 }, statPoints: 100 };
+statSystem.applyVitInvest(peakVit, 100);
+assert.strictEqual(peakVit.playerMaxHp, 1100, "max Vit (100) → 1100 HP cap");
+console.log("✅ Vit: +10 HP/pt, max Vit 100 → 1100 HP");
+
+// ── 38. Combat energy grows with level (+1 per level) ──────
+const climber = { username: "Striver", level: 1, xp: 0 };
+statSystem.ensureStatFields(climber);
+const xpSys = require("../core/xpSystem");
+// Force-level 4 levels in one shot — should bump combatMaxEnergy by 4
+const climbXp = xpSys.playerXpToNextLevel(1) + xpSys.playerXpToNextLevel(2) +
+                xpSys.playerXpToNextLevel(3) + xpSys.playerXpToNextLevel(4);
+const beforeMaxEnergy = climber.combatMaxEnergy || 50;
+xpSys.addPlayerXp(climber, climbXp * 2);  // overshoot so we definitely get 4+ levels
+const expectedGain = climber.level - 1;
+assert.ok(climber.combatMaxEnergy >= 50 + expectedGain, `combatMaxEnergy grew with level (${climber.combatMaxEnergy} vs ${50 + expectedGain})`);
+console.log(`✅ stamina/level: lv ${climber.level} → combatMaxEnergy ${climber.combatMaxEnergy}`);
+
+console.log("\n🎉 ALL v0.8.1 SMOKE TESTS PASSED (38 checks)");

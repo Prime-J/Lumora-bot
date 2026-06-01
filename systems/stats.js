@@ -19,10 +19,15 @@ const POINTS_PER_LEVEL = 3;
 const MELEE_DMG_PER_POINT    = 2;     // +2 damage on base/style hit
 const MELEE_ENERGY_PER_POINT = 1;     // +1 combat-energy max per point (stamina scales with dedication)
 const MORA_DMG_PER_POINT     = 2;     // +2 damage on merge hit
-const VIT_HP_PER_POINT       = 5;     // +5 max HP per point invested
+const VIT_HP_PER_POINT       = 10;    // +10 max HP per point invested (v0.8.1 rebalance)
 const SPEED_DODGE_PER_POINT  = 0.01;  // +1% dodge per point
 const SPEED_DODGE_CAP        = 0.50;  // 50% max
 const DEF_REDUCTION_PER_POINT = 1.5;  // -1.5 damage taken per point (floored to >=1)
+
+// v0.8.1: per-stat investment cap. You cannot invest more than 100 points
+// into any single stat. With 3 pts/level and level cap 100 you'd get 297
+// points total — enough to fully max ~3 stats, not all 5.
+const PER_STAT_CAP = 100;
 
 const CATEGORIES = ["melee", "mora", "vit", "speed", "def"];
 const CATEGORY_ALIASES = {
@@ -119,13 +124,13 @@ async function cmdStats(ctx, chatId, senderId, msg, args = []) {
 
   // Render
   const lines = [
-    `📊 *YOUR STATS*  _Level ${player.level || 1}_`,
+    `📊 *YOUR STATS*  _Level ${player.level || 1}  •  cap ${PER_STAT_CAP}/stat_`,
     DIVIDER,
-    `⚔️ Melee: *${player.stats.melee}*  _(+${meleeDamageBonus(player)} dmg on base/style hits, +${player.stats.melee * MELEE_ENERGY_PER_POINT} stamina)_`,
-    `🌀 Mora:  *${player.stats.mora}*  _(+${moraDamageBonus(player)} dmg on merge hits)_`,
-    `❤️ Vit:   *${player.stats.vit}*  _(+${vitHpBonus(player)} max HP)_`,
-    `💨 Speed: *${player.stats.speed}*  _(${Math.round(dodgeChance(player) * 100)}% dodge)_`,
-    `🛡 Def:   *${player.stats.def}*  _(-${defenseReduction(player)} dmg taken)_`,
+    `⚔️ Melee: *${player.stats.melee}/${PER_STAT_CAP}*  _(+${meleeDamageBonus(player)} dmg, +${player.stats.melee * MELEE_ENERGY_PER_POINT} stamina)_`,
+    `🌀 Mora:  *${player.stats.mora}/${PER_STAT_CAP}*  _(+${moraDamageBonus(player)} dmg on merge hits)_`,
+    `❤️ Vit:   *${player.stats.vit}/${PER_STAT_CAP}*  _(+${vitHpBonus(player)} max HP)_`,
+    `💨 Speed: *${player.stats.speed}/${PER_STAT_CAP}*  _(${Math.round(dodgeChance(player) * 100)}% dodge)_`,
+    `🛡 Def:   *${player.stats.def}/${PER_STAT_CAP}*  _(-${defenseReduction(player)} dmg taken)_`,
     DIVIDER,
     `🎯 *Unspent points: ${player.statPoints}*`,
     player.statPoints > 0
@@ -156,8 +161,16 @@ async function cmdStatsInvest(ctx, chatId, senderId, msg, args = []) {
       text: `❌ Not enough points. You have *${player.statPoints}*, tried to spend *${n}*.`,
     }, { quoted: msg });
   }
+  const current = Number(player.stats[cat] || 0);
+  if (current + n > PER_STAT_CAP) {
+    const room = Math.max(0, PER_STAT_CAP - current);
+    return sock.sendMessage(chatId, {
+      text:
+        `❌ ${cat.toUpperCase()} caps at *${PER_STAT_CAP}*. You're at *${current}* — only *${room}* more allowed.`,
+    }, { quoted: msg });
+  }
 
-  player.stats[cat] = Number(player.stats[cat] || 0) + n;
+  player.stats[cat] = current + n;
   player.statPoints -= n;
 
   let extraLine = "";
@@ -198,6 +211,7 @@ module.exports = {
 
   // constants
   POINTS_PER_LEVEL,
+  PER_STAT_CAP,
   MELEE_DMG_PER_POINT,
   MELEE_ENERGY_PER_POINT,
   MORA_DMG_PER_POINT,
