@@ -16,12 +16,13 @@ const DIVIDER = "━━━━━━━━━━━━━━━━━━━━━
 const POINTS_PER_LEVEL = 3;
 
 // Per-point effect magnitudes (kept here so combat code references one source)
-const MELEE_DMG_PER_POINT   = 2;     // +2 damage on base/style hit
-const MORA_DMG_PER_POINT    = 2;     // +2 damage on merge hit
-const VIT_HP_PER_POINT      = 5;     // +5 max HP per point invested
-const SPEED_DODGE_PER_POINT = 0.01;  // +1% dodge per point
-const SPEED_DODGE_CAP       = 0.50;  // 50% max
-const DEF_REDUCTION_PER_POINT = 1.5; // -1.5 damage taken per point (floored to >=1)
+const MELEE_DMG_PER_POINT    = 2;     // +2 damage on base/style hit
+const MELEE_ENERGY_PER_POINT = 1;     // +1 combat-energy max per point (stamina scales with dedication)
+const MORA_DMG_PER_POINT     = 2;     // +2 damage on merge hit
+const VIT_HP_PER_POINT       = 5;     // +5 max HP per point invested
+const SPEED_DODGE_PER_POINT  = 0.01;  // +1% dodge per point
+const SPEED_DODGE_CAP        = 0.50;  // 50% max
+const DEF_REDUCTION_PER_POINT = 1.5;  // -1.5 damage taken per point (floored to >=1)
 
 const CATEGORIES = ["melee", "mora", "vit", "speed", "def"];
 const CATEGORY_ALIASES = {
@@ -78,6 +79,18 @@ function applyVitInvest(player, pointsInvested) {
   return gain;
 }
 
+// Melee investments raise the combat-energy max (stamina) AND refill to new max.
+function applyMeleeInvest(player, pointsInvested) {
+  if (!pointsInvested) return 0;
+  ensureStatFields(player);
+  const gain = MELEE_ENERGY_PER_POINT * pointsInvested;
+  if (typeof player.combatMaxEnergy !== "number") player.combatMaxEnergy = 50;
+  player.combatMaxEnergy += gain;
+  if (typeof player.combatEnergy !== "number") player.combatEnergy = player.combatMaxEnergy;
+  else player.combatEnergy = Math.min(player.combatMaxEnergy, Number(player.combatEnergy) + gain);
+  return gain;
+}
+
 // ══════════════════════════════════════════════════════════════
 // COMMANDS
 // ══════════════════════════════════════════════════════════════
@@ -108,7 +121,7 @@ async function cmdStats(ctx, chatId, senderId, msg, args = []) {
   const lines = [
     `📊 *YOUR STATS*  _Level ${player.level || 1}_`,
     DIVIDER,
-    `⚔️ Melee: *${player.stats.melee}*  _(+${meleeDamageBonus(player)} dmg on base/style hits)_`,
+    `⚔️ Melee: *${player.stats.melee}*  _(+${meleeDamageBonus(player)} dmg on base/style hits, +${player.stats.melee * MELEE_ENERGY_PER_POINT} stamina)_`,
     `🌀 Mora:  *${player.stats.mora}*  _(+${moraDamageBonus(player)} dmg on merge hits)_`,
     `❤️ Vit:   *${player.stats.vit}*  _(+${vitHpBonus(player)} max HP)_`,
     `💨 Speed: *${player.stats.speed}*  _(${Math.round(dodgeChance(player) * 100)}% dodge)_`,
@@ -151,6 +164,9 @@ async function cmdStatsInvest(ctx, chatId, senderId, msg, args = []) {
   if (cat === "vit") {
     const hpGain = applyVitInvest(player, n);
     extraLine = `\n❤️ Max HP increased by *${hpGain}* (now ${player.playerMaxHp}). Healed.`;
+  } else if (cat === "melee") {
+    const energyGain = applyMeleeInvest(player, n);
+    extraLine = `\n🔋 Combat-energy max increased by *${energyGain}* (now ${player.combatMaxEnergy}). Stamina bar refilled.`;
   }
 
   savePlayers(players);
@@ -173,6 +189,7 @@ module.exports = {
   ensureStatFields,
   grantPointsForLevels,
   applyVitInvest,
+  applyMeleeInvest,
   meleeDamageBonus,
   moraDamageBonus,
   vitHpBonus,
@@ -182,6 +199,7 @@ module.exports = {
   // constants
   POINTS_PER_LEVEL,
   MELEE_DMG_PER_POINT,
+  MELEE_ENERGY_PER_POINT,
   MORA_DMG_PER_POINT,
   VIT_HP_PER_POINT,
   SPEED_DODGE_PER_POINT,

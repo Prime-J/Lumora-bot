@@ -1306,5 +1306,141 @@
     "effects": {
       "mask": true
     }
+  },
+
+  "SHARD_VIAL": {
+    "id": "SHARD_VIAL",
+    "name": "Cleansing Vial",
+    "category": "consumable",
+    "rarity": "Rare",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 350,
+    "stock": 3,
+    "storageCost": 0,
+    "effect": "Purifies one corrupted shard in your vault back to its normal form. No Lucon cost.",
+    "desc": "A vial of clean tide-water from the Sanctuary. Pour it on a corrupted shard and watch the dark veining drain away.",
+    "effects": {
+      "purifyShard": true
+    }
+  },
+
+  "SHARD_LURE": {
+    "id": "SHARD_LURE",
+    "name": "Shard Lure",
+    "category": "consumable",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 200,
+    "stock": 5,
+    "storageCost": 0,
+    "effect": "Guarantees a shard drop on your next defeated mergeable wild Mora.",
+    "desc": "A small magnet of carved resonance-glass. Wild Mora carrying mergeable essence feel its pull during the kill.",
+    "effects": {
+      "forceShardDropNext": true
+    }
+  },
+
+  "HP_TINCTURE": {
+    "id": "HP_TINCTURE",
+    "name": "Sun-Dew Tincture",
+    "category": "consumable",
+    "rarity": "Common",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 80,
+    "stock": 10,
+    "storageCost": 0,
+    "effect": "Restores 50 HP instantly. Use between fights.",
+    "desc": "A pale-gold dropper. One pull and the small wounds knit themselves shut.",
+    "effects": {
+      "heal": 50
+    }
+  },
+
+  "HP_TONIC_FULL": {
+    "id": "HP_TONIC_FULL",
+    "name": "Anastasis Draught",
+    "category": "consumable",
+    "rarity": "Rare",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 240,
+    "stock": 4,
+    "storageCost": 0,
+    "effect": "Heals you to FULL HP instantly. Named after the legendary style.",
+    "desc": "A dark glass bottle pressed by Sanctuary hands. They say the formula was stolen from a Mercy Rising ritual — they say a lot of things.",
+    "effects": {
+      "healFull": true
+    }
+  },
+
+  "ENERGY_TONIC": {
+    "id": "ENERGY_TONIC",
+    "name": "Surge Tonic",
+    "category": "consumable",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 120,
+    "stock": 6,
+    "storageCost": 0,
+    "effect": "Refills your combat energy bar to full. Use mid-fight to chain finishers.",
+    "desc": "Bright blue, slightly bitter. The Lumora apothecaries deny that it contains real lightning. They deny it with their eyes.",
+    "effects": {
+      "energyRefill": true
+    }
+  },
+
+  "RESONANCE_VIAL": {
+    "id": "RESONANCE_VIAL",
+    "name": "Resonance Vial",
+    "category": "consumable",
+    "rarity": "Rare",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 300,
+    "stock": 3,
+    "storageCost": 1,
+    "effect": "+50 Resonance instantly.",
+    "desc": "A vibrating phial of pale crystal-dust. Hold it close to your sternum and it sings the note your aura sings back.",
+    "effects": {
+      "resonanceBoost": 50
+    }
+  },
+
+  "READERS_INK": {
+    "id": "READERS_INK",
+    "name": "Reader's Ink",
+    "category": "consumable",
+    "rarity": "Rare",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 320,
+    "stock": 3,
+    "storageCost": 0,
+    "effect": "+3 Intelligence. Single dose.",
+    "desc": "A thin black ink in a glass needle. Press one drop to the tongue and the next page you open will make slightly more sense than the last.",
+    "effects": {
+      "intelligenceBoost": 3
+    }
+  },
+
+  "QUEST_COMPASS": {
+    "id": "QUEST_COMPASS",
+    "name": "Quest Compass",
+    "category": "consumable",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "rotates": true,
+    "price": 180,
+    "stock": 5,
+    "storageCost": 0,
+    "effect": "Re-DMs the next pending NPC hint and hidden command for every active chained quest.",
+    "desc": "A small brass disc with a needle that won't sit still. Whatever you've lost track of, this thing remembers.",
+    "effects": {
+      "questHintRefresh": true
+    }
   }
 }

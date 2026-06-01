@@ -58,9 +58,18 @@ function syncEnergyFromHuntState(player, senderId) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// SECTION 2 — EFFECTS ENGINE
-// Handles ALL 41 effect keys from items.json correctly.
-// ctx is optional — used for mora-targeting effects (cleanse etc.)
+// SECTION 2 — EFFECTS ENGINE  (v0.8.0)
+// Handles every effect key in items.json. After the rework, "Mora-targeting"
+// effects are redirected — there are no party Mora to act on anymore.
+//   • removeCorruption → purifies the first corrupted shard in vault
+//   • moraHpRestore    → heals player.playerHp (legacy alias for heal)
+//   • primordialReduce → reduces player.riftPE
+//   • primordialInstant→ increases player.riftPE
+// New effect keys added in v0.8.0:
+//   • purifyShard, healFull, energyRefill, resonanceBoost,
+//     intelligenceBoost, statBoost (with stat field), forceShardDropNext,
+//     questHintRefresh, statPointsGrant
+// ctx is optional — passes loadMora for shard cleanse lookups.
 // ══════════════════════════════════════════════════════════════
 function applyItemEffects(player, effects = {}, ctx = {}) {
   if (!effects || typeof effects !== "object") return { log: [] };
@@ -162,18 +171,13 @@ function applyItemEffects(player, effects = {}, ctx = {}) {
       }
 
       // ─── PRIMORDIAL ENERGY CONTROL ───────────────────────
+      // v0.8.0: PE now lives on the player (player.riftPE), not on Mora.
       case "primordialReduce": {
-        // Applied to target Mora in ctx, or all owned Mora
-        const targets = ctx.targetMora ? [ctx.targetMora]
-          : (Array.isArray(player.moraOwned) ? player.moraOwned : []);
-        let reduced = 0;
-        for (const mora of targets) {
-          if (!mora) continue;
-          const before = Number(mora.pe || 0);
-          mora.pe = Math.max(0, before - n);
-          reduced += (before - mora.pe);
-        }
-        if (reduced > 0) log.push(`🌀 Primordial Energy reduced by *${reduced}* total`);
+        const before = Number(player.riftPE || 0);
+        player.riftPE = Math.max(0, before - n);
+        const reduced = before - player.riftPE;
+        if (reduced > 0) log.push(`🌀 Rift PE reduced by *${reduced}* (now ${player.riftPE})`);
+        else             log.push(`🌀 Rift PE is already at 0.`);
         break;
       }
 
@@ -188,18 +192,46 @@ function applyItemEffects(player, effects = {}, ctx = {}) {
       }
 
       // ─── CLEANSE CORRUPTION ──────────────────────────────
-      case "removeCorruption": {
-        const targets = ctx.targetMora ? [ctx.targetMora]
-          : (Array.isArray(player.moraOwned) ? player.moraOwned.filter(m => m?.corrupted) : []);
-        if (!targets.length) {
-          log.push(`🧼 No corrupted Mora to cleanse.`);
-          break;
+      // v0.8.0: redirected — there are no party Mora to cleanse. Instead,
+      // purify the player's first CORRUPTED SHARD in the vault (no Lucon cost).
+      case "removeCorruption":
+      case "purifyShard": {
+        try {
+          const shardSystem = require("./shards");
+          shardSystem.ensureShardFields(player);
+          const corrEntry = Object.entries(player.shards).find(
+            ([k, count]) => Number(count) > 0 && shardSystem.isCorruptedKey(k)
+          );
+          if (!corrEntry) {
+            log.push(`🧼 No corrupted shards to purify.`);
+            break;
+          }
+          const [corrKey] = corrEntry;
+          const baseKey = shardSystem.stripCorrupted(corrKey);
+
+          // Cap check on normal slot first — refuse if it would overflow
+          const cap = shardSystem.getStorageCap(player, baseKey);
+          const have = shardSystem.getShardCount(player, baseKey);
+          if (have >= cap) {
+            log.push(`🧼 Normal vault for that shard is full (${have}/${cap}) — purify aborted.`);
+            break;
+          }
+
+          player.shards[corrKey] -= 1;
+          if (player.shards[corrKey] <= 0) delete player.shards[corrKey];
+          player.shards[baseKey] = have + 1;
+
+          // Try to name the species in the log
+          let label = baseKey;
+          try {
+            const list = (ctx.loadMora || (() => []))();
+            const sp = list.find((m) => String(m.id).toLowerCase() === baseKey);
+            if (sp?.name) label = sp.name;
+          } catch {}
+          log.push(`🧼 Corrupted *${label}* shard cleansed back to normal.`);
+        } catch (e) {
+          log.push(`🧼 Purification failed: ${e?.message || "unknown"}`);
         }
-        const target = targets[0]; // Cleanse Shard: one at a time
-        target.corrupted  = false;
-        target.pe         = Math.max(0, Number(target.pe || 0) - 30);
-        target.corruptionWarned = false;
-        log.push(`🧼 *${target.name}* has been cleansed of corruption!`);
         break;
       }
 
@@ -396,12 +428,12 @@ function applyItemEffects(player, effects = {}, ctx = {}) {
       }
 
       case "moraHpRestore": {
-        const targets = Array.isArray(player.moraOwned) ? player.moraOwned : [];
-        for (const mora of targets) {
-          if (!mora || Number(mora.hp || 0) <= 0) continue;
-          mora.hp = Math.min(Number(mora.hp || 0) + n, Number(mora.maxHp || n));
-        }
-        log.push(`🐉 Active Mora HP restored: *+${n}*`);
+        // v0.8.0: redirected — no party Mora. Treat as a player heal.
+        const before = Number(player.playerHp || 0);
+        player.playerHp = clamp(before + n, 0, maxHp);
+        const gained = player.playerHp - before;
+        if (gained > 0) log.push(`❤️ HP restored: *+${gained}* (legacy mora-heal redirected)`);
+        else            log.push(`❤️ Already at full HP.`);
         break;
       }
 
@@ -427,13 +459,106 @@ function applyItemEffects(player, effects = {}, ctx = {}) {
       }
 
       case "primordialInstant": {
-        const targets = ctx.targetMora ? [ctx.targetMora]
-          : (Array.isArray(player.moraOwned) ? player.moraOwned.slice(0,1) : []);
-        for (const mora of targets) {
-          if (!mora) continue;
-          mora.pe = Math.min(100, Number(mora.pe || 0) + n);
+        // v0.8.0: redirected — PE is a player stat now.
+        const before = Number(player.riftPE || 0);
+        player.riftPE = Math.min(100, before + n);
+        const gained = player.riftPE - before;
+        if (gained > 0) log.push(`🌀 Rift PE: *+${gained}* (now ${player.riftPE})`);
+        else            log.push(`🌀 Rift PE already maxed at 100.`);
+        break;
+      }
+
+      // ══════════════════════════════════════════════════════
+      // v0.8.0 NEW EFFECTS
+      // ══════════════════════════════════════════════════════
+
+      // Full HP heal
+      case "healFull": {
+        const before = Number(player.playerHp || 0);
+        player.playerHp = maxHp;
+        const gained = player.playerHp - before;
+        if (gained > 0) log.push(`❤️ Restored *${gained}* HP — back to full (${maxHp}/${maxHp})`);
+        else             log.push(`❤️ Already at full HP.`);
+        break;
+      }
+
+      // Full combat-energy refill
+      case "energyRefill": {
+        if (typeof player.combatMaxEnergy !== "number") player.combatMaxEnergy = 50;
+        if (typeof player.combatEnergy    !== "number") player.combatEnergy    = player.combatMaxEnergy;
+        const before = Number(player.combatEnergy);
+        player.combatEnergy = player.combatMaxEnergy;
+        const gained = player.combatEnergy - before;
+        log.push(`🔋 Combat energy restored: *+${gained}* (full ${player.combatMaxEnergy}/${player.combatMaxEnergy})`);
+        break;
+      }
+
+      // Resonance boost
+      case "resonanceBoost": {
+        player.resonance = Number(player.resonance || 0) + n;
+        log.push(`💠 Resonance: *+${n}* (now ${player.resonance})`);
+        break;
+      }
+
+      // Intelligence boost
+      case "intelligenceBoost": {
+        player.intelligence = Number(player.intelligence || 0) + n;
+        log.push(`🧠 Intelligence: *+${n}* (now ${player.intelligence})`);
+        break;
+      }
+
+      // Force next wild defeat to drop a shard (sets a one-shot passive)
+      case "forceShardDropNext": {
+        if (!player.passives) player.passives = {};
+        player.passives.forceShardDropNext = true;
+        log.push(`💎 *Shard Lure* primed — your next wild defeat guarantees a shard drop.`);
+        break;
+      }
+
+      // Grant unspent stat points directly
+      case "statPointsGrant": {
+        try {
+          const st = require("./stats");
+          st.ensureStatFields(player);
+          player.statPoints = Number(player.statPoints || 0) + n;
+          log.push(`📊 Stat points granted: *+${n}* (unspent: ${player.statPoints})`);
+        } catch (e) {
+          log.push(`📊 Failed to grant stat points: ${e?.message || "unknown"}`);
         }
-        log.push(`🌀 Primordial Energy: *+${n}* to active Mora`);
+        break;
+      }
+
+      // Re-DM the next pending NPC hint for active chain quests
+      case "questHintRefresh": {
+        try {
+          const qs    = require("./quests");
+          const quests = qs.loadQuests();
+          const hints = [];
+          for (const [qId, active] of Object.entries(player.quests?.active || {})) {
+            const def = quests[qId];
+            if (!def || def.requirement?.kind !== "chain") continue;
+            const sp = active.stepProgress || {};
+            for (let i = 0; i < def.requirement.steps.length; i++) {
+              if (sp[i]) continue;
+              const step = def.requirement.steps[i];
+              if (step.kind === "meetNpc" && def.hiddenCommands?.[step.npc]) {
+                hints.push(
+                  `📜 *${def.name}* — next: *${step.label || `Find ${step.npc}`}*\n` +
+                  `   Hidden command: *.${def.hiddenCommands[step.npc].cmd}*`
+                );
+              }
+              break; // only the FIRST incomplete step
+            }
+          }
+          if (!hints.length) {
+            log.push(`🧭 No pending chain-quest hints to refresh.`);
+          } else {
+            log.push(`🧭 *Quest Compass* spoke. Hints refreshed below:`);
+            for (const h of hints) log.push(h);
+          }
+        } catch (e) {
+          log.push(`🧭 Compass failed: ${e?.message || "unknown"}`);
+        }
         break;
       }
 

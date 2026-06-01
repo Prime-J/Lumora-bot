@@ -755,8 +755,11 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
       `✨ @${String(senderId).split("@")[0]}${tag} used *${move.name}*\n   ${fxLines.join("\n   ")}`
     );
   } else {
-    // neverMisses moves bypass the hit roll
-    const hit = move.neverMisses ? true : battleMath.checkHit(move.accuracy ?? 100);
+    // neverMisses moves bypass the hit roll. Accuracy passives bump the roll.
+    let effectiveAcc = Number(move.accuracy ?? 100);
+    const accBoost = Number(player.passives?.accuracyBoost || 0);
+    if (accBoost > 0) effectiveAcc = Math.min(100, effectiveAcc + accBoost);
+    const hit = move.neverMisses ? true : battleMath.checkHit(effectiveAcc);
     if (!hit) {
       logs.push(
         `💨 @${String(senderId).split("@")[0]}${tag} used *${move.name}* and missed!`
@@ -805,6 +808,12 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
             res.dmg = Math.floor(res.dmg * (1 + rarityBuffPct));
           }
         } catch {}
+      }
+
+      // ── Item-set passives (v0.8.0) — finally read in combat ─
+      const ps = player.passives || {};
+      if (Number(ps.battleDamageBoost) > 0) {
+        res.dmg = Math.floor(res.dmg * (1 + Number(ps.battleDamageBoost) / 100));
       }
 
       // ── Corrupted merge: +25% damage on merge moves ─────────
@@ -879,7 +888,15 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
       const wildSpecies = ctx.loadMora().find(
         (x) => Number(x.id) === Number(state.wildMora.moraId)
       );
-      const shardLog = shardSystem.dropShardOnDefeat(player, wildSpecies, { source: "defeat" });
+      // v0.8.0: Shard Lure item consumes a one-shot forceShardDropNext passive
+      const forceDrop = !!player.passives?.forceShardDropNext;
+      if (forceDrop) {
+        delete player.passives.forceShardDropNext;
+      }
+      const shardLog = shardSystem.dropShardOnDefeat(player, wildSpecies, {
+        source: "defeat",
+        forceDrop,
+      });
       if (shardLog) logs.push(shardLog);
     } catch (e) {
       // never break the defeat path because of a shard hiccup
@@ -1161,6 +1178,12 @@ async function doWildTurn(ctx, player, playerMora, state, senderId) {
       res.dmg = Math.max(1, Math.floor(res.dmg - reduction));
     }
   } catch {}
+
+  // ── Item-set incoming-damage reduction (v0.8.0 — dormant passive now live) ─
+  const incomingRed = Number(player.passives?.incomingDamageReduction || 0);
+  if (incomingRed > 0) {
+    res.dmg = Math.max(1, Math.floor(res.dmg * (1 - incomingRed / 100)));
+  }
 
   // ── Brace / counter from previous turn (Block, Iron Stance) ──────
   let braceHalved = false;

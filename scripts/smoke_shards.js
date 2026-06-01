@@ -488,4 +488,63 @@ assert.ok(pvpMoves.length >= 2, "at least base actions present");
 assert.ok(pvpMoves.some((m) => m.name === "Punch"), "Punch is in base moveset");
 console.log("✅ PvP combatant/moveset uses same helpers as wild combat");
 
-console.log("\n🎉 ALL v0.7.1 SMOKE TESTS PASSED (31 checks)");
+// ── 32. Items v0.8.0: 8 new items in items.json ──────────
+const itemsCatalog = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "items.json"), "utf-8"));
+for (const id of ["SHARD_VIAL","SHARD_LURE","HP_TINCTURE","HP_TONIC_FULL","ENERGY_TONIC","RESONANCE_VIAL","READERS_INK","QUEST_COMPASS"]) {
+  assert.ok(itemsCatalog[id], `${id} present in items.json`);
+  assert.ok(itemsCatalog[id].effects, `${id} has effects`);
+}
+console.log("✅ items.json: 8 new consumables present with effects");
+
+// ── 33. Effect engine: new keys mutate player as expected ────
+const inv = require("../systems/inventory");
+const efxPlayer = {
+  id: "efx@lid", username: "Tester",
+  playerHp: 30, playerMaxHp: 100,
+  combatEnergy: 5, combatMaxEnergy: 50,
+  resonance: 0, intelligence: 0, riftPE: 60,
+  shards: {}, shardStorage: {}, currentMerge: null,
+};
+// healFull restores full
+inv.applyItemEffects(efxPlayer, { healFull: true });
+assert.strictEqual(efxPlayer.playerHp, 100, "healFull → full HP");
+// energyRefill restores full combat energy
+inv.applyItemEffects(efxPlayer, { energyRefill: true });
+assert.strictEqual(efxPlayer.combatEnergy, 50, "energyRefill → full combat energy");
+// resonance + intelligence boosts
+inv.applyItemEffects(efxPlayer, { resonanceBoost: 50, intelligenceBoost: 3 });
+assert.strictEqual(efxPlayer.resonance, 50, "+50 resonance");
+assert.strictEqual(efxPlayer.intelligence, 3, "+3 intelligence");
+// primordialReduce now drains player.riftPE
+inv.applyItemEffects(efxPlayer, { primordialReduce: 25 });
+assert.strictEqual(efxPlayer.riftPE, 35, "primordialReduce drains player.riftPE");
+// primordialInstant raises player.riftPE
+inv.applyItemEffects(efxPlayer, { primordialInstant: 40 });
+assert.strictEqual(efxPlayer.riftPE, 75, "primordialInstant boosts player.riftPE");
+// forceShardDropNext sets passive
+inv.applyItemEffects(efxPlayer, { forceShardDropNext: true });
+assert.strictEqual(efxPlayer.passives?.forceShardDropNext, true, "forceShardDropNext passive set");
+console.log("✅ effect engine: healFull/energyRefill/resonance/intel/PE/shardLure all apply correctly");
+
+// ── 34. Item-based purify: corrupted shard cleansed via effect ──
+const purgePlayer = { id: "p@lid", username: "Vance", lucons: 0, shards: {}, shardStorage: {} };
+shardSystem.ensureShardFields(purgePlayer);
+shardSystem.dropCorruptedShard(purgePlayer, tideling);
+const ckey = shardSystem.shardKey(tideling, { corrupted: true });
+assert.strictEqual(shardSystem.getShardCount(purgePlayer, ckey), 1, "corrupted Nylon dropped");
+inv.applyItemEffects(purgePlayer, { purifyShard: true }, { loadMora });
+assert.strictEqual(shardSystem.getShardCount(purgePlayer, ckey), 0, "corrupted consumed");
+assert.strictEqual(shardSystem.getShardCount(purgePlayer, "1"), 1, "normal shard granted");
+console.log("✅ item-based purify: corrupted Nylon → normal Nylon, no Lucon cost");
+
+// ── 35. Melee invest grows combat-energy max ──────────
+const melPlayer = { id: "m@lid", username: "Bruiser", level: 1, statPoints: 5,
+                    playerHp: 100, playerMaxHp: 100, combatEnergy: 50, combatMaxEnergy: 50 };
+statSystem.ensureStatFields(melPlayer);
+const beforeMax = melPlayer.combatMaxEnergy;
+statSystem.applyMeleeInvest(melPlayer, 10);
+assert.strictEqual(melPlayer.combatMaxEnergy, beforeMax + 10, "10 melee points → +10 stamina");
+assert.strictEqual(melPlayer.combatEnergy, melPlayer.combatMaxEnergy, "energy refilled to new max");
+console.log("✅ melee → +1 combat-energy max per point (stamina scales with dedication)");
+
+console.log("\n🎉 ALL v0.8.0 SMOKE TESTS PASSED (35 checks)");

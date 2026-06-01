@@ -326,8 +326,11 @@ async function cmdAttack(ctx, chatId, senderId, msg, args = []) {
     let dodged = false;
     try { if (Math.random() < stats().dodgeChance(defender)) dodged = true; } catch {}
 
-    // Attacker hit roll (neverMisses bypass)
-    const hit = move.neverMisses ? true : battleMath.checkHit(move.accuracy ?? 100);
+    // Attacker hit roll (neverMisses bypass; accuracy passive bumps the roll)
+    let effAcc = Number(move.accuracy ?? 100);
+    const aBoost = Number(attacker.passives?.accuracyBoost || 0);
+    if (aBoost > 0) effAcc = Math.min(100, effAcc + aBoost);
+    const hit = move.neverMisses ? true : battleMath.checkHit(effAcc);
 
     if (dodged) {
       logs.push(`💨 @${defenderJid.split("@")[0]} dodges @${senderId.split("@")[0]}${tag}'s *${move.name}*!`);
@@ -351,6 +354,12 @@ async function cmdAttack(ctx, chatId, senderId, msg, args = []) {
           rarityPct = quests().getRarityBuff(move.styleRarity);
           if (rarityPct > 0) res.dmg = Math.floor(res.dmg * (1 + rarityPct));
         } catch {}
+      }
+
+      // Item-set passives (v0.8.0)
+      const attPas = attacker.passives || {};
+      if (Number(attPas.battleDamageBoost) > 0) {
+        res.dmg = Math.floor(res.dmg * (1 + Number(attPas.battleDamageBoost) / 100));
       }
 
       // Corrupted merge bonus
@@ -379,6 +388,12 @@ async function cmdAttack(ctx, chatId, senderId, msg, args = []) {
         const r = stats().defenseReduction(defender);
         if (r > 0) res.dmg = Math.max(1, Math.floor(res.dmg - r));
       } catch {}
+
+      // Defender's item-set incoming-damage reduction passive
+      const defIncRed = Number(defender.passives?.incomingDamageReduction || 0);
+      if (defIncRed > 0) {
+        res.dmg = Math.max(1, Math.floor(res.dmg * (1 - defIncRed / 100)));
+      }
 
       // Energy refund on damage hits
       if (move.energyRestore) {
