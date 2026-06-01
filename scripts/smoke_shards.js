@@ -445,4 +445,47 @@ reset.raidDeadline = 0;
 delete reset._nextSpawnAt;
 autoRaid.saveState(reset);
 
-console.log("\n🎉 ALL v0.7.0 SMOKE TESTS PASSED (28 checks)");
+// ── 29. PvP module loads + exports expected commands ──────
+const playerBattle = require("../systems/playerBattle");
+for (const cmd of ["cmdBattle", "cmdAccept", "cmdReject", "cmdAttack", "cmdCharge", "cmdForfeit", "getBattle", "clearBattle"]) {
+  assert.strictEqual(typeof playerBattle[cmd], "function", `playerBattle.${cmd} exists`);
+}
+// getBattle returns null for chats with no battle
+assert.strictEqual(playerBattle.getBattle("nochat@g.us"), null, "getBattle null for empty");
+console.log("✅ playerBattle module exports all PvP commands");
+
+// ── 30. PvP shares wildbattle's combat helpers (no duplication) ──
+const wbExports = require("../systems/wildbattle");
+for (const helper of ["BASE_ACTIONS", "ensurePlayerCombatFields", "getPlayerCombatant",
+                       "buildPlayerMoveset", "renderPlayerMoveset", "resolvePlayerMove",
+                       "regenPlayerCombatEnergy", "calcDamage"]) {
+  assert.ok(wbExports[helper] != null, `wildbattle exports ${helper}`);
+}
+console.log("✅ wildbattle helpers exported for shared use");
+
+// ── 31. PvP combatant build uses same stat math as wild ────
+const pvpPlayer = {
+  id: "x@lid",
+  username: "Duelist",
+  level: 25,
+  playerHp: 100,
+  playerMaxHp: 100,
+  aura: 50,
+  intelligence: 20,
+};
+wbExports.ensurePlayerCombatFields(pvpPlayer);
+statSystem.ensureStatFields(pvpPlayer);
+pvpPlayer.stats.melee = 10;
+pvpPlayer.stats.mora  = 5;
+pvpPlayer.stats.vit   = 8;
+const combatant = wbExports.getPlayerCombatant(pvpPlayer, loadMora);
+assert.ok(combatant.atk > 0, "combatant has attack");
+assert.ok(combatant.def > 0, "combatant has defense");
+assert.strictEqual(combatant.level, 25, "combatant level mirrors player level");
+// Moveset includes base actions
+const pvpMoves = wbExports.buildPlayerMoveset(pvpPlayer, loadMora);
+assert.ok(pvpMoves.length >= 2, "at least base actions present");
+assert.ok(pvpMoves.some((m) => m.name === "Punch"), "Punch is in base moveset");
+console.log("✅ PvP combatant/moveset uses same helpers as wild combat");
+
+console.log("\n🎉 ALL v0.7.1 SMOKE TESTS PASSED (31 checks)");

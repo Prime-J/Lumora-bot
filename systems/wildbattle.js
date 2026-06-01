@@ -1906,4 +1906,14 @@ module.exports = {
   getWildBattle,
   clearWildBattle,
   decayMutations,
+
+  // ── Shared combat helpers (re-used by systems/playerBattle.js v0.7.1) ──
+  BASE_ACTIONS,
+  ensurePlayerCombatFields,
+  getPlayerCombatant,
+  buildPlayerMoveset,
+  renderPlayerMoveset,
+  resolvePlayerMove,
+  regenPlayerCombatEnergy,
+  calcDamage,
 };

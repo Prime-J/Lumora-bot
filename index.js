@@ -133,6 +133,7 @@ const statSystem  = require('./systems/stats');
 const apologySystem = require('./systems/apology');
 const scrollSystem  = require('./systems/scrolls');
 const autoRaidSystem = require('./systems/autoRaid');
+const playerBattleSystem = require('./systems/playerBattle');
 const { generateRankCard, generateRankUpCard } = require('./systems/rankCardCanvas');
 const { generateWealthCard, findWealthRank, buildWealthLb } = require('./systems/wealthCanvas');
 const { generateAlverahCard } = require('./systems/alverahCanvas');
@@ -5681,18 +5682,32 @@ if (command === "reset-stats") {
       }
 
       // ============================
-      // PVP BATTLE SYSTEM
+      // PVP BATTLE SYSTEM (v0.7.1 — playerBattle.js, shard/style/stats aware)
+      // The OLD systems/battle.js is no longer reachable from .battle/.accept/etc.
       // ============================
-      if (command === "battle")  return battleSystem.cmdBattle(ctx, chatId, senderId, msg, args);
-      if (command === "accept")  return battleSystem.cmdAccept?.(ctx, chatId, senderId, msg);
-      if (command === "reject" || command === "refuse") return battleSystem.cmdReject?.(ctx, chatId, senderId, msg);
-      if (command === "attack")  return battleSystem.cmdAttack?.(ctx, chatId, senderId, args, msg);
-      if (command === "switch")  return battleSystem.cmdSwitch?.(ctx, chatId, senderId, args, msg);
-      if (command === "forfeit") return battleSystem.cmdForfeit(ctx, chatId, senderId, msg);
+      if (command === "battle")  return playerBattleSystem.cmdBattle(ctx, chatId, senderId, msg, args);
+      if (command === "accept")  return playerBattleSystem.cmdAccept(ctx, chatId, senderId, msg);
+      if (command === "reject" || command === "refuse") return playerBattleSystem.cmdReject(ctx, chatId, senderId, msg);
+      // .attack only enters PvP if a PvP battle is live in this chat — otherwise fall through
+      if (command === "attack" && playerBattleSystem.getBattle?.(chatId)) {
+        return playerBattleSystem.cmdAttack(ctx, chatId, senderId, msg, args);
+      }
+      // .charge in PvP context only
+      if (command === "charge" && playerBattleSystem.getBattle?.(chatId)) {
+        return playerBattleSystem.cmdCharge(ctx, chatId, senderId, msg);
+      }
+      if (command === "switch" && playerBattleSystem.getBattle?.(chatId)) {
+        return sock.sendMessage(chatId, {
+          text:
+            `🔁 *.switch* is retired in PvP — you fight as yourself.\n` +
+            `Use *.awaken <shard>* or *.shed* outside battle to change form.`,
+        }, { quoted: msg });
+      }
+      if (command === "forfeit" && playerBattleSystem.getBattle?.(chatId)) {
+        return playerBattleSystem.cmdForfeit(ctx, chatId, senderId, msg);
+      }
+      // Items in PvP: not implemented in v0.7.1. Fall through to .consume.
       if (command === "use") {
-        // In an active battle: handled by battle system (item-as-action).
-        // Outside battle: fall through to .consume so items like Cleanse
-        // Shard work with a target party slot/name.
         if (battleSystem.getBattle?.(chatId)) {
           return battleSystem.cmdUse?.(ctx, chatId, senderId, msg, args);
         }
