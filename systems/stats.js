@@ -1,12 +1,12 @@
 // ╔═══════════════════════════════════════════════════════════════╗
-// ║  LUMORA STAT-POINT SYSTEM  v0.6.0                             ║
-// ║  5 categories distributed by player:                          ║
-// ║    Melee     — +base/style damage                             ║
-// ║    Mora      — +merge damage (the mora's power within you)    ║
-// ║    Vitality  — +max HP                                        ║
-// ║    Speed     — +dodge chance                                  ║
-// ║    Defense   — flat damage reduction taken                    ║
-// ║  3 points granted per level up.                               ║
+// ║  LUMORA STAT-POINT SYSTEM  v0.9.0                              ║
+// ║  4 categories distributed by player:                          ║
+// ║    Melee     — +base/style damage  AND  +combat-energy max    ║
+// ║    Mora      — +merge damage (the Mora's power within you)    ║
+// ║    Vitality  — +max HP (absorbed the old Defense stat;         ║
+// ║                more HP IS the defense now)                     ║
+// ║    Speed     — +dodge chance                                   ║
+// ║  3 points granted per level up. Per-stat cap 100.              ║
 // ╚═══════════════════════════════════════════════════════════════╝
 "use strict";
 
@@ -22,29 +22,38 @@ const MORA_DMG_PER_POINT     = 2;     // +2 damage on merge hit
 const VIT_HP_PER_POINT       = 10;    // +10 max HP per point invested (v0.8.1 rebalance)
 const SPEED_DODGE_PER_POINT  = 0.01;  // +1% dodge per point
 const SPEED_DODGE_CAP        = 0.50;  // 50% max
-const DEF_REDUCTION_PER_POINT = 1.5;  // -1.5 damage taken per point (floored to >=1)
+// v0.9.0: Def merged into Vit. defenseReduction() kept as no-op for
+// backward compatibility with any legacy callers.
 
 // v0.8.1: per-stat investment cap. You cannot invest more than 100 points
 // into any single stat. With 3 pts/level and level cap 100 you'd get 297
 // points total — enough to fully max ~3 stats, not all 5.
 const PER_STAT_CAP = 100;
 
-const CATEGORIES = ["melee", "mora", "vit", "speed", "def"];
+const CATEGORIES = ["melee", "mora", "vit", "speed"];
 const CATEGORY_ALIASES = {
   melee: "melee", m: "melee",
   mora: "mora",
   vit: "vit", vitality: "vit", v: "vit", hp: "vit",
   speed: "speed", spd: "speed", s: "speed",
-  def: "def", defense: "def", defence: "def", d: "def",
+  // Legacy aliases — silently redirected to Vit
+  def: "vit", defense: "vit", defence: "vit", d: "vit",
 };
 
+// v0.9.0 — every stat seeds at 1, not 0. Gives new players a baseline +2 dmg,
+// +1 stamina, +10 HP, +1% dodge before they invest anything.
 function ensureStatFields(player) {
   if (!player || typeof player !== "object") return;
   if (!player.stats || typeof player.stats !== "object") {
-    player.stats = { melee: 0, mora: 0, vit: 0, speed: 0, def: 0 };
+    player.stats = { melee: 1, mora: 1, vit: 1, speed: 1 };
   } else {
     for (const c of CATEGORIES) {
-      if (typeof player.stats[c] !== "number") player.stats[c] = 0;
+      if (typeof player.stats[c] !== "number") player.stats[c] = 1;
+    }
+    // Migrate legacy Def → Vit if present
+    if (typeof player.stats.def === "number" && player.stats.def > 0) {
+      player.stats.vit = Number(player.stats.vit || 0) + player.stats.def;
+      delete player.stats.def;
     }
   }
   if (typeof player.statPoints !== "number") player.statPoints = 0;
@@ -63,7 +72,9 @@ function dodgeChance(player) {
   ensureStatFields(player);
   return Math.min(SPEED_DODGE_CAP, Number(player.stats.speed) * SPEED_DODGE_PER_POINT);
 }
-function defenseReduction(player)   { ensureStatFields(player); return Number(player.stats.def)   * DEF_REDUCTION_PER_POINT; }
+// v0.9.0: Def merged into Vit. This helper returns 0 so any lingering callers
+// (older paths, smoke tests) continue to work without bumping damage.
+function defenseReduction(_player) { return 0; }
 
 // ── Level-up hook (called when xpSystem reports a level gain) ──
 function grantPointsForLevels(player, levelsGained = 1) {
@@ -115,27 +126,36 @@ async function cmdStats(ctx, chatId, senderId, msg, args = []) {
       text:
         `📊 *.stats* — view & distribute stat points\n${DIVIDER}\n` +
         `• *.stats* — show your stats + unspent points\n` +
-        `• *.stats invest <cat> <n>* — distribute N points to a category\n` +
-        `  cats: *melee*, *mora*, *vit*, *speed*, *def*\n` +
-        `  e.g. *.stats invest melee 3*\n${DIVIDER}\n` +
+        `• *.invest <cat> <n>* — quick distribute\n` +
+        `  cats: *melee*, *mora*, *vit*, *speed*\n` +
+        `  e.g. *.invest mora 5*\n${DIVIDER}\n` +
         `Each level up grants *${POINTS_PER_LEVEL}* points to distribute.`,
     }, { quoted: msg });
   }
 
   // Render
   const lines = [
-    `📊 *YOUR STATS*  _Level ${player.level || 1}  •  cap ${PER_STAT_CAP}/stat_`,
+    `╭──────────────────────╮`,
+    `│  📊  *YOUR STATS*       │`,
+    `│  _Lv ${String(player.level || 1).padEnd(3)}                  │`,
+    `╰──────────────────────╯`,
+    ``,
+    `⚔️  *Melee*  ${player.stats.melee}`,
+    `   +${meleeDamageBonus(player)} dmg  •  +${player.stats.melee * MELEE_ENERGY_PER_POINT} stamina`,
+    ``,
+    `🌀  *Mora*   ${player.stats.mora}`,
+    `   +${moraDamageBonus(player)} dmg on merge hits`,
+    ``,
+    `❤️  *Vit*    ${player.stats.vit}`,
+    `   +${vitHpBonus(player)} max HP  _(${player.playerMaxHp || 100} total)_`,
+    ``,
+    `💨  *Speed*  ${player.stats.speed}`,
+    `   ${Math.round(dodgeChance(player) * 100)}% dodge chance`,
+    ``,
     DIVIDER,
-    `⚔️ Melee: *${player.stats.melee}/${PER_STAT_CAP}*  _(+${meleeDamageBonus(player)} dmg, +${player.stats.melee * MELEE_ENERGY_PER_POINT} stamina)_`,
-    `🌀 Mora:  *${player.stats.mora}/${PER_STAT_CAP}*  _(+${moraDamageBonus(player)} dmg on merge hits)_`,
-    `❤️ Vit:   *${player.stats.vit}/${PER_STAT_CAP}*  _(+${vitHpBonus(player)} max HP)_`,
-    `💨 Speed: *${player.stats.speed}/${PER_STAT_CAP}*  _(${Math.round(dodgeChance(player) * 100)}% dodge)_`,
-    `🛡 Def:   *${player.stats.def}/${PER_STAT_CAP}*  _(-${defenseReduction(player)} dmg taken)_`,
-    DIVIDER,
-    `🎯 *Unspent points: ${player.statPoints}*`,
     player.statPoints > 0
-      ? `Use *.stats invest <cat> <n>* to distribute.`
-      : `_Level up to earn more points._`,
+      ? `🎯  *${player.statPoints}* unspent — drop them with:\n   *.invest <melee|mora|vit|speed> <n>*\n   _shortcut: .invest m 3  •  .invest v 5_`
+      : `_All points spent. Level up to earn more._`,
   ];
   return sock.sendMessage(chatId, { text: lines.join("\n") }, { quoted: msg });
 }
@@ -149,7 +169,7 @@ async function cmdStatsInvest(ctx, chatId, senderId, msg, args = []) {
   const cat = getCategory(args[0]);
   if (!cat) {
     return sock.sendMessage(chatId, {
-      text: `❌ Usage: *.stats invest <melee|mora|vit|speed|def> <n>*\nExample: *.stats invest melee 3*`,
+      text: `❌ Usage: *.invest <melee|mora|vit|speed> <n>*\nExample: *.invest melee 3*`,
     }, { quoted: msg });
   }
   const n = parseInt(args[1], 10);
@@ -218,6 +238,5 @@ module.exports = {
   VIT_HP_PER_POINT,
   SPEED_DODGE_PER_POINT,
   SPEED_DODGE_CAP,
-  DEF_REDUCTION_PER_POINT,
   CATEGORIES,
 };

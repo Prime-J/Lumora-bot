@@ -574,4 +574,32 @@ const expectedGain = climber.level - 1;
 assert.ok(climber.combatMaxEnergy >= 50 + expectedGain, `combatMaxEnergy grew with level (${climber.combatMaxEnergy} vs ${50 + expectedGain})`);
 console.log(`✅ stamina/level: lv ${climber.level} → combatMaxEnergy ${climber.combatMaxEnergy}`);
 
-console.log("\n🎉 ALL v0.8.1 SMOKE TESTS PASSED (38 checks)");
+// ── 39. v0.9.0: stats init=1, no Def, legacy def migrates to vit ──
+const freshStat = {};
+statSystem.ensureStatFields(freshStat);
+assert.deepStrictEqual(freshStat.stats, { melee: 1, mora: 1, vit: 1, speed: 1 }, "new player → all stats = 1");
+assert.ok(!("def" in freshStat.stats), "no 'def' in fresh stats");
+// Legacy migration
+const legacy = { stats: { melee: 5, mora: 0, vit: 10, speed: 0, def: 7 }, statPoints: 0 };
+statSystem.ensureStatFields(legacy);
+assert.strictEqual(legacy.stats.vit, 17, "legacy def merged into vit (10+7=17)");
+assert.ok(!("def" in legacy.stats), "def stripped after migration");
+// defenseReduction is a no-op
+assert.strictEqual(statSystem.defenseReduction({ stats: { vit: 100 } }), 0, "defenseReduction returns 0");
+console.log("✅ v0.9.0 stats: init=1, Def stat removed (legacy migrates to Vit), defenseReduction is no-op");
+
+// ── 40. Starter style picker has 3 options ──────
+const sso = ["wind_step", "sun_walk", "tide_veil"];
+for (const sid of sso) assert.ok(questSystem.loadStyles()[sid], `starter style ${sid} exists`);
+console.log("✅ starter style options (3): wind_step, sun_walk, tide_veil");
+
+// ── 41. Starter shard picker has 3 options ──────
+const ssh = [1, 4, 2];
+for (const id of ssh) {
+  const sp = loadMora().find((m) => Number(m.id) === id);
+  assert.ok(sp, `starter shard id ${id} exists`);
+  assert.ok(sp.merge === "partial" || sp.merge === "full", `starter shard ${sp.name} is mergeable`);
+}
+console.log("✅ starter shard options (3): Nylon, Sparko, Thornel — all mergeable");
+
+console.log("\n🎉 ALL v0.9.0 SMOKE TESTS PASSED (41 checks)");

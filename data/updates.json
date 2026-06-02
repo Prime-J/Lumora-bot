@@ -1,34 +1,28 @@
 {
   "current": {
-    "version": "0.3.0",
-    "name": "Battlegrounds",
-    "releasedAt": 1778976000000,
-    "notes": "🏹 Hunting Grounds — wild Mora encounters in dedicated groups.\n🏦 Banks & Alverah — store Lucons safely, daily / weekly taxes.\n🥷 Robbery — Snatch Glove with three tiers.\n📊 Ranks — rank cards, full ladder, rank-up reveal.\n💰 Wealth — bank + wallet + total + wealth leaderboard.\n🏅 Achievements — unlocks with rewards, equip on .rank.\n⚔️ Battlegrounds — faction wars, cross-faction skirmishes.\n🎭 Profile mask, lucon weight reduced on global leaderboard."
+    "version": "0.9.0",
+    "name": "The Awakening Rework",
+    "releasedAt": 1780646400000,
+    "notes": "🌅 *FULL REWORK SHIPPED.*\n\n💎 *Shards & merge* — defeat mergeable wild Mora to crystallize their essence into shards. *.awaken <shard>* shatters one and your form becomes theirs. *.shed* reverts.\n\n🥋 *10 fighting styles* — Wind Step, Sun Walk, Tide Veil, Bone Crush, Void Sever + 5 new Greek/Latin styles: Pyrolexis, Kataphraxis, Tenebris, Astrobolos, Anastasis. Rarity tiers buff damage (rare +5%, epic +12%, legendary +22%).\n\n📜 *Quests via scrolls* — 12 scrolls drop on wild defeats. *.open <name>* DMs you the quest details + a hidden whisper command for chained NPC steps.\n\n🌀 *Player IS the combatant* — wild battles AND PvP (*.battle @user*) both use the new engine. No more party Mora in combat. Stats apply on both sides.\n\n📊 *4 stats* (Melee / Mora / Vit / Speed). Each grants 3 points per level up. *.invest <cat> <n>* to distribute. Melee = +dmg AND +stamina. Vit = +10 HP/pt (no separate Def — Vit absorbed it).\n\n⚔️ *PvP rework* — *.battle @user [stake]* now uses the same engine as wild. Optional Lucons stake, status moves, dodge, rarity buffs all live.\n\n🌐 *Auto-raids* — Kael's teleporter spawns autonomously every 4-10h. First *.respond <victim>* names a different faction; victim must *.engage* Kael together.\n\n🌿 *Faction rites on corrupted shards*: Harmony *.purify*, Purity *.destroy*, Rift *.bind*.\n\n🎁 *Apology gift* — wiped players get 500 Lucons + a rare/epic shard 48 days after launch.\n\n🆕 *Starter pickers* — every new player chooses 1 of 3 starter styles + 1 of 3 starter shards at .start.\n\n🛒 *New items* — Cleansing Vial, Shard Lure, Anastasis Draught, Surge Tonic, Resonance Vial, Reader's Ink, Quest Compass, Sun-Dew Tincture.\n\n💯 Level cap: 100. Linear XP curve."
   },
   "pending": {
-    "version": "0.4.0",
-    "name": "The Card Era",
+    "version": "0.10.0",
+    "name": "Live polish",
     "stages": [
-      "🎴 Anime Cards — collect tiered cards (T1–T5; T6 & S come later)",
-      "📺 First fandom: Jujutsu Kaisen. Naruto, One Piece, Bleach to follow.",
-      "⭐ Star — a sister bot dedicated to card management",
-      "🌐 Lumora Vault — internal website where cards are reviewed, launched, and tracked",
-      "🤝 .card-register — cardsmiths submit raw card images from WhatsApp",
-      "🚀 .card-launch — owner pushes finished cards live to the vault (owner-only)",
-      "💎 Card economy — sell, auction, and gift cards between players",
-      "🏆 Anime Collector Tiers — complete a full anime set, claim top-collector benefits",
-      "🎭 Mora Emojis — every Mora message gets its type/rarity emoji glyph",
-      "🎣 New Catch System — wild Mora encounter & taming flow refreshed from the ground up",
-      "🥷 Rob payouts raised — robbery actually pays now",
-      "🧤 Snatch Glove rework — no longer one-use. Glove is only lost when the robber is caught.",
-      "🌑 Corrupted Tamed Mora bite back — corruption now damages the tamer over time",
-      "🌫️ Mora spawn rebalance — legendaries / epics / rares are *truly* rare again",
-      "🎲 Random spawn levels — wild mora arrive at varied levels",
-      "💥 Underdog scaling — a low-level mora defeating a higher one gets a massive HP swing reward",
-      "❤️ .heal heals party mora only",
-      "🖼️ Battle scenes (preview) — pixel battle frames showing mora + HP bars in chat"
+      "🖼️ Battle scene canvas — sprite battle frames (unstuck the v0.4.0 backdrop)",
+      "🏪 Shard market board — public listings (currently P2P trade only)",
+      "💳 Storage upgrade payment — real-money +1 storage cap per Mora",
+      "🎒 Items in PvP — wire .use through the new combat engine",
+      "🧹 Drop dead systems/battle.js (old PvP)"
     ],
-    "notes": "Cards arrive. The Vault opens. The Hunt is reborn."
+    "notes": "Polishing the live world. Polish only — no more big mechanics shifts for a while."
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.3.0",
+      "name": "Battlegrounds",
+      "releasedAt": 1778976000000,
+      "notes": "Hunting Grounds, Banks, Robbery, Ranks, Wealth, Achievements, Battlegrounds, Profile mask."
+    }
+  ]
 }

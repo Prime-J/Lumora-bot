@@ -612,6 +612,66 @@ async function cmdLegacyMerge(ctx, chatId, senderId, msg, args = []) {
 }
 
 // ══════════════════════════════════════════════════════════════
+// STARTER SHARD PICKER  (v0.9.0)
+// At .start, every new player picks one of 3 mergeable shards.
+// ══════════════════════════════════════════════════════════════
+
+// Three Mora IDs offered as starter shards (all partial-merge, common-tier).
+const STARTER_SHARD_OPTIONS = [
+  { id: 1, name: "Nylon",   type: "Aqua",   blurb: "Disciplined river guardian. Flow-and-strike rhythm." },
+  { id: 4, name: "Sparko",  type: "Volt",   blurb: "Lightning-fast. Speed and bursts." },
+  { id: 2, name: "Thornel", type: "Nature", blurb: "Razor-leaf predator. Blade-arm precision." },
+];
+
+async function cmdChooseShard(ctx, chatId, senderId, msg, args = []) {
+  const { sock, players, savePlayers, loadMora } = ctx;
+  const player = players[senderId];
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  ensureShardFields(player);
+
+  if (player.starterShardChosen) {
+    return sock.sendMessage(chatId, {
+      text: `✅ You already chose your starter shard. Check your vault with *.shards*.`,
+    }, { quoted: msg });
+  }
+
+  const list = loadMora();
+  const options = STARTER_SHARD_OPTIONS.map((opt) => ({
+    ...opt,
+    species: list.find((m) => Number(m.id) === opt.id),
+  })).filter((o) => o.species);
+
+  const pick = parseInt(args[0], 10);
+  if (!Number.isFinite(pick) || pick < 1 || pick > options.length) {
+    const linesOpt = options.map((o, i) =>
+      `*${i + 1}.* 💠 *${o.name}* — ${o.type}\n     _${o.blurb}_`
+    );
+    return sock.sendMessage(chatId, {
+      text:
+        `💎 *CHOOSE YOUR STARTER SHARD*\n${DIVIDER}\n` +
+        `One mergeable shard to begin your path. Use *.awaken <name>* later to merge.\n${DIVIDER}\n` +
+        linesOpt.join("\n\n") +
+        `\n${DIVIDER}\n` +
+        `Pick with *.choose-shard 1-${options.length}*`,
+    }, { quoted: msg });
+  }
+
+  const chosen = options[pick - 1];
+  const key = shardKey(chosen.species);
+  player.shards[key] = Number(player.shards[key] || 0) + 1;
+  player.starterShardChosen = true;
+  savePlayers(players);
+
+  return sock.sendMessage(chatId, {
+    text:
+      `💎 *STARTER SHARD GRANTED*\n${DIVIDER}\n` +
+      `A *${chosen.name}* shard crystallizes into your vault.\n_${chosen.blurb}_\n${DIVIDER}\n` +
+      `Use *.shards* to view your vault.\n` +
+      `When ready, run *.awaken ${chosen.name}* to merge.`,
+  }, { quoted: msg });
+}
+
+// ══════════════════════════════════════════════════════════════
 // P2P SHARD TRADE  (v0.5.0 rework — direct trade; market board later)
 // ══════════════════════════════════════════════════════════════
 
@@ -815,6 +875,7 @@ module.exports = {
   cmdStorage,
   cmdPurify,
   cmdDestroy,
+  cmdChooseShard,
 
   // helpers used by other systems
   ensureShardFields,

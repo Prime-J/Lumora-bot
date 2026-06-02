@@ -337,6 +337,57 @@ async function cmdQuest(ctx, chatId, senderId, msg, args = []) {
   }, { quoted: msg });
 }
 
+// ══════════════════════════════════════════════════════════════
+// STARTER STYLE PICKER  (v0.9.0)
+// At .start, every new player picks one of 3 starter fighting styles.
+// ══════════════════════════════════════════════════════════════
+const STARTER_STYLE_OPTIONS = ["wind_step", "sun_walk", "tide_veil"];
+
+async function cmdChooseStyle(ctx, chatId, senderId, msg, args = []) {
+  const { sock, players, savePlayers } = ctx;
+  const player = players[senderId];
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  ensureQuestFields(player);
+
+  if (player.starterStyleChosen) {
+    return sock.sendMessage(chatId, {
+      text: `✅ You already chose your starter style. View it with *.styles*.`,
+    }, { quoted: msg });
+  }
+
+  const styles = loadStyles();
+  const options = STARTER_STYLE_OPTIONS.map((sid) => styles[sid]).filter(Boolean);
+  const pick = parseInt(args[0], 10);
+  if (!Number.isFinite(pick) || pick < 1 || pick > options.length) {
+    const lines = options.map((s, i) => {
+      const moves = (s.moves || []).map((m) => m.name).join(" • ");
+      return `*${i + 1}.* 🥋 *${s.name}* — ${s.type}\n     _${s.lore}_\n     Moves: ${moves}`;
+    });
+    return sock.sendMessage(chatId, {
+      text:
+        `🥋 *CHOOSE YOUR STARTER STYLE*\n${DIVIDER}\n` +
+        `One fighting style to begin with. You can unlock more later by finding scrolls.\n${DIVIDER}\n` +
+        lines.join("\n\n") +
+        `\n${DIVIDER}\n` +
+        `Pick with *.choose-style 1-${options.length}*`,
+    }, { quoted: msg });
+  }
+
+  const chosen = options[pick - 1];
+  if (!player.styles.includes(chosen.id)) player.styles.push(chosen.id);
+  player.starterStyleChosen = true;
+  savePlayers(players);
+
+  return sock.sendMessage(chatId, {
+    text:
+      `🥋 *STARTER STYLE LEARNED*\n${DIVIDER}\n` +
+      `*${chosen.name}* — ${chosen.type}\n${DIVIDER}\n` +
+      `_${chosen.lore}_\n\n` +
+      `Moves added to your *.attack* list:\n` +
+      (chosen.moves || []).map((m) => `• *${m.name}*`).join("\n"),
+  }, { quoted: msg });
+}
+
 async function cmdStyles(ctx, chatId, senderId, msg) {
   const { sock, players } = ctx;
   const player = players[senderId];
@@ -436,6 +487,7 @@ module.exports = {
   cmdQuests,
   cmdQuest,
   cmdStyles,
+  cmdChooseStyle,
   cmdWhisper,
 
   // hooks

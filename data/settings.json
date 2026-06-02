@@ -13,7 +13,7 @@
   },
   "features": {
     "factionsEnabled": true,
-    "groupSpawnsEnabled": true
+    "groupSpawnsEnabled": false
   },
   "huntingGroups": {
     "enabled": true,

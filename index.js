@@ -1391,16 +1391,30 @@ function migratePlayers(players, moraList) {
     if (!p.shardStorage || typeof p.shardStorage !== "object") { p.shardStorage = {}; changed = true; }
     if (!("currentMerge" in p)) { p.currentMerge = null; changed = true; }
 
-    // ── Stat-point system (v0.6.0) ───────────────────────────
+    // ── Stat-point system (v0.6.0 → v0.9.0: Def merged into Vit, init=1) ──
     if (!p.stats || typeof p.stats !== "object") {
-      p.stats = { melee: 0, mora: 0, vit: 0, speed: 0, def: 0 };
+      p.stats = { melee: 1, mora: 1, vit: 1, speed: 1 };
       changed = true;
     } else {
-      for (const k of ["melee","mora","vit","speed","def"]) {
-        if (typeof p.stats[k] !== "number") { p.stats[k] = 0; changed = true; }
+      for (const k of ["melee","mora","vit","speed"]) {
+        if (typeof p.stats[k] !== "number") { p.stats[k] = 1; changed = true; }
+      }
+      // Migrate any legacy Def points → Vit, then strip
+      if (typeof p.stats.def === "number" && p.stats.def > 0) {
+        p.stats.vit = Number(p.stats.vit || 0) + p.stats.def;
+        delete p.stats.def;
+        changed = true;
+      } else if ("def" in p.stats) {
+        delete p.stats.def;
+        changed = true;
       }
     }
     if (typeof p.statPoints !== "number") { p.statPoints = 0; changed = true; }
+
+    // ── v0.9.0: starter picks (style + shard) ─────────────
+    if (typeof p.starterStyleChosen !== "boolean") { p.starterStyleChosen = false; changed = true; }
+    if (typeof p.starterShardChosen !== "boolean") { p.starterShardChosen = false; changed = true; }
+
     if (!p.scrolls || typeof p.scrolls !== "object") { p.scrolls = {}; changed = true; }
     if (!p.quests || typeof p.quests !== "object") { p.quests = { active: {}, completed: [] }; changed = true; }
     if (!Array.isArray(p.styles)) { p.styles = []; changed = true; }
@@ -2460,7 +2474,7 @@ if (command === "cancel") {
           text:
             `🏓 *Pong.*\n` +
             `⏱️ Response: *${ms}ms*\n\n` +
-            `_Prijo is active and ready to roll, young master._`,
+            `_Star is online._`,
         }, { quoted: msg });
       }
 
@@ -2860,8 +2874,14 @@ if (command === "uptime") {
       // ============================
       // SHARD / MERGE SYSTEM (v0.5.0 rework)
       // ============================
-      if (command === "shards" || command === "vault") {
+      if (command === "shards" || command === "shard" || command === "vault") {
         return shardSystem.cmdShards(ctx, chatId, senderId, msg);
+      }
+      if (command === "choose-shard" || command === "chooseshard") {
+        return shardSystem.cmdChooseShard(ctx, chatId, senderId, msg, args);
+      }
+      if (command === "choose-style" || command === "choosestyle") {
+        return questSystem.cmdChooseStyle(ctx, chatId, senderId, msg, args);
       }
       if (command === "awaken") {
         return shardSystem.cmdAwaken(ctx, chatId, senderId, msg, args);
@@ -3528,6 +3548,24 @@ if (command === "endseason") {
           if (!p.starterChosen) {
             return sock.sendMessage(chatId, {
               text: `✅ You are already a Lumorian.\n\n🐉 Choose your starter Mora using: ${PREFIX}choose 1-5`,
+            });
+          }
+
+          if (!p.starterStyleChosen) {
+            return sock.sendMessage(chatId, {
+              text:
+                `✅ You are already a Lumorian.\n\n` +
+                `🥋 Pick a starter fighting style: ${PREFIX}choose-style\n` +
+                `   (you'll be shown 3 options — Wind Step / Sun Walk / Tide Veil)`,
+            });
+          }
+
+          if (!p.starterShardChosen) {
+            return sock.sendMessage(chatId, {
+              text:
+                `✅ You are already a Lumorian.\n\n` +
+                `💎 Pick a starter mergeable shard: ${PREFIX}choose-shard\n` +
+                `   (3 options — Nylon / Sparko / Thornel)`,
             });
           }
 
@@ -7003,6 +7041,43 @@ if (command === "help") { try {
 
     // ── Section content map ─────────────────────────────────
     const SECTIONS = {
+      awakening:
+        `${divider}\n  🌅  *AWAKENING — THE REWORK*\n${divider}\n` +
+        `┃ ${PREFIX}start ─ awaken (faction → starter mora → starter style → starter shard)\n` +
+        `┃ ${PREFIX}choose-style 1-3 ─ pick starter fighting style\n` +
+        `┃ ${PREFIX}choose-shard 1-3 ─ pick starter mergeable shard\n\n` +
+        `${divider}\n  💎  *SHARDS & MERGE*\n${divider}\n` +
+        `┃ ${PREFIX}shard / ${PREFIX}shards ─ your vault\n` +
+        `┃ ${PREFIX}awaken <name> ─ shatter shard, become the Mora\n` +
+        `┃ ${PREFIX}shed ─ revert to base form\n` +
+        `┃ ${PREFIX}trade @user A B ─ swap shards (10-min TTL)\n` +
+        `┃ ${PREFIX}purify <shard> ─ cleanse corrupted shard (100 Lucons)\n` +
+        `┃ ${PREFIX}destroy <shard> ─ shatter corrupted shard (+Resonance)\n` +
+        `┃ ${PREFIX}storage ─ inspect per-Mora vault caps\n\n` +
+        `${divider}\n  🥋  *STYLES, QUESTS, SCROLLS*  _(10 styles total)_\n${divider}\n` +
+        `┃ ${PREFIX}styles ─ all 10 fighting styles\n` +
+        `┃ ${PREFIX}quests / ${PREFIX}quest accept <id> ─ active quests\n` +
+        `┃ ${PREFIX}scrolls ─ your scroll inventory\n` +
+        `┃ ${PREFIX}open <name> ─ open a scroll (DMs quest details)\n` +
+        `┃ ${PREFIX}whisper <npc> ─ hidden command (revealed by scrolls)\n\n` +
+        `_5 of the styles_: Wind Step, Tide Veil, Bone Crush, Pyrolexis, Anastasis.\n\n` +
+        `${divider}\n  📊  *STATS*\n${divider}\n` +
+        `┃ ${PREFIX}stats ─ view your spread + unspent points\n` +
+        `┃ ${PREFIX}invest <melee|mora|vit|speed> <n> ─ distribute points\n` +
+        `┃ _3 points per level. Cap level 100._\n\n` +
+        `${divider}\n  ⚔️  *COMBAT*\n${divider}\n` +
+        `┃ ${PREFIX}attack [n] ─ list / fire a move (wild + PvP)\n` +
+        `┃ ${PREFIX}charge ─ regen combat energy (spend turn)\n` +
+        `┃ ${PREFIX}battle @user [stake] ─ PvP duel\n` +
+        `┃ ${PREFIX}accept / ${PREFIX}reject / ${PREFIX}forfeit ─ PvP responses\n\n` +
+        `${divider}\n  🌐  *AUTO-RAIDS*\n${divider}\n` +
+        `┃ ${PREFIX}respond <victim> ─ name a faction as Kael's target\n` +
+        `┃ ${PREFIX}engage ─ swing at Kael (victim-faction only)\n` +
+        `┃ ${PREFIX}raid-status ─ inspect current raid\n\n` +
+        `${divider}\n  🎁  *POST-WIPE GIFT*\n${divider}\n` +
+        `┃ ${PREFIX}gift ─ check apology gift status (claimable 48d after launch)\n` +
+        `┃ ${PREFIX}gift claim <ShardName> ─ claim 500 Lucons + 1 rare/epic shard\n`,
+
       companion:
         `${divider}\n  💞  *COMPANION & MUTATION*\n${divider}\n` +
         `┃ ${PREFIX}companion <mora> ─ set companion\n` +
@@ -7260,6 +7335,9 @@ if (command === "help") { try {
 
     // Section aliases (so users can type natural variants)
     const SECTION_ALIASES = {
+      awakening: "awakening", rework: "awakening", shards: "awakening", merge: "awakening",
+        styles: "awakening", quests: "awakening", scrolls: "awakening", stats: "awakening",
+        start: "awakening", combat: "awakening", awaken: "awakening", autoraid: "awakening",
       companion: "companion", mutation: "companion", achievements: "companion",
       gear: "gear", inventory: "gear", inv: "gear", items: "gear",
       economy: "economy", lucons: "economy", trading: "economy", trade: "economy",
@@ -7344,6 +7422,7 @@ if (command === "help") { try {
       (settings?.arenaGroups?.enabled
         ? `┃ ${PREFIX}help arena      ─ NPC arena & .challenge\n`
         : "") +
+      `┃ ${PREFIX}help awakening  ─ 🌅 the rework: shards, merge, styles, quests, stats\n` +
       `┃ ${PREFIX}help pvp        ─ player vs player battles\n` +
       `┃ ${PREFIX}help hunting    ─ hunting, terrains, post-battle\n` +
       `┃ ${PREFIX}help fun        ─ stickers, dice, roast, etc.\n` +
