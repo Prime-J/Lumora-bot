@@ -29,6 +29,7 @@
 
 const itemsSystem = require("./items");
 const { applyItemEffects, SCROLL_EFFECTS } = require("./inventory");
+const ui = require("./ui");
 
 const DIV  = "━━━━━━━━━━━━━━━━━━━━━━━━━";
 const SDIV = "─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─";
@@ -514,26 +515,17 @@ function buildFactionMarketText(player) {
   const drawbacksText = info.drawbacks.slice(0, 3).map(d => `  ❌ ${d}`).join("\n");
 
   return (
-    `${DIV}\n` +
-    `${info.emoji}  *${info.name.toUpperCase()}*  ${info.emoji}\n` +
-    `${DIV}\n\n` +
+    ui.header(info.name.toUpperCase(), info.emoji) + '\n\n' +
     `_"${info.belief}"_\n\n` +
-    `${SDIV}\n` +
-    `✅  *BENEFITS*\n` +
-    `${SDIV}\n` +
+    ui.subheader("BENEFITS", "✅") + '\n' +
     perksText +
-    `\n\n${SDIV}\n` +
-    `⚠️  *DRAWBACKS*\n` +
-    `${SDIV}\n` +
+    `\n\n${ui.subheader("DRAWBACKS", "⚠️")}\n` +
     drawbacksText +
-    `\n\n${DIV}\n` +
-    `🛒  *MARKET CATALOG*\n` +
-    `${DIV}\n\n` +
-    (sections.length ? sections.join(`\n\n${SDIV}\n\n`) : "No items currently available.") +
-    `\n\n${DIV}\n` +
-    `📖 Buy: *.fbuy <item name or id>*\n` +
-    `_Exclusive to ${titleCase(faction)} members._\n` +
-    `${DIV}`
+    `\n\n${ui.subheader("MARKET CATALOG", "🛒")}\n\n` +
+    (sections.length ? sections.join(`\n\n${ui.DIV}\n\n`) : "No items currently available.") +
+    `\n\n${ui.divider()}\n` +
+    `📖 Buy: *${'.fbuy'} <item name or id>*\n` +
+    `_Exclusive to ${titleCase(faction)} members._`
   );
 }
 
@@ -543,7 +535,7 @@ function buildFactionMarketText(player) {
 async function cmdFactionMarket(ctx, chatId, senderId, msg) {
   const { sock, players } = ctx;
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Register first using `.start`." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Register first using `.register`." }, { quoted: msg });
 
   return sock.sendMessage(chatId, { text: buildFactionMarketText(player) }, { quoted: msg });
 }
@@ -665,22 +657,19 @@ async function cmdFbuy(ctx, chatId, senderId, msg, args = []) {
 
   // Show usage hint based on item type
   let usageHint = "";
-  if (matchItem.category === "consumable") usageHint = `\n💡 Use: *.consume ${matchItem.name}*`;
-  if (matchItem.category === "scroll")     usageHint = `\n💡 Use: *.consume ${matchItem.name}* (in battle or hunt)`;
-  if (matchItem.category === "gear")       usageHint = `\n💡 Equip: *.equip ${matchItem.id}*`;
+  if (matchItem.category === "consumable") usageHint = `\n💡 Use: *${'.consume'} ${matchItem.name}*`;
+  if (matchItem.category === "scroll")     usageHint = `\n💡 Use: *${'.consume'} ${matchItem.name}* (in battle or hunt)`;
+  if (matchItem.category === "gear")       usageHint = `\n💡 Equip: *${'.equip'} ${matchItem.id}*`;
 
   return sock.sendMessage(chatId, {
     text:
-      `${DIV}\n` +
-      `${info.emoji}  *FACTION PURCHASE*\n` +
-      `${DIV}\n\n` +
-      `${icon} *${matchItem.name}*\n` +
-      `💰 Paid: *${price} Lucons*\n` +
-      `⚡ ${matchItem.effect || "Effect active"}\n` +
-      `📜 ${matchItem.desc || ""}` +
-      usageHint +
-      `\n\n💳 Lucons remaining: *${player.lucons}*\n` +
-      `${DIV}`,
+      ui.header("FACTION PURCHASE", info.emoji) + '\n\n' +
+      ui.card(matchItem.name, icon, [
+        { emoji: "💰", label: "Paid", value: `${price} Lucons` },
+        { emoji: "⚡", label: "Effect", value: matchItem.effect || "Effect active" },
+        { emoji: "📜", label: "Desc", value: matchItem.desc || "" },
+      ]) + usageHint +
+      `\n\n💳 Lucons remaining: *${player.lucons}*`,
   }, { quoted: msg });
 }
 
@@ -720,7 +709,9 @@ function getRiftInBattleBurn(player, activeMora) {
 function rollRiftUnstableCatch(player, moraType) {
   if (player.faction !== "rift") return false;
   if (String(moraType || "").toLowerCase() === "shadow") return false; // Shadow exempt
-  return Math.random() < 0.10;
+  const base = 0.10;
+  const reduction = Number(player.passives?.fleeReduction || 0) / 100;
+  return Math.random() < (base * (1 - reduction));
 }
 
 // ── RIFT: -20% daily Lucon reduction ─────────────────────────

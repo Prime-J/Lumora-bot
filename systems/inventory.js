@@ -11,6 +11,7 @@
 "use strict";
 
 const itemsSystem = require("./items");
+const { generateInventoryCard, PER_PAGE } = require("./inventoryCanvas");
 
 const DIVIDER      = "━━━━━━━━━━━━━━━━━━━━━━━━━";
 const SMALL_DIVIDER = "─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─";
@@ -36,9 +37,13 @@ function getPlayerMaxHuntEnergy(player) {
   return Number(player.maxHuntEnergy ?? player.huntEnergyMax ?? 100);
 }
 
+const ui = require("./ui");
+const interactiveUI = require("./interactiveUI");
+const progression = require("./progression");
+
 function buildSection(title, lines = []) {
   if (!lines.length) return "";
-  return `${title}\n${lines.join("\n")}`;
+  return `${ui.subheader(title)}\n${lines.join("\n")}`;
 }
 
 // Lazy-load hunting to avoid circular dependency at startup
@@ -103,8 +108,12 @@ function applyItemEffects(player, effects = {}, ctx = {}) {
 
       // ─── MAX HP PERMANENT BOOST ───────────────────────────
       case "maxHp": {
-        player.playerMaxHp = clamp(Number(player.playerMaxHp || 100) + n, 10, 9999);
-        player.playerHp    = clamp(Number(player.playerHp    || 0),       0, player.playerMaxHp);
+        if (typeof player.baseMaxHp !== "number") {
+          player.baseMaxHp = Math.max(100, Number(player.playerMaxHp || 100));
+        }
+        player.baseMaxHp   = clamp(Number(player.baseMaxHp) + n, 10, 9999);
+        player.playerMaxHp = clamp(Number(player.baseMaxHp) + Number(player.passives?.gearBonusMaxHp || 0), 10, 9999);
+        player.playerHp    = clamp(Number(player.playerHp    || 0), 0, player.playerMaxHp);
         log.push(`❤️ Max HP increased by *+${n}*. Now *${player.playerMaxHp}*`);
         break;
       }
@@ -495,8 +504,8 @@ function applyItemEffects(player, effects = {}, ctx = {}) {
 
       // Resonance boost
       case "resonanceBoost": {
-        player.resonance = Number(player.resonance || 0) + n;
-        log.push(`💠 Resonance: *+${n}* (now ${player.resonance})`);
+        const resResult = progression.addFactionStat(player, n);
+        log.push(`💠 ${progression.getFactionStatEmoji(player.faction)} *${progression.getFactionStatKey(player.faction).charAt(0).toUpperCase() + progression.getFactionStatKey(player.faction).slice(1)}*: *+${n}* (now ${resResult.newValue})`);
         break;
       }
 
@@ -507,6 +516,18 @@ function applyItemEffects(player, effects = {}, ctx = {}) {
         break;
       }
 
+      // Companion bond boost
+      case "bondBoost": {
+        if (player.companion) {
+          if (!player.companionBond) player.companionBond = {};
+          const key = player.companion;
+          player.companionBond[key] = Number(player.companionBond[key] || 0) + n;
+          log.push(`❤️ Companion bond: *+${n}* (now ${player.companionBond[key]})`);
+        } else {
+          log.push(`⚠️ No companion set — use *.companion <mora>* first.`);
+        }
+        break;
+      }
       // Force next wild defeat to drop a shard (sets a one-shot passive)
       case "forceShardDropNext": {
         if (!player.passives) player.passives = {};
@@ -622,18 +643,24 @@ function applyGearEffects(player) {
     const item = itemsDb[itemId];
     if (!item || !item.effects) continue;
 
-    const { log } = applyItemEffects(player, item.effects, {});
+    // maxHp on gear is a passive bonus — apply the other effects for their
+    // passives, but never let it mutate the player's permanent baseMaxHp.
+    const gearPassives = { ...item.effects };
+    delete gearPassives.maxHp;
+    if (Object.keys(gearPassives).length) applyItemEffects(player, gearPassives, {});
 
     if (item.effects.maxHp) bonusMaxHp += Number(item.effects.maxHp);
   }
 
-  // Apply HP bonus without triggering consume logging
-  if (bonusMaxHp > 0) {
-    player.passives.gearBonusMaxHp = bonusMaxHp;
-    // playerMaxHp is recalculated freshly — base 100 + gear bonus
-    player.playerMaxHp = 100 + bonusMaxHp;
-    player.playerHp = clamp(player.playerHp || 0, 0, player.playerMaxHp);
+  // Apply HP bonus without triggering consume logging.
+  // Permanent max-HP boosts (from consumed items) live in player.baseMaxHp;
+  // gear adds on top instead of clobbering the permanent value.
+  if (typeof player.baseMaxHp !== "number") {
+    player.baseMaxHp = Math.max(100, Number(player.playerMaxHp || 100));
   }
+  player.passives.gearBonusMaxHp = bonusMaxHp;
+  player.playerMaxHp = Number(player.baseMaxHp) + bonusMaxHp;
+  player.playerHp = clamp(player.playerHp || 0, 0, player.playerMaxHp);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -686,29 +713,29 @@ function buildInventoryText(player, targetName = "Hunter") {
   const sections = groupInventoryItems(player, itemsDb);
 
   const parts = [
-    buildSection("🧪 *Consumables*",    sections.consumables),
-    buildSection("📜 *Scrolls*",        sections.scrolls),
-    buildSection("🧰 *Hunting Items*",  sections.hunting),
-    buildSection("💎 *Materials*",      sections.materials),
-    buildSection("🛡️ *Gear*",           sections.gear),
-    buildSection("🔮 *Crystals*",       sections.crystals),
-    buildSection("🔑 *Access*",         sections.access),
-    buildSection("✨ *Special*",        sections.specials),
-    buildSection("📦 *Other*",          sections.misc),
+    buildSection("Consumables",    sections.consumables),
+    buildSection("Scrolls",        sections.scrolls),
+    buildSection("Hunting Items",  sections.hunting),
+    buildSection("Materials",      sections.materials),
+    buildSection("Gear",           sections.gear),
+    buildSection("Crystals",       sections.crystals),
+    buildSection("Access",         sections.access),
+    buildSection("Special",        sections.specials),
+    buildSection("Other",          sections.misc),
   ].filter(Boolean);
 
   const empty = `🌌 Your inventory is empty.\nVisit *.market* or your faction market to stock up.`;
 
   return (
-    `${DIVIDER}\n` +
-    `🎒  *I N V E N T O R Y*\n` +
-    `${DIVIDER}\n\n` +
+    ui.header('INVENTORY', '🎒') + `\n\n` +
     `👤 ${targetName}\n` +
-    `📦 Storage: *${used}/${cap}*\n` +
-    `❤️ HP: *${Number(player.playerHp || 0)}/${getPlayerMaxHp(player)}*\n` +
-    `⚡ Hunt Energy: *${Number(player.huntEnergy || 0)}/${getPlayerMaxHuntEnergy(player)}*\n\n` +
-    (parts.length ? parts.join(`\n\n${SMALL_DIVIDER}\n\n`) : empty) +
-    `\n\n${DIVIDER}\n` +
+    ui.card('STATUS', '📦', [
+      { emoji: '📦', label: 'Storage', value: `${used}/${cap}` },
+      { emoji: '❤️', label: 'HP', value: `${Number(player.playerHp || 0)}/${getPlayerMaxHp(player)}` },
+      { emoji: '⚡', label: 'Energy', value: `${Number(player.huntEnergy || 0)}/${getPlayerMaxHuntEnergy(player)}` },
+    ]) + `\n\n` +
+    (parts.length ? parts.join(`\n\n${ui.DIVIDER}\n\n`) : empty) +
+    `\n\n${ui.DIV}\n` +
     `📖 Commands:\n` +
     `*.item <name>*  ·  *.consume <name>*  ·  *.gear*`
   );
@@ -720,21 +747,47 @@ function buildItemDetailText(item, qty = 0) {
     ? `Gear · ${titleCase(item.slot || "?")}`
     : titleCase(item.category || "?");
 
-  const effectsKeys = item.effects ? Object.entries(item.effects).map(([k,v]) => `${k}: ${v}`).join(", ") : "none";
+  // Usage hint
+  let usage = '';
+  const id = (item.id || '').toUpperCase();
+  if (item.category === 'consumable') {
+    usage = '.consume ' + item.name;
+  } else if (item.category === 'gear') {
+    usage = '.equip ' + item.name;
+  } else if (item.category === 'scroll') {
+    usage = '.use ' + item.name;
+  } else if (id.startsWith('MUT_')) {
+    usage = '.mutate <mora> (uses ' + item.name + ' from inventory)';
+  } else if (id === 'RES_001') {
+    usage = '.escape (during raid capture)';
+  } else if (id === 'CREATION_POWDER' || id === 'REOB') {
+    usage = '.create-mora (Lumora Labs)';
+  } else if (id === 'PROFILE_MASK') {
+    usage = '.mask / .unmask (toggle profile visibility)';
+  } else if (id.includes('GLOVE')) {
+    usage = '.rob @user (attempt snatch)';
+  } else if (id.startsWith('CRY_')) {
+    usage = '.fortify-wall ' + item.name;
+  }
+
+  const rows = [
+    { emoji: "🆔", label: 'ID', value: item.id },
+    { emoji: "💎", label: 'Rarity', value: item.rarity },
+    { emoji: "📂", label: 'Type', value: type },
+    ...(item.faction ? [{ emoji: "⚔️", label: 'Faction', value: titleCase(item.faction) }] : []),
+    { emoji: "📦", label: 'Owned', value: String(qty) },
+    { emoji: "⚡", label: 'Effect', value: item.effect || 'None' },
+    ...(usage ? [{ emoji: "👆", label: 'How to use', value: usage }] : []),
+  ];
 
   return (
-    `${DIVIDER}\n` +
-    `📜  *ITEM DETAILS*\n` +
-    `${DIVIDER}\n\n` +
-    `${icon} *${item.name}*\n` +
-    `🆔 ID: \`${item.id}\`\n` +
-    `💠 Rarity: *${item.rarity}*\n` +
-    `🗂 Type: *${type}*\n` +
-    (item.faction ? `⚔️ Faction: *${titleCase(item.faction)}*\n` : "") +
-    `📦 Owned: *${qty}*\n` +
-    `⚡ Effect: ${item.effect || "None"}\n` +
-    `📜 ${item.desc || "No description."}\n\n` +
-    `${DIVIDER}`
+    ui.header(item.name, icon) + `
+
+` +
+    ui.card('DETAILS', "📜", rows) + `
+
+` +
+    `📜 ${item.desc || "No description."}`
   );
 }
 
@@ -745,14 +798,11 @@ function buildConsumeResultText({ item, usedAmount, before, after, log, remainin
   if (after.en  !== before.en)     changes.push(`⚡ Energy: *${before.en} → ${after.en}*`);
 
   return (
-    `${DIVIDER}\n` +
-    `🧪  *ITEM USED*\n` +
-    `${DIVIDER}\n\n` +
+    ui.header('ITEM USED', '🧪') + `\n\n` +
     `${icon} *${item.name}* ×${usedAmount}\n\n` +
     (log.length   ? log.join("\n") + "\n\n"  : "") +
     (changes.length ? changes.join("\n") + "\n\n" : "") +
-    `📦 Remaining: *${remaining}*\n` +
-    `${DIVIDER}`
+    `📦 Remaining: *${remaining}*`
   );
 }
 
@@ -763,13 +813,34 @@ function buildConsumeResultText({ item, usedAmount, before, after, log, remainin
 async function cmdInventory(ctx, chatId, senderId, msg, args = []) {
   const { sock, players } = ctx;
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Register first using `.start`." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Register first using `.register`." }, { quoted: msg });
 
   itemsSystem.ensurePlayerItemData(player);
   syncEnergyFromHuntState(player, senderId);
   applyGearEffects(player); // recalculate gear passives
 
   const name = player.username?.trim() || "Unnamed Lumorian";
+  const page = Math.max(1, parseInt(args[0], 10) || 1);
+
+  // Send interactive list menu for inventory browsing
+  await interactiveUI.sendInventoryMenu(sock, chatId, player.inventory || {}, msg);
+
+  // Visual inventory — falls back to the text card if render fails or it's empty.
+  try {
+    const card = await generateInventoryCard(player, { page });
+    if (card) {
+      const itemsDb = itemsSystem.loadItems();
+      const used = itemsSystem.getUsedStorage(player, itemsDb);
+      const cap = itemsSystem.getPlayerStorageCapacity(player, itemsDb);
+      const caption =
+        `🎒 *${name}* — ${used}/${cap} used\n` +
+        (page > 1 ? `_Page ${page}_\n` : ``) +
+        `_Tap an item's name to look it up with .item <name>_`;
+      return sock.sendMessage(chatId, { image: card, caption }, { quoted: msg });
+    }
+  } catch (err) {
+    console.log(`[inventory] image render failed — falling back to text:`, err?.message || err);
+  }
   return sock.sendMessage(chatId, { text: buildInventoryText(player, name) }, { quoted: msg });
 }
 
@@ -789,32 +860,9 @@ async function cmdItem(ctx, chatId, senderId, msg, args = []) {
   return sock.sendMessage(chatId, { text: buildItemDetailText(item, qty) }, { quoted: msg });
 }
 
-// Effects that require picking a specific party mora as their target.
-const MORA_TARGET_EFFECTS = ["removeCorruption", "primordialReduce"];
-
-// Resolve a target mora from a party-slot number (1..5) or a name fragment.
-// Returns the mora object from player.moraOwned, or null.
-function findPartyMoraTarget(player, token) {
-  const owned = Array.isArray(player?.moraOwned) ? player.moraOwned : [];
-  const party = Array.isArray(player?.party) ? player.party : [];
-
-  const t = String(token || "").trim();
-  if (!t) return null;
-
-  if (/^[1-5]$/.test(t)) {
-    const ownedIdx = party[Number(t) - 1];
-    if (Number.isInteger(ownedIdx) && owned[ownedIdx]) return owned[ownedIdx];
-    return null;
-  }
-
-  const needle = t.toLowerCase();
-  for (const ownedIdx of party) {
-    if (!Number.isInteger(ownedIdx)) continue;
-    const m = owned[ownedIdx];
-    if (m && String(m.name || "").toLowerCase().includes(needle)) return m;
-  }
-  return null;
-}
+// NOTE: legacy mora-target effects (removeCorruption / primordialReduce) no
+// longer act on party Mora — they target the player's shard vault and rift PE
+// directly. A party-slot/mora target is neither required nor honored.
 
 async function cmdConsume(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers } = ctx;
@@ -853,15 +901,7 @@ async function cmdConsume(ctx, chatId, senderId, msg, args = []) {
   const owned = itemsSystem.getItemQuantity(player, item.id);
   if (owned <= 0) return sock.sendMessage(chatId, { text: `❌ You don't own any *${item.name}*.` }, { quoted: msg });
 
-  // Faction check for scrolls
-  if (item.category === "scroll" && item.faction && player.faction !== item.faction) {
-    return sock.sendMessage(chatId, {
-      text:
-        `🚫 *${item.name}* is a *${titleCase(item.faction)}* scroll.\n` +
-        `You are in the *${titleCase(player.faction || "no")}* faction.\n` +
-        `This scroll's power does not respond to you.`,
-    }, { quoted: msg });
-  }
+  // (Faction scroll barrier removed — any faction can use any scroll)
 
   // Get effects — scrolls use SCROLL_EFFECTS, consumables use item.effects
   const effects = item.category === "scroll"
@@ -874,34 +914,9 @@ async function cmdConsume(ctx, chatId, senderId, msg, args = []) {
     }, { quoted: msg });
   }
 
-  // Resolve tail: either a numeric amount or a party-mora target token.
-  // Effects like removeCorruption require the user to pick which party mora
-  // to target — otherwise cleanse picks arbitrarily or fails silently.
-  const needsTarget = Object.keys(effects).some(k => MORA_TARGET_EFFECTS.includes(k));
   let amount = 1;
-  let targetMora = null;
 
-  if (needsTarget) {
-    if (!tail.length) {
-      return sock.sendMessage(chatId, {
-        text: `❌ *${item.name}* needs a target.\n` +
-              `Usage: \`.consume ${String(item.name).toLowerCase()} <party-slot 1-5 | mora name>\`\n` +
-              `Example: \`.consume ${String(item.name).toLowerCase()} 2\` or \`.consume ${String(item.name).toLowerCase()} sparko\``,
-      }, { quoted: msg });
-    }
-    const targetToken = tail.join(" ").trim();
-    targetMora = findPartyMoraTarget(player, targetToken);
-    if (!targetMora) {
-      return sock.sendMessage(chatId, {
-        text: `❌ No mora in your party matches *${targetToken}*.\nCheck \`.party\` to see your 5 party slots.`,
-      }, { quoted: msg });
-    }
-    if (Object.keys(effects).includes("removeCorruption") && !targetMora.corrupted) {
-      return sock.sendMessage(chatId, {
-        text: `✨ *${targetMora.name}* isn't corrupted — no need to cleanse.`,
-      }, { quoted: msg });
-    }
-  } else if (tail.length && /^\d+$/.test(tail[0])) {
+  if (tail.length && /^\d+$/.test(tail[0])) {
     amount = Math.max(1, Number(tail[0]));
   }
 
@@ -915,7 +930,10 @@ async function cmdConsume(ctx, chatId, senderId, msg, args = []) {
   if (healsOnly) {
     const atFullHp = Number(player.playerHp || 0) >= maxHp;
     const atFullEn = Number(player.huntEnergy || 0) >= maxEn;
-    if (atFullHp && atFullEn) {
+    // Only block if the item can't restore anything the player actually needs
+    const canHeal   = ("heal" in effects || "playerHpRestore" in effects) && !atFullHp;
+    const canEnergy = ("energy" in effects) && !atFullEn;
+    if (!canHeal && !canEnergy) {
       return sock.sendMessage(chatId, { text: `⚠️ You are already at full HP and Energy.` }, { quoted: msg });
     }
   }
@@ -924,7 +942,7 @@ async function cmdConsume(ctx, chatId, senderId, msg, args = []) {
 
   const allLog = [];
   for (let i = 0; i < useAmount; i++) {
-    const { log } = applyItemEffects(player, effects, { targetMora });
+    const { log } = applyItemEffects(player, effects);
     allLog.push(...log);
   }
 

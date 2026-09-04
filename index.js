@@ -34,19 +34,64 @@ try { require("dotenv").config(); } catch {}
 const dns = require("dns");
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
+const fs = require("fs");
+const path = require("path");
 const express = require('express');
 const app = express();
 const port = process.env.PORT || 10000;
 
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'web')));
+
+// ── Web Dashboard API ─────────────────────────────────────
+app.get('/api/players', (req, res) => {
+  try {
+    const data = loadPlayers();
+    const list = Object.values(data).map(p => ({
+      id: p.id, username: p.username, level: p.level, xp: p.xp,
+      rank: p.rank, faction: p.faction, gender: p.gender, age: p.age,
+      lucons: p.lucons, aura: p.aura, intelligence: p.intelligence,
+      tameSkill: p.tameSkill, playerMaxHp: p.playerMaxHp, playerHp: p.playerHp,
+      moraOwned: p.moraOwned, equipment: p.equipment, statPoints: p.statPoints || 0,
+    }));
+    res.json({ ok: true, players: list });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/mora', (req, res) => {
+  try {
+    const moraPath = path.join(__dirname, 'data', 'mora.json');
+    const mora = JSON.parse(fs.readFileSync(moraPath, 'utf8'));
+    res.json({ ok: true, mora });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/stats/invest', (req, res) => {
+  try {
+    const { playerId, stat, delta } = req.body;
+    if (!playerId || !stat || !delta) return res.json({ ok: false, error: 'Missing params' });
+    const data = loadPlayers();
+    const p = data[playerId];
+    if (!p) return res.json({ ok: false, error: 'Player not found' });
+    const validStats = ['intelligence', 'aura', 'tameSkill', 'playerMaxHp'];
+    if (!validStats.includes(stat)) return res.json({ ok: false, error: 'Invalid stat' });
+    if (delta > 0 && (p.statPoints || 0) <= 0) return res.json({ ok: false, error: 'No stat points available' });
+    if (delta < 0 && (p[stat] || 0) <= 0) return res.json({ ok: false, error: 'Cannot reduce below 0' });
+    p[stat] = (p[stat] || 0) + delta;
+    if (stat === 'playerMaxHp') p.playerHp = Math.min(p.playerHp || p.playerMaxHp, p.playerMaxHp);
+    p.statPoints = (p.statPoints || 0) - delta;
+    savePlayers(data);
+    res.json({ ok: true, stat, value: p[stat], statPoints: p.statPoints });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
 app.get('/', (req, res) => {
-  res.send('Lumora Bot is Pulsing! ⚡');
+  res.sendFile(path.join(__dirname, 'web', 'index.html'));
 });
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
-const fs = require("fs");
-const path = require("path");
 
 const pino = require("pino");
 const qrcode = require("qrcode-terminal");
@@ -108,9 +153,14 @@ const giveItemSystem = require("./systems/giveItem");
 const welcomeSystem = require("./systems/factionWelcomeSystem");
 const partySystem = require("./systems/party");
 const missionSystem = require("./systems/factionMissionSystem")
+const factionProgressSystem = require("./systems/factionProgressSystem");
 const fEngine = require('./factionWarEngine');
 const { generateFactionGraph, generateFacPointsCard, generateBattleVsImage } = require('./factionCanvas');
 const botPersonality = require('./systems/botPersonality');
+const onboardingSystem = require('./systems/onboarding');
+const ui = require('./systems/ui');
+const interactiveUI = require('./systems/interactiveUI');
+const helpUI = require('./systems/helpUI');
 const FACTION_FILE = './data/faction_state.json';
 const lb = require('./leaderboard');
 const factionsData = JSON.parse(fs.readFileSync('./data/factions.json'));
@@ -120,7 +170,6 @@ const miscSystem = require('./systems/misc');
 const arenaSystem = require('./systems/npcArena');
 const proSystem = require('./systems/pro');
 const moraCreationSystem = require('./systems/moraCreation');
-const cardsmithSystem = require('./systems/cardsmith');
 const raidsSystem = require('./systems/raids');
 const starSystem = require('./systems/star');
 const updatesSystem = require('./systems/updates');
@@ -132,8 +181,15 @@ const questSystem = require('./systems/quests');
 const statSystem  = require('./systems/stats');
 const apologySystem = require('./systems/apology');
 const scrollSystem  = require('./systems/scrolls');
+const combatLockSystem = require('./systems/combatLock');
 const autoRaidSystem = require('./systems/autoRaid');
 const playerBattleSystem = require('./systems/playerBattle');
+const ownerToolsSystem  = require('./systems/ownerTools');
+const testModeSystem = require('./systems/testMode');
+const meetingsSystem = require('./systems/meetings');
+const buttonsSystem = require('./systems/buttons');
+const { sendButtons } = buttonsSystem;
+const artpackSystem = require('./systems/artpack');
 const { generateRankCard, generateRankUpCard } = require('./systems/rankCardCanvas');
 const { generateWealthCard, findWealthRank, buildWealthLb } = require('./systems/wealthCanvas');
 const { generateAlverahCard } = require('./systems/alverahCanvas');
@@ -164,11 +220,7 @@ const NEW_COMMANDS = [
   { name: ".creations",    section: "admin", blurb: "Owner: list pending Mora submissions",             addedAt: 1776067200000 },
   { name: ".approve-mora", section: "admin", blurb: "Owner: approve a creation + pay creator",          addedAt: 1776067200000 },
   { name: ".reject-mora",  section: "admin", blurb: "Owner: reject a pending creation",                 addedAt: 1776067200000 },
-  { name: ".cardsmith-help", section: "cards", blurb: "See all Cardsmith pipeline commands",            addedAt: Date.now() },
-  { name: ".card-add",       section: "cards", blurb: "Log a new card: anime | character | tier",       addedAt: Date.now() },
-  { name: ".card-list",      section: "cards", blurb: "Browse the card pipeline (filterable)",          addedAt: Date.now() },
-  { name: ".card-stage",     section: "cards", blurb: "Move a card to pic / gpt / approved / spawned",  addedAt: Date.now() },
-  { name: ".card-stats",     section: "cards", blurb: "Dashboard — totals by stage / tier / smith",     addedAt: Date.now() },
+  { name: ".meeting",        section: "utilities", blurb: "Owner: save & recall meeting decisions",         addedAt: Date.now() },
 ];
 function getActiveNewCommands() {
   const now = Date.now();
@@ -233,6 +285,25 @@ const startTime =Date.now();
 const DIVIDER = "━━━━━━━━━━━━━━━━━━━━━━";
 const SMALL_DIVIDER = "──────────────────────";
 global.blackMarket = { active: false, type: null, owner: null, expiry: 0, items: [] };
+
+// 🕶️ BLACK MARKET POOL — real catalog items the Void Merchant can carry.
+// Every entry resolves to a live item in data/items.json, so buying works
+// through the normal inventory pipeline (by item ID, not name).
+const BLACK_MARKET_POOL = [
+  { id: "GER_005",  name: "Riftbite Core" },
+  { id: "GER_013",  name: "Gloam Thread Charm" },
+  { id: "GER_023",  name: "Echo Drill" },
+  { id: "GER_033",  name: "Gloamwrap" },
+  { id: "GER_041",  name: "Riftwalk Greaves" },
+  { id: "GER_043",  name: "Tempest Striders" },
+  { id: "ITM_008",  name: "Forbidden Mora Lure" },
+  { id: "ITM_012",  name: "Dimensional Pouch" },
+  { id: "ITM_013",  name: "Shadow Permit" },
+  { id: "PHANTOM_GLOVE", name: "Phantom Glove" },
+  { id: "CRY_004",  name: "Rift Crystal" },
+  { id: "REL_003",  name: "Echo Relic" },
+];
+
 // Mapping of Group WhatsApp JIDs to Factions
 // To find a group JID: send any message in the group while bot is running and check console logs
 const FACTION_GROUPS = {};
@@ -652,9 +723,8 @@ function saveFactionPoints(fp) {
 }
 function addFactionPoints(faction, amount, reason = "") {
   if (!faction || !["harmony","purity","rift"].includes(faction)) return;
-  const fp = loadFactionPoints();
-  fp[faction] = (fp[faction] || 0) + amount;
-  saveFactionPoints(fp);
+  // Delegate to factionProgressSystem — single source of truth
+  factionProgressSystem.addFactionPoints(faction, amount);
 }
 
 // ============================
@@ -963,6 +1033,8 @@ function denyMarketGroup(sock, chatId, msg) {
   }, { quoted: msg });
 }
 function isHuntAllowedInChat(chatId, settings) {
+  // 🧪 TEST MODE groups get full hunting/battle access
+  if (testModeSystem.isTestGroup(chatId)) return true;
   const hg = settings?.huntingGroups || { enabled: true, allowed: [] };
   if (hg.enabled === false) return false;
   if (!isGroupJid(chatId)) return false;
@@ -975,6 +1047,8 @@ function denyHuntGroup(sock, chatId, msg) {
   }, { quoted: msg });
 }
 function isArenaAllowedInChat(chatId, settings) {
+  // 🧪 TEST MODE groups get full arena access
+  if (testModeSystem.isTestGroup(chatId)) return true;
   const ag = settings?.arenaGroups || { enabled: false, allowed: [] };
   if (ag.enabled === false) return false;
   if (!isGroupJid(chatId)) return false;
@@ -1057,9 +1131,54 @@ function unwrapMessage(m) {
   return msg;
 }
 
+// ── TAP DEDUP ──────────────────────────────────────────────────
+// Some clients post the button label as a chat message AND deliver
+// the button response — without a guard, a single tap would run the
+// command twice (e.g. spend 2 stat points on one tap of "❤️ +1 Vit").
+// Exact same (chat, sender, text) repeats within 2.5s are swallowed.
+const _tapDedup = new Map();
+function isTapDuplicate(chatId, senderId, text) {
+  if (!text) return false;
+  const key = `${chatId}|${senderId}|${text}`;
+  const now = Date.now();
+  const prev = _tapDedup.get(key);
+  if (prev && now - prev < 2500) return true;
+  _tapDedup.set(key, now);
+  return false;
+}
+
 function getText(m) {
   const msg = unwrapMessage(m);
   if (!msg) return "";
+  // Button/template responses — return what the user tapped.
+  // v2.1: button ids ARE the commands (".inv"), so a command-id is
+  // returned directly; labels fall back to the translated text path.
+  // v2.2: handle templateButtonReplyMessage — live taps on several
+  // clients arrive as this type, not interactiveResponseMessage.
+  if (msg.templateButtonReplyMessage) {
+    const tbr = msg.templateButtonReplyMessage;
+    const sid = tbr.selectedId;
+    if (sid && String(sid).startsWith(".")) return String(sid);
+    return sid || tbr.selectedDisplayText || "";
+  }
+  if (msg.buttonsResponseMessage) {
+    const bid = msg.buttonsResponseMessage.selectedButtonId;
+    const bdt = msg.buttonsResponseMessage.selectedDisplayText;
+    if (bid && String(bid).startsWith(".")) return String(bid);
+    return bid || bdt || "";
+  }
+  if (msg.interactiveResponseMessage) {
+    const nfrm = msg.interactiveResponseMessage.nativeFlowResponseMessage;
+    if (nfrm && nfrm.paramsJson) {
+      try {
+        const parsed = JSON.parse(nfrm.paramsJson);
+        if (parsed.id && String(parsed.id).startsWith(".")) return String(parsed.id);
+        return parsed.display_text || parsed.id || "";
+      } catch {}
+    }
+    const br = msg.interactiveResponseMessage.buttonReplyMessage;
+    if (br) return (br.id && String(br.id).startsWith(".")) ? br.id : (br.displayText || br.id || "");
+  }
   return (
     msg.conversation ||
     msg.extendedTextMessage?.text ||
@@ -1167,7 +1286,8 @@ function moraImagePath(speciesOrOwned) {
   for (const p of tries) {
     if (safeFileExists(p)) return p;
   }
-  return null;
+  // No custom art → anime art pack (assets/artpack, any source).
+  return artpackSystem.artPathFor(speciesOrOwned) || null;
 }
 
 async function sendHelpWithLogo(sock, chatId, settings, caption, quotedMsg) {
@@ -1567,6 +1687,28 @@ let isStarting = false;
 let isReady = false;
 const BOT_START_TIME = Math.floor(Date.now() / 1000);
 
+// Convert any shape of Baileys messageTimestamp (number, string, Date, protobuf
+// Long, {low,high}) to Unix seconds — or 0 when absent/invalid. Baileys can hand
+// us a Long / Date / NaN here; Number() alone silently yields NaN, which disabled
+// the old-message guard and let the post-relink history replay flood through.
+function toUnixSeconds(ts) {
+  if (ts == null) return 0;
+  if (typeof ts === "number") return Number.isFinite(ts) ? ts : 0;
+  if (typeof ts === "string") {
+    const n = Number(ts);
+    return Number.isFinite(n) ? n : 0;
+  }
+  if (ts instanceof Date) return Math.floor(ts.getTime() / 1000);
+  if (typeof ts === "object") {
+    if (typeof ts.toNumber === "function") {
+      const n = ts.toNumber();
+      return Number.isFinite(n) ? n : 0;
+    }
+    if (typeof ts.low === "number") return ts.low;
+  }
+  return 0;
+}
+
 // Cache of WhatsApp pushNames seen in messages (used by .q sticker to show real WA name)
 const pushNameCache = {};
 
@@ -1574,9 +1716,43 @@ const punishRuntime = {
   lastCmdAt: {},
 };
 
+// ── SINGLE-INSTANCE LOCK ────────────────────────────────────────
+// Two bots sharing ./auth corrupts creds.json and forces a re-link.
+// Refuse to boot if another instance is already running on this folder.
+function acquireInstanceLock() {
+  const fs = require("fs");
+  const LOCK_PATH = "./auth/.lock";
+  try {
+    if (fs.existsSync(LOCK_PATH)) {
+      const oldPid = parseInt(fs.readFileSync(LOCK_PATH, "utf8"), 10);
+      let alive = false;
+      if (oldPid && oldPid !== process.pid) {
+        if (process.platform === 'win32') {
+          try { const { execSync } = require('child_process');
+            execSync(`tasklist /FI "PID eq ${oldPid}" /NH`, { stdio: 'pipe' }).toString().includes(String(oldPid)) && (alive = true);
+          } catch { alive = false; }
+        } else {
+          try { process.kill(oldPid, 0); alive = true; } catch { alive = false; }
+        }
+      }
+      if (alive) {
+        console.log(`[lock] Another Lumora instance is already running (PID ${oldPid}). Refusing to start — this protects your WhatsApp session.`);
+        process.exit(1);
+      }
+      console.log(`[lock] Stale lock from PID ${oldPid} — removing.`);
+    }
+    fs.writeFileSync(LOCK_PATH, String(process.pid));
+    process.on("exit", () => { try { fs.unlinkSync(LOCK_PATH); } catch {} });
+  } catch (e) {
+    console.log("[lock] Lock unavailable — continuing without it.");
+  }
+}
+
 async function startBot() {
   if (isStarting) return;
   isStarting = true;
+
+  acquireInstanceLock();
 
   await loadBaileys();
   try { starSystem.init(); } catch (e) { console.warn("[star] init failed:", e.message); }
@@ -1756,6 +1932,15 @@ console.log(`[bot] Loaded ${Object.keys(initialPlayers).length} players`);
 sock.ev.removeAllListeners("messages.upsert");
   sock.ev.on("messages.upsert", async ({ messages, type }) => {
 
+    // Replay diagnostics: history/offline replays arrive as non-notify batches.
+    // Log them so any post-relink flood is visible (and provable) in the console.
+    if (type !== "notify") {
+      for (const _m of messages || []) {
+        const _ts = _m?.messageTimestamp;
+        console.log(`[upsert:${type}] ts=${_ts} (${typeof _ts}) fromMe=${!!_m?.key?.fromMe} jid=${_m?.key?.remoteJid} body=${String(_m?.message?.conversation || _m?.message?.extendedTextMessage?.text || "").slice(0, 60)}`);
+      }
+    }
+
     // ✅ ONLY ONE LISTENER NOW
     if (type !== "notify") return;
     if (!isReady) return;
@@ -1774,20 +1959,60 @@ sock.ev.removeAllListeners("messages.upsert");
       return;
     }
 
-    // Debug print
+    // Debug print — also surface button taps & interactive responses,
+    // which arrive with empty conversation text and used to be invisible.
     const debugBody = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
-
-    if (debugBody) console.log(`📩 Message Received: ${debugBody}`);
+    if (debugBody) {
+      console.log(`📩 Message Received: ${debugBody}`);
+    } else {
+      const tapText = getText(msg);
+      // v2.2 — dump the raw tap payload so we can see exactly what the
+      // client sent (selectedId vs display text) on every client type.
+      const raw = (() => {
+        try {
+          const m = msg.message;
+          if (m.templateButtonReplyMessage) {
+            const t = m.templateButtonReplyMessage;
+            return `template[id=${JSON.stringify(t.selectedId)} text=${JSON.stringify(t.selectedDisplayText)}]`;
+          }
+          if (m.buttonsResponseMessage) {
+            const b = m.buttonsResponseMessage;
+            return `buttons[id=${JSON.stringify(b.selectedButtonId)} text=${JSON.stringify(b.selectedDisplayText)}]`;
+          }
+          if (m.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson) {
+            return `native[${m.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson}]`;
+          }
+          return JSON.stringify(Object.keys(m));
+        } catch { return "?"; }
+      })();
+      if (tapText) console.log(`🔘 Button tap received: ${tapText}  (${raw})`);
+      else console.log(`[msg] non-text type: ${Object.keys(msg.message).join(",")}  ${raw}`);
+    }
 
     try {
       const msg = messages?.[0];
       if (!msg || !msg.message) return;
       // ============================
       // IGNORE OFFLINE / OLD MESSAGES
-      // ✅ FIXED: drop anything sent more than 15 seconds before bot connected
+      // Hard gate against the post-relink replay flood: after a fresh QR link
+      // (or reconnect), WhatsApp can surface old group messages as 'notify'.
+      // Drop anything that predates this process by 30s+, or that is older
+      // than 5 minutes outright (offline/history replays).
       // ============================
-      const msgTimestamp = Number(msg.messageTimestamp || 0);
-      if (msgTimestamp && msgTimestamp < BOT_START_TIME - 15) return;
+      const msgTimestamp = toUnixSeconds(msg.messageTimestamp);
+      const msgAgeSec = msgTimestamp ? Math.floor(Date.now() / 1000) - msgTimestamp : 0;
+      const bootAgeSec = Math.floor(Date.now() / 1000) - BOT_START_TIME;
+      if (msgTimestamp && (msgTimestamp < BOT_START_TIME - 60 || msgAgeSec > 120)) {
+        console.log(`[msg] dropped stale message (age ${msgAgeSec}s, jid ${msg.key.remoteJid})`);
+        return;
+      }
+      // No usable timestamp: always drop.
+      // Real WhatsApp messages always carry a timestamp. An unstamped message
+      // is replay noise from history sync or stale sender keys.
+      if (!msgTimestamp) {
+        console.log(`[msg] dropped unstamped message (jid ${msg.key.remoteJid})`);
+        return;
+      }
 
       const settings = loadSettings();
       const PREFIX = settings.prefix || ".";
@@ -1937,6 +2162,7 @@ sock.ev.removeAllListeners("messages.upsert");
         getWallLevelCapacity,
         addFactionPoints,
         shardSystem,
+        questSystem,
         statSystem,
       };
 
@@ -1948,7 +2174,43 @@ sock.ev.removeAllListeners("messages.upsert");
         }
       }
 
-      const text = getText(msg).trim();
+      // Tap-to-command: button taps come back as chat text — translate
+      // known button labels ("🌿 Harmony" → ".faction harmony") first.
+      let text = buttonsSystem.translateText(getText(msg).trim());
+      // ── HARDCODED FALLBACK LABEL MAP ──
+      // Ensures button taps always resolve even if button_labels.json
+      // is stale (e.g. after a restart before mapButtons was called).
+      const TAP_FALLBACK = {
+        '🎮 Game Menu': `${PREFIX}help-game`,
+        '🛡️ Bot Menu': `${PREFIX}help-bot`,
+        '🔙 Back': `${PREFIX}help`,
+        '👤 Profile': `${PREFIX}profile`,
+        '🎒 Inventory': `${PREFIX}inv`,
+        '🥋 Styles': `${PREFIX}styles`,
+        '💎 Shards': `${PREFIX}shards`,
+        '⚔️ Battle': `${PREFIX}battle`,
+        '📖 Guide': `${PREFIX}guide`,
+        '📚 Help': `${PREFIX}help`,
+        '🗺️ Map': `${PREFIX}map`,
+        '🌲 Hunt': `${PREFIX}hunt`,
+        '⚔️ Attack': `${PREFIX}attack`,
+        '⚡ Charge': `${PREFIX}charge`,
+        '🏃 Run': `${PREFIX}run`,
+        '🎯 Capture': `${PREFIX}capture`,
+        '✨ Purify': `${PREFIX}purify`,
+        '🎮 Quick Menu': `${PREFIX}menu`,
+        '✅ Accept': `${PREFIX}accept`,
+        '❌ Reject': `${PREFIX}reject`,
+      };
+      if (!text.startsWith(PREFIX) && TAP_FALLBACK[text]) {
+        text = TAP_FALLBACK[text];
+      }
+
+      // Swallow double-delivered taps (label bubble + button response).
+      if (isTapDuplicate(chatId, senderId, text)) {
+        console.log(`[tap] deduped repeat: ${JSON.stringify(text)}`);
+        return;
+      }
 
       // ── PENDING CREATION FLOW INTERCEPTOR ──
       const moraCreationSystem = require("./systems/moraCreation");
@@ -1973,7 +2235,41 @@ sock.ev.removeAllListeners("messages.upsert");
       if (!isCommand) return;
 
       const args = text.slice(PREFIX.length).trim().split(/\s+/);
-      const command = (args.shift() || "").toLowerCase();
+      let command = (args.shift() || "").toLowerCase();
+
+      // ── OWNER TOOLBOX (.ow) — registered EARLY so it works even mid-battle ──
+      // Superset router: native toolbox subs are handled here; anything else falls
+      // through as a legacy owner command (e.g. .ow warn → warn), so the whole
+      // owner surface lives under one prefix.
+      if (command === "ow" || command.startsWith("ow-")) {
+        const sub = String(args[0] || "").toLowerCase();
+        const isToolboxSub = sub === "" || ownerToolsSystem.isToolboxCommand(sub);
+
+        if (isToolboxSub) {
+          try {
+            return ownerToolsSystem.cmdOwnerTools(ctx, chatId, senderId, msg, args, {
+              getMentionedJids,
+              getRepliedJid,
+              toUserJidFromArg,
+              normJid,
+            });
+          } catch (e) {
+            console.log("[ow] error:", e?.message || e);
+            return sock.sendMessage(chatId, { text: "⚠️ Owner toolbox error. Check logs." });
+          }
+        }
+
+        // Legacy merge: .ow <legacy-cmd> <args...> → rewrite and fall through.
+        // Architect-only surface; the legacy handlers re-check isOwner / isPrivileged.
+        if (!isOwner) {
+          return sock.sendMessage(chatId, { text: "❌ Architect-only toolbox." });
+        }
+        if (command === "ow") {
+          command = (args.shift() || "").toLowerCase();
+        } else {
+          command = command.slice(3); // "ow-refill" → "refill"
+        }
+      }
 
       if (isHuntingCommand(command) && !isHuntingGroupAllowed(chatId, settings)) {
         return mentionTag(
@@ -2054,7 +2350,7 @@ sock.ev.removeAllListeners("messages.upsert");
           return sock.sendMessage(chatId, { text: "❌ Owner-only command." });
         }
 
-        const newDesc = text.slice((PREFIX + "setlinkdesc").length).trim();
+        const newDesc = args.join(" ").trim() || text.slice((PREFIX + "setlinkdesc").length).trim();
 
         if (!newDesc) {
           return sock.sendMessage(chatId, { text: `Use: ${PREFIX}setlinkdesc Your custom text here` });
@@ -2232,10 +2528,11 @@ if (command === "war") {
     const result = fEngine.registerPlayer(senderId, players);
     if (!result.ok) return sock.sendMessage(chatId, { text: `❌ ${result.msg}` }, { quoted: msg });
     const p = players[senderId];
+    const warName = p?.username || '???';
     return sock.sendMessage(chatId, {
       text:
         `🌌 *[ ENERGY SYNCED ]*\n\n` +
-        `✅ @${String(senderId).split("@")[0]} has entered the war!\n` +
+        `✅ @${String(senderId).split("@")[0]} *${warName}* has entered the war!\n` +
         `Faction: *${(p.faction || "none").toUpperCase()}*\n` +
         `Lobby: *${result.count}* fighters registered.`,
       mentions: [senderId],
@@ -2253,14 +2550,16 @@ if (command === "war") {
 
   // .war bracket
   if (sub === "bracket" || sub === "status" || sub === "view") {
+    const bracket = fEngine.getBracketText(players);
     try {
       const bracketImg = await generateBracketCanvas(fEngine.war, players);
       return sock.sendMessage(chatId, {
         image: bracketImg,
-        caption: fEngine.getBracketText(players),
+        caption: bracket.text,
+        mentions: bracket.mentions,
       }, { quoted: msg });
     } catch {
-      return sock.sendMessage(chatId, { text: fEngine.getBracketText(players) }, { quoted: msg });
+      return sock.sendMessage(chatId, { text: bracket.text, mentions: bracket.mentions }, { quoted: msg });
     }
   }
 
@@ -2283,19 +2582,27 @@ if (command === "war") {
         const resultImg = await generateWarResultCanvas(result.champion, result.runnerUp, fEngine.war, players);
         const champName = players[result.champion]?.username || "???";
         const ruName = players[result.runnerUp]?.username || "???";
+        const champPhone = result.champion?.split("@")[0];
+        const ruPhone = result.runnerUp?.split("@")[0];
 
+        const rewardMentions = [];
         const rewardLines = rewards.map(r => {
           const icon = r.tier === "champion" ? "👑" : r.tier === "runnerUp" ? "🥈" : r.tier === "winner" ? "✅" : "📦";
-          return `  ${icon} *${r.username}*: +${r.lucons} Lucons, +${r.aura} Aura, +${r.resonance} Resonance`;
+          const rPhone = r.id?.split("@")[0];
+          if (rPhone && r.id) rewardMentions.push(r.id);
+          return rPhone
+            ? `  ${icon} @${rPhone} *${r.username}*: +${r.lucons} Lucons, +${r.aura} Aura, +${r.resonance} Resonance`
+            : `  ${icon} *${r.username}*: +${r.lucons} Lucons, +${r.aura} Aura, +${r.resonance} Resonance`;
         });
 
         await sock.sendMessage(chatId, {
           image: resultImg,
           caption:
             `🏆 *FACTION WAR #${fEngine.war.warCount} ENDED!*\n\n` +
-            `👑 Champion: *${champName}*\n` +
-            `🥈 Runner-Up: *${ruName}*\n\n` +
+            `👑 Champion: @${champPhone} *${champName}*\n` +
+            `🥈 Runner-Up: @${ruPhone} *${ruName}*\n\n` +
             `*REWARDS:*\n${rewardLines.join("\n")}`,
+          mentions: [result.champion, result.runnerUp, ...rewardMentions],
         });
       } catch (e) {
         await sock.sendMessage(chatId, { text: `🏆 *WAR OVER!* Champion: *${winnerName}*\nRewards have been distributed!` });
@@ -2320,18 +2627,22 @@ if (command === "war") {
       const np2 = players[nextMatch.p2];
       try {
         const vsImg = await generateVsCanvas(np1, np2, `WAR #${fEngine.war.warCount} - ROUND ${fEngine.war.round}`);
+        const p1Name = players[nextMatch.p1]?.username || '???';
+        const p2Name = players[nextMatch.p2]?.username || '???';
         await sock.sendMessage(chatId, {
           image: vsImg,
           caption:
             `⚔️ *NEXT MATCH*\n\n` +
             `_${fEngine.getMatchIntro()}_\n\n` +
-            `@${String(nextMatch.p1).split("@")[0]}  vs  @${String(nextMatch.p2).split("@")[0]}\n\n` +
+            `@${String(nextMatch.p1).split("@")[0]} *${p1Name}*  vs  @${String(nextMatch.p2).split("@")[0]} *${p2Name}*\n\n` +
             `Use *.ready* when prepared!`,
           mentions: [nextMatch.p1, nextMatch.p2],
         });
       } catch {
+        const p1Name = players[nextMatch.p1]?.username || '???';
+        const p2Name = players[nextMatch.p2]?.username || '???';
         await sock.sendMessage(chatId, {
-          text: `⚔️ *NEXT MATCH:* @${String(nextMatch.p1).split("@")[0]} vs @${String(nextMatch.p2).split("@")[0]}\nUse *.ready* when prepared!`,
+          text: `⚔️ *NEXT MATCH:* @${String(nextMatch.p1).split("@")[0]} *${p1Name}* vs @${String(nextMatch.p2).split("@")[0]} *${p2Name}*\nUse *.ready* when prepared!`,
           mentions: [nextMatch.p1, nextMatch.p2],
         });
       }
@@ -2377,18 +2688,22 @@ if (command === "war-start") {
     const p2 = players[match.p2];
     try {
       const vsImg = await generateVsCanvas(p1, p2, `WAR #${fEngine.war.warCount}`);
+      const m1Name = p1?.username || '???';
+      const m2Name = p2?.username || '???';
       await sock.sendMessage(chatId, {
         image: vsImg,
         caption:
           `⚔️ *FACTION WAR #${fEngine.war.warCount} HAS BEGUN!*\n\n` +
           `_${fEngine.getMatchIntro()}_\n\n` +
-          `First Match:\n@${String(match.p1).split("@")[0]}  vs  @${String(match.p2).split("@")[0]}\n\n` +
+          `First Match:\n@${String(match.p1).split("@")[0]} *${m1Name}*  vs  @${String(match.p2).split("@")[0]} *${m2Name}*\n\n` +
           `Use *.ready* when prepared!`,
         mentions: [match.p1, match.p2],
       });
     } catch {
+      const m1Name = p1?.username || '???';
+      const m2Name = p2?.username || '???';
       await sock.sendMessage(chatId, {
-        text: `⚔️ *WAR BEGUN!*\nFirst Match: @${String(match.p1).split("@")[0]} vs @${String(match.p2).split("@")[0]}`,
+        text: `⚔️ *WAR BEGUN!*\nFirst Match: @${String(match.p1).split("@")[0]} *${m1Name}* vs @${String(match.p2).split("@")[0]} *${m2Name}*`,
         mentions: [match.p1, match.p2],
       });
     }
@@ -2405,10 +2720,12 @@ if (command === "ready") {
 
     if (result.bothReady) {
       const match = fEngine.getActiveMatch();
+      const ready1 = players[match.p1]?.username || '???';
+      const ready2 = players[match.p2]?.username || '???';
       return sock.sendMessage(chatId, {
         text:
           `⚡ *BOTH FIGHTERS READY!*\n\n` +
-          `@${String(match.p1).split("@")[0]} vs @${String(match.p2).split("@")[0]}\n\n` +
+          `@${String(match.p1).split("@")[0]} *${ready1}* vs @${String(match.p2).split("@")[0]} *${ready2}*\n\n` +
           `_The battle can begin! Use *.battle @opponent* to fight!_\n` +
           `Owner: use *.war winner @user* to report the result.`,
         mentions: [match.p1, match.p2],
@@ -2454,16 +2771,6 @@ if (command === "cancel") {
   return sock.sendMessage(chatId, { text: "🛡️ Good. Stand your ground, Lumorian!" }, { quoted: msg });
 }
 
-      if (command === "ownercheck") {
-        return sock.sendMessage(chatId, {
-          text:
-            `senderId: ${senderId}\n` +
-            `normalized: ${normalizeNumberFromJid(senderId)}\n` +
-            `ownerNumbers: ${(settings.ownerNumbers || []).join(", ")}\n` +
-            `isOwner: ${isOwner}`,
-        });
-      }
-
       // ============================
       // CORE COMMANDS
       // ============================
@@ -2478,6 +2785,10 @@ if (command === "cancel") {
         }, { quoted: msg });
       }
 
+      if (command === "menu") {
+        // Redirect to the new help system
+        return sendButtons(sock, chatId, helpUI.buildMainMenuText(players[senderId]), ["🎮 Game Menu", "🛡️ Bot Menu"], { footer: "Tap a section or type .help-game / .help-bot", quoted: msg });
+      }
       if (command === "update" || command === "updates") {
         return updatesSystem.cmdUpdate(ctx, chatId, msg);
       }
@@ -2625,22 +2936,20 @@ if (command === "cancel") {
             `Run *.bank register* to open a vault (free).`;
 
         const caption =
-          `🏦 *THE MAIN BANK*\n` +
+          ui.header('THE MAIN BANK', '🏦') + '\n' +
           `${ownerLine}\n\n` +
           `_"Coin trusted to stone never bleeds in the alley."_\n\n` +
-          `━━━━━━━━━━━━━━━━━━\n` +
-          `📜 *YOUR STATUS*\n` +
+          ui.subheader('YOUR STATUS', '📜') + '\n' +
           `${statusBlock}\n\n` +
-          `━━━━━━━━━━━━━━━━━━\n` +
-          `💸 *TAX POLICY*\n` +
+          ui.subheader('TAX POLICY', '💸') + '\n' +
           `${depositTaxLine}\n\n` +
           `_Claim tax (auto, on .daily / .weekly while banked):_\n` +
           `${taxBracketLines}\n\n` +
-          `━━━━━━━━━━━━━━━━━━\n` +
-          `📖 *.bank register* — open a vault\n` +
-          `📖 *.bank deposit <amt>* / *.bank withdraw <amt>*\n` +
-          `📖 *.bank* — your balances\n` +
-          `📖 *.wealth* — wealth ledger card`;
+          ui.subheader('COMMANDS', '📖') + '\n' +
+          `• ${'.bank register'} — open a vault\n` +
+          `• ${'.bank deposit <amt>'} / ${'.bank withdraw <amt>'}\n` +
+          `• ${'.bank'} — your balances\n` +
+          `• ${'.wealth'} — wealth ledger card`;
 
         try {
           // Public card uses Alverah's image only — no internal numbers.
@@ -2742,7 +3051,7 @@ if (command === "cancel") {
       // ── RANK ──
       if (command === "rank") {
         const p = players[senderId];
-        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using *.start*." }, { quoted: msg });
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using *.begin*." }, { quoted: msg });
         try {
           const card = await generateRankCard(p);
           await sock.sendMessage(chatId, {
@@ -2761,7 +3070,7 @@ if (command === "cancel") {
       // ── WEALTH ──
       if (command === "wealth") {
         const p = players[senderId];
-        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using *.start*." }, { quoted: msg });
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using *.begin*." }, { quoted: msg });
         bankSystem.ensureBank(p);
         const { position, total } = findWealthRank(players, senderId);
         try {
@@ -2799,7 +3108,7 @@ if (command === "cancel") {
       // ── PROFILE MASK ──
       if (command === "mask") {
         const p = players[senderId];
-        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using *.start*." }, { quoted: msg });
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using *.begin*." }, { quoted: msg });
         const inv = p.inventory || {};
         if (Number(inv.PROFILE_MASK || 0) <= 0) {
           return sock.sendMessage(chatId, {
@@ -2814,7 +3123,7 @@ if (command === "cancel") {
       }
       if (command === "unmask") {
         const p = players[senderId];
-        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using *.start*." }, { quoted: msg });
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using *.begin*." }, { quoted: msg });
         if (!p.profileMasked) {
           return sock.sendMessage(chatId, { text: "🪞 You're not masked." }, { quoted: msg });
         }
@@ -2872,6 +3181,18 @@ if (command === "uptime") {
       }
 
       // ============================
+      // M1 COMBAT LOCK — deny out-of-battle actions mid-fight.
+      // One shared check (wildbattle + PvP); kills the heal/invest/
+      // awaken/shed/trade/storage/open exploit cluster. (M1, L-01..L-04)
+      // ============================
+      const lock = (action) => {
+        const denied = combatLockSystem.denyIfInCombat(chatId, senderId, action);
+        return denied
+          ? sock.sendMessage(chatId, { text: denied.text }, { quoted: msg })
+          : null;
+      };
+
+      // ============================
       // SHARD / MERGE SYSTEM (v0.5.0 rework)
       // ============================
       if (command === "shards" || command === "shard" || command === "vault") {
@@ -2883,22 +3204,27 @@ if (command === "uptime") {
       if (command === "choose-style" || command === "choosestyle") {
         return questSystem.cmdChooseStyle(ctx, chatId, senderId, msg, args);
       }
-      if (command === "awaken") {
+      if (command === "awaken" || command === "equip-shard" || command === "equipshard") {
+        const denied = lock("awaken (merge forms)"); if (denied) return denied;
         return shardSystem.cmdAwaken(ctx, chatId, senderId, msg, args);
       }
       if (command === "shed" || command === "unmerge") {
+        const denied = lock("shed (drop merge)"); if (denied) return denied;
         return shardSystem.cmdShed(ctx, chatId, senderId, msg);
       }
       if (command === "merge") {
+        const denied = lock("merge"); if (denied) return denied;
         // Retired in v0.5.0 — soft-alias users back to .awaken
         return shardSystem.cmdLegacyMerge(ctx, chatId, senderId, msg, args);
       }
       if (command === "trade") {
+        const denied = lock("trade"); if (denied) return denied;
         return shardSystem.cmdTrade(ctx, chatId, senderId, msg, args, {
           getMentionedJids,
         });
       }
       if (command === "storage" || command === "shardstorage") {
+        const denied = lock("change shard storage"); if (denied) return denied;
         return shardSystem.cmdStorage(ctx, chatId, senderId, msg, args);
       }
       if (command === "purify") {
@@ -2922,10 +3248,28 @@ if (command === "uptime") {
       if (command === "styles") {
         return questSystem.cmdStyles(ctx, chatId, senderId, msg);
       }
+      if (command === "style") {
+        // .style <name> — style deep-dive with art (assets/styles/<id>.png)
+        return questSystem.cmdStyleDetail(ctx, chatId, senderId, msg, args);
+      }
+      if (command === "equip-style" || command === "equipstyle") {
+        // .equip-style <name> — switch the ONE style active in combat
+        return questSystem.cmdEquipStyle(ctx, chatId, senderId, msg, args);
+      }
+      if (command === "testkit") {
+        // 🧪 TEST MODE only — free tester wallet + starter items
+        return testModeSystem.cmdTestKit(ctx, chatId, senderId, msg);
+      }
+      if (command === "meeting" || command === "mnotes") {
+        // 📋 save & recall meeting decisions (owner-only)
+        if (!isOwner) return sock.sendMessage(chatId, { text: "❌ Owner-only command." }, { quoted: msg });
+        return meetingsSystem.cmdMeeting(ctx, chatId, senderId, msg, args);
+      }
       if (command === "stats" || command === "stat") {
         return statSystem.cmdStats(ctx, chatId, senderId, msg, args);
       }
       if (command === "invest") {
+        const denied = lock("invest stat points"); if (denied) return denied;
         return statSystem.cmdStatsInvest(ctx, chatId, senderId, msg, args);
       }
       if (command === "gift" || command === "apology") {
@@ -2935,6 +3279,7 @@ if (command === "uptime") {
         return scrollSystem.cmdScrolls(ctx, chatId, senderId, msg);
       }
       if (command === "open") {
+        const denied = lock("open scrolls"); if (denied) return denied;
         return scrollSystem.cmdOpen(ctx, chatId, senderId, msg, args);
       }
       if (command === "whisper") {
@@ -3088,12 +3433,11 @@ if (command === "uptime") {
   const p = players[senderId];
   if (!p) return;
 
-  // 1. Check for Active Duel (Global)
-  // Assuming your battle system sets p.inBattle = true when a fight starts
-  if (p.inBattle) {
-    return sock.sendMessage(chatId, {
-      text: "❌ *RESONANCE INTERRUPTED*\n\nYou cannot heal while your consciousness is tied to an active duel! Finish your fight first.",
-    });
+  // 1. Check for Active Duel (Global) — M1: real combat lock now reads
+  // the live wildbattle/PvP state instead of the never-set p.inBattle flag.
+  const denied = combatLockSystem.denyIfInCombat(chatId, senderId, "heal");
+  if (denied) {
+    return sock.sendMessage(chatId, { text: denied.text }, { quoted: msg });
   }
 
   // 2. Check for Active Hunt (Global)
@@ -3113,28 +3457,6 @@ if (command === "uptime") {
 
   // 3. If they are safe, run the heal
   return healSystem.cmdHeal(ctx, chatId, senderId);
-}
-      if (command === "sub") {
-  const p = players[senderId];
-  if (!p || !p.moraOwned) return;
-
-  const slot1 = parseInt(args[0]) - 1;
-  const slot2 = parseInt(args[1]) - 1;
-
-  if (isNaN(slot1) || isNaN(slot2) || slot1 === slot2) {
-    return sock.sendMessage(chatId, { text: "❌ Use: .sub <slot1> <slot2> (e.g., .sub 1 5)" });
-  }
-
-  if (!p.moraOwned[slot1] || !p.moraOwned[slot2]) {
-    return sock.sendMessage(chatId, { text: "❌ Invalid slots chosen." });
-  }
-
-  // Remove the selected Mora from the ACTIVE battle party (assuming you track that)
-  // Or create a temporary 'warParty' array for the tournament.
-  p.warParty = p.moraOwned.filter((_, index) => index !== slot1 && index !== slot2);
-  
-  savePlayers(players);
-  return sock.sendMessage(chatId, { text: "✅ Lineup adjusted. You are now ready for the bracket!" });
 }
 
       // ============================
@@ -3176,7 +3498,7 @@ if (command === "uptime") {
       // SET ICON — ✅ max size raised to 2MB
       // ============================
       if (command === "set-icon") {
-        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" });
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
 
         const rawMsg = unwrapMessage(msg);
         const quoted = rawMsg?.extendedTextMessage?.contextInfo?.quotedMessage;
@@ -3239,7 +3561,7 @@ if (command === "uptime") {
 // 📊 USER COMMAND: VIEW FACTION PROGRESS
 // ==========================================
 if (command === "facprogress" || command === "factionprogress") {
-  if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" });
+  if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
   
   const p = players[senderId];
   const cost = 200;
@@ -3253,21 +3575,27 @@ if (command === "facprogress" || command === "factionprogress") {
   p.lucons -= cost;
   savePlayers(players);
 
-  // Determine Leader
-  const pts = factionState.points;
+  // Read from factionProgressSystem — single source of truth
+  const factionData = factionProgressSystem.loadFactions();
+  const pts = { harmony: factionData.harmony.points, purity: factionData.purity.points, rift: factionData.rift.points };
   let leader = "Harmony";
   let max = pts.harmony;
   if (pts.purity > max) { leader = "Purity"; max = pts.purity; }
   if (pts.rift > max) { leader = "Rift"; max = pts.rift; }
 
+  // Season number from factionState (season metadata stays in faction_state.json)
+  const seasonNum = factionState.season || 1;
+  const rewardPool = factionState.rewards?.lucons || 1000;
+  const style = factionState.style || "classic";
+
   const caption = 
-    `📊 *SEASON ${factionState.season} INTEL* 📊\n${DIVIDER}\n` +
+    `📊 *SEASON ${seasonNum} INTEL* 📊\n${DIVIDER}\n` +
     `🏆 *Current Leader:* ${leader}\n` +
-    `💰 *Reward Pool:* ${factionState.rewards.lucons} Lucons to all winners\n\n` +
+    `💰 *Reward Pool:* ${rewardPool} Lucons to all winners\n\n` +
     `_200 Lucons were deducted from your account to access this terminal._`;
 
   // Generate Image
-  const imageBuffer = await generateFactionGraph(pts, factionState.season, factionState.style);
+  const imageBuffer = await generateFactionGraph(pts, seasonNum, style);
 
   return sock.sendMessage(chatId, { 
     image: imageBuffer, 
@@ -3342,11 +3670,15 @@ if (command === "addfacpts") {
   const fac = args[0]?.toLowerCase();
   const amt = parseInt(args[1]);
   
-  if (!fac || !factionState.points[fac] === undefined || isNaN(amt)) {
+  if (!fac || !["harmony","purity","rift"].includes(fac) || isNaN(amt)) {
     return sock.sendMessage(chatId, { text: "Use: .addfacpts harmony/purity/rift 500" });
   }
   
-  factionState.points[fac] += amt;
+  // Delegate to factionProgressSystem — single source of truth
+  factionProgressSystem.addFactionPoints(fac, amt);
+  // Sync factionState.points for the graph/season metadata
+  const factionData = factionProgressSystem.loadFactions();
+  factionState.points = { harmony: factionData.harmony.points, purity: factionData.purity.points, rift: factionData.rift.points };
   saveFactionState(factionState);
   return sock.sendMessage(chatId, { text: `✅ Added ${amt} points to ${fac}.` });
 }
@@ -3374,7 +3706,9 @@ if (command === "setfacreward") {
 if (command === "endseason") {
   if (!isOwner) return sock.sendMessage(chatId, { text: "❌ Owner only." });
 
-  const pts = factionState.points;
+  // Read points from factionProgressSystem — single source of truth
+  const factionData = factionProgressSystem.loadFactions();
+  const pts = { harmony: factionData.harmony.points, purity: factionData.purity.points, rift: factionData.rift.points };
   let winner = "harmony";
   let max = pts.harmony;
   
@@ -3394,9 +3728,13 @@ if (command === "endseason") {
   
   savePlayers(players);
 
-  // 🔄 Reset Season Data
-  factionState.season += 1;
-  factionState.points = { harmony: 0, purity: 0, rift: 0 };
+  // 🔄 Reset Season via factionProgressSystem (resets faction points + records win)
+  factionProgressSystem.endSeason();
+  // Bump season number in factionState (season metadata stays here)
+  factionState.season = (factionState.season || 1) + 1;
+  // Sync factionState.points from factionProgressSystem (now zeroed)
+  const freshData = factionProgressSystem.loadFactions();
+  factionState.points = { harmony: freshData.harmony.points, purity: freshData.purity.points, rift: freshData.rift.points };
   saveFactionState(factionState);
 
   // 📢 Announce to the chat
@@ -3407,11 +3745,24 @@ if (command === "endseason") {
           `Welcome to Season ${factionState.season}! The board has been wiped clean. Let the new hunt begin!`
   });
 }
+if (command === "resetseason") {
+  if (!isOwner) return sock.sendMessage(chatId, { text: "❌ Owner only." });
+
+  // Wipe points via factionProgressSystem — single source of truth
+  factionProgressSystem.resetPoints();
+  // Sync factionState.points
+  factionState.points = { harmony: 0, purity: 0, rift: 0 };
+  saveFactionState(factionState);
+
+  return sock.sendMessage(chatId, {
+    text: `🧹 *SEASON RESET* — faction points wiped to 0.\nThe hunt begins anew.`,
+  });
+}
       // ============================
       // USERNAME
       // ============================
       if (command === "set-username") {
-        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" });
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
 
         const raw = text.slice((PREFIX + "set-username").length).trim();
         const cleaned = sanitizeUsername(raw);
@@ -3533,49 +3884,62 @@ if (command === "endseason") {
       }
 
       // ================= START (AWAKENING) =================
-      if (command === "start") {
+      // ── .begin — Star's intro ──────────────────────────────
+      if (command === "begin") {
         if (players[senderId]) {
           const p = players[senderId];
-
-          if (!p.faction && settings.features.factionsEnabled !== false) {
-            return sock.sendMessage(chatId, {
-              text:
-                `✅ You are already a Lumorian.\n\n⚔ You must choose ONE faction:\n` +
-                `${PREFIX}faction harmony\n${PREFIX}faction purity\n${PREFIX}faction rift`,
-            });
-          }
-
-          if (!p.starterChosen) {
-            return sock.sendMessage(chatId, {
-              text: `✅ You are already a Lumorian.\n\n🐉 Choose your starter Mora using: ${PREFIX}choose 1-5`,
-            });
-          }
-
-          if (!p.starterStyleChosen) {
-            return sock.sendMessage(chatId, {
-              text:
-                `✅ You are already a Lumorian.\n\n` +
-                `🥋 Pick a starter fighting style: ${PREFIX}choose-style\n` +
-                `   (you'll be shown 3 options — Wind Step / Sun Walk / Tide Veil)`,
-            });
-          }
-
-          if (!p.starterShardChosen) {
-            return sock.sendMessage(chatId, {
-              text:
-                `✅ You are already a Lumorian.\n\n` +
-                `💎 Pick a starter mergeable shard: ${PREFIX}choose-shard\n` +
-                `   (3 options — Nylon / Sparko / Thornel)`,
-            });
-          }
-
           return sock.sendMessage(chatId, {
-            text: `✅ You are already a Lumorian.\nUse ${PREFIX}profile to view your profile.`,
+            text: `🌟 *Welcome back, ${p.username || 'Lumorian'}!*
+
+You're already registered. Use ${PREFIX}profile to check your stats!`,
+            mentions: [senderId],
+          });
+        }
+        return sock.sendMessage(chatId, {
+          text: [
+            ui.header('LUMORA', '🌌'),
+            '',
+            ui.subheader('STAR', '✨'),
+            '',
+            'Hey there, traveler... 👋',
+            '',
+            'I\'m *Star* — your guide through',
+            'the world of *Lumora*.',
+            '',
+            'The Rift hums softly. Somewhere out',
+            'there, *Mora* are waiting to be found, ',
+            'factions are waging quiet wars, and',
+            'old legends are being rewritten.',
+            '',
+            'But every legend starts with a',
+            'single step.',
+            '',
+            ui.card('YOUR JOURNEY', '🚀', [
+              { emoji: '1️⃣', label: 'Register', value: 'choose your identity' },
+              { emoji: '2️⃣', label: 'Explore', value: 'find your faction & Mora' },
+              { emoji: '3️⃣', label: 'Grow', value: 'battle, hunt, and rise' },
+            ]),
+            '',
+            `_Type ${PREFIX}register to take that first step 👇`,
+          ].join('\n'),
+          mentions: [senderId],
+        });
+      }
+
+      // ── .register — Start guided onboarding ────────────────
+      if (command === "register") {
+        if (players[senderId]) {
+          const p = players[senderId];
+          return sock.sendMessage(chatId, {
+            text: `🌟 You're already registered, *${p.username || 'Lumorian'}*! ✅\n\nUse ${PREFIX}profile to check your stats.`,
+            mentions: [senderId],
           });
         }
 
+        // Create player immediately with phone number as username
+        const phoneNum = senderId.split('@')[0];
         players[senderId] = {
-          username: null,
+          username: phoneNum,
           id: senderId,
           level: 1,
           xp: 0,
@@ -3587,7 +3951,7 @@ if (command === "endseason") {
           tameSkill: 5,
           playerMaxHp: 100,
           playerHp: 100,
-          faction: settings.features.factionsEnabled === false ? null : null,
+          faction: null,
           starterOptions: [],
           moraOwned: [],
           starterChosen: false,
@@ -3610,82 +3974,55 @@ if (command === "endseason") {
             boots: null,
           },
         };
-
         savePlayers(players);
 
-        // ── Referral code check ──────────────────────────────
-        const enteredCode = String(args[0] || "").trim().toUpperCase();
-        if (enteredCode) {
-          const refs = loadReferrals();
-          // Find whose code this is
-          const refEntry = Object.values(refs).find(r => r.code === enteredCode);
-          if (!refEntry) {
-            await sock.sendMessage(chatId, { text: `⚠️ Referral code *${enteredCode}* not found. You joined without a referral.` }, { quoted: msg });
-          } else if (refEntry.ownerJid === senderId) {
-            await sock.sendMessage(chatId, { text: `⚠️ You can't use your own referral code!` }, { quoted: msg });
-          } else if (refEntry.usedBy && refEntry.usedBy.includes(senderId)) {
-            await sock.sendMessage(chatId, { text: `⚠️ You already used this referral code.` }, { quoted: msg });
-          } else {
-            // Record use
-            if (!refEntry.usedBy) refEntry.usedBy = [];
-            refEntry.usedBy.push(senderId);
-            refEntry.totalUses = (refEntry.totalUses || 0) + 1;
-            // Mark a pending reward for the referrer (claimed via .claim-ref)
-            if (!refEntry.pendingRewards) refEntry.pendingRewards = [];
-            const tier = getRefTier(refEntry.totalUses);
-            refEntry.pendingRewards.push({
-              triggeredAt: Date.now(),
-              newPlayer: senderId,
-              lucons: tier.lucons,
-              moraRarities: tier.moraRarities,
-              uses: refEntry.totalUses,
-              claimed: false,
-            });
-            saveReferrals(refs);
-            // Notify referrer in DM
-            const referrer = players[refEntry.ownerJid];
-            const referrerName = referrer?.username || String(refEntry.ownerJid).split("@")[0];
-            try {
-              await sock.sendMessage(refEntry.ownerJid, {
-                text:
-                  `🎉 *REFERRAL ACTIVATED!*\n\n` +
-                  `Someone used your referral code *${enteredCode}*!\n` +
-                  `👥 Total referrals: *${refEntry.totalUses}*\n\n` +
-                  `🎁 A reward is waiting for you!\n` +
-                  `Use *.claim-ref* in DM to choose your prize.`,
-              });
-            } catch {}
-            await sock.sendMessage(chatId, { text: `✅ Referral code accepted! *${referrerName}* will be rewarded for bringing you in.` }, { quoted: msg });
-          }
-        }
+        // Show welcome + faction selection
+        buttonsSystem.mapButtons({
+          '🌿 Harmony': `${PREFIX}faction harmony`,
+          '⚔️ Purity': `${PREFIX}faction purity`,
+          '🕶️ Rift': `${PREFIX}faction rift`,
+        });
+        return sendButtons(sock, chatId,
+          ui.header('WELCOME TO LUMORA', '🌟') + '\n\n' +
+          `Welcome, *${phoneNum}*! Your journey begins now.\n\n` +
+          `Use ${PREFIX}username <name> to set your display name.\n` +
+          `Use ${PREFIX}set-icon with an image to set your profile picture.\n\n` +
+          ui.subheader('CHOOSE YOUR PATH', '⚔️') + '\n' +
+          `_Tap a faction or type: ${PREFIX}faction harmony / purity / rift_`,
+          ['🌿 Harmony', '⚔️ Purity', '🕶️ Rift'],
+          { footer: 'Choose your faction 👇', quoted: msg, mentions: [senderId] }
+        );
+      }
 
-        const cap = START_CAPTIONS[Math.floor(Math.random() * START_CAPTIONS.length)];
-
-        if (settings.features.factionsEnabled === false) {
+      // ── .start — legacy alias for .begin ───────────────────
+      if (command === "start") {
+        // Redirect to .begin
+        command = "begin";
+        // Re-enter the begin handler above by falling through
+        // (we already handled it, so just return)
+        if (players[senderId]) {
+          const p = players[senderId];
           return sock.sendMessage(chatId, {
-            text:
-              `🌌 *${settings.eraName}*\n${cap}\n\n` +
-              `✅ You are now a *Lumorian*.\n\n` +
-              `Choose a Mora to start your venture:\n` +
-              `1) Nylon (ID_1 • Aqua)\n` +
-              `2) Thornel (ID_2 • Nature)\n` +
-              `3) Terron (ID_3 • Terra)\n` +
-              `4) Sparko (ID_4 • Volt)\n` +
-              `5) Emberu (ID_5 • Flame)\n\n` +
-              `Use: .choose 1  (or .choose Emberu)`,
+            text: `🌟 *Welcome back, ${p.username || 'Lumorian'}!*\n\nUse ${PREFIX}profile to check your stats!`,
+            mentions: [senderId],
           });
         }
-
         return sock.sendMessage(chatId, {
-          text:
-            `🌌 *${settings.eraName}*\n${cap}\n\n` +
-            `✅ You are now a *Lumorian*.\n\n` +
-            `⚔ *Choose ONE faction*\n\n` +
-            `🌿 *Harmony Lumorians*\n•Belief ${FACTIONS.harmony.belief}\n• Strength: ${FACTIONS.harmony.strength}\n• Weakness: ${FACTIONS.harmony.weakness}\n\n` +
-            `⚔ *The Purity Order*\n•Belief ${FACTIONS.purity.belief}\n• Strength: ${FACTIONS.purity.strength}\n• Weakness: ${FACTIONS.purity.weakness}\n\n` +
-            `🕶 *The Rift Seekers*\n•Belief ${FACTIONS.rift.belief}\n• Strength: ${FACTIONS.rift.strength}\n• Weakness: ${FACTIONS.rift.weakness}\n\n` +
-            `👉 Choose by typing:\n` +
-            `*${PREFIX}faction harmony*\n*${PREFIX}faction purity*\n*${PREFIX}faction rift*`,
+          text: [
+            ui.header('LUMORA', '🌌'),
+            '',
+            '╔═══════════════════════╗',
+            '║  ✨ *I am STAR* ✨    ║',
+            '╚═══════════════════════╝',
+            '',
+            'Hey there, stranger... 👋',
+            '',
+            'I\'m *Star* — your guide through',
+            'the world of *Lumora*.',
+            '',
+            `Type ${PREFIX}register to begin 👇`,
+          ].join('\n'),
+          mentions: [senderId],
         });
       }
 
@@ -3693,7 +4030,7 @@ if (command === "endseason") {
 
       // .myref — get or create your referral code
       if (command === "myref") {
-        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" }, { quoted: msg });
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
         const refs = loadReferrals();
         if (!refs[senderId]) {
           refs[senderId] = {
@@ -3726,7 +4063,7 @@ if (command === "endseason") {
 
       // .claim-ref — claim a pending referral reward (DM only)
       if (command === "claim-ref") {
-        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" }, { quoted: msg });
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
         const refs = loadReferrals();
         const r = refs[senderId];
         if (!r) return sock.sendMessage(chatId, { text: "❌ You have no referral code yet. Use *.myref* first." }, { quoted: msg });
@@ -3767,7 +4104,7 @@ if (command === "endseason") {
 
       // .pick-ref <choice> — finalize the reward pick
       if (command === "pick-ref") {
-        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" }, { quoted: msg });
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
         const refs = loadReferrals();
         const r = refs[senderId];
         const pick = r?.activePick;
@@ -3879,8 +4216,68 @@ if (command === "endseason") {
       }
 
       // ================= FACTION PICK =================
+      // ── .username — set display name ──────────────────────
+      if (command === "username" || command === "name") {
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
+        const p = players[senderId];
+        const newName = args.join(' ').trim();
+        if (!newName) {
+          return sock.sendMessage(chatId, {
+            text: `📝 *Set your username*\n\nUsage: ${PREFIX}username <name>\n\nCurrent: *${p.username || 'Not set'}*`,
+            mentions: [senderId]
+          });
+        }
+        if (newName.length < 2 || newName.length > 20) {
+          return sock.sendMessage(chatId, { text: "❌ Username must be 2-20 characters.", mentions: [senderId] });
+        }
+        p.username = newName;
+        savePlayers(players);
+        return sock.sendMessage(chatId, {
+          text: `✅ Username updated to *${newName}*!`,
+          mentions: [senderId]
+        });
+      }
+
+      // ── .set-icon — set profile icon from image ────────────
+      if (command === "set-icon" || command === "seticon" || command === "icon") {
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
+        
+        // Check for image in message or quoted message
+        const rawMsg = unwrapMessage ? unwrapMessage(msg) : msg;
+        const hasImage = rawMsg?.message?.imageMessage 
+          || rawMsg?.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage;
+        
+        if (!hasImage) {
+          return sock.sendMessage(chatId, {
+            text: `📸 *Set your profile icon*\n\nSend an image with ${PREFIX}set-icon as the caption,\nor reply to an image with ${PREFIX}set-icon`,
+            mentions: [senderId]
+          });
+        }
+        
+        try {
+          const { downloadMediaMessage } = await import('@whiskeysockets/baileys');
+          const buffer = await downloadMediaMessage(
+            { message: rawMsg.message, key: msg.key },
+            'buffer', {}
+          );
+          const iconDir = path.join(__dirname, 'data', 'icons');
+          if (!fs.existsSync(iconDir)) fs.mkdirSync(iconDir, { recursive: true });
+          const iconPath = path.join(iconDir, `${senderId}.jpg`);
+          fs.writeFileSync(iconPath, buffer);
+          players[senderId].profileIcon = iconPath;
+          savePlayers(players);
+          return sock.sendMessage(chatId, {
+            text: `✅ Profile icon updated!`,
+            mentions: [senderId]
+          });
+        } catch (e) {
+          console.log('[set-icon] error:', e.message);
+          return sock.sendMessage(chatId, { text: '❌ Failed to save image. Try again.' });
+        }
+      }
+
       if (command === "faction") {
-        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" });
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
         if (settings.features.factionsEnabled === false) return sock.sendMessage(chatId, { text: "⚠ Factions are disabled by the owner." });
 
         const key = String(args[0] || "").trim().toLowerCase();
@@ -3930,16 +4327,47 @@ try {
 // ============================
 // ✅ GROUP CONFIRMATION
 // ============================
+
+// If in onboarding, advance to mora step
+if (p.onboardingStep === 'faction') {
+  p.onboardingStep = 'mora';
+  savePlayers(players);
+
+  // Build starter options for this faction
+  const factionStarters = {
+    harmony: [2, 11, 14],
+    purity: [1, 3, 13],
+    rift: [5, 7, 15],
+  };
+  const allowedIds = factionStarters[key] || factionStarters.harmony;
+  const starters = moraList.filter(m => allowedIds.includes(m.id));
+
+  const labelToCmd = {};
+  starters.forEach((m, i) => {
+    labelToCmd[`${i + 1}. ${m.name}`] = `${PREFIX}choose ${i + 1}`;
+  });
+  buttonsSystem.mapButtons(labelToCmd);
+
+  const detail = starters
+    .map((m, i) => `${i + 1}. *${m.name}* [${m.type.toUpperCase()}] — _${m.description || 'A mysterious Mora.'}_`)
+    .join('\n');
+
+  return sendButtons(sock, chatId,
+    onboardingSystem.stepMessage('mora', { username: p.username }) + '\n' + detail,
+    starters.map((m, i) => `${i + 1}. ${m.name}`),
+    { footer: `Or type: ${PREFIX}choose <name>`, quoted: msg, mentions: [senderId] }
+  );
+}
+
 return sock.sendMessage(chatId, {
   text:
-    `✅ You joined *${FACTIONS[key].name}*\n` +
-    `📩 Check your DM for the faction group link\n\n` +
-    `⚠ You must join the group before choosing your starter`
+    `✅ Joined *${FACTIONS[key].name}* — 📩 DM sent with your faction group link\n` +
+    `⚠ Join the group, then *.choose* your starter`
 });
       }
       // ================= CHOOSE STARTER =================
 if (command === "choose") {
-  if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" });
+  if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
   
   const p = players[senderId];
   if (p.starterChosen) return sock.sendMessage(chatId, { text: "✅ You already chose a starter Mora." });
@@ -3971,18 +4399,19 @@ if (command === "choose") {
 
   // 3. DISPLAY STARTERS (If no argument provided)
   if (!rawPick) {
-    let menu = `🐾 *${p.faction.toUpperCase()}  •  S T A R T E R S*\n${DIVIDER}\n`;
-    menu += `Select your first companion to begin your journey.\n\n`;
-    
+    const labelToCmd = {};
     starters.forEach((m, i) => {
-      menu += `*${i + 1}. ${m.name}* [${m.type.toUpperCase()}]\n`;
-      menu += `📜 ${m.description || "A mysterious Mora."}\n`;
-      menu += `⚔ Atk: ${m.baseStats?.atk} | 🛡 Def: ${m.baseStats?.def}\n${SMALL_DIVIDER}\n`;
+      labelToCmd[`${i + 1}. ${m.name}`] = `${PREFIX}choose ${i + 1}`;
     });
-
-    menu += `\n👉 Use: *.choose 1-3* or *.choose Name*`;
-    
-    return sock.sendMessage(chatId, { text: menu }, { quoted: msg });
+    buttonsSystem.mapButtons(labelToCmd);
+    const detail = starters
+      .map((m, i) => `${i + 1}. *${m.name}* [${m.type.toUpperCase()}] — _${m.description || "A mysterious Mora."}_`)
+      .join("\n");
+    return sendButtons(sock, chatId,
+      `🐾 *CHOOSE YOUR STARTER* — _${p.faction} path_\n${detail}\n\n👉 Tap below 👇`,
+      starters.map((m, i) => `${i + 1}. ${m.name}`),
+      { footer: `Or type: ${PREFIX}choose <name>`, quoted: msg }
+    );
   }
 
   // 4. PROCESS THE PICK
@@ -4021,37 +4450,218 @@ if (command === "choose") {
 
   savePlayers(players);
 
-  return sock.sendMessage(chatId, {
-    text: `🎉 *CONGRATULATIONS!*\n\nYou have bonded with *${newMora.name}*!\n\n` +
-          `Use *.profile* to see your stats or *.hunt* to begin your first battle.`,
-    mentions: [senderId]
-  }, { quoted: msg });
+  // If in onboarding, show GAME BEGINS and complete
+  if (p.onboardingStep === 'mora') {
+    p.onboardingStep = 'done';
+    savePlayers(players);
+    return sock.sendMessage(chatId, {
+      text: onboardingSystem.stepMessage('complete', { username: p.username }),
+      mentions: [senderId],
+    });
+  }
+
+  buttonsSystem.mapButtons({ "🥋 Pick a Style": `${PREFIX}choose-style` });
+  return sendButtons(sock, chatId,
+    `🎉 *CONGRATULATIONS!* — you bonded with *${newMora.name}*!\n\nNext: pick your *fighting style* 👇`,
+    ["🥋 Pick a Style"],
+    { footer: `Or type: ${PREFIX}choose-style`, quoted: msg, mentions: [senderId] }
+  );
 }
+
+      // ================= ANIME ART PACK =================
+      // 🎴 Every Mora can carry anime art. Custom art (assets/mora) wins,
+      // then the art pack (assets/artpack — any source: Kaggle / Danbooru /
+      // live fetch), then the live API fills on demand.
+      if (command === "artpack" || command === "art-pack") {
+        const sub = String(args[0] || "").toLowerCase();
+
+        if (sub === "fetch" || sub === "fill") {
+          // Owner can bulk-fetch; testers too (they push the pack in test GCs)
+          if (!isOwner && !testModeSystem.isTestGroup(chatId)) {
+            return sock.sendMessage(chatId, { text: "❌ Owner-only command." }, { quoted: msg });
+          }
+          const limit = parseInt(args[1], 10) || 0;
+          const s = artpackSystem.getStatus();
+          if (!s.missing) return sock.sendMessage(chatId, { text: "❌ Art pack unavailable." }, { quoted: msg });
+          await sock.sendMessage(chatId, {
+            text: `🎴 *ART PACK — FETCHING*\n${DIVIDER}\n` +
+              `Fetching anime art for *${limit > 0 ? Math.min(limit, s.missing) : s.missing}* missing Mora…\n` +
+              `_This runs in the background and pings when done._`,
+          }, { quoted: msg });
+          const res = await artpackSystem.fillMissing({ limit, onProgress: async (p) => {
+            // Throttle progress pings so the group isn't spammed
+            if (p.done % 10 === 0 || p.done === p.total) {
+              try {
+                await sock.sendMessage(chatId, { text: `🎴 Progress: *${p.done}/${p.total}*` });
+              } catch {}
+            }
+          } });
+          const s2 = artpackSystem.getStatus();
+          return sock.sendMessage(chatId, {
+            text: `🎴 *ART PACK — DONE*\n${DIVIDER}\n` +
+              `✅ Fetched: *${res.fetched}*  ❌ Failed: *${res.failed}*\n` +
+              `Now: *${s2.custom}* custom  +  *${s2.pack}* pack  =  *${s2.pack + s2.custom}/${s2.total}* Mora with art` +
+              (res.errors.length ? `\n\n⚠️ ${res.errors.join("\n")}` : ""),
+          }, { quoted: msg });
+        }
+
+        if (sub === "reset" || sub === "clear") {
+          if (!isOwner) return sock.sendMessage(chatId, { text: "❌ Owner-only command." }, { quoted: msg });
+          const query = args.slice(1).join(" ").trim();
+          if (!query) return sock.sendMessage(chatId, { text: "❌ Use: .artpack reset <mora name or id>" }, { quoted: msg });
+          const m = findMora(moraList, normalizePickToIdOrName(query));
+          if (!m) return sock.sendMessage(chatId, { text: `❌ Unknown Mora: *${query}*` }, { quoted: msg });
+          const removed = artpackSystem.clearArt(m);
+          return sock.sendMessage(chatId, {
+            text: removed ? `🗑 Cleared *${m.name}*'s pack art (${removed} file${removed > 1 ? "s" : ""}). Next view refetches.` : `*${m.name}* had no cached pack art.`,
+          }, { quoted: msg });
+        }
+
+        // Default: status panel
+        const s = artpackSystem.getStatus();
+        if (!s.total) return sock.sendMessage(chatId, { text: "❌ Art pack unavailable." }, { quoted: msg });
+        return sock.sendMessage(chatId, {
+          text:
+            `🎴 *ANIME ART PACK*\n${DIVIDER}\n` +
+            `🖼 Custom art (assets/mora): *${s.custom}*\n` +
+            `🗂 Pack art (assets/artpack): *${s.pack}*  _(${s.packFiles} files)_\n` +
+            `❓ Still missing: *${s.missing}*\n` +
+            (s.missingNames.length ? `   ↳ ${s.missingNames.join(", ")}${s.missing > s.missingNames.length ? "…" : ""}\n` : "") +
+            `${DIVIDER}\n` +
+            `✨ Art = raw anime image. *Tiers* (Common→Legendary) are drawn by Lumora's card design on top.\n` +
+            `📦 Pack is source-agnostic — drop Kaggle/Danbooru art into *assets/artpack* as *id_<id>.png* or *<name>.png* and it wins over live.\n` +
+            `🔌 Live source: ${s.liveSource}\n` +
+            `${DIVIDER}\n` +
+            `Commands:\n` +
+            `┃ *.artpack fetch* — fill all missing now\n` +
+            `┃ *.artpack fetch <n>* — fill first n\n` +
+            `┃ *.artpack reset <name>* — clear one (owner)\n` +
+            `┃ *.art <name>* — view a Mora's art\n` +
+            `┃ *.mora <name>* — bio now shows art too`,
+        }, { quoted: msg });
+      }
+
+      // .art <name> — show a single Mora's anime art (fetch on demand)
+      if (command === "art" || command === "artpic") {
+        const query = args.join(" ").trim();
+        const m = query ? findMora(moraList, normalizePickToIdOrName(query)) : null;
+        if (!m) {
+          return sock.sendMessage(chatId, { text: "❌ Use: .art <mora name or id>" }, { quoted: msg });
+        }
+        // Custom art → pack art → live fetch (cached)
+        let p = moraImagePath(m) || artpackSystem.artPathFor(m);
+        if (!p) {
+          const r = await artpackSystem.fetchArtFor(m);
+          if (!r.ok) return sock.sendMessage(chatId, { text: `❌ Couldn't fetch art for *${m.name}*: ${r.reason}` }, { quoted: msg });
+          p = r.path;
+        }
+        const sprite = moraImagePath(m) || p; // custom art still wins for display
+        const src = artpackSystem.hasCustomArt(m) ? "custom" : (artpackSystem.artPathFor(m) ? "pack" : "live");
+        try {
+          return sock.sendMessage(chatId, {
+            image: fs.readFileSync(sprite),
+            caption: `🎴 *${m.name}* — 💠 ${m.rarity} • ⚡ ${m.type}\n🆔 ID ${m.id}  •  _source: ${src}_`,
+          }, { quoted: msg });
+        } catch (e) {
+          return sock.sendMessage(chatId, { text: `❌ Art render failed: ${e?.message}` }, { quoted: msg });
+        }
+      }
 
       // ================= MORA =================
       if (command === "mora") {
         if (!moraList.length) return sock.sendMessage(chatId, { text: "❌ Mora database is empty. Check data/mora.json" });
 
+        const pMora = players[senderId];
         const queryRaw = args.join(" ").trim();
         const query = normalizePickToIdOrName(queryRaw);
 
-        if (!query) {
-          const lines = moraList.map((m) => `ID_${m.id} • *${m.name}* • ${m.type} • ${String(m.rarity || "—").toLowerCase()}`);
-          return sock.sendMessage(chatId, {
-            text: `📜 *MORA AVAILABLE* (${moraList.length})\n\n` + lines.join("\n") + `\n\nUse: *.mora 2* or *.mora Thornel*`,
+        // A Mora is "known" once the player has MET it: dex (wild encounters /
+        // awakenings), owns one, holds a shard of it, or is currently merged.
+        const isMoraKnown = (mora) => {
+          if (!pMora || !mora) return false;
+          const id = String(mora.id ?? "");
+          if (Array.isArray(pMora.dex) && pMora.dex.includes(id)) return true;
+          if (Array.isArray(pMora.moraOwned) && pMora.moraOwned.some((m) => String(m.moraId) === id)) return true;
+          const merge = pMora.currentMerge;
+          if (merge && (String(merge.moraId) === id || String(merge.name || "") === String(mora.name || ""))) return true;
+          const baseKey = String(mora.id ?? mora.name ?? "").toLowerCase();
+          return Object.keys(pMora.shards || {}).some((k) => {
+            const clean = String(k).toLowerCase().replace(/@corrupted$/, "");
+            return clean === baseKey || String(mora.name || "").toLowerCase() === clean;
           });
+        };
+
+        // No query → the player's biography collection (only what they've met)
+        if (!query) {
+          const seen = moraList.filter((m) => isMoraKnown(m));
+          if (!seen.length) {
+            return sock.sendMessage(chatId, {
+              text: ui.header('MORA DEX', '📖') + `\n\n` +
+                `_You haven't met any Mora yet._\n\n` +
+                `Use *.hunt* / *.travel* to explore the wilds — every encounter unlocks a Mora's biography here.`,
+            }, { quoted: msg });
+          }
+          // Group by type
+          const typeEmoji = { fire: '🔥', water: '💧', earth: '🪨', electric: '⚡', grass: '🌿', ice: '❄️', dark: '🌑', light: '✨', wind: '💨', poison: '☠️', psychic: '🔮', dragon: '🐉', normal: '⚪' };
+          const grouped = {};
+          for (const m of seen) {
+            const t = (m.type || 'other').toLowerCase();
+            if (!grouped[t]) grouped[t] = [];
+            grouped[t].push(m);
+          }
+          const lines = [];
+          lines.push(ui.header('MORA DEX', '📖'));
+          lines.push(`  _${seen.length}/${moraList.length} discovered_`);
+          lines.push('');
+          for (const [type, mora] of Object.entries(grouped)) {
+            lines.push(ui.subheader(type.toUpperCase(), typeEmoji[type] || '❓'));
+            for (const m of mora) {
+              const r = String(m.rarity || '—').toLowerCase();
+              lines.push(`  ◉ *${m.name}*  ·  ${m.type}  ·  ${r}`);
+            }
+            lines.push('');
+          }
+          lines.push(ui.DIV);
+          lines.push(`_Unlock more by encountering Mora in the wild — *.hunt*._`);
+          lines.push(`Use: *.mora 2* or *.mora Thornel*`);
+          return sock.sendMessage(chatId, { text: lines.join('\n') }, { quoted: msg });
         }
 
         const mora = findMora(moraList, query) || findMora(moraList, queryRaw);
-        if (!mora) return sock.sendMessage(chatId, { text: `❌ Mora not found: *${queryRaw}*` });
+        if (!mora) return sock.sendMessage(chatId, { text: `❌ No Mora matches *${queryRaw}* in the registry.` });
 
+        // Not encountered yet → mystery. No image, no stats, no lore.
+        if (!isMoraKnown(mora)) {
+          return sock.sendMessage(chatId, {
+            text: ui.header('???', '❓') + `\n\n` +
+              `_A Mora by that name walks the wilds — but its biography is still a mystery._\n\n` +
+              ui.card('LOCKED', '🔒', [
+                { emoji: '🔰', label: 'Name', value: '???' },
+                { emoji: '⚡', label: 'Type', value: '???' },
+                { emoji: '💠', label: 'Rarity', value: '???' },
+              ]) + `\n\n` +
+              `_Encounter it to unlock its full biography._`,
+          }, { quoted: msg });
+        }
+
+        const base = mora.baseStats || {};
+        const moveNames = Object.keys(mora.moves || {}).slice(0, 3).join(", ");
         const caption =
-          `🐉 *MORA INFO*\n\n` +
-          `🆔 ID: *${mora.id}*\n` +
-          `🔰 Name: *${mora.name}*\n` +
-          `⚡ Type: *${mora.type}*\n` +
-          `💠 Rarity: *${mora.rarity}*\n\n` +
-          `📖 *Description*\n${mora.description || "—"}\n`;
+          ui.header(mora.name, '🐉') + `\n\n` +
+          ui.card('BIOGRAPHY', '📖', [
+            { emoji: '🆔', label: 'ID', value: String(mora.id) },
+            { emoji: '💠', label: 'Rarity', value: mora.rarity },
+            { emoji: '⚡', label: 'Type', value: mora.type },
+            { emoji: '🧬', label: 'Merge', value: mora.merge || '—' },
+          ]) + `\n\n` +
+          `📖 *Description*\n${mora.description || "—"}\n\n` +
+          ui.card('BASE STATS', '📊', [
+            { emoji: '❤️', label: 'HP', value: String(base.hp ?? '?') },
+            { emoji: '⚔️', label: 'ATK', value: String(base.atk ?? '?') },
+            { emoji: '🛡️', label: 'DEF', value: String(base.def ?? '?') },
+            { emoji: '💨', label: 'SPD', value: String(base.spd ?? '?') },
+          ]) + `\n` +
+          (moveNames ? `\n🎴 *Signature moves:* ${moveNames}` : "");
 
         // Try to send with sprite image; fall back to text-only if no image.
         const sprite = moraImagePath(mora);
@@ -4138,20 +4748,21 @@ if (command === "pbuy") {
 }
 if (command === "crystals") {
     const p = players[senderId];
-    if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using .start" });
+    if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
     proSystem.ensureProState(p);
     if (isOwner && (args[0] === "grant" || args[0] === "give")) {
         return proSystem.cmdGrantCrystals(ctx, chatId, senderId, msg, args.slice(1));
     }
     return sock.sendMessage(chatId, {
         text:
-            `━━━━━━━━━━━━━━━━━━\n` +
-            `💎 *LUCRYSTAL BALANCE*\n` +
-            `━━━━━━━━━━━━━━━━━━\n\n` +
-            `🔷 ${Number(p.pro?.crystals || 0)} LCR\n\n` +
-            `• *.exchange <lucons>* — trade 1000 Lucons → 1 LCR\n` +
-            `• *.pro-market* — browse LCR items\n` +
-            `• *.pro-info* — subscription tiers`,
+            ui.header('LUCRYSTAL', '💎') + '\n\n' +
+            ui.card('BALANCE', '🔷', [
+              { emoji: '🔷', label: 'LCR', value: Number(p.pro?.crystals || 0) },
+            ]) + '\n\n' +
+            ui.subheader('COMMANDS', '📋') + '\n' +
+            `• ${'.exchange <lucons>'} — trade 1000 Lucons → 1 LCR\n` +
+            `• ${'.pro-market'} — browse LCR items\n` +
+            `• ${'.pro-info'} — subscription tiers`,
     }, { quoted: msg });
 }
 if (command === "pro-grant") {
@@ -4308,66 +4919,6 @@ if (command === "moracreation-off") {
 }
 
 // ─────────────────────────────────────────────
-// CARDSMITH — Anime card production tracker (systems/cardsmith.js)
-// ─────────────────────────────────────────────
-{
-    const cardsmithHelpers = { getMentionedJids, getRepliedJid, toUserJidFromArg };
-    if (command === "cardsmith-help" || command === "card-help" || command === "cards-help") {
-        return cardsmithSystem.cmdHelp(ctx, chatId, senderId, msg);
-    }
-    if (command === "cardsmith-setgroup") {
-        return cardsmithSystem.cmdSetGroup(ctx, chatId, senderId, msg);
-    }
-    if (command === "cardsmith-removegroup") {
-        return cardsmithSystem.cmdRemoveGroup(ctx, chatId, senderId, msg);
-    }
-    if (command === "add-cardsmith" || command === "addcardsmith") {
-        return cardsmithSystem.cmdAddSmith(ctx, chatId, senderId, msg, args, cardsmithHelpers);
-    }
-    if (command === "remove-cardsmith" || command === "removecardsmith") {
-        return cardsmithSystem.cmdRemoveSmith(ctx, chatId, senderId, msg, args, cardsmithHelpers);
-    }
-    if (command === "cardsmiths" || command === "cardsmith-roster") {
-        return cardsmithSystem.cmdRoster(ctx, chatId, senderId, msg);
-    }
-    if (command === "cardsmith-on") {
-        return cardsmithSystem.cmdToggle(ctx, chatId, senderId, msg, true);
-    }
-    if (command === "cardsmith-off") {
-        return cardsmithSystem.cmdToggle(ctx, chatId, senderId, msg, false);
-    }
-    if (command === "card-add" || command === "cardadd") {
-        return cardsmithSystem.cmdAdd(ctx, chatId, senderId, msg, args);
-    }
-    if (command === "card-list" || command === "cardlist" || command === "cards") {
-        return cardsmithSystem.cmdList(ctx, chatId, senderId, msg, args);
-    }
-    if (command === "card-mine" || command === "cardmine" || command === "mycards") {
-        return cardsmithSystem.cmdMine(ctx, chatId, senderId, msg);
-    }
-    if (command === "card-view" || command === "cardview" || command === "card") {
-        return cardsmithSystem.cmdView(ctx, chatId, senderId, msg, args);
-    }
-    if (command === "card-stage" || command === "cardstage") {
-        return cardsmithSystem.cmdStage(ctx, chatId, senderId, msg, args);
-    }
-    if (command === "card-assign" || command === "cardassign") {
-        return cardsmithSystem.cmdAssign(ctx, chatId, senderId, msg, args, cardsmithHelpers);
-    }
-    if (command === "card-price" || command === "cardprice") {
-        return cardsmithSystem.cmdPrice(ctx, chatId, senderId, msg, args);
-    }
-    if (command === "card-note" || command === "cardnote") {
-        return cardsmithSystem.cmdNote(ctx, chatId, senderId, msg, args);
-    }
-    if (command === "card-delete" || command === "carddelete" || command === "card-rm") {
-        return cardsmithSystem.cmdDelete(ctx, chatId, senderId, msg, args);
-    }
-    if (command === "card-stats" || command === "cardstats") {
-        return cardsmithSystem.cmdStats(ctx, chatId, senderId, msg);
-    }
-}
-
 // ─────────────────────────────────────────────
 // GIVE ORB (Owner-only)
 // ─────────────────────────────────────────────
@@ -4414,7 +4965,7 @@ if (command === "give-orb" || command === "giveorb") {
 // ─────────────────────────────────────────────
 if (command === "transfer-lcr" || command === "transfer-reob") {
     const sender = players[senderId];
-    if (!sender) return sock.sendMessage(chatId, { text: "❌ Register first with *.start*." }, { quoted: msg });
+    if (!sender) return sock.sendMessage(chatId, { text: "❌ Register first with *.register*." }, { quoted: msg });
 
     const mentioned = getMentionedJids(msg);
     const replied = getRepliedJid(msg);
@@ -4502,9 +5053,25 @@ if (command === "summon-merchant") {
         return sock.sendMessage(chatId, { text: "📜 Usage: `.summon-merchant public` or `.summon-merchant private`" });
     }
 
-    // 🎲 ROTATION LOGIC: Pick 4 random items from the pool of 12
-    const shuffled = BLACK_MARKET_POOL.sort(() => 0.5 - Math.random());
-    const selectedItems = shuffled.slice(0, 4).map(item => ({ ...item, stock: Math.floor(Math.random() * 3) + 1 }));
+    // 🎲 ROTATION LOGIC: Pick 4 random items from the pool of 12.
+    // Resolve each entry against the live catalog so prices/descs are real
+    // and purchases flow through the normal item-ID inventory pipeline.
+    const itemsSystem = require("./systems/items");
+    const itemsDb = itemsSystem.loadItems();
+    const shuffled = [...BLACK_MARKET_POOL].sort(() => 0.5 - Math.random());
+    const selectedItems = [];
+    for (const entry of shuffled) {
+      const def = itemsDb[entry.id];
+      if (!def) continue; // never sell a dead/missing item
+      selectedItems.push({
+        id: def.id,
+        name: def.name,
+        desc: def.desc || def.description || def.effect || "Forbidden wares from beyond the Rift.",
+        price: Number(def.price || 0),
+        stock: Math.floor(Math.random() * 3) + 1,
+      });
+      if (selectedItems.length >= 4) break;
+    }
 
     global.blackMarket = {
         active: true,
@@ -4536,16 +5103,19 @@ if (command === "black-market") {
         });
     }
 
-    let marketText = `🕶️ *THE BLACK MARKET* 🕶️\n`;
-    marketText += `_"I trade in things the Capital claims do not exist."_\n${DIVIDER}\n`;
-    
+    let marketText =
+      `🕶️ *T H E   V O I D   M E R C H A N T* 🕶️\n` +
+      `_\"I trade in things the Capital claims do not exist.\"_\n` +
+      `${DIVIDER}\n\n`;
+
     global.blackMarket.items.forEach((item, index) => {
-        marketText += `**[${index + 1}] ${item.name}** — 💰 ${item.price} Lucons\n`;
-        marketText += `📜 _${item.desc}_\n`;
-        marketText += `📦 Stock: ${item.stock}\n${SMALL_DIVIDER}\n`;
+        marketText += `\`[${index + 1}]\`  💀 *${item.name}*\n`;
+        marketText += `    💰 ${item.price} Lucons   ·   📦 Stock: ${item.stock}\n`;
+        marketText += `    📜 _${item.desc}_\n`;
+        marketText += (index < global.blackMarket.items.length - 1) ? `${SMALL_DIVIDER}\n` : "";
     });
 
-    marketText += `\n🛒 Use \`.buy-bm <item name> <quantity>\` to purchase.`;
+    marketText += `\n${DIVIDER}\n🛒 Buy: \`.buy-bm <name> <qty>\``;
     
     return sock.sendMessage(chatId, { text: marketText });
 }
@@ -4588,20 +5158,40 @@ if (command === "buy-bm") {
     p.lucons -= totalCost;
     item.stock -= quantity;
     
-    // Add to inventory (assuming p.inventory is an object)
-    if (!p.inventory) p.inventory = {};
-    p.inventory[item.name] = (p.inventory[item.name] || 0) + quantity;
+    // Add to inventory via the normal item-ID pipeline (not by display name)
+    const itemsSystem = require("./systems/items");
+    const itemsDb = itemsSystem.loadItems();
+    const def = itemsDb[item.id] || null;
+    if (def) {
+      const added = itemsSystem.addItem(p, item.id, quantity);
+      if (!added?.ok) {
+        // rollback payment
+        p.lucons += totalCost;
+        item.stock += quantity;
+        return sock.sendMessage(chatId, { text: `❌ ${added?.reason || "Could not add to inventory."}` });
+      }
+    } else {
+      // fallback: store by ID anyway so the item still exists in the inventory map
+      if (!p.inventory) p.inventory = {};
+      p.inventory[item.id] = Number(p.inventory[item.id] || 0) + quantity;
+    }
 
     savePlayers(players);
 
-    return sock.sendMessage(chatId, { 
-        text: `💰 *PURCHASE SUCCESSFUL*\n\n"A pleasure doing business. May it serve you well in the wild."\n\nYou bought **${quantity}x ${item.name}** for ${totalCost} Lucons.` 
+    const icon = def ? itemsSystem.getRarityIcon(def.rarity) : "🕶️";
+    return sock.sendMessage(chatId, {
+        text:
+          `🕶️ *VOID PURCHASE*\n${DIVIDER}\n\n` +
+          `${icon} *${item.name}* ×${quantity}\n` +
+          `💰 Paid: *${totalCost} Lucons*\n` +
+          (def?.effect ? `⚡ Effect: ${def.effect}\n` : "") +
+          `\n💳 Lucons left: *${p.lucons}*`,
     });
 }
       // ================= TAMED =================
       if (command === "tamed") {
         const p = players[senderId];
-        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using .start" });
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
 
         const owned = Array.isArray(p.moraOwned) ? p.moraOwned : [];
         if (!owned.length) return sock.sendMessage(chatId, { text: "😔 You don't own any Mora yet." });
@@ -4631,14 +5221,30 @@ if (command === "buy-bm") {
             );
           });
 
+          const tamedLines = owned.map((m, i) => {
+            const lv = m.level ?? 1;
+            const need = xpSystem.xpToNextLevel(lv);
+            const xpNow = typeof m.xp === "number" ? m.xp : 0;
+            const inParty = partySet.has(i) ? ' ⚔️' : '';
+            const genBadge = Number(m.generation) === 2 ? ' 🧬' : '';
+            return ui.card(`${i + 1}. ${m.name}${inParty}${genBadge}`, '', [
+              { emoji: '🆔', label: 'ID', value: `ID_${m.moraId}` },
+              { emoji: '⚡', label: 'Type', value: m.type || '—' },
+              { emoji: '💠', label: 'Rarity', value: m.rarity || '—' },
+              { emoji: '📈', label: 'Level', value: `${lv} (${xpNow}/${need} XP)` },
+              { emoji: '❤️', label: 'HP', value: `${m.hp}/${m.maxHp}` },
+            ]);
+          });
+
+          // Send interactive list menu for Mora collection
+          // sendListMenu removed — plain text sent below
+
           return sock.sendMessage(chatId, {
             text:
-              `━━━━━━━━━━━━━━━━━━\n` +
-              `🐉 *YOUR TAMED MORA* _(legacy collection)_\n` +
-              `━━━━━━━━━━━━━━━━━━\n\n` +
-              lines.join(`\n\n──────────────────\n\n`) +
-              `\n\n━━━━━━━━━━━━━━━━━━\n` +
-              `_💎 Combat now uses SHARDS, not party Mora. This list is your historical collection._\n` +
+              ui.header('TAMED MORA', '🐉') + `\n\n` +
+              tamedLines.join(`\n\n`) +
+              `\n\n` + ui.DIV + `\n` +
+              `_💎 Combat now uses SHARDS, not party Mora._\n` +
               `• *.tamed 1* to inspect a Mora\n` +
               `• *.shards* — your shard vault (used in combat)\n` +
               `• *.awaken <name>* — merge with a shard`,
@@ -4770,7 +5376,7 @@ if (command === "buy-bm") {
       // Useful when a player has multiple of the same species.
       if (command === "tamed-search" || command === "tsearch") {
         const p = players[senderId];
-        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using .start" }, { quoted: msg });
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
 
         const owned = Array.isArray(p.moraOwned) ? p.moraOwned : [];
         if (!owned.length) return sock.sendMessage(chatId, { text: "😔 You don't own any Mora yet." }, { quoted: msg });
@@ -4826,7 +5432,7 @@ if (command === "buy-bm") {
       // ================= VIEW SANCTUARY (faction status roll-up) =================
       if (command === "view-sanctuary" || command === "viewsanctuary" || command === "sanctuary-view") {
         const p = players[senderId];
-        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.start*." }, { quoted: msg });
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.register*." }, { quoted: msg });
         if (!p.faction || !["harmony","purity","rift"].includes(p.faction)) {
           return sock.sendMessage(chatId, { text: "❌ You must belong to a faction to view its sanctuary." }, { quoted: msg });
         }
@@ -4886,33 +5492,37 @@ if (command === "buy-bm") {
 
         return sock.sendMessage(chatId, {
           text:
-            `━━━━━━━━━━━━━━━━━━\n` +
-            `${factionEmoji} *${factionName.toUpperCase()} — ${factionLabel.toUpperCase()}*\n` +
-            `━━━━━━━━━━━━━━━━━━\n\n` +
-            `👥 Members: *${memberCount}*\n` +
-            `🏅 Faction Points: *${fp[faction] || 0}*\n\n` +
-            `🛡️ *TREASURY*\n` +
-            `├ 💰 Vault: *${treasuryLucons.toLocaleString()} Lucons*\n` +
-            `├ 🐉 Deployed Mora: *${deployedCount}*\n` +
-            (corruptedMora ? `├ 🕷 Corrupted Among Them: *${corruptedMora}*\n` : "") +
-            `└ 💎 Crystal Stockpile: *${stockpile}*\n\n` +
-            `🧱 *WALL — Lv ${wallLevel}*\n` +
-            `├ ${wallBar}  ${wallHp}/${wallMax}\n` +
-            `└ _Use_ *.fortify-wall* _to reinforce._\n\n` +
-            `${honourIcon} — Honour: *${honour}*\n` +
+            ui.header(`${factionName.toUpperCase()} — ${factionLabel.toUpperCase()}`, factionEmoji) + '\n\n' +
+            ui.card('FACTION', '👥', [
+              { emoji: '👥', label: 'Members', value: memberCount },
+              { emoji: '🏅', label: 'Faction Points', value: fp[faction] || 0 },
+            ]) + '\n\n' +
+            ui.subheader('TREASURY', '🛡️') + '\n' +
+            ui.card('VAULT', '💰', [
+              { emoji: '💰', label: 'Lucons', value: treasuryLucons.toLocaleString() },
+              { emoji: '🐉', label: 'Deployed', value: `${deployedCount} Mora` },
+              ...(corruptedMora ? [{ emoji: '🕷', label: 'Corrupted', value: corruptedMora }] : []),
+              { emoji: '💎', label: 'Crystals', value: stockpile },
+            ]) + '\n\n' +
+            ui.subheader(`WALL — Lv ${wallLevel}`, '🧱') + '\n' +
+            `\`${wallBar}\`  *${wallHp}/${wallMax}*\n` +
+            `_${'.fortify-wall'} to reinforce_\n\n` +
+            ui.card('HONOUR', '⭐', [
+              { emoji: '⭐', label: 'Status', value: honour >= 150 ? 'REVERED' : honour >= 100 ? 'Honoured' : honour >= 50 ? 'Standing' : 'Disgraced' },
+              { emoji: '📊', label: 'Points', value: honour },
+            ]) + '\n' +
             `_${honourNote}_\n\n` +
-            `━━━━━━━━━━━━━━━━━━\n` +
-            `🏆 *TOP WALL DONORS*\n` +
-            (topLines.length ? topLines.join("\n") : "_(none yet — be the first!)_") +
-            `\n━━━━━━━━━━━━━━━━━━\n` +
-            `📖 *.fortify-wall <crystal|amount>*  •  *.upgrade-wall*`,
+            ui.subheader('TOP DONORS', '🏆') + '\n' +
+            (topLines.length ? topLines.join('\n') : '_(none yet — be the first!)_') + '\n\n' +
+            ui.divider() + '\n' +
+            `_${'.fortify-wall <crystal|amount>'}  •  ${'.upgrade-wall'}_`,
         }, { quoted: msg });
       }
 
       // ================= FORTIFY WALL =================
       if (command === "fortify-wall" || command === "fortifywall") {
         const p = players[senderId];
-        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.start*." }, { quoted: msg });
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.register*." }, { quoted: msg });
         if (!p.faction || !["harmony","purity","rift"].includes(p.faction)) {
           return sock.sendMessage(chatId, { text: "❌ Join a faction first." }, { quoted: msg });
         }
@@ -5028,7 +5638,7 @@ if (command === "buy-bm") {
       // same exchange rate as .exchange (1 LCR = 1000 Lucons of treasury value).
       if (command === "donate") {
         const p = players[senderId];
-        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.start*." }, { quoted: msg });
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.register*." }, { quoted: msg });
         if (!p.faction || !["harmony","purity","rift"].includes(p.faction)) {
           return sock.sendMessage(chatId, { text: "❌ Join a faction first." }, { quoted: msg });
         }
@@ -5103,7 +5713,7 @@ if (command === "buy-bm") {
       // ================= UPGRADE WALL =================
       if (command === "upgrade-wall" || command === "upgradewall") {
         const p = players[senderId];
-        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.start*." }, { quoted: msg });
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.register*." }, { quoted: msg });
         if (!p.faction || !["harmony","purity","rift"].includes(p.faction)) {
           return sock.sendMessage(chatId, { text: "❌ Join a faction first." }, { quoted: msg });
         }
@@ -5204,7 +5814,7 @@ if (command === "buy-bm") {
       // ================= CLAIM RESTORATION GIFT (Patch 0.1.1) =================
       if (command === "claim-gift" || command === "claimgift") {
         const p = players[senderId];
-        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.start*." }, { quoted: msg });
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.register*." }, { quoted: msg });
         if (p.giftClaimedAt) {
           const when = new Date(p.giftClaimedAt).toISOString().slice(0, 10);
           return sock.sendMessage(chatId, { text: `✨ You already received the Rift Restoration on *${when}*. The gift was a one-time gesture.` }, { quoted: msg });
@@ -5274,29 +5884,29 @@ if (command === "buy-bm") {
 
         return sock.sendMessage(chatId, {
           text:
-            `🌀 *━━━━━━━━━━━━━━━━━━━━━━━*\n` +
-            `   *RIFT RESTORATION* — Patch 0.1.1\n` +
-            `🌀 *━━━━━━━━━━━━━━━━━━━━━━━*\n\n` +
+            ui.header('RIFT RESTORATION', '🌀') + '\n' +
+            `_Patch 0.1.1 — A gift from the Rift._\n\n` +
             `_When the Rift convulsed, the data-storm tore through every Stronghold._\n` +
             `_Vaults blinked. Records faltered. For one terrible moment, even the names of bonded Mora flickered out of the world._\n\n` +
             `_But you stayed. You held the line while we patched the tear._\n\n` +
-            `*Kael bows — for once, sincerely.*\n\n` +
             `🎭 *Kael:* "You weathered the storm, little Lumorian. The Rift owes you a debt. Take what is yours."\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━\n` +
-            `🎁 *RESTORATION REWARDS*\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `🐉 *NEW MORA GRANTED:*\n` +
-            grantedNames.join("\n") + `\n\n` +
-            `💰 *+7,000 Lucons* — pulled fresh from the Rift Treasury\n` +
-            `🌀 *+1 Rift Energy Orb (REOB)* — a forge-spark for new creation\n` +
-            `🏆 *Title Unlocked:* 🌀 *Survivor of the Rift Tear*\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━\n` +
-            `⚡ *RIFT ENERGY SURGE — ACTIVE*\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `_Raw Primordial Energy floods your veins. The Rift hums in time with your heartbeat._\n` +
-            `_For the next *18 hours*, hunting costs you *no energy*. Travel, hunt, and chase Mora until the surge fades._\n\n` +
-            `⏳ Surge ends: *${new Date(p.riftEnergyUntil).toLocaleString()}*\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            ui.subheader('RESTORATION REWARDS', '🎁') + '\n\n' +
+            ui.card('NEW MORA', '🐉', grantedNames.map((n, i) => {
+              const parts = n.split(' — ');
+              return { emoji: i === 0 ? '🌟' : i < 4 ? '💎' : '✨', label: parts[0].replace(/[🌟💎✨*]/g, '').trim(), value: parts[1] || '' };
+            })) + '\n\n' +
+            ui.card('BONUS', '💰', [
+              { emoji: '💰', label: 'Lucons', value: '+7,000 — Rift Treasury' },
+              { emoji: '🌀', label: 'REOB', value: '+1 — Forge-spark' },
+              { emoji: '🏆', label: 'Title', value: 'Survivor of the Rift Tear' },
+            ]) + '\n\n' +
+            ui.subheader('RIFT ENERGY SURGE', '⚡') + '\n\n' +
+            `_Raw Primordial Energy floods your veins._\n` +
+            `_For the next *18 hours*, hunting costs *no energy*._\n\n` +
+            ui.card('SURGE ACTIVE', '⏳', [
+              { emoji: '⏰', label: 'Ends', value: new Date(p.riftEnergyUntil).toLocaleString() },
+            ]) + '\n\n' +
+            ui.divider() + '\n' +
             `_Thank you for surviving with us._\n` +
             `_— The Lumora Team_`,
         }, { quoted: msg });
@@ -5340,7 +5950,7 @@ if (command === "buy-bm") {
       // ================= SUBMIT MORA =================
       if (command === "submit-mora") {
         const p = players[senderId];
-        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using .start" }, { quoted: msg });
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
         if (!p.faction) return sock.sendMessage(chatId, { text: "❌ Join a faction first." }, { quoted: msg });
 
         const queryRaw = args.join(" ").trim();
@@ -5486,11 +6096,12 @@ const maxHp        = p.playerMaxHp ?? 100;
 if (masked) {
   return sock.sendMessage(chatId, {
     text:
-      `🎭 *L U M O R A  •  P R O F I L E*\n\n` +
-      `👤 *${username}*\n` +
-      `🆔 ID: ${normalizeNumberFromJid(targetId)}\n\n` +
-      `🕶 Profile Masked: *Yes*\n` +
-      `⚔ Faction: *${factionLine}*`,
+      ui.header(username, '⚔️') + `\n\n` +
+      ui.card('STATUS', '📊', [
+        { emoji: '🕶️', label: 'Masked', value: 'Yes' },
+        { emoji: '⚔️', label: 'Faction', value: factionLine },
+        { emoji: '🆔', label: 'ID', value: normalizeNumberFromJid(targetId) },
+      ]),
   });
 }
 // Compute dynamic fields for profile
@@ -5527,69 +6138,38 @@ if (p.equippedAchievement && ACHIEVEMENTS[p.equippedAchievement]) {
   equippedAchLine = `🎖️ Equipped: ${ach.icon} *${ach.title}* (+${auraBonus} Aura)\n`;
 }
 
-const profileCaption =
-    `⚔️ *L U M O R A  •  P R O F I L E* ⚔️\n\n` +
-
-    `👤 *${username}*\n` +
-    (p.title && String(p.title).trim() ? `🏷️ Title: *${p.title}*\n` : "") +
-    achTitleLine +
-    `🎖️ Rank: *${playerRank}*\n` +
-    genderLine +
-    `🆔 ID: ${normalizeNumberFromJid(targetId)}\n\n` +
-
-    `📊 *V I T A L S*\n` +
-    `├ ❤️ Player HP: *${currentHp}/${p.playerMaxHp ?? 100}*\n` +
-    `└ ⚡ Hunt Energy: *${currentEnergy}/${maxEnergy}*\n\n` +
-
-    `🔰 *S T A T S*\n` +
-    `├ 📊 Level: *${p.level ?? 1}* (${p.xp ?? 0} XP)\n` +
-    `├ 💠 Resonance: *${p.resonance || 0}*\n` +
-    `├ 🧠 Intelligence: *${p.intelligence ?? 0}*\n` +
-    `├ ✨ Aura: *${displayAura}*${p.aura !== displayAura ? ` (base: ${p.aura ?? 0})` : ""}\n` +
-    `└ 🪢 Tame Skill: *${p.tameSkill ?? 0}*\n\n` +
-    (equippedAchLine ? `${equippedAchLine}\n` : "") +
-
-    `🚩 *F A C T I O N*\n` +
-    `├ ⚔ Faction: *${factionLine}*\n` +
-    `├ 💠 Resonance: *${p.resonance ?? 0}*\n` +
-    (p.faction === "rift" ? `├ 🔮 Rift Shards: *${p.riftShards ?? 0}*\n` : "") +
-    (p.riftFury && Number(p.riftFury.battles) > 0 ? `├ 🔥 Rift Fury: *${p.riftFury.battles} battles left*\n` : "") +
-    `└ 🏷 Faction Points: *${factionLine !== "None" ? "check .facpoints" : "—"}*\n\n` +
-
-    `💰 *W E A L T H*\n` +
-    `├ 💰 Lucons: *${p.lucons ?? 0}*\n` +
-    `└ 💠 Lucrystals: *${Number(p.pro?.crystals || 0)} LCR*\n\n` +
-
-    `📍 *L O C A T I O N*\n` +
-    `└ 📍 Current: *${locationLine}*\n\n` +
-
-    companionLine +
-    streakLine +
-    `🏆 Achievements: *${achCount}/${totalAch}*\n\n` +
-
-    `🌀 *M E R G E  S T A T E*\n` +
-    (() => {
-      const merge = p.currentMerge || null;
-      const shardCount = p.shards && typeof p.shards === "object"
-        ? Object.values(p.shards).reduce((a, b) => a + Number(b || 0), 0)
-        : 0;
-      if (merge) {
+const xpNeeded = xpSystem.playerXpToNextLevel(p.level || 1);
+      const xpCurrent = p.xp ?? 0;
+      const mergeText = (() => {
+        const merge = p.currentMerge || null;
+        if (!merge) return "Base form";
         const tierTag = merge.tier === "full" ? "🔥 FULL" : merge.tier === "partial" ? "✨ PARTIAL" : "—";
         const corrTag = merge.corrupted ? "  ☠ CORRUPTED" : "";
-        return (
-          `├ 🌟 Active: *[${merge.name}]* (${tierTag})${corrTag}\n` +
-          `└ 💎 Shards in vault: *${shardCount}* (.shards)`
-        );
-      }
-      return (
-        `├ 🩶 Active: *Base form*\n` +
-        `└ 💎 Shards in vault: *${shardCount}* (.shards)`
-      );
-    })() + `\n\n` +
-    `🐉 *M O R A* _(legacy collection)_\n` +
-    `├ 🐾 Tamed: *${moraCount}*\n` +
-    `└ ⭐ Latest: *${main?.name || "None"}*` +
-    (main ? ` (${main.type || "—"}) • Lv *${main.level ?? 1}*` : "");
+        return `[${merge.name}] (${tierTag})${corrTag}`;
+      })();
+
+      const profileCaption =
+        ui.header(username, '⚔️') + `\n\n` +
+        (p.title && String(p.title).trim() ? `🏷️ *${p.title}*\n` : "") +
+        ui.card('STATUS', '📊', [
+          { emoji: '🏅', label: 'Rank', value: playerRank },
+          { emoji: '📊', label: 'Level', value: `${p.level ?? 1}` },
+          { emoji: '⚔️', label: 'Faction', value: factionLine },
+          { emoji: '🆔', label: 'ID', value: normalizeNumberFromJid(targetId) },
+        ]) + `\n\n` +
+        ui.card('ECONOMY', '💰', [
+          { emoji: '💰', label: 'Lucons', value: String(p.lucons ?? 0) },
+          { emoji: '🌀', label: 'Merge', value: mergeText },
+        ]) + `\n\n` +
+        `${ui.statBar(xpCurrent, xpNeeded)}  _XP to next: ${xpNeeded === Infinity ? 'MAX' : (xpNeeded - xpCurrent)}_\n` +
+        (genderLine || "") +
+        (companionLine ? companionLine : "") +
+        (streakLine ? streakLine : "") +
+        (achTitleLine ? achTitleLine : "") +
+        (equippedAchLine ? equippedAchLine : "") +
+        `🔮 Aura: *${displayAura}*\n\n` +
+        ui.DIV + `\n` +
+        `_Dive deeper: *.inv*  •  *.gear*  •  *.stats*  •  *.shards*  •  *.help*_`;
         // Try to send visual profile card
         try {
           const profileData = {
@@ -5620,7 +6200,18 @@ const profileCaption =
           }
         }
 
-        return sock.sendMessage(chatId, { text: profileCaption }, { quoted: msg });
+        // Profile buttons below (sendListMenu removed — broken on PC)
+        buttonsSystem.mapButtons({
+          "🎒 Inventory": `${PREFIX}inv`,
+          "🥋 Styles": `${PREFIX}styles`,
+          "💎 Shards": `${PREFIX}shards`,
+          "📊 Stats": `${PREFIX}stats`,
+          "🎮 Menu": `${PREFIX}menu`,
+        });
+        return sendButtons(sock, chatId, profileCaption,
+          ["🎒 Inventory", "🥋 Styles", "💎 Shards", "📊 Stats", "🎮 Menu"],
+          { footer: `Tap to jump — or type ${PREFIX}help for everything`, quoted: msg }
+        );
       }
 
       // ============================
@@ -5674,11 +6265,11 @@ if (command === "reset-stats") {
     return sock.sendMessage(chatId, { text: "❌ Please tag the user you wish to reset." });
   }
 
-  // Force reset all activity locks
-  players[target].inBattle = false;
-  players[target].activeHunt = false;
-  players[target].isStuck = false; // If you have a stuck flag
-  
+  // M2.6: force-release ALL live battles (wildbattle + PvP, every chat).
+  // The old p.inBattle / p.activeHunt / p.isStuck flags were never set by
+  // any engine — the real locks live in the battle maps now.
+  const released = combatLockSystem.forceRelease(target);
+
   // Refill energy for launch support
   const resetMaxE = players[target].maxHuntEnergy || 100;
   players[target].huntEnergy = resetMaxE;
@@ -5693,8 +6284,11 @@ if (command === "reset-stats") {
 
   savePlayers(players);
 
+  const battleLine = (released.wild || released.pvp)
+    ? `Released *${released.wild} wild* + *${released.pvp} PvP* battle${(released.wild + released.pvp) === 1 ? "" : "s"}.\n`
+    : `No live battles found.\n`;
   return sock.sendMessage(chatId, { 
-    text: `⚙️ *SYSTEM OVERRIDE*\n\nAll activity locks for @${target.split('@')[0]} have been purged. Energy restored to maximum.`,
+    text: `⚙️ *SYSTEM OVERRIDE*\n\n${battleLine}Energy restored to maximum for @${target.split('@')[0]}.`,
     mentions: [target]
   });
 }
@@ -5770,10 +6364,15 @@ if (command === "reset-stats") {
     return denyHuntGroup(sock, chatId, msg);
   }
 
-  // 🛑 GLOBAL LOCK: Stop hunting while in a battle
-  const p = players[senderId];
-  if (p?.inBattle) {
-    return sock.sendMessage(chatId, { text: "❌ You cannot hunt while your soul is bound to a battle! Finish your duel first." });
+  // 🛑 GLOBAL LOCK: Stop hunting while in a battle (M2.6 — was reading the
+  // never-set p.inBattle flag; now consults the live battle maps directly)
+  const battleKind = combatLockSystem.isInCombat(chatId, senderId);
+  if (battleKind) {
+    return sock.sendMessage(chatId, {
+      text: battleKind === "pvp"
+        ? "❌ You cannot hunt while locked in a PvP duel! Finish your battle first."
+        : "❌ You cannot hunt while a wild Mora has you pinned! Finish or flee first.",
+    });
   }
 
   if (command === "map")     return huntingSystem.cmdMap(ctx, chatId, senderId, msg);
@@ -5816,7 +6415,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
       // ============================
       // GUIDE — full walkthrough for new players
       // ============================
-      if (command === "guide" || command === "help-game" || command === "tutorial") {
+      if (command === "guide" || command === "tutorial") {
         return sock.sendMessage(chatId, {
           text:
             `hey hey welcome........glad you're here bro 🌌\n\n` +
@@ -5825,7 +6424,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
             `*STEP 1 — SET YOURSELF UP*\n` +
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `first things first........type *.start* to create your profile\n\n` +
+            `first things first........type *.begin* then *.register* to create your profile\n\n` +
             `then give yourself a name:\n` +
             `*.set-username YourName*\n\n` +
             `set your profile icon (pick a number 1-20):\n` +
@@ -5856,7 +6455,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
             `two merge tiers:\n` +
             `  🔥 *FULL* — you ARE the mora, full stats\n` +
             `  ✨ *PARTIAL* — your stats, their moveset\n\n` +
-            `also........you can only hold *1* shard of each mora type by default........buy storage to hold more (coming soon)\n\n` +
+            `also........you can only hold *1* shard of each mora type by default........*.storage <Mora> buy* to hold more (Lucons sink, up to 10/type)\n\n` +
 
             `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
             `*STEP 4 — GO HUNTING*\n` +
@@ -5940,7 +6539,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
             `*.awaken <name>* — merge with a shard\n` +
             `*.shed* — return to base form\n` +
             `*.attack* — see your full moveset (base + styles + merge)\n` +
-            `*.storage [Mora]* — check shard caps (upgrades coming soon)\n` +
+            `*.storage [Mora]* — check shard caps · *.storage <Mora> buy* to upgrade (Lucons)\n` +
             `*.stats* / *.stats invest <cat> <n>* — distribute level-up points\n` +
             `*.scrolls* / *.open <name>* — discover and read quest scrolls\n` +
             `*.quests* / *.quest accept <id>* / *.styles* — unlock movesets\n` +
@@ -6012,7 +6611,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
       // GENDER SYSTEM
       // ============================
       if (command === "gender") {
-        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" }, { quoted: msg });
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
         const genderInput = args.join(" ").trim();
         if (!genderInput) {
           const current = players[senderId].gender || "Not set";
@@ -6034,7 +6633,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
       // COMPANION SYSTEM
       // ============================
       if (command === "companion") {
-        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" }, { quoted: msg });
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
         const p = players[senderId];
         if (!args.length) {
           if (p.companionId == null) {
@@ -6078,7 +6677,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
       // MUTATION SYSTEM
       // ============================
       if (command === "mutate") {
-        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" }, { quoted: msg });
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
         const p = players[senderId];
         const query = args.join(" ").trim().toLowerCase();
         if (!query) {
@@ -6176,7 +6775,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
       // ACHIEVEMENTS
       // ============================
       if (command === "achievements" || command === "titles") {
-        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" }, { quoted: msg });
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
         const p = players[senderId];
         checkAchievements(p);
         savePlayers(players);
@@ -6201,8 +6800,8 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
       // ============================
       // EQUIP ACHIEVEMENT
       // ============================
-      if (command === "equip" || command === "equip-achievement") {
-        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" }, { quoted: msg });
+      if (command === "equip-achievement") {
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
         const p = players[senderId];
         const achievementKey = (args[0] || "").toLowerCase();
 
@@ -6235,8 +6834,8 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
       // ============================
       // UNEQUIP ACHIEVEMENT
       // ============================
-      if (command === "unequip" || command === "unequip-achievement") {
-        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" }, { quoted: msg });
+      if (command === "unequip-achievement") {
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
         const p = players[senderId];
 
         if (!p.equippedAchievement) {
@@ -6256,7 +6855,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
       // BUG REPORT SYSTEM
       // ============================
       if (command === "bug-report") {
-        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" }, { quoted: msg });
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
         const desc = args.join(" ").trim();
         if (!desc) return sock.sendMessage(chatId, { text: `Use: ${PREFIX}bug-report <describe the bug>` }, { quoted: msg });
         const bugs = loadBugs();
@@ -6321,8 +6920,9 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
         warns[tid].push({ reason, date: new Date().toISOString().slice(0, 10), by: senderId });
         saveWarns(warns);
         const count = warns[tid].length;
+        const warnName = players[tid]?.username || '???';
         return sock.sendMessage(chatId, {
-          text: `⚠️ @${tid.split("@")[0]} has been warned!\n\n📝 Reason: _${reason}_\n⚠️ Total warnings: *${count}*`,
+          text: `⚠️ @${tid.split("@")[0]} *${warnName}* has been warned!\n\n📝 Reason: _${reason}_\n⚠️ Total warnings: *${count}*`,
           mentions: [tid],
         }, { quoted: msg });
       }
@@ -6333,12 +6933,13 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
         const targetId = normJid(mentioned[0] || replied || senderId);
         const warns = loadWarns();
         const userWarns = warns[targetId] || [];
+        const warnsName = players[targetId]?.username || '???';
         if (!userWarns.length) {
-          return sock.sendMessage(chatId, { text: `✅ @${targetId.split("@")[0]} has no warnings.`, mentions: [targetId] }, { quoted: msg });
+          return sock.sendMessage(chatId, { text: `✅ @${targetId.split("@")[0]} *${warnsName}* has no warnings.`, mentions: [targetId] }, { quoted: msg });
         }
         const list = userWarns.map((w, i) => `  *${i + 1}.* ${w.reason} _(${w.date})_`).join("\n");
         return sock.sendMessage(chatId, {
-          text: `⚠️ *WARNINGS* for @${targetId.split("@")[0]}\n\n${list}\n\nTotal: *${userWarns.length}*`,
+          text: `⚠️ *WARNINGS* for @${targetId.split("@")[0]} *${warnsName}*\n\n${list}\n\nTotal: *${userWarns.length}*`,
           mentions: [targetId],
         }, { quoted: msg });
       }
@@ -6374,9 +6975,10 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
         const target = mentioned[0] || replied;
         if (!target) return sock.sendMessage(chatId, { text: `Use: ${PREFIX}promote @user` }, { quoted: msg });
         try {
+          const promoName = players[target]?.username || '???';
           await sock.groupParticipantsUpdate(chatId, [target], "promote");
           return sock.sendMessage(chatId, {
-            text: `👑 @${target.split("@")[0]} has been promoted to admin!`,
+            text: `👑 @${target.split("@")[0]} *${promoName}* has been promoted to admin!`,
             mentions: [target],
           }, { quoted: msg });
         } catch (e) {
@@ -6392,9 +6994,10 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
         const target = mentioned[0] || replied;
         if (!target) return sock.sendMessage(chatId, { text: `Use: ${PREFIX}demote @user` }, { quoted: msg });
         try {
+          const demoName = players[target]?.username || '???';
           await sock.groupParticipantsUpdate(chatId, [target], "demote");
           return sock.sendMessage(chatId, {
-            text: `⬇️ @${target.split("@")[0]} has been demoted from admin.`,
+            text: `⬇️ @${target.split("@")[0]} *${demoName}* has been demoted from admin.`,
             mentions: [target],
           }, { quoted: msg });
         } catch (e) {
@@ -6555,19 +7158,23 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
         if (!sudos.length) return sock.sendMessage(chatId, { text: "📋 No sudos set." }, { quoted: msg });
         let throneSection = "";
         const regularSudos = [];
+        const mentions = [];
         for (const num of sudos) {
           const cleanNum = String(num).replace(/\D/g, "");
           const jid = `${cleanNum}@s.whatsapp.net`;
-          const name = players[jid]?.username || cleanNum;
+          const displayName = players[jid]?.username || players[jid]?.name || null;
+          const tag = displayName ? `@${displayName}` : `@${cleanNum}`;
+          mentions.push(jid);
           if (throneNum && cleanNum === throneNum) {
-            throneSection = `⚔️👑 *RIGHT-HAND MAN*\n  ${name} (${cleanNum})\n\n`;
+            throneSection = `⚔️👑 *RIGHT-HAND MAN*\n  ${tag}\n\n`;
           } else {
-            regularSudos.push(`  *${regularSudos.length + 1}.* ${name} (${cleanNum})`);
+            regularSudos.push(`  *${regularSudos.length + 1}.* ${tag}`);
           }
         }
         const sudoSection = regularSudos.length ? `🛡️ *SUDOS*\n${regularSudos.join("\n")}` : "";
         return sock.sendMessage(chatId, {
           text: `👑 *HIERARCHY*\n\n${throneSection}${sudoSection}`,
+          mentions,
         }, { quoted: msg });
       }
 
@@ -6721,6 +7328,9 @@ if (command === "lb") {
     // different rankings.
     const sortedTop = lb.getGlobalLeaderboardData(players);
     const text = lb.getGlobalLeaderboard(players);
+
+    // Send interactive leaderboard menu
+    await lb.sendLeaderboardMenu(sock, chatId, msg);
 
     try {
       const topPlayers = sortedTop
@@ -7009,458 +7619,108 @@ if (command === "f-lb") {
         );
       }
 
-      // HELP — wrapped so a missing help.jpg / sendMessage failure can't
-      // bubble to the catch and look like an unknown command.
-if (command === "help") { try {
-    const p = players[senderId];
-    const hasPro = proSystem.hasActivePro(p);
-    const pFaction = p?.faction ? p.faction.charAt(0).toUpperCase() + p.faction.slice(1) : "None";
-    const fIcon = p?.faction === "harmony" ? "🌿" : p?.faction === "purity" ? "⚔" : p?.faction === "rift" ? "🔶" : "⚡";
 
-    const greeting = hasPro
-        ? `👑 *Welcome back, Bearer of the Mark.* The Rifts recognize your rank.`
-        : `🌌 *Greetings, traveler.* The Lumorian crystals hum at your presence.`;
+      // ── HELP SYSTEM ────────────────────────────────────────────
+      // .help        → main menu (Game Menu + Bot Menu)
+      // .help-game   → game category list / category detail
+      // .help-bot    → bot category list / category detail
+      if (command === "help" || command === "help-game" || command === "help-bot") { try {
+        const p = players[senderId];
+        const sub = String(args[0] || "").toLowerCase().trim();
 
-    const divider = `┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈`;
+        // ── .help — Main menu ──
+        if (command === "help") {
+          const text = helpUI.buildMainMenuText(p);
+          buttonsSystem.mapButtons({
+            "🎮 Game Menu": `${PREFIX}help-game`,
+            "🛡️ Bot Menu": `${PREFIX}help-bot`,
+          });
+          return sendButtons(sock, chatId, text,
+            ["🎮 Game Menu", "🛡️ Bot Menu"],
+            { footer: "Tap a section or type .help-game / .help-bot", quoted: msg }
+          );
+        }
 
-    // ── Always-shown Getting Started block ───────────────────
-    const gettingStarted =
-      `${divider}\n` +
-      `  🚀  *GETTING STARTED*\n` +
-      `${divider}\n` +
-      `┃ ${PREFIX}lumora ─ enter the world\n` +
-      `┃ ${PREFIX}start ─ begin your journey\n` +
-      `┃ ${PREFIX}choose ─ pick your starter Mora\n` +
-      `┃ ${PREFIX}profile ─ view stats & rank\n` +
-      `┃ ${PREFIX}set-username ─ set display name\n` +
-      `┃ ${PREFIX}set-icon ─ set profile icon\n` +
-      `┃ ${PREFIX}gender <m/f/other> ─ set gender\n` +
-      `┃ ${PREFIX}mora ─ browse all Mora data\n` +
-      `┃ ${PREFIX}tamed ─ your captured Mora\n` +
-      `┃ ${PREFIX}claim-gift ─ 🎁 Rift Tear survivor's gift (one-time)\n`;
+        // ── .help-game — Game menu / category detail ──
+        if (command === "help-game") {
+          const validGameCats = require("./systems/commandRegistry").getGameCategories();
+          const catIds = validGameCats.map(c => c.id);
+          if (sub && catIds.includes(sub)) {
+            const text = helpUI.buildGameCategoryText(sub);
+            if (!text) return sock.sendMessage(chatId, { text: "No commands in that category." }, { quoted: msg });
+            return sock.sendMessage(chatId, { text }, { quoted: msg });
+          }
+          // Game category menu — show as text with clickable category names
+          const text = helpUI.buildGameMenuText();
+          // Map the top 8 categories to buttons for quick access
+          const topCats = validGameCats.slice(0, 8);
+          const btnLabels = topCats.map(c => `${c.emoji} ${c.name}`);
+          const btnMap = {};
+          for (const c of topCats) btnMap[`${c.emoji} ${c.name}`] = `${PREFIX}help-game ${c.id}`;
+          btnMap["🔙 Back"] = `${PREFIX}help`;
+          buttonsSystem.mapButtons(btnMap);
+          return sendButtons(sock, chatId, text + "\n\n💠 *Quick categories:*", btnLabels,
+            { footer: "Or type .help-game <name>", quoted: msg }
+          );
+        }
 
-    // ── Section content map ─────────────────────────────────
-    const SECTIONS = {
-      awakening:
-        `${divider}\n  🌅  *AWAKENING — THE REWORK*\n${divider}\n` +
-        `┃ ${PREFIX}start ─ awaken (faction → starter mora → starter style → starter shard)\n` +
-        `┃ ${PREFIX}choose-style 1-3 ─ pick starter fighting style\n` +
-        `┃ ${PREFIX}choose-shard 1-3 ─ pick starter mergeable shard\n\n` +
-        `${divider}\n  💎  *SHARDS & MERGE*\n${divider}\n` +
-        `┃ ${PREFIX}shard / ${PREFIX}shards ─ your vault\n` +
-        `┃ ${PREFIX}awaken <name> ─ shatter shard, become the Mora\n` +
-        `┃ ${PREFIX}shed ─ revert to base form\n` +
-        `┃ ${PREFIX}trade @user A B ─ swap shards (10-min TTL)\n` +
-        `┃ ${PREFIX}purify <shard> ─ cleanse corrupted shard (100 Lucons)\n` +
-        `┃ ${PREFIX}destroy <shard> ─ shatter corrupted shard (+Resonance)\n` +
-        `┃ ${PREFIX}storage ─ inspect per-Mora vault caps\n\n` +
-        `${divider}\n  🥋  *STYLES, QUESTS, SCROLLS*  _(10 styles total)_\n${divider}\n` +
-        `┃ ${PREFIX}styles ─ all 10 fighting styles\n` +
-        `┃ ${PREFIX}quests / ${PREFIX}quest accept <id> ─ active quests\n` +
-        `┃ ${PREFIX}scrolls ─ your scroll inventory\n` +
-        `┃ ${PREFIX}open <name> ─ open a scroll (DMs quest details)\n` +
-        `┃ ${PREFIX}whisper <npc> ─ hidden command (revealed by scrolls)\n\n` +
-        `_5 of the styles_: Wind Step, Tide Veil, Bone Crush, Pyrolexis, Anastasis.\n\n` +
-        `${divider}\n  📊  *STATS*\n${divider}\n` +
-        `┃ ${PREFIX}stats ─ view your spread + unspent points\n` +
-        `┃ ${PREFIX}invest <melee|mora|vit|speed> <n> ─ distribute points\n` +
-        `┃ _3 points per level. Cap level 100._\n\n` +
-        `${divider}\n  ⚔️  *COMBAT*\n${divider}\n` +
-        `┃ ${PREFIX}attack [n] ─ list / fire a move (wild + PvP)\n` +
-        `┃ ${PREFIX}charge ─ regen combat energy (spend turn)\n` +
-        `┃ ${PREFIX}battle @user [stake] ─ PvP duel\n` +
-        `┃ ${PREFIX}accept / ${PREFIX}reject / ${PREFIX}forfeit ─ PvP responses\n\n` +
-        `${divider}\n  🌐  *AUTO-RAIDS*\n${divider}\n` +
-        `┃ ${PREFIX}respond <victim> ─ name a faction as Kael's target\n` +
-        `┃ ${PREFIX}engage ─ swing at Kael (victim-faction only)\n` +
-        `┃ ${PREFIX}raid-status ─ inspect current raid\n\n` +
-        `${divider}\n  🎁  *POST-WIPE GIFT*\n${divider}\n` +
-        `┃ ${PREFIX}gift ─ check apology gift status (claimable 48d after launch)\n` +
-        `┃ ${PREFIX}gift claim <ShardName> ─ claim 500 Lucons + 1 rare/epic shard\n`,
+        // ── .help-bot — Bot menu / category detail ──
+        if (command === "help-bot") {
+          const validBotCats = require("./systems/commandRegistry").getBotCategories();
+          const catIds = validBotCats.map(c => c.id);
+          if (sub && catIds.includes(sub)) {
+            const text = helpUI.buildBotCategoryText(sub);
+            if (!text) return sock.sendMessage(chatId, { text: "No commands in that category." }, { quoted: msg });
+            return sock.sendMessage(chatId, { text }, { quoted: msg });
+          }
+          // Bot category menu
+          const text = helpUI.buildBotMenuText();
+          const btnLabels = validBotCats.map(c => `${c.emoji} ${c.name}`);
+          const btnMap = {};
+          for (const c of validBotCats) btnMap[`${c.emoji} ${c.name}`] = `${PREFIX}help-bot ${c.id}`;
+          btnMap["🔙 Back"] = `${PREFIX}help`;
+          buttonsSystem.mapButtons(btnMap);
+          return sendButtons(sock, chatId, text + "\n\n💠 *Quick categories:*", btnLabels,
+            { footer: "Or type .help-bot <name>", quoted: msg }
+          );
+        }
+      } catch (helpErr) {
+        console.log("[help-handler]", helpErr?.message || helpErr);
+        try {
+          await sock.sendMessage(chatId, {
+            text: `Help temporarily unavailable.
 
-      companion:
-        `${divider}\n  💞  *COMPANION & MUTATION*\n${divider}\n` +
-        `┃ ${PREFIX}companion <mora> ─ set companion\n` +
-        `┃ ${PREFIX}companion ─ view companion & bond\n` +
-        `┃ ${PREFIX}mutate <mora> ─ trigger mutation\n` +
-        `┃ ${PREFIX}achievements ─ view titles & achievements\n\n` +
-        `${divider}\n  🧪  *LUMORA LABS (Int 15+)*\n${divider}\n` +
-        `┃ ${PREFIX}create-mora ─ forge a new Mora (costs 1 Creation Powder)\n` +
-        `┃ _Submit a name, type, 4 starter moves + 1 special._\n` +
-        `┃ _Architect must approve before it enters the registry._\n`,
+Try: *.help-game* or *.help-bot*`,
+          }, { quoted: msg });
+        } catch {}
+        return;
+      } }
+      if (command === "factioninfo" || command === "faction" && !args[0]) {
+        const p = players[senderId];
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
 
-      gear:
-        `${divider}\n  🎒  *INVENTORY & GEAR*\n${divider}\n` +
-        `┃ ${PREFIX}inventory ─ your items\n` +
-        `┃ ${PREFIX}item <name> ─ item details\n` +
-        `┃ ${PREFIX}consume <name> [amt|target] ─ use consumable\n` +
-        `┃ ${PREFIX}use cleanse shard <slot|name> ─ cleanse party mora\n` +
-        `┃ ${PREFIX}tamed-search <name> ─ find owned mora by name\n` +
-        `┃ ${PREFIX}gear ─ equipped loadout\n` +
-        `┃ ${PREFIX}equip <item> ─ equip from bag\n` +
-        `┃ ${PREFIX}unequip <slot> ─ remove gear\n` +
-        `┃ ${PREFIX}eradicate <item|slot> ─ destroy gear\n`,
+        // Faction info shown as formatted text below
 
-      economy:
-        `${divider}\n  💰  *ECONOMY & TRADING*\n${divider}\n` +
-        `┃ ${PREFIX}daily ─ daily Lucons + streak bonus\n` +
-        `┃ ${PREFIX}weekly ─ weekly Lucons (faction taxed)\n` +
-        `┃ ${PREFIX}give @user <amt> ─ send Lucons\n` +
-        `┃ ${PREFIX}transfer-lcr @user <amt> ─ send Lucrystals\n` +
-        `┃ ${PREFIX}transfer-reob @user <amt> ─ send Rift Energy Orbs\n` +
-        `┃ ${PREFIX}reverse <code> ─ undo a Lucons transaction\n` +
-        `┃ ${PREFIX}tamed-give ─ trade Mora\n` +
-        `┃ ${PREFIX}gitem <item> <qty> @user ─ give items\n\n` +
-        `${divider}\n  🏦  *BANK & ROBBERY*\n${divider}\n` +
-        `┃ ${PREFIX}bank ─ view your vault\n` +
-        `┃ ${PREFIX}bank deposit <amt> ─ store Lucons safely\n` +
-        `┃ ${PREFIX}bank withdraw <amt> ─ pull from vault\n` +
-        `┃ ${PREFIX}wealth ─ wealth ledger card\n` +
-        `┃ ${PREFIX}wealth-lb ─ top 10 richest\n` +
-        `┃ ${PREFIX}rob @user ─ snatch Lucons (needs glove)\n` +
-        `┃ ${PREFIX}defend ─ react to a snatch attempt\n` +
-        `┃ ${PREFIX}mask / ${PREFIX}unmask ─ hide/show your profile (Veil Mask)\n` +
-        `┃ ${PREFIX}bank register ─ open your vault\n` +
-        `┃ ${PREFIX}main-bank ─ Alverah's storefront (public)\n` +
-        `┃ _Bank Owner / Architect:_ ${PREFIX}bank-info ─ internal ledger\n` +
-        `┃ _Bank Owner:_ ${PREFIX}bank-tax / ${PREFIX}bank-pool / ${PREFIX}bank-grant @user <amt> / ${PREFIX}bank-vault\n` +
-        `┃ _Architect:_ ${PREFIX}bank-assign @user · ${PREFIX}bank-remove\n`,
-
-      referrals:
-        `${divider}\n  🔗  *REFERRALS*\n${divider}\n` +
-        `┃ ${PREFIX}myref ─ share your code\n` +
-        `┃ ${PREFIX}start <code> ─ join via referral\n` +
-        `┃ ${PREFIX}claim-ref ─ claim reward (DM)\n` +
-        `┃ ${PREFIX}pick-ref <choice> ─ pick reward (DM)\n`,
-
-      market:
-        `${divider}\n  🏪  *MARKET*\n${divider}\n` +
-        `┃ ${PREFIX}market ─ browse the shop\n` +
-        `┃ ${PREFIX}buy <item> ─ purchase\n` +
-        `┃ ${PREFIX}subscribe-market ─ notifications ON\n` +
-        `┃ ${PREFIX}unsubscribe-market ─ notifications OFF\n\n` +
-        `${divider}\n  🕶  *BLACK MARKET (Pro perk)*\n${divider}\n` +
-        `┃ ${PREFIX}summon-merchant ─ call the void shop (pro)\n` +
-        `┃ ${PREFIX}black-market ─ browse forbidden items\n` +
-        `┃ ${PREFIX}buy-bm <item> <qty> ─ buy from void\n`,
-
-      factions:
-        `${divider}\n  🛡  *FACTIONS & WARS*\n${divider}\n` +
-        `┃ ${PREFIX}factioninfo <name> ─ perks & drawbacks\n` +
-        `┃ ${PREFIX}faction market ─ exclusive faction shop\n` +
-        `┃ ${PREFIX}fbuy <item> ─ buy faction gear\n` +
-        `┃ ${PREFIX}missions ─ weekly faction missions\n` +
-        `┃ ${PREFIX}complete <ID> ─ claim mission reward\n` +
-        `┃ ${PREFIX}facpoints ─ faction point standings\n` +
-        `┃ ${PREFIX}view-sanctuary ─ treasury, wall, honour\n` +
-        `┃ ${PREFIX}fortify-wall <crystal|amount> ─ reinforce wall\n` +
-        `┃ ${PREFIX}upgrade-wall ─ spend treasury to level up (top 5)\n` +
-        `┃ ${PREFIX}donate <amount> [lucons|lcr] ─ feed faction treasury\n` +
-        `┃ ${PREFIX}submit-mora <mora> ─ deploy to treasury\n` +
-        `┃ ${PREFIX}chronicles ─ 📜 the story of Lumora (coming soon)\n` +
-        `┃ ${PREFIX}pe-check ─ Primordial Energy levels\n` +
-        `┃ ${PREFIX}facprogress ─ season graph (200L)\n` +
-        `┃ ${PREFIX}war join ─ register for war\n` +
-        `┃ ${PREFIX}war bracket ─ view war bracket\n` +
-        `┃ ${PREFIX}war history ─ past war results\n` +
-        `┃ ${PREFIX}ready ─ ready up for match\n` +
-        `┃ ${PREFIX}withdraw ─ leave war (penalties!)\n` +
-        `┃ ${PREFIX}f-lb ─ resonance leaderboard\n`,
-
-      raids:
-        `${divider}\n  🌀  *CROSS-FACTION RAIDS*\n${divider}\n` +
-        `┃ ${PREFIX}summon-kael ─ summon the Riftwalker (top 3 / Pro)\n` +
-        `┃ ${PREFIX}claim-raidcontract ─ bind Kael's contract (-10% bal)\n` +
-        `┃ ${PREFIX}raid join ─ join raid (-10% balance)\n` +
-        `┃ ${PREFIX}raid launch <faction> ─ begin assault\n` +
-        `┃ ${PREFIX}reroll-roles ─ leader: reroll (max 2)\n` +
-        `┃ ${PREFIX}ready ─ confirm before wall phase\n` +
-        `┃ ${PREFIX}raid-go ─ leader: force-start\n` +
-        `┃ ${PREFIX}raid-kick @user ─ leader: remove unready raider\n` +
-        `┃ ${PREFIX}raid-attack ─ strike wall / fight treasury mora\n` +
-        `┃ ${PREFIX}raid-reinforce ─ defender: restore wall HP\n` +
-        `┃ ${PREFIX}engage @raider ─ defender: intercept (PvP)\n` +
-        `┃ ${PREFIX}escape ─ use Rift Escape Shard to break free\n` +
-        `┃ ${PREFIX}raid status ─ view ongoing raid\n` +
-        `┃ ${PREFIX}raid history ─ past raids\n` +
-        `┃ ${PREFIX}fortify-wall <crystal|amount> ─ reinforce wall\n` +
-        `┃ ${PREFIX}upgrade-wall ─ spend treasury to level up wall\n` +
-        `┃ ${PREFIX}donate <amount> [lucons|lcr] ─ feed faction treasury\n` +
-        `┃ ${PREFIX}view-sanctuary ─ treasury, wall, honour\n\n` +
-        `_Owner only:_\n` +
-        `┃ ${PREFIX}add-raidgroup / ${PREFIX}remove-raidgroup\n` +
-        `┃ ${PREFIX}raids-on / ${PREFIX}raids-off\n` +
-        `┃ ${PREFIX}raid-end ─ force-end active raid\n`,
-
-      arena:
-        `${divider}\n  🏟️  *NPC ARENA*\n${divider}\n` +
-        `┃ ${PREFIX}arena ─ view arena tiers & NPCs\n` +
-        `┃ ${PREFIX}challenge <name> <difficulty> ─ fight an NPC\n` +
-        `┃   _difficulty: weak / normal / strong / nightmare_\n` +
-        `┃ ${PREFIX}intel <name> ─ NPC dossier (unlock by winning)\n` +
-        `┃ ${PREFIX}arena-flee ─ abandon arena battle\n`,
-
-      pvp:
-        `${divider}\n  ⚔  *PvP BATTLE*\n${divider}\n` +
-        `┃ ${PREFIX}battle @user ─ challenge\n` +
-        `┃ ${PREFIX}accept / ${PREFIX}reject ─ respond\n` +
-        `┃ ${PREFIX}attack 1-5 ─ use a move\n` +
-        `┃ ${PREFIX}switch 1-5 ─ swap Mora\n` +
-        `┃ ${PREFIX}use ─ use item in battle\n` +
-        `┃ ${PREFIX}charge ─ recover energy\n` +
-        `┃ ${PREFIX}forfeit ─ surrender\n`,
-
-      hunting:
-        `${divider}\n  🌲  *HUNTING & EXPLORATION*\n${divider}\n` +
-        `┃ ${PREFIX}map ─ world map\n` +
-        `┃ ${PREFIX}travel <terrain> <diff> ─ set out\n` +
-        `┃ ${PREFIX}proceed / ${PREFIX}dismiss ─ confirm/cancel\n` +
-        `┃ ${PREFIX}return ─ head back to Capital\n` +
-        `┃ ${PREFIX}hunt ─ scout for Mora\n` +
-        `┃ ${PREFIX}track ─ follow tracks\n` +
-        `┃ ${PREFIX}gather / ${PREFIX}intel ─ faction intel action\n` +
-        `┃ ${PREFIX}pick / ${PREFIX}pass ─ loot or leave\n` +
-        `┃ ${PREFIX}journal ─ hunt history & streak\n` +
-        `┃ ${PREFIX}bounty ─ today's bounty target\n` +
-        `┃ ${PREFIX}assemble ─ forge Rift Relic (5 frags)\n` +
-        `┃ ${PREFIX}lastterrain ─ last 3 terrains\n\n` +
-        `${divider}\n  🕊  *POST-BATTLE ACTIONS*\n${divider}\n` +
-        `┃ _After defeating wild Mora:_\n` +
-        `┃ ${PREFIX}tame ─ bond with it (+Tame Skill)\n` +
-        `┃ ${PREFIX}release ─ free it (+Intelligence)\n` +
-        `┃ ${PREFIX}sanctuary ─ shelter it (+Lucons +Resonance)\n` +
-        `┃\n` +
-        `┃ _Harmony:_ ${PREFIX}purify [scroll] ─ purify corrupted\n` +
-        `┃ _Purity:_ ${PREFIX}execute · ${PREFIX}conscript · ${PREFIX}fortify\n` +
-        `┃ _Rift:_ ${PREFIX}devour · ${PREFIX}bind · ${PREFIX}harvest\n`,
-
-      fun:
-        `${divider}\n  🎲  *FUN & MISC*\n${divider}\n` +
-        `┃ ${PREFIX}q ─ quote reply → sticker\n` +
-        `┃ ${PREFIX}sticker ─ image → sticker\n` +
-        `┃ ${PREFIX}toimg ─ sticker → image\n` +
-        `┃ ${PREFIX}8ball <question> ─ magic 8-ball\n` +
-        `┃ ${PREFIX}flip ─ coin flip\n` +
-        `┃ ${PREFIX}roll <max> ─ dice roll\n` +
-        `┃ ${PREFIX}ship @user ─ love calculator\n` +
-        `┃ ${PREFIX}rate <thing> ─ rate anything\n` +
-        `┃ ${PREFIX}roast @user ─ roast someone\n` +
-        `┃ ${PREFIX}truth / ${PREFIX}dare ─ truth or dare\n`,
-
-      utilities:
-        `${divider}\n  🔧  *UTILITY*\n${divider}\n` +
-        `┃ ${PREFIX}lb ─ global leaderboard\n` +
-        `┃ ${PREFIX}rank ─ your rank card (image)\n` +
-        `┃ ${PREFIX}ranks ─ full rank ladder\n` +
-        `┃ ${PREFIX}update / ${PREFIX}updates ─ current + pending updates\n` +
-        `┃ ${PREFIX}heal ─ heal all Mora\n` +
-        `┃ ${PREFIX}catch ─ catch spawned Mora\n` +
-        `┃ ${PREFIX}afk <reason> ─ set AFK\n` +
-        `┃ ${PREFIX}link ─ group invite link\n` +
-        `┃ ${PREFIX}rules ─ view group rules\n` +
-        `┃ ${PREFIX}warns @user ─ view warnings\n` +
-        `┃ ${PREFIX}bug-report <desc> ─ report a bug\n` +
-        `┃ ${PREFIX}appeal ─ request review\n` +
-        `┃ ${PREFIX}ping ─ test bot\n` +
-        `┃ ${PREFIX}uptime ─ bot uptime\n`,
-
-      pro:
-        `${divider}\n  💎  *PRO / SUBSCRIPTIONS*\n${divider}\n` +
-        `┃ ${PREFIX}pro-info ─ tier plans & USD pricing\n` +
-        `┃ ${PREFIX}pro ─ your subscription status\n` +
-        `┃ ${PREFIX}pro-daily ─ daily Lucons bonus\n` +
-        `┃ ${PREFIX}pro --hunt-energy ─ refill hunt gauge\n` +
-        `┃ ${PREFIX}pro-market ─ browse Lucrystal shop\n` +
-        `┃ ${PREFIX}pbuy <item> ─ buy with Lucrystals\n` +
-        `┃ ${PREFIX}exchange <lucons> ─ 1000L → 1 LCR\n` +
-        `┃ ${PREFIX}autocatch <n> ─ arm offline mora catcher\n` +
-        `┃ ${PREFIX}autocatch off ─ disarm\n` +
-        `┃ ${PREFIX}autocatch-log ─ view mora caught while away\n` +
-        `┃ _Pro users bypass faction tax on daily/weekly._\n`,
-
-      star:
-        `${divider}\n  🎩  *PRIJO — STEWARD-IN-RESIDENCE*\n${divider}\n` +
-        `_(Star is on vacation with her family. Prijo, the young master's elder butler, philosopher, and former poet, holds the post in her absence.)_\n\n` +
-        `┃ Mention "prijo" (or "star") or reply to him to converse\n` +
-        `┃ ${PREFIX}gift-star <amt> ─ send a tribute to the house\n` +
-        `┃ _25 free conversations/day. Pro = unlimited._\n\n` +
-        `${divider}\n  👑  *PRIJO — ARCHITECT CONTROLS*\n${divider}\n` +
-        `┃ ${PREFIX}star-on / ${PREFIX}star-off ─ enable/dismiss Prijo in this group\n` +
-        `┃ ${PREFIX}star-mode <off|public|private|private+pro>\n` +
-        `┃ ${PREFIX}star-stats ─ usage + cost\n` +
-        `┃ ${PREFIX}star-reset @user ─ wipe Prijo's memory of someone\n` +
-        `┃ ${PREFIX}star-ping on|off ─ loneliness pings\n` +
-        `┃ ${PREFIX}star-bestie add|remove @user ─ mark/unmark a confidant\n` +
-        `┃ ${PREFIX}orders ─ list Prijo's standing orders\n` +
-        `┃ ${PREFIX}order-del <id> ─ remove an order\n` +
-        `┃ _Tools (automatic, ask in chat):_ list players, give lucons, warn,\n` +
-        `┃ _tag, force spawn, faction/treasury status, bot stats._\n`,
-
-      admin:
-        `${divider}\n  🛡️  *SUDO (Admin)*\n${divider}\n` +
-        `┃ ${PREFIX}ban / ${PREFIX}unban / ${PREFIX}punish / ${PREFIX}forgive\n` +
-        `┃ ${PREFIX}warn @user / ${PREFIX}unwarn @user\n` +
-        `┃ ${PREFIX}promote / ${PREFIX}demote ─ group admin\n` +
-        `┃ ${PREFIX}kick @user ─ remove from group\n` +
-        `┃ ${PREFIX}announce <msg> ─ announcement\n` +
-        `┃ ${PREFIX}tagall ─ tag all members\n` +
-        `┃ ${PREFIX}players ─ player count\n` +
-        `┃ ${PREFIX}add-rule / ${PREFIX}remove-rule\n` +
-        `┃ ${PREFIX}bugs ─ view bug reports\n` +
-        `┃ ${PREFIX}sudolist ─ view hierarchy\n\n` +
-        `${divider}\n  ⚔️👑  *RIGHT-HAND MAN*\n${divider}\n` +
-        `┃ ${PREFIX}sudo / ${PREFIX}unsudo ─ manage sudos\n` +
-        `┃ _All Sudo powers + sudo management_\n\n` +
-        `${divider}\n  👑  *ARCHITECT (Owner)*\n${divider}\n` +
-        `┃ ${PREFIX}throne / ${PREFIX}unthrone ─ set Right-Hand\n` +
-        `┃ ${PREFIX}pro-grant @user <tier> ─ subscribe a player\n` +
-        `┃ ${PREFIX}crystals @user <amt> ─ top up Lucrystals\n` +
-        `┃ ${PREFIX}creations ─ list pending Mora submissions\n` +
-        `┃ ${PREFIX}approve-mora <id> <amt> <lucons|lcr> ─ approve + pay creator\n` +
-        `┃ ${PREFIX}reject-mora <id> ─ reject a submission\n` +
-        `┃ ${PREFIX}give-orb @user <amt> ─ give Rift Energy Orbs\n` +
-        `┃ ${PREFIX}moragroups ─ list allowed mora-creation labs\n` +
-        `┃ ${PREFIX}addmoragroup ─ add current group as a mora lab\n` +
-        `┃ ${PREFIX}removemoragroup ─ remove current group from labs\n` +
-        `┃ ${PREFIX}moracreation-on/off ─ toggle mora creation globally\n` +
-        `┃ ${PREFIX}set-gauge / ${PREFIX}reduce-gauge\n` +
-        `┃ ${PREFIX}war init / ${PREFIX}war-start\n` +
-        `┃ ${PREFIX}war winner @user ─ report match result\n` +
-        `┃ ${PREFIX}owner-fac-p ─ faction panel\n` +
-        `┃ ${PREFIX}bug <id> fixed ─ close bug report\n` +
-        `┃ ${PREFIX}owner-arena ─ arena control panel\n` +
-        `┃ ${PREFIX}addarenagroup ─ add arena group\n` +
-        `┃ ${PREFIX}arenagroup-on/off ─ toggle arena\n`,
-    };
-
-    // Section aliases (so users can type natural variants)
-    const SECTION_ALIASES = {
-      awakening: "awakening", rework: "awakening", shards: "awakening", merge: "awakening",
-        styles: "awakening", quests: "awakening", scrolls: "awakening", stats: "awakening",
-        start: "awakening", combat: "awakening", awaken: "awakening", autoraid: "awakening",
-      companion: "companion", mutation: "companion", achievements: "companion",
-      gear: "gear", inventory: "gear", inv: "gear", items: "gear",
-      economy: "economy", lucons: "economy", trading: "economy", trade: "economy",
-      referrals: "referrals", referral: "referrals", ref: "referrals",
-      market: "market", shop: "market", bm: "market", "black-market": "market",
-      factions: "factions", faction: "factions", war: "factions", wars: "factions",
-      raids: "raids", raid: "raids", kael: "raids", riftwalker: "raids", wall: "raids",
-      arena: "arena", npc: "arena", challenge: "arena",
-      pvp: "pvp", battle: "pvp",
-      hunting: "hunting", hunt: "hunting", explore: "hunting", exploration: "hunting",
-      fun: "fun", misc: "fun", sticker: "fun",
-      utilities: "utilities", utility: "utilities", util: "utilities",
-      pro: "pro", premium: "pro", subscription: "pro", sub: "pro", crystals: "pro", lcr: "pro",
-      star: "star", prijo: "star", ai: "star", girlfriend: "star", butler: "star", steward: "star",
-      admin: "admin", sudo: "admin", owner: "admin", architect: "admin",
-    };
-
-    // ── "New commands" banner (entries <12h old) ────────────
-    const freshCmds = getActiveNewCommands();
-    const newCmdsBlock = freshCmds.length
-      ? `${divider}\n  ✨  *NEW COMMANDS* _(<12h)_\n${divider}\n` +
-        freshCmds.map(c => `┃ ${c.name} ─ ${c.blurb}`).join("\n") + `\n\n`
-      : "";
-
-    const requestedSection = String(args[0] || "").toLowerCase().trim();
-
-    // ── If user asked for a specific section ────────────────
-    if (requestedSection && SECTION_ALIASES[requestedSection]) {
-      const key = SECTION_ALIASES[requestedSection];
-      const sectionText =
-        `╔═══════════════════════════╗\n` +
-        `║    ✦  *L U M O R A*  ✦    ║\n` +
-        `║   _Help — ${key.toUpperCase()}_   ║\n` +
-        `╚═══════════════════════════╝\n\n` +
-        newCmdsBlock +
-        gettingStarted + `\n` +
-        SECTIONS[key] + `\n` +
-        `${divider}\n` +
-        `_Use *.help* to see all sections._`;
-      try {
-        await sock.sendMessage(chatId, {
-          image: { url: "./help.jpg" },
-          caption: sectionText,
-        });
-      } catch (imgErr) {
-        await sock.sendMessage(chatId, { text: sectionText });
-      }
-      return;
-    }
-
-    // ── If they typed an unknown section ─────────────────────
-    if (requestedSection) {
-      const known = Object.keys(SECTIONS).join(", ");
-      return sock.sendMessage(chatId, {
-        text:
-          `❌ Unknown help section: *${requestedSection}*\n\n` +
-          `Available sections:\n${known}\n\n` +
-          `Use *.help <section>* (e.g. *.help arena*)`,
-      }, { quoted: msg });
-    }
-
-    // ── Default: index page ──────────────────────────────────
-    const indexText =
-      `╔═══════════════════════════╗\n` +
-      `║    ✦  *L U M O R A*  ✦    ║\n` +
-      `║   _Dominion Command Codex_  ║\n` +
-      `╚═══════════════════════════╝\n\n` +
-      greeting + `\n` +
-      `${fIcon} Faction: *${pFaction}* | 💰 ${p?.lucons || 0} Lucons\n\n` +
-      newCmdsBlock +
-      gettingStarted + `\n` +
-      `${divider}\n` +
-      `  📚  *HELP SECTIONS*\n` +
-      `${divider}\n` +
-      `┃ ${PREFIX}help companion  ─ companions, mutation, achievements\n` +
-      `┃ ${PREFIX}help gear       ─ inventory, gear, eradicate\n` +
-      `┃ ${PREFIX}help economy    ─ daily, weekly, give, reverse\n` +
-      `┃ ${PREFIX}help referrals  ─ referral codes & rewards\n` +
-      `┃ ${PREFIX}help market     ─ market & black market\n` +
-      `┃ ${PREFIX}help factions   ─ factions, missions, wars\n` +
-      `┃ ${PREFIX}help raids      ─ Kael, walls, cross-faction raids\n` +
-      (settings?.arenaGroups?.enabled
-        ? `┃ ${PREFIX}help arena      ─ NPC arena & .challenge\n`
-        : "") +
-      `┃ ${PREFIX}help awakening  ─ 🌅 the rework: shards, merge, styles, quests, stats\n` +
-      `┃ ${PREFIX}help pvp        ─ player vs player battles\n` +
-      `┃ ${PREFIX}help hunting    ─ hunting, terrains, post-battle\n` +
-      `┃ ${PREFIX}help fun        ─ stickers, dice, roast, etc.\n` +
-      `┃ ${PREFIX}help utilities  ─ leaderboard, ping, bug-report\n` +
-      `┃ ${PREFIX}help pro        ─ subscriptions, Lucrystals, autocatch\n` +
-      `┃ ${PREFIX}help star       ─ 🎩 Prijo, the young master's steward (Star on leave)\n` +
-      `┃ ${PREFIX}help admin      ─ sudo / owner / architect\n\n` +
-      `╔═══════════════════════════╗\n` +
-      `║  💰 Currency: *${settings.currencyName}*\n` +
-      `║  📝 *.confirm* / *.cancel* when prompted\n` +
-      `║  _"The Rift watches. Choose wisely."_\n` +
-      `╚═══════════════════════════╝`;
-
-    try {
-      await sock.sendMessage(chatId, {
-        image: { url: "./help.jpg" },
-        caption: indexText,
-      });
-    } catch (imgErr) {
-      // Image load/send failed — fall back to text-only so help never silently dies.
-      await sock.sendMessage(chatId, { text: indexText });
-    }
-    return;
-} catch (helpErr) {
-  console.log("[help-handler]", helpErr?.message || helpErr);
-  try {
-    await sock.sendMessage(chatId, {
-      text: `📖 Help temporarily unavailable. Try a specific section: *.help arena*, *.help economy*, *.help raids*, etc.`,
-    }, { quoted: msg });
-  } catch {}
-  return;
-} }
-
-      // .factioninfo — show perks AND drawbacks for any faction
-      if (command === "factioninfo") {
         const key = String(args[0] || "").toLowerCase().trim();
         const info = factionMarketSystem.FACTION_BENEFITS?.[key];
         if (!info) {
+          // If no specific faction requested, show the user's faction info
+          if (p.faction) {
+            const factionInfo = factionMarketSystem.FACTION_BENEFITS?.[p.faction];
+            if (factionInfo) {
+              const perks     = (factionInfo.perks     || []).map(p => `  ✅ ${p}`).join("\n");
+              const drawbacks = (factionInfo.drawbacks || []).map(d => `  ❌ ${d}`).join("\n");
+              return sock.sendMessage(chatId, {
+                text:
+                  ui.header(factionInfo.name || p.faction, factionInfo.emoji || '⚔️') + `\n\n` +
+                  `_"${factionInfo.belief || ""}"_\n\n` +
+                  ui.subheader('BENEFITS', '✅') + `\n${perks || "  None listed"}\n\n` +
+                  ui.subheader('DRAWBACKS', '❌') + `\n${drawbacks || "  None listed"}\n\n` +
+                  ui.divider() + `\n` +
+                  `Use *.fbuy <item>* to access this faction's market.`,
+              }, { quoted: msg });
+            }
+          }
           return sock.sendMessage(chatId, {
             text: "❌ Use: *.factioninfo harmony / purity / rift*",
           }, { quoted: msg });
@@ -7469,13 +7729,11 @@ if (command === "help") { try {
         const drawbacks = (info.drawbacks || []).map(d => `  ❌ ${d}`).join("\n");
         return sock.sendMessage(chatId, {
           text:
-            `━━━━━━━━━━━━━━━━━━━━━━━\n` +
-            `${info.emoji || "⚡"}  *${(info.name || key).toUpperCase()}*\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+            ui.header(info.name || key, info.emoji || '⚔️') + `\n\n` +
             `_"${info.belief || ""}"_\n\n` +
-            `✅ *BENEFITS*\n${perks || "  None listed"}\n\n` +
-            `❌ *DRAWBACKS*\n${drawbacks || "  None listed"}\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            ui.subheader('BENEFITS', '✅') + `\n${perks || "  None listed"}\n\n` +
+            ui.subheader('DRAWBACKS', '❌') + `\n${drawbacks || "  None listed"}\n\n` +
+            ui.divider() + `\n` +
             `Use *.fbuy <item>* to access this faction's market.`,
         }, { quoted: msg });
       }

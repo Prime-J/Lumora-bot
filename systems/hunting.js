@@ -43,6 +43,9 @@ const encountersSystem    = require("./encounters");
 const itemsSystem         = require("./items");
 const factionMarketSystem = require("./factionMarket");
 const missionSystem       = require("./factionMissionSystem");
+const testMode            = require("./testMode");
+const buttonsSystem       = require("./buttons");
+const interactiveUI       = require("./interactiveUI");
 
 // ── PATHS ────────────────────────────────────────────────────
 const DATA_DIR        = path.join(__dirname, "..", "data");
@@ -476,7 +479,7 @@ function pickEncounterItem(weather) {
   const pool = [
     { id:"MAT_001", name:"Rift Dust",              rarity:"Common",   quantity:1, effect:"Crafting material" },
     { id:"ITM_001", name:"Minor Healing Capsule",   rarity:"Common",   quantity:1, effect:"Restores 30 player HP" },
-    { id:"ITM_004", name:"Energy Capsule",           rarity:"Common",   quantity:1, effect:"Restores 20 Mora energy" },
+    { id:"ITM_016", name:"Energy Capsule",           rarity:"Common",   quantity:1, effect:"Restores 30 Energy" },
     { id:"ITM_014", name:"Capture Net",              rarity:"Common",   quantity:1, effect:"+5% catch success" },
     { id:"CRY_001", name:"Shard Crystal",            rarity:"Common",   quantity:1, effect:"+50 wall HP" },
     { id:"MAT_002", name:"Aura Crystal",             rarity:"Uncommon", quantity:1, effect:"Crafting material" },
@@ -692,10 +695,43 @@ async function cmdMap(ctx, chatId, senderId, msg) {
   const mapText  = buildMapText(grounds, hunter);
   const imgPath  = path.join(__dirname, "../assets/map.jpg");
 
-  if (!fs.existsSync(imgPath)) {
-    return sock.sendMessage(chatId, { text: mapText }, { quoted: msg });
-  }
-  return sock.sendMessage(chatId, { image: fs.readFileSync(imgPath), caption: mapText }, { quoted: msg });
+  // 🏔 One-tap travel: every travelable terrain becomes a button (easy diff).
+  const TERRAIN_EMOJI = {
+    wilderness: "🌲", verdant_wilds: "🌿", volt_expanse: "⚡", ashfall_basin: "🌋",
+    terra_shatterfields: "🏜️", frostreach: "❄️", shadow_hollow: "🌑", rift_scar: "🌀",
+  };
+  const travelable = Object.values(grounds)
+    .filter((g) => g.travelable && g.id !== "capital" && g.difficultyModes?.easy)
+    .slice(0, 8);
+  const travelMap = {};
+  travelable.forEach((g) => { travelMap[`${TERRAIN_EMOJI[g.id] || "🌍"} ${g.name}`] = `.travel ${g.id} easy`; });
+  buttonsSystem.mapButtons(travelMap);
+  const travelBtns = travelable.map((g) => `${TERRAIN_EMOJI[g.id] || "🌍"} ${g.name}`);
+
+  const sendMap = async () => {
+    // Send interactive list menu for map
+    const terrainList = Object.values(grounds)
+      .filter((g) => g.travelable && g.id !== "capital")
+      .map((g) => ({
+        name: g.name,
+        id: g.id,
+        difficulty: g.difficultyModes?.easy ? "Easy" : "Normal",
+        levelReq: g.levelReq || 1,
+      }));
+    await interactiveUI.sendMapMenu(sock, chatId, terrainList, msg);
+
+    if (!fs.existsSync(imgPath)) {
+      await sock.sendMessage(chatId, { text: mapText }, { quoted: msg });
+    } else {
+      await sock.sendMessage(chatId, { image: fs.readFileSync(imgPath), caption: mapText }, { quoted: msg });
+    }
+    return buttonsSystem.sendButtons(sock, chatId,
+      `🏔 *GO WHERE?* — _tap a terrain to travel (easy)_`,
+      travelBtns,
+      { footer: `Or type: .travel <terrain> <difficulty>`, quoted: msg }
+    );
+  };
+  return sendMap();
 }
 
 // .travel <terrain> <difficulty>
@@ -709,6 +745,12 @@ async function cmdTravel(ctx, chatId, senderId, msg, args = []) {
   const travelPlayer = players?.[senderId];
   if (travelPlayer) {
     regenHuntEnergy(travelPlayer);
+    // 🧪 TEST MODE — refill hunt energy so testers can battle endlessly
+    if (testMode.isTestGroup(chatId)) {
+      travelPlayer.huntEnergy    = travelPlayer.maxHuntEnergy || 100;
+      hunter.huntEnergy          = travelPlayer.huntEnergy;
+      hunter.huntEnergyMax       = travelPlayer.maxHuntEnergy || 100;
+    }
     if (typeof travelPlayer.huntEnergy    === "number") hunter.huntEnergy    = travelPlayer.huntEnergy;
     if (typeof travelPlayer.maxHuntEnergy === "number") hunter.huntEnergyMax = travelPlayer.maxHuntEnergy;
   }
@@ -759,8 +801,12 @@ async function cmdTravel(ctx, chatId, senderId, msg, args = []) {
 
   saveHuntState(state);
 
-  const payload = mentionText(senderId, `{mention}\n\n${buildTravelPrompt(ground, diffKey, diff, weather)}`);
-  return sock.sendMessage(chatId, payload, { quoted: msg });
+  buttonsSystem.mapButtons({ "✅ Proceed": ".proceed", "❌ Dismiss": ".dismiss" });
+  return buttonsSystem.sendButtons(sock, chatId,
+    `${buildTravelPrompt(ground, diffKey, diff, weather)}`,
+    ["✅ Proceed", "❌ Dismiss"],
+    { footer: `Pending travel expires in 2 min`, quoted: msg }
+  );
 }
 
 // .proceed
@@ -771,7 +817,7 @@ async function cmdProceed(ctx, chatId, senderId, msg) {
   const hunter  = ensureHunter(state, senderId);
   const player  = players[senderId];
 
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Register first using `.start`." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Register first using `.register`." }, { quoted: msg });
 
   const pending = hunter.pendingTravel;
   if (!pending) return sock.sendMessage(chatId, { text: "❌ No pending travel request." }, { quoted: msg });
@@ -819,11 +865,18 @@ async function cmdProceed(ctx, chatId, senderId, msg) {
     `${weather.icon} Weather: *${weather.label}*\n\n` +
     `⚡ Hunt Energy: *${hunter.huntEnergy}/${hunter.huntEnergyMax}*\n` +
     `❤️ Player HP:  *${player.playerHp}/${player.playerMaxHp}*` +
-    buildTerrainDamageText(terrainResult, "entry") +
-    `\n\n${SDIV}\n` +
-    `Use *.hunt* to start scouting!`
+    buildTerrainDamageText(terrainResult, "entry")
   );
-  return sock.sendMessage(chatId, payload, { quoted: msg });
+  buttonsSystem.mapButtons({
+    "🌲 Hunt": ".hunt",
+    "🗺 Map": ".map",
+    "🏠 Return": ".return",
+  });
+  return buttonsSystem.sendButtons(sock, chatId,
+    `${payload}\n\n${SDIV}\nStart scouting!`,
+    ["🌲 Hunt", "🗺 Map", "🏠 Return"],
+    { footer: `Tap to continue 👇`, quoted: msg }
+  );
 }
 
 // .dismiss
@@ -894,7 +947,7 @@ async function cmdHunt(ctx, chatId, senderId, msg) {
   const player  = players[senderId];
 
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ Register first using `.start`." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Register first using `.register`." }, { quoted: msg });
   }
 
   // ─ Energy regen (shared helper, 6-hour tick) ─────────────
@@ -905,18 +958,27 @@ async function cmdHunt(ctx, chatId, senderId, msg) {
   regenHuntEnergy(player);
   const now = Date.now();
 
+  // 🧪 TEST MODE — refill hunt energy so testers can battle endlessly
+  if (testMode.isTestGroup(chatId)) {
+    player.huntEnergy    = player.maxHuntEnergy || 100;
+    hunter.huntEnergy    = player.huntEnergy;
+    hunter.huntEnergyMax = player.maxHuntEnergy || 100;
+  }
+
   // Sync energy from player object to hunter state
   if (typeof player.huntEnergy    === "number") hunter.huntEnergy    = player.huntEnergy;
   if (typeof player.maxHuntEnergy === "number") hunter.huntEnergyMax = player.maxHuntEnergy;
 
   // ─ Location checks ────────────────────────────────────────
   if (hunter.location === "capital") {
-    return sock.sendMessage(chatId, {
-      text:
-        `🏛️ *You are in the Capital.*\n\n` +
-        `Use *.map* to see terrains, then *.travel <terrain> <difficulty>* to set out.\n` +
-        `🎯 Today's bounty: *.bounty*`,
-    }, { quoted: msg });
+    buttonsSystem.mapButtons({ "🗺 Map": ".map", "🎮 Menu": ".menu" });
+    return buttonsSystem.sendButtons(sock, chatId,
+      `🏛️ *You are in the Capital.*\n\n` +
+      `Use *.map* to see terrains, then *.travel <terrain> <difficulty>* to set out.\n` +
+      `🎯 Today's bounty: *.bounty*`,
+      ["🗺 Map", "🎮 Menu"],
+      { footer: `Where to? 👇`, quoted: msg }
+    );
   }
 
   if (hunter.activeEncounter) {
@@ -1072,14 +1134,21 @@ async function cmdHunt(ctx, chatId, senderId, msg) {
     const isCorrupted = hunter.activeTracks.corrupted;
     const streakLine  = hunter.huntStreak >= 5 ? `\n✨ *Lucky Streak!* +15% encounter quality boost active.` : "";
 
-    const payload = mentionText(senderId,
+    const payload =
       `${introText}${encounter.text}\n\n` +
       `👣 Track State: *${titleCase(hunter.activeTracks.state)}*\n` +
       `☠ Corrupted: *${isCorrupted ? "Yes — danger" : "No"}*` +
       streakLine +
-      statusFooter
+      statusFooter;
+    buttonsSystem.mapButtons({
+      "👣 Track": ".track",
+      "🗺 Map": ".map",
+      "🏠 Return": ".return",
+    });
+    return buttonsSystem.sendButtons(sock, chatId, payload,
+      ["👣 Track", "🗺 Map", "🏠 Return"],
+      { footer: `Follow the tracks 👇`, quoted: msg }
     );
-    return sock.sendMessage(chatId, payload, { quoted: msg });
   }
 
   // ── ITEM ────────────────────────────────────────────────
@@ -1096,26 +1165,48 @@ async function cmdHunt(ctx, chatId, senderId, msg) {
       `${SDIV}\n` +
       `✨ *${item.name}*\n` +
       `📊 Rarity: ${item.rarity}\n` +
-      `📜 ${item.effect}\n\n` +
-      `*.pick* to take it  |  *.pass* to leave it`;
+      `📜 ${item.effect}`;
 
-    const payload = mentionText(senderId,
-      `${introText}${encounter.text}` + itemCard + statusFooter
+    const payload = `${introText}${encounter.text}` + itemCard + statusFooter;
+    buttonsSystem.mapButtons({ "📦 Pick Up": ".pick", "🚶 Pass": ".pass" });
+    return buttonsSystem.sendButtons(sock, chatId, payload,
+      ["📦 Pick Up", "🚶 Pass"],
+      { footer: `Take it or leave it 👇`, quoted: msg }
     );
-    return sock.sendMessage(chatId, payload, { quoted: msg });
   }
 
   // ── ENVIRONMENT EVENT ───────────────────────────────────
   if (encounter.type === "environment") {
     hunter.huntStreak = 0;
     saveHuntState(state);
-    savePlayers(players);
 
     const severity = titleCase(encounter.environmentEvent?.severity || "low");
-    const payload  = mentionText(senderId,
-      `${introText}${encounter.text}\n\n🌍 Severity: *${severity}*` + statusFooter
+    // Apply environment damage based on severity
+    const baseDmg = { low: 5, medium: 15, high: 30 };
+    let rawDmg = baseDmg[String(encounter.environmentEvent?.severity || "low").toLowerCase()] || 5;
+    const reduction = Number(players[senderId]?.passives?.envDamageReduction || 0);
+    let dmg = Math.max(1, Math.floor(rawDmg * (1 - reduction / 100)));
+    const player = players[senderId];
+    if (player) {
+      ensurePlayerVitals(player);
+      player.playerHp = Math.max(0, player.playerHp - dmg);
+    }
+    savePlayers(players);
+
+    const dmgLine = reduction > 0
+      ? `🩸 *-${dmg} HP* (${severity} — Pulse Tonic reduced by ${reduction}%)`
+      : `🩸 *-${dmg} HP* (${severity})`;
+    const hpLeft = player ? `❤️ HP: *${player.playerHp}/${player.playerMaxHp}*` : '';
+    const payload  = `${introText}${encounter.text}\n\n🌍 Severity: *${severity}*\n${dmgLine}\n${hpLeft}` + statusFooter;
+    buttonsSystem.mapButtons({
+      "🌲 Hunt Again": ".hunt",
+      "🗺 Map": ".map",
+      "🏠 Return": ".return",
+    });
+    return buttonsSystem.sendButtons(sock, chatId, payload,
+      ["🌲 Hunt Again", "🗺 Map", "🏠 Return"],
+      { footer: `Keep scouting 👇`, quoted: msg }
     );
-    return sock.sendMessage(chatId, payload, { quoted: msg });
   }
 
   // ── NOTHING FOUND ───────────────────────────────────────
@@ -1123,8 +1214,16 @@ async function cmdHunt(ctx, chatId, senderId, msg) {
   saveHuntState(state);
   savePlayers(players);
 
-  const payload = mentionText(senderId, `${introText}${encounter.text}` + statusFooter);
-  return sock.sendMessage(chatId, payload, { quoted: msg });
+  const payload = `${introText}${encounter.text}` + statusFooter;
+  buttonsSystem.mapButtons({
+    "🌲 Hunt Again": ".hunt",
+    "🗺 Map": ".map",
+    "🏠 Return": ".return",
+  });
+  return buttonsSystem.sendButtons(sock, chatId, payload,
+    ["🌲 Hunt Again", "🗺 Map", "🏠 Return"],
+    { footer: `Keep scouting 👇`, quoted: msg }
+  );
 }
 
 // .pick
@@ -1447,7 +1546,7 @@ async function cmdGatherIntel(ctx, chatId, senderId, msg) {
   const player = players[senderId];
 
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ Register first using `.start`." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Register first using `.register`." }, { quoted: msg });
   }
 
   // Check if in capital (can't gather intel there)
