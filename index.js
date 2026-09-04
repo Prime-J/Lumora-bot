@@ -165,6 +165,63 @@ app.post('/api/items/update', requireAdmin, (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// ── Dashboard API: Bot Stats ───────────────────────────────
+app.get('/api/bot/stats', (req, res) => {
+  try {
+    const stats = {
+      uptime: getBotUptime(),
+      startTime: new Date(startTime).toISOString(),
+      commandsParsed: botStats.commandsParsed,
+      luconsSpent: botStats.luconsSpent,
+      messagesSent: botStats.messagesSent,
+      broadcastsSent: botStats.broadcastsSent,
+      connected: !!global._lumoraSock,
+      pid: process.pid,
+      memoryMB: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+    };
+    res.json({ ok: true, stats });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+// ── Dashboard API: Broadcast to WhatsApp ───────────────────
+app.post('/api/broadcast', requireAdmin, async (req, res) => {
+  try {
+    const { groupId, message } = req.body;
+    if (!message) return res.json({ ok: false, error: 'Message required' });
+    const sock = global._lumoraSock;
+    if (!sock) return res.json({ ok: false, error: 'Bot not connected' });
+
+    // Broadcast to all registered faction groups
+    const state = loadState ? null : null; // avoid circular
+    const broadcastToGroups = async (targetJid) => {
+      await sock.sendMessage(targetJid, { text: message });
+      botStats.broadcastsSent++;
+      botStats.messagesSent++;
+    };
+
+    if (groupId) {
+      // Send to specific group
+      await broadcastToGroups(groupId);
+      return res.json({ ok: true, sent: 'group' });
+    } else {
+      // Broadcast to ALL faction groups
+      const sent = [];
+      for (const [jid] of Object.entries(FACTION_GROUPS || {})) {
+        try {
+          await broadcastToGroups(jid);
+          sent.push(jid);
+        } catch {}
+      }
+      // Also send to the main group if configured
+      try {
+        await broadcastToGroups('HRwht4ktwZ6F9DnldqissZ');
+        sent.push('main');
+      } catch {}
+      return res.json({ ok: true, sent: sent.length, groups: sent });
+    }
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'web', 'index.html'));
 });
@@ -361,7 +418,20 @@ const THRONE_FILE = path.join(DATA_DIR, "throne.json");
 const RULES_FILE = path.join(DATA_DIR, "rules.json");
 const BUGS_FILE = path.join(DATA_DIR, "bugs.json");
 const WARNS_FILE = path.join(DATA_DIR, "warns.json");
-const startTime =Date.now();
+const startTime = Date.now();
+// ── Bot Stats (dashboard-facing) ─────────────────────────
+const botStats = { commandsParsed: 0, luconsSpent: 0, messagesSent: 0, broadcastsSent: 0 };
+global._lumoraSock = null; // set when connected
+function getBotUptime() {
+  const ms = Date.now() - startTime;
+  const s = Math.floor(ms / 1000) % 60;
+  const m = Math.floor(ms / 60000) % 60;
+  const h = Math.floor(ms / 3600000) % 24;
+  const d = Math.floor(ms / 86400000);
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  return `${m}m ${s}s`;
+}
 const DIVIDER = "━━━━━━━━━━━━━━━━━━━━━━";
 const SMALL_DIVIDER = "──────────────────────";
 global.blackMarket = { active: false, type: null, owner: null, expiry: 0, items: [] };
@@ -1892,6 +1962,7 @@ async function startBot() {
     if (connection === "open") {
       isReady = true;
       isStarting = false;
+      global._lumoraSock = sock;
       console.log("🔥 Lumora Bot Connected Successfully!");
       resolveFactionGroups(sock).catch(e => console.log("⚠️ Faction resolve error:", e.message));
 
@@ -2316,6 +2387,7 @@ sock.ev.removeAllListeners("messages.upsert");
 
       const args = text.slice(PREFIX.length).trim().split(/\s+/);
       let command = (args.shift() || "").toLowerCase();
+      botStats.commandsParsed++;
 
       // ── OWNER TOOLBOX (.ow) — registered EARLY so it works even mid-battle ──
       // Superset router: native toolbox subs are handled here; anything else falls
