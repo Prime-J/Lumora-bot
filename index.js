@@ -6391,8 +6391,9 @@ const xpNeeded = xpSystem.playerXpToNextLevel(p.level || 1);
           { emoji: '⚔️', label: 'Faction', value: factionLine },
           { emoji: '🆔', label: 'ID', value: normalizeNumberFromJid(targetId) },
         ]) + `\n\n` +
-        ui.card('ECONOMY', '💰', [
-          { emoji: '💰', label: 'Lucons', value: String(p.lucons ?? 0) },
+        ui.card('VITALS', '❤️', [
+          { emoji: '❤️', label: 'HP', value: `${currentHp}/${maxHp}` },
+          { emoji: '⚡', label: 'Energy', value: `${currentEnergy}/${maxEnergy}` },
           { emoji: '🌀', label: 'Merge', value: mergeText },
         ]) + `\n\n` +
         `${ui.statBar(xpCurrent, xpNeeded)}  _XP to next: ${xpNeeded === Infinity ? 'MAX' : (xpNeeded - xpCurrent)}_\n` +

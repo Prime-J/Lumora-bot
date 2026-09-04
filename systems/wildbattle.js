@@ -1,8 +1,12 @@
 const corruptionSystem    = require("./corruption");
+const bm                   = require("../core/battleMath");
 const huntingSystem       = require("./hunting");
 const factionMarketSystem = require("./factionMarket");
 const missionSystem       = require("./factionMissionSystem");
 const itemsSystem         = require("./items");
+const buttonsSystem       = require("./buttons");
+const botPersonality      = require("./botPersonality");
+const progression         = require("./progression");
 
 // ── RARITY-BASED REWARD TABLE ────────────────────────────────
 const RARITY_REWARDS = {
@@ -44,6 +48,21 @@ function setWildBattle(chatId, senderId, state) {
 
 function clearWildBattle(chatId, senderId) {
   wildBattles.delete(makeKey(chatId, senderId));
+}
+
+// M2.6: force-release every wild battle this player is in, across all chats.
+// Used by the owner .ow reset tool — the old p.inBattle flag was never set.
+function clearAllWildBattlesFor(senderId) {
+  let n = 0;
+  for (const [key, state] of wildBattles) {
+    const keySender = String(key).split("::")[1];
+    const stateSender = state && (state.senderId || state.player);
+    if (keySender === senderId || stateSender === senderId) {
+      wildBattles.delete(key);
+      n++;
+    }
+  }
+  return n;
 }
 
 function getDisplayName(players, jid) {
@@ -205,10 +224,12 @@ function scaleWildOwnedMora(baseSpecies, level, statMultiplier = 1) {
   const lv = Math.max(1, Number(level || 1));
   const base = baseSpecies?.baseStats || {};
 
-  const maxHp = Math.max(1, Math.floor((Number(base.hp || 50) + lv * 3) * statMultiplier));
-  const atk = Math.max(1, Math.floor((Number(base.atk || 10) + lv * 2) * statMultiplier));
-  const def = Math.max(1, Math.floor((Number(base.def || 10) + lv * 2) * statMultiplier));
-  const spd = Math.max(1, Math.floor((Number(base.spd || 10) + lv * 1) * statMultiplier));
+  // Rarity → power (fair curve from core/battleMath): rarer Mora hit harder.
+  const rp = bm.getRarityPower(baseSpecies?.rarity);
+  const maxHp = Math.max(1, Math.floor((Number(base.hp || 50) + lv * 3) * statMultiplier * rp));
+  const atk = Math.max(1, Math.floor((Number(base.atk || 10) + lv * 2) * statMultiplier * rp));
+  const def = Math.max(1, Math.floor((Number(base.def || 10) + lv * 2) * statMultiplier * rp));
+  const spd = Math.max(1, Math.floor((Number(base.spd || 10) + lv * 1) * statMultiplier * rp));
   const maxEnergy = Math.max(1, Math.floor((Number(base.energy || 30) + (lv - 1) * 2) * statMultiplier));
 
   const allMoves = Object.keys(baseSpecies?.moves || {});
@@ -284,15 +305,17 @@ function getPlayerCombatant(player, loadMora) {
     const sp = loadMora?.().find((m) => Number(m.id) === Number(merge.moraId));
     type = sp?.type || merge.type || type;
     mergeTier = merge.tier || null;
+    // Rarity → power: a merged Legendary form is genuinely stronger.
+    const rp = bm.getRarityPower(sp?.rarity || merge.rarity);
     if (mergeTier === shardSystem.TIER_FULL && sp?.baseStats) {
       // Full merge: take the Mora's stats outright (player HP still applies)
-      atk = Math.max(atk, Math.floor((Number(sp.baseStats.atk || atk) + level * 2)));
-      def = Math.max(def, Math.floor((Number(sp.baseStats.def || def) + level * 2)));
-      spd = Math.max(spd, Math.floor((Number(sp.baseStats.spd || spd) + level)));
+      atk = Math.max(atk, Math.floor((Number(sp.baseStats.atk || atk) + level * 2) * rp));
+      def = Math.max(def, Math.floor((Number(sp.baseStats.def || def) + level * 2) * rp));
+      spd = Math.max(spd, Math.floor((Number(sp.baseStats.spd || spd) + level) * rp));
     } else {
       // Partial merge: small boost over base, retain identity
-      atk = Math.floor(atk * 1.15);
-      def = Math.floor(def * 1.05);
+      atk = Math.floor(atk * 1.15 * rp);
+      def = Math.floor(def * 1.05 * rp);
     }
     name = `[${merge.name}] ${name}`;
   }
@@ -318,14 +341,18 @@ function buildPlayerMoveset(player, loadMora) {
   const shardSystem = require("./shards");
   const merge = shardSystem.getCurrentMerge(player);
 
-  const moves = BASE_ACTIONS.map((m) => ({ ...m }));
-
   // ── Fighting-style moves (quest-unlocked) ────────────────────
+  let styleMoves = [];
   try {
     const questSystem = require("./quests");
-    const styleMoves = questSystem.getUnlockedStyleMoves(player) || [];
-    for (const mv of styleMoves) moves.push(mv);
+    styleMoves = questSystem.getUnlockedStyleMoves(player) || [];
   } catch {}
+
+  // If player has a fighting style, NO Punch/Block — style moves only
+  const hasStyle = styleMoves.length > 0;
+  const moves = hasStyle ? [] : BASE_ACTIONS.map((m) => ({ ...m }));
+
+  for (const mv of styleMoves) moves.push(mv);
 
   if (merge) {
     const sp = loadMora?.().find((m) => Number(m.id) === Number(merge.moraId));
@@ -557,7 +584,7 @@ async function startWildBattle(ctx, chatId, senderId, msg, options = {}) {
 
   const player = players[senderId];
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ Register first using .start" }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
   }
 
   const existing = getWildBattle(chatId, senderId);
@@ -631,6 +658,18 @@ async function startWildBattle(ctx, chatId, senderId, msg, options = {}) {
   const statMultiplier = Math.max(1, Number(options.statMultiplier || 1));
   const wildMora = scaleWildOwnedMora(wildSpecies, level, statMultiplier);
 
+  // 📖 MORA BIOGRAPHY — meeting a wild Mora unlocks its info in *.mora*
+  // (only for real registry species; natural-corrupted variants are skipped)
+  const wildId = String(wildSpecies?.baseId ?? wildSpecies?.id ?? "");
+  const isRegistrySpecies = moraList.some((x) => String(x.id) === wildId);
+  if (isRegistrySpecies) {
+    try {
+      const shardsRef = require("./shards");
+      shardsRef.markEncountered(player, { id: wildId });
+      ctx.savePlayers?.(players);
+    } catch {}
+  }
+
   const personality = options.personality || pickWildAiPersonality(isCorrupted);
 
   const state = {
@@ -646,10 +685,20 @@ async function startWildBattle(ctx, chatId, senderId, msg, options = {}) {
     allowCapture: options.allowCapture !== false,
     allowPurify: !!options.allowPurify,
     allowCharge: true,
-    rewards: {
-      moraXp: Number(options.moraXp || (30 + level * 5)),
-      playerXp: Number(options.playerXp || (20 + level * 3))
-    },
+    rewards: (() => {
+      // Use progression engine for XP calculation
+      const enemy = { level, isBoss: options.isCorrupted, difficulty: options.difficulty || 'normal' };
+      const xpResult = progression.calculateXPReward(player, enemy, {
+        baseReward: options.playerXp || 50,
+        difficulty: options.difficulty,
+        isCorrupted: options.isCorrupted,
+      });
+      return {
+        moraXp: Number(options.moraXp || (30 + level * 5)),
+        playerXp: xpResult.amount,
+        xpModifiers: xpResult.modifiers,
+      };
+    })(),
     wildSpecies,
     wildMora,
     flavorIntro: pickWildIntro(isCorrupted)
@@ -660,18 +709,21 @@ async function startWildBattle(ctx, chatId, senderId, msg, options = {}) {
   const headerCombatant = getPlayerCombatant(player, loadMora);
   const header = buildWildHeader(players, senderId, headerCombatant, wildMora, hpBar, state);
 
-  return sock.sendMessage(chatId, {
-    text:
-      `${state.flavorIntro}\n\n` +
-      `${header}\n\n` +
-      `🎯 Commands:\n` +
-      `• *.attack* — list moves & strike\n` +
-      `• *.charge* — focus, regain energy\n` +
-      `• *.run* — flee\n` +
-      (state.allowCapture ? `• *.capture* — attempt capture\n` : "") +
-      (state.allowPurify ? `• *.purify* — purify (Harmony only)\n` : ""),
-    mentions: [senderId]
-  }, { quoted: msg });
+  const act = ["⚔ Attack", "⚡ Charge", "🏃 Run"];
+  if (state.allowCapture) act.push("🎯 Capture");
+  if (state.allowPurify) act.push("✨ Purify");
+  buttonsSystem.mapButtons({
+    "⚔ Attack": ".attack",
+    "⚡ Charge": ".charge",
+    "🏃 Run": ".run",
+    "🎯 Capture": ".capture",
+    "✨ Purify": ".purify",
+  });
+  return buttonsSystem.sendButtons(sock, chatId,
+    `${state.flavorIntro}\n\n${header}`,
+    act,
+    { footer: `Your turn — tap an action below 👇`, quoted: msg }
+  );
 }
 
 async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
@@ -687,7 +739,7 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
 
   const player = players[senderId];
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ Player not found. Use *.start*." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Player not found. Use *.register*." }, { quoted: msg });
   }
   ensurePlayerCombatFields(player);
 
@@ -703,12 +755,39 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
   const pickRaw = args.join(" ").trim();
 
   if (!pickRaw) {
-    return sock.sendMessage(chatId, {
-      text:
-        `🎴 *Choose your action*\n` +
-        `Use: *.attack 1-${moveset.length}* or *.attack <move>*\n\n` +
-        renderPlayerMoveset(moveset, player)
-    }, { quoted: msg });
+    // Build clean button labels — style moves only if equipped
+    const styleMoves = moveset.filter(m => m.source === 'style');
+    const hasStyle = styleMoves.length > 0;
+
+    const moveLabels = moveset.slice(0, 6).map((m, i) => {
+      const icon = m.source === 'style' ? '🥋' : m.source === 'merge' ? '✨' : '🩶';
+      return `${icon} ${m.name}`;
+    });
+    const allLabels = moveLabels.concat(["⚡ Charge", "🏃 Run"]).slice(0, 8);
+    const labelMap = {};
+    moveset.slice(0, 6).forEach((m, i) => { labelMap[allLabels[i]] = `.attack ${i + 1}`; });
+    labelMap["⚡ Charge"] = ".charge";
+    labelMap["🏃 Run"] = ".run";
+    buttonsSystem.mapButtons(labelMap);
+
+    // Compact move display — no full text dump
+    const movePreview = moveset.slice(0, 6).map((m, i) => {
+      const tags = [];
+      if (m.selfHeal) tags.push(`heal ${m.selfHeal}`);
+      if (m.neverMisses) tags.push('never misses');
+      if (m.brace) tags.push('brace');
+      return `${i + 1}) *${m.name}* — 💥${m.power} 🎯${m.accuracy}% 🔋${m.energyCost}${tags.length ? ` [${tags.join(', ')}]` : ''}`;
+    }).join('\n');
+
+    const header = hasStyle
+      ? `🥋 *FIGHTING STYLE ACTIVE*\n_${styleMoves[0]?.styleName || 'Style'} — ${moveset.length} moves ready_`
+      : `⚔️ *BATTLE MODE*`;
+
+    return buttonsSystem.sendButtons(sock, chatId,
+      `${header}\n\n${movePreview}\n\n⚡ Charge · 🏃 Run`,
+      allLabels,
+      { footer: `Tap a move 👇`, quoted: msg }
+    );
   }
 
   const move = resolvePlayerMove(pickRaw, moveset);
@@ -842,13 +921,22 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
         : rarityBuffPct >= 0.05 ? "  ✨*RARE!*"
         : "";
 
+      // Star commentary based on battle events
+      let starComment = "";
+      if (crit || res.mult >= 1.2) {
+        starComment = botPersonality.getBattleCommentary("bigHit");
+      } else if (res.dmg <= 5) {
+        starComment = botPersonality.getBattleCommentary("miss");
+      }
+
       logs.push(
         `⚔️ @${String(senderId).split("@")[0]}${tag} used *${move.name}* and dealt *${res.dmg}* to wild *${state.wildMora.name}*` +
         (crit ? "  ✨*CRIT!*" : "") +
         effTxt +
         (furyActive ? "  🔥*RIFT FURY!*" : "") +
         (corruptedActive ? "  ☠*CORRUPTED!*" : "") +
-        rarityTag
+        rarityTag +
+        (starComment ? `\n\n✨ *Star:* ${starComment}` : "")
       );
 
       // ── Instability backlash chance for corrupted merges ────
@@ -964,21 +1052,22 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
       state.pendingDecision = "purity";
       savePlayers(players);
       setWildBattle(chatId, senderId, state);
-      return sock.sendMessage(chatId, {
-        text:
-          `${logs.join("\n")}\n\n` +
-          `🏁 *WILD MORA DEFEATED*\n` +
-          `☠ Wild *${state.wildMora.name}* has fallen.\n\n` +
-          `${xpLines}\n\n` +
-          `⚔️ *PURITY ORDER — JUDGMENT AWAITS*\n` +
-          `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-          `Choose what to do with the fallen Mora:\n\n` +
-          `🗡 *.execute* — Destroy it. Gain *Resonance* + bonus *Lucons*.\n` +
-          `📜 *.conscript* — Discipline it. Gain *Tame Skill*.\n` +
-          `🏰 *.fortify* — Send to Stronghold. Gain *Intelligence*.\n` +
-          `━━━━━━━━━━━━━━━━━━━━━━━━━`,
-        mentions: [senderId]
-      }, { quoted: msg });
+      buttonsSystem.mapButtons({
+        "🗡 Execute": ".execute",
+        "📜 Conscript": ".conscript",
+        "🏰 Fortify": ".fortify",
+      });
+      return buttonsSystem.sendButtons(sock, chatId,
+        `${logs.join("\n")}\n\n` +
+        `🏁 *WILD MORA DEFEATED*\n` +
+        `☠ Wild *${state.wildMora.name}* has fallen.\n\n` +
+        `${xpLines}\n\n` +
+        `⚔️ *PURITY ORDER — JUDGMENT AWAITS*\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `Choose what to do with the fallen Mora 👇`,
+        ["🗡 Execute", "📜 Conscript", "🏰 Fortify"],
+        { footer: `Destroy it · Discipline it · Send to Stronghold`, quoted: msg }
+      );
     }
 
     // ── RIFT SEEKERS: post-defeat decision ─────────────────────
@@ -986,21 +1075,22 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
       state.pendingDecision = "rift";
       savePlayers(players);
       setWildBattle(chatId, senderId, state);
-      return sock.sendMessage(chatId, {
-        text:
-          `${logs.join("\n")}\n\n` +
-          `🏁 *WILD MORA DEFEATED*\n` +
-          `☠ Wild *${state.wildMora.name}* has fallen.\n\n` +
-          `${xpLines}\n\n` +
-          `🔥 *RIFT SEEKERS — THE VOID HUNGERS*\n` +
-          `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-          `The fallen Mora's energy lingers. Claim it:\n\n` +
-          `🩸 *.devour* — Absorb its energy. Gain *PE* + *Intelligence*.\n` +
-          `⛓ *.bind* — Force-bind with Rift chains. *30%* chance to tame as *corrupted*.\n` +
-          `🔮 *.harvest* — Strip materials. Gain *Lucons* + *Resonance*.\n` +
-          `━━━━━━━━━━━━━━━━━━━━━━━━━`,
-        mentions: [senderId]
-      }, { quoted: msg });
+      buttonsSystem.mapButtons({
+        "🩸 Devour": ".devour",
+        "⛓ Bind": ".bind",
+        "🔮 Harvest": ".harvest",
+      });
+      return buttonsSystem.sendButtons(sock, chatId,
+        `${logs.join("\n")}\n\n` +
+        `🏁 *WILD MORA DEFEATED*\n` +
+        `☠ Wild *${state.wildMora.name}* has fallen.\n\n` +
+        `${xpLines}\n\n` +
+        `🔥 *RIFT SEEKERS — THE VOID HUNGERS*\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `The fallen Mora's energy lingers. Claim it 👇`,
+        ["🩸 Devour", "⛓ Bind", "🔮 Harvest"],
+        { footer: `Absorb it · Force-bind · Strip materials`, quoted: msg }
+      );
     }
 
     // ── DEFAULT: post-battle choices (Harmony / no faction) ────
@@ -1008,40 +1098,42 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
       state.pendingDecision = "harmony_wild";
       savePlayers(players);
       setWildBattle(chatId, senderId, state);
-      return sock.sendMessage(chatId, {
-        text:
-          `${logs.join("\n")}\n\n` +
-          `🏁 *WILD MORA DEFEATED*\n` +
-          `☠ Wild *${state.wildMora.name}* has fallen.\n\n` +
-          `${xpLines}\n\n` +
-          `🌿 *HARMONY — WHAT WILL YOU DO?*\n` +
-          `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-          `🌬 *.release* — Set it free. Gain *Intelligence*.\n` +
-          `🤝 *.tame* — Bond with it. Gain *Tame Skill*.\n` +
-          `🏛 *.sanctuary* — Send to Sanctuary. Gain *Lucons* + *Resonance*.\n` +
-          `━━━━━━━━━━━━━━━━━━━━━━━━━`,
-        mentions: [senderId]
-      }, { quoted: msg });
+      buttonsSystem.mapButtons({
+        "🤝 Tame": ".tame",
+        "🌬 Release": ".release",
+        "🏛 Sanctuary": ".sanctuary",
+      });
+      return buttonsSystem.sendButtons(sock, chatId,
+        `${logs.join("\n")}\n\n` +
+        `🏁 *WILD MORA DEFEATED*\n` +
+        `☠ Wild *${state.wildMora.name}* has fallen.\n\n` +
+        `${xpLines}\n\n` +
+        `🌿 *HARMONY — WHAT WILL YOU DO?*\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `Choose the fallen Mora's fate 👇`,
+        ["🤝 Tame", "🌬 Release", "🏛 Sanctuary"],
+        { footer: `Bond with it · Set it free · Shelter it`, quoted: msg }
+      );
     }
 
     // No faction — generic choices
     state.pendingDecision = "default";
     savePlayers(players);
     setWildBattle(chatId, senderId, state);
-    return sock.sendMessage(chatId, {
-      text:
-        `${logs.join("\n")}\n\n` +
-        `🏁 *WILD MORA DEFEATED*\n` +
-        `☠ Wild *${state.wildMora.name}* has fallen.\n\n` +
-        `${xpLines}\n\n` +
-        `⚔️ *CHOOSE YOUR ACTION*\n` +
-        `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-        `🤝 *.tame* — Bond with it. Gain *Tame Skill*.\n` +
-        `🌬 *.release* — Set it free. Gain *Intelligence*.\n` +
-        `🏛 *.sanctuary* — Study it. Gain *Lucons*.\n` +
-        `━━━━━━━━━━━━━━━━━━━━━━━━━`,
-      mentions: [senderId]
-    }, { quoted: msg });
+    buttonsSystem.mapButtons({
+      "🤝 Tame": ".tame",
+      "🌬 Release": ".release",
+      "🏛 Sanctuary": ".sanctuary",
+    });
+    return buttonsSystem.sendButtons(sock, chatId,
+      `${logs.join("\n")}\n\n` +
+      `🏁 *WILD MORA DEFEATED*\n` +
+      `☠ Wild *${state.wildMora.name}* has fallen.\n\n` +
+      `${xpLines}\n\n` +
+      `⚔️ *CHOOSE YOUR ACTION* 👇`,
+      ["🤝 Tame", "🌬 Release", "🏛 Sanctuary"],
+      { footer: `Bond with it · Set it free · Study it`, quoted: msg }
+    );
   }
 
   // Regen player's combat energy at end of own turn
@@ -1058,13 +1150,24 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
   player.playerHp = clamp(Math.min(combatantHp, directHp), 0, Number(player.playerMaxHp || 100));
 
   if (player.playerHp <= 0) {
+    // Apply death penalty — lose some faction stat
+    const deathPenalty = progression.calculateNPCDeathPenalty(player, {
+      name: state.wildMora.name,
+      level: state.wildMora.level || 1,
+    });
+    const penaltyResult = progression.applyDeathPenalty(player, deathPenalty);
+    
     savePlayers(players);
     await finishWildBattle(chatId, senderId);
+    
+    const statEmoji = progression.getFactionStatEmoji(player.faction);
+    const statKey = progression.getFactionStatKey(player.faction);
     return sock.sendMessage(chatId, {
       text:
         `${logs.join("\n")}\n\n` +
         `☠ *YOU FAINTED*\n` +
-        `Wild *${state.wildMora.name}* overwhelmed you.`,
+        `Wild *${state.wildMora.name}* overwhelmed you.\n\n` +
+        (penaltyResult.actualLoss > 0 ? `${statEmoji} *-${penaltyResult.actualLoss} ${statKey.charAt(0).toUpperCase() + statKey.slice(1)}* — death penalty` : ``),
       mentions: [senderId]
     }, { quoted: msg });
   }
@@ -1076,10 +1179,16 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
   const headerCombatant = getPlayerCombatant(player, loadMora);
   const header = buildWildHeader(players, senderId, headerCombatant, state.wildMora, hpBar, state);
 
-  return sock.sendMessage(chatId, {
-    text: `${logs.join("\n")}\n\n${header}`,
-    mentions: [senderId]
-  }, { quoted: msg });
+  buttonsSystem.mapButtons({
+    "⚔ Attack": ".attack",
+    "⚡ Charge": ".charge",
+    "🏃 Run": ".run",
+  });
+  return buttonsSystem.sendButtons(sock, chatId,
+    `${logs.join("\n")}\n\n${header}`,
+    ["⚔ Attack", "⚡ Charge", "🏃 Run"],
+    { footer: `Your turn — tap to act 👇`, quoted: msg, mentions: [senderId] }
+  );
 }
 async function doWildTurn(ctx, player, playerMora, state, senderId) {
   const { battleMath, savePlayers } = ctx;
@@ -1210,11 +1319,20 @@ async function doWildTurn(ctx, player, playerMora, state, senderId) {
     : res.mult <= 0.85 ? "  🥶*NOT VERY EFFECTIVE*"
     : "";
 
+  // Star commentary on enemy attacks
+  let starComment = "";
+  if (crit) {
+    starComment = botPersonality.getBattleCommentary("bigHit");
+  } else if (player.playerHp <= player.playerMaxHp * 0.25) {
+    starComment = botPersonality.getBattleCommentary("lowHp");
+  }
+
   logs.push(
     `☠ Wild *${state.wildMora.name}* used *${choice.name}* and dealt *${res.dmg}* to *${playerMora.name}*` +
     (crit ? "  ✨*CRIT!*" : "") +
     effTxt +
-    (braceHalved ? "  🛡*BRACED — halved!*" : "")
+    (braceHalved ? "  🛡*BRACED — halved!*" : "") +
+    (starComment ? `\n\n✨ *Star:* ${starComment}` : "")
   );
   if (counterDealt) {
     logs.push(`⚔️ *Counter!* — your brace strikes back for *${counterDealt}* damage.`);
@@ -1519,13 +1637,25 @@ async function cmdWildCharge(ctx, chatId, senderId, msg) {
   player.playerHp = clamp(Math.min(combatantHp, directHp), 0, Number(player.playerMaxHp || 100));
 
   if (player.playerHp <= 0) {
+    // Apply death penalty — lose some faction stat
+    const deathPenalty = progression.calculateNPCDeathPenalty(player, {
+      name: state.wildMora.name,
+      level: state.wildMora.level || 1,
+    });
+    const penaltyResult = progression.applyDeathPenalty(player, deathPenalty);
+    
     savePlayers(players);
     await finishWildBattle(chatId, senderId);
+    
+    const statEmoji = progression.getFactionStatEmoji(player.faction);
+    const statKey = progression.getFactionStatKey(player.faction);
     return sock.sendMessage(chatId, {
       text:
         `${logs.join("\n")}\n\n` +
         `☠ *YOU FAINTED*\n` +
-        `Wild *${state.wildMora.name}* overwhelmed you.`,
+        `Wild *${state.wildMora.name}* overwhelmed you.\n\n` +
+        (penaltyResult.actualLoss > 0 ? `${statEmoji} *-${penaltyResult.actualLoss} ${statKey.charAt(0).toUpperCase() + statKey.slice(1)}* — death penalty\n\n` : ``) +
+        `✨ *Star:* ${botPersonality.getBattleCommentary("faint")}`,
       mentions: [senderId]
     }, { quoted: msg });
   }
@@ -1619,7 +1749,7 @@ async function cmdWildTame(ctx, chatId, senderId, msg) {
     const gainResonance = Math.max(1, Math.floor(rewards.sanctuary_resonance * 0.5));
 
     player.lucons    = Number(player.lucons || 0) + gainLucons;
-    player.resonance = Number(player.resonance || 0) + gainResonance;
+    progression.addFactionStat(player, gainResonance);
 
     rewardsBlock =
       `\n💰 *+${gainLucons} Lucons* _(${rarity} rarity)_` +
@@ -1661,17 +1791,19 @@ async function cmdWildSanctuary(ctx, chatId, senderId, msg) {
   const rewards = getRewards(rarity);
 
   player.lucons = (player.lucons || 0) + rewards.sanctuary_lucons;
-  player.resonance = (player.resonance || 0) + rewards.sanctuary_resonance;
+  progression.addFactionStat(player, rewards.sanctuary_resonance);
   savePlayers(players);
   await finishWildBattle(chatId, senderId);
 
+  const statEmoji = progression.getFactionStatEmoji(player.faction);
+  const statKey = progression.getFactionStatKey(player.faction);
   return sock.sendMessage(chatId, {
     text:
       `🏛 *SENT TO SANCTUARY*\n\n` +
       `@${String(senderId).split("@")[0]} guided *${moraName}* to the Sanctuary.\n` +
       `The Mora rests peacefully, and the Sanctuary grows stronger.\n\n` +
       `💰 *+${rewards.sanctuary_lucons} Lucons* _(${rarity} rarity)_\n` +
-      `💠 *+${rewards.sanctuary_resonance} Resonance* _(${rarity} rarity)_\n\n` +
+      `${statEmoji} *+${rewards.sanctuary_resonance} ${statKey.charAt(0).toUpperCase() + statKey.slice(1)}* _(${rarity} rarity)_\n\n` +
       `_"Every soul sheltered strengthens the light."_`,
     mentions: [senderId]
   }, { quoted: msg });
@@ -1689,7 +1821,7 @@ async function cmdWildExecute(ctx, chatId, senderId, msg) {
   const rarity = String(state.wildSpecies?.rarity || state.wildMora?.rarity || "common").toLowerCase();
   const rewards = getRewards(rarity);
 
-  player.resonance = (player.resonance || 0) + rewards.execute_resonance;
+  progression.addFactionStat(player, rewards.execute_resonance);
   player.lucons = (player.lucons || 0) + rewards.execute_lucons;
 
   const fp = loadFactionPointsWild();
@@ -1886,7 +2018,7 @@ async function cmdWildHarvest(ctx, chatId, senderId, msg) {
   const rewards = getRewards(rarity);
 
   player.lucons = (player.lucons || 0) + rewards.harvest_lucons;
-  player.resonance = (player.resonance || 0) + rewards.harvest_resonance;
+  progression.addFactionStat(player, rewards.harvest_resonance);
 
   // Rift Shards: 1-3 based on rarity tier
   const shardCount = rarity === "mythic" || rarity === "legendary" ? 3
@@ -1928,6 +2060,7 @@ module.exports = {
   cmdWildHarvest,
   getWildBattle,
   clearWildBattle,
+  clearAllWildBattlesFor,
   decayMutations,
 
   // ── Shared combat helpers (re-used by systems/playerBattle.js v0.7.1) ──
