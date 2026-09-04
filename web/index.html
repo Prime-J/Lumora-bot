@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumora — Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root {
+    --bg: #0a0a0f; --surface: #12121a; --surface2: #1a1a25; --border: #2a2a3a;
+    --text: #e8e8f0; --text-dim: #8888aa; --accent: #00d4ff; --accent2: #7c5cff;
+    --gold: #ffd700; --green: #00ff88; --red: #ff4466; --orange: #ff8844;
+    --pink: #ff66aa; --purple: #9966ff; --harmony: #4caf50; --purity: #2196f3; --rift: #9c27b0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+  /* NAV */
+  .nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 20px; display: flex; align-items: center; gap: 0; position: sticky; top: 0; z-index: 100; }
+  .nav-logo { display: flex; align-items: center; gap: 10px; padding: 12px 20px 12px 0; border-right: 1px solid var(--border); margin-right: 10px; }
+  .nav-logo img { height: 36px; width: 36px; border-radius: 50%; }
+  .nav-logo span { font-weight: 800; font-size: 1.1rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 2px; }
+  .nav button { background: none; border: none; color: var(--text-dim); padding: 14px 16px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; border-bottom: 2px solid transparent; }
+  .nav button:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav button.admin-btn { color: var(--gold); margin-left: auto; }
+  .nav button.admin-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  /* PANELS */
+  .panel { display: none; padding: 30px; max-width: 1200px; margin: 0 auto; }
+  .panel.active { display: block; }
+  .panel h1 { font-size: 1.8rem; margin-bottom: 5px; }
+  .panel .subtitle { color: var(--text-dim); margin-bottom: 25px; font-size: 0.9rem; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .card h2 { font-size: 1.1rem; margin-bottom: 10px; color: var(--accent); }
+  .card h3 { font-size: 0.95rem; margin-bottom: 8px; color: var(--text); }
+
+  /* GRID */
+  .grid { display: grid; gap: 16px; }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 768px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+  /* MORA CARDS */
+  .mora-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; transition: all 0.2s; cursor: pointer; }
+  .mora-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .mora-card .icon { font-size: 2.5rem; margin-bottom: 8px; }
+  .mora-card .name { font-weight: 600; font-size: 0.9rem; }
+  .mora-card .type { font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; }
+  .mora-card .rarity { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 6px; }
+  .rarity-common { background: #1b3a1b; color: #4caf50; }
+  .rarity-uncommon { background: #1a2a3a; color: #2196f3; }
+  .rarity-rare { background: #2a1a2a; color: #9c27b0; }
+  .rarity-epic { background: #3a1a0a; color: #ff8844; }
+  .rarity-legendary { background: #3a2a0a; color: #ffd700; }
+
+  /* ITEM CARDS */
+  .item-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; transition: all 0.2s; }
+  .item-card:hover { border-color: var(--accent2); }
+  .item-card .item-name { font-weight: 600; font-size: 0.9rem; }
+  .item-card .item-id { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); }
+  .item-card .item-effect { font-size: 0.8rem; color: var(--green); margin-top: 4px; }
+  .item-card .item-price { font-size: 0.8rem; color: var(--gold); margin-top: 4px; }
+
+  /* STYLE CARDS */
+  .style-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .style-card .style-name { font-weight: 700; font-size: 1rem; }
+  .style-card .style-meta { font-size: 0.8rem; color: var(--text-dim); margin: 4px 0; }
+  .style-card .move { font-size: 0.8rem; padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .style-card .move:last-child { border: none; }
+  .move-power { color: var(--red); }
+  .move-acc { color: var(--green); }
+
+  /* EVENTS */
+  .event-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; border-left: 4px solid var(--accent); }
+  .event-card.upcoming { border-left-color: var(--gold); }
+  .event-card.active { border-left-color: var(--green); }
+  .event-card .event-name { font-weight: 600; }
+  .event-card .event-date { font-size: 0.8rem; color: var(--text-dim); }
+  .event-card .event-desc { font-size: 0.85rem; color: var(--text-dim); margin-top: 6px; }
+
+  /* BUTTONS */
+  .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s; }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #33ddff; }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-success { background: var(--green); color: #000; }
+  .btn-gold { background: var(--gold); color: #000; }
+
+  /* INPUTS */
+  input, select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; width: 100%; }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
+  label { font-size: 0.8rem; color: var(--text-dim); display: block; margin-bottom: 4px; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 10px; background: var(--surface2); color: var(--accent); font-size: 0.8rem; border-bottom: 2px solid var(--border); }
+  td { padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* BADGE */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
+  .badge-harmony { background: rgba(76,175,80,0.2); color: var(--harmony); }
+  .badge-purity { background: rgba(33,150,243,0.2); color: var(--purity); }
+  .badge-rift { background: rgba(156,39,176,0.2); color: var(--rift); }
+
+  /* SEARCH */
+  .search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+  .search-bar input { flex: 1; }
+
+  /* ADMIN LOGIN */
+  .admin-login { max-width: 400px; margin: 60px auto; text-align: center; }
+  .admin-login input { margin-bottom: 10px; }
+
+  /* TOGGLE */
+  .toggle { position: relative; width: 44px; height: 24px; display: inline-block; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #333; border-radius: 12px; cursor: pointer; transition: 0.3s; }
+  .toggle .slider:before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.3s; }
+  .toggle input:checked + .slider { background: var(--green); }
+  .toggle input:checked + .slider:before { transform: translateX(20px); }
+
+  .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .hero { text-align: center; padding: 40px 0; }
+  .hero h1 { font-size: 2.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2), var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero p { color: var(--text-dim); margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="nav">
+  <div class="nav-logo">
+    <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff4466,#00d4ff);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">💎</div>
+    <span>LUMORA</span>
+  </div>
+  <button class="active" onclick="showPanel('home',this)">🏠 Home</button>
+  <button onclick="showPanel('mora',this)">🐾 Mora</button>
+  <button onclick="showPanel('items',this)">📦 Items</button>
+  <button onclick="showPanel('styles',this)">⚔️ Styles</button>
+  <button onclick="showPanel('events',this)">📅 Events</button>
+  <button onclick="showPanel('trading',this)">💰 Trading</button>
+  <button class="admin-btn" onclick="showPanel('admin',this)">🔒 Admin</button>
+</div>
+
+<!-- ═══════════════ HOME ═══════════════ -->
+<div class="panel active" id="panel-home">
+  <div class="hero">
+    <h1>LUMORA</h1>
+    <p>Era of Awakening — WhatsApp RPG</p>
+  </div>
+  <div class="grid grid-3">
+    <div class="card" style="text-align:center;">
+      <h2>👥 Players</h2>
+      <div id="home-players" style="font-size:2rem;font-weight:800;color:var(--accent);">—</div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <h2>🐾 Mora Species</h2>
+      <div id="home-mora" style="font-size:2rem;font-weight:800;color:var(--green);">—</div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <h2>📦 Items</h2>
+      <div id="home-items" style="font-size:2rem;font-weight:800;color:var(--gold);">—</div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>📰 Latest Bulletins</h2>
+    <div id="home-bulletins">
+      <div class="stat-row"><span>v0.9.0 — 4-stat overhaul + guided onboarding</span><span style="color:var(--text-dim);font-size:0.8rem;">Recent</span></div>
+      <div class="stat-row"><span>Faction group links updated</span><span style="color:var(--text-dim);font-size:0.8rem;">Fixed</span></div>
+      <div class="stat-row"><span>Consumables crash fix — all items working</span><span style="color:var(--text-dim);font-size:0.8rem;">Fixed</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>📅 Upcoming Events</h2>
+    <div id="home-events"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ MORA ═══════════════ -->
+<div class="panel" id="panel-mora">
+  <h1>🐾 Mora Catalog</h1>
+  <p class="subtitle">All discovered Mora species in Lumora</p>
+  <div class="search-bar">
+    <input type="text" id="mora-search" placeholder="Search by name or type..." oninput="filterMora()">
+    <select id="mora-type-filter" onchange="filterMora()" style="width:150px;">
+      <option value="">All Types</option>
+      <option value="Aqua">💧 Aqua</option>
+      <option value="Nature">🌿 Nature</option>
+      <option value="Terra">🪨 Terra</option>
+      <option value="Volt">⚡ Volt</option>
+      <option value="Flame">🔥 Flame</option>
+      <option value="Frost">❄️ Frost</option>
+      <option value="Wind">💨 Wind</option>
+      <option value="Shadow">🌑 Shadow</option>
+    </select>
+  </div>
+  <div class="grid grid-4" id="mora-grid"></div>
+</div>
+
+<!-- ═══════════════ ITEMS ═══════════════ -->
+<div class="panel" id="panel-items">
+  <h1>📦 Item Database</h1>
+  <p class="subtitle">All items, their effects, and where to find them</p>
+  <div class="search-bar">
+    <input type="text" id="item-search" placeholder="Search items..." oninput="filterItems()">
+    <select id="item-cat-filter" onchange="filterItems()" style="width:150px;">
+      <option value="">All Categories</option>
+      <option value="consumable">🧪 Consumable</option>
+      <option value="gear">⚙️ Gear</option>
+      <option value="scroll">📜 Scroll</option>
+      <option value="special">✨ Special</option>
+      <option value="material">🪨 Material</option>
+    </select>
+  </div>
+  <div id="item-list"></div>
+</div>
+
+<!-- ═══════════════ STYLES ═══════════════ -->
+<div class="panel" id="panel-styles">
+  <h1>⚔️ Fighting Styles</h1>
+  <p class="subtitle">Combat disciplines and their moves</p>
+  <div class="search-bar">
+    <input type="text" id="style-search" placeholder="Search styles..." oninput="filterStyles()">
+    <select id="style-rarity-filter" onchange="filterStyles()" style="width:150px;">
+      <option value="">All Rarities</option>
+      <option value="common">🟢 Common</option>
+      <option value="rare">🔵 Rare</option>
+      <option value="epic">🟣 Epic</option>
+      <option value="legendary">🟡 Legendary</option>
+    </select>
+  </div>
+  <div class="grid grid-2" id="style-grid"></div>
+</div>
+
+<!-- ═══════════════ EVENTS ═══════════════ -->
+<div class="panel" id="panel-events">
+  <h1>📅 Events</h1>
+  <p class="subtitle">Upcoming and active events in Lumora</p>
+  <div class="card upcoming">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div class="event-name" style="font-size:1.1rem;">🏆 Faction War Season 1</div>
+        <div class="event-date">Coming Soon</div>
+      </div>
+      <span class="badge" style="background:rgba(255,215,0,0.2);color:var(--gold);">UPCOMING</span>
+    </div>
+    <div class="event-desc">All-out faction warfare. Earn Glory for your faction. Top faction controls the Rift for a week.</div>
+  </div>
+  <div class="card upcoming">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div class="event-name" style="font-size:1.1rem;">🌙 Rift Surge Event</div>
+        <div class="event-date">Coming Soon</div>
+      </div>
+      <span class="badge" style="background:rgba(255,215,0,0.2);color:var(--gold);">UPCOMING</span>
+    </div>
+    <div class="event-desc">Primordial energy surges. Shadow Mora spawn rates increased 3x. Exclusive Legendary drops.</div>
+  </div>
+  <div class="card active">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div class="event-name" style="font-size:1.1rem;">🎮 Grand Opening</div>
+        <div class="event-date">Active Now</div>
+      </div>
+      <span class="badge" style="background:rgba(0,255,136,0.2);color:var(--green);">ACTIVE</span>
+    </div>
+    <div class="event-desc">Lumora is live! All players start with 350 Lucons + Creation Powder. Register now!</div>
+  </div>
+</div>
+
+<!-- ═══════════════ TRADING ═══════════════ -->
+<div class="panel" id="panel-trading">
+  <h1>💰 Trading Values</h1>
+  <p class="subtitle">Market prices and item values for trading</p>
+  <div class="search-bar">
+    <input type="text" id="trade-search" placeholder="Search items..." oninput="filterTrading()">
+  </div>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Item</th><th>Rarity</th><th>Category</th><th>Market Price</th><th>Effect</th></tr>
+      </thead>
+      <tbody id="trade-table"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════ ADMIN ═══════════════ -->
+<div class="panel" id="panel-admin">
+  <div id="admin-login" class="admin-login">
+    <h1>🔒 Admin Panel</h1>
+    <p class="subtitle">Enter admin password</p>
+    <input type="password" id="admin-pass" placeholder="Password" onkeydown="if(event.key==='Enter')adminLogin()">
+    <br><br>
+    <button class="btn btn-gold" onclick="adminLogin()">Login</button>
+  </div>
+  <div id="admin-panel" style="display:none;">
+    <h1>⚙️ Admin Dashboard</h1>
+    <p class="subtitle">Manage Lumora game settings</p>
+    <div class="grid grid-2">
+      <div class="card">
+        <h2>📊 Game Stats</h2>
+        <div class="stat-row"><span>Total Players</span><span id="admin-players">—</span></div>
+        <div class="stat-row"><span>Total Mora Species</span><span id="admin-mora">—</span></div>
+        <div class="stat-row"><span>Total Items</span><span id="admin-items">—</span></div>
+      </div>
+      <div class="card">
+        <h2>🎮 Quick Actions</h2>
+        <button class="btn btn-primary" onclick="adminAction('broadcast')" style="margin:4px;">📢 Broadcast</button>
+        <button class="btn btn-danger" onclick="adminAction('reset-daily')" style="margin:4px;">🔄 Reset Dailies</button>
+        <button class="btn btn-success" onclick="adminAction('backup')" style="margin:4px;">💾 Backup Data</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📦 Item Manager</h2>
+      <p style="color:var(--text-dim);font-size:0.85rem;margin-bottom:10px;">Edit item properties directly</p>
+      <div class="search-bar">
+        <input type="text" id="admin-item-search" placeholder="Search item to edit..." oninput="filterAdminItems()">
+      </div>
+      <div id="admin-item-list"></div>
+    </div>
+    <div class="card">
+      <h2>⚙️ Game Settings</h2>
+      <div id="admin-settings"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TYPE_ICONS = { Aqua:'💧', Nature:'🌿', Terra:'🪨', Volt:'⚡', Flame:'🔥', Frost:'❄️', Wind:'💨', Shadow:'🌑' };
+const RARITY_CLASS = { common:'rarity-common', uncommon:'rarity-uncommon', rare:'rarity-rare', epic:'rarity-epic', legendary:'rarity-legendary' };
+
+let allMora = [], allItems = [], allStyles = [];
+let adminToken = null;
+
+// ── NAV ──
+function showPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// ── API ──
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (adminToken) headers['X-Admin-Token'] = adminToken;
+  const res = await fetch(path, { ...opts, headers: { ...headers, ...opts.headers } });
+  return res.json();
+}
+
+// ── HOME ──
+async function loadHome() {
+  const [players, mora, items] = await Promise.all([api('/api/players'), api('/api/mora'), api('/api/items')]);
+  document.getElementById('home-players').textContent = players.ok ? players.players.length : '—';
+  document.getElementById('home-mora').textContent = mora.ok ? (Array.isArray(mora.mora) ? mora.mora.length : Object.keys(mora.mora).length) : '—';
+  document.getElementById('home-items').textContent = items.ok ? items.items.length : '—';
+}
+
+// ── MORA ──
+async function loadMora() {
+  const res = await api('/api/mora');
+  if (!res.ok) return;
+  allMora = Array.isArray(res.mora) ? res.mora : Object.values(res.mora);
+  renderMora(allMora);
+}
+function renderMora(list) {
+  const grid = document.getElementById('mora-grid');
+  grid.innerHTML = list.map(m => `
+    <div class="mora-card">
+      <div class="icon">${TYPE_ICONS[m.type] || '🐾'}</div>
+      <div class="name">${m.name}</div>
+      <div class="type">${m.type}</div>
+      <div class="rarity ${(RARITY_CLASS[m.rarity] || 'rarity-common')}">${m.rarity || 'common'}</div>
+    </div>
+  `).join('');
+}
+function filterMora() {
+  const q = document.getElementById('mora-search').value.toLowerCase();
+  const t = document.getElementById('mora-type-filter').value;
+  const filtered = allMora.filter(m => {
+    if (t && m.type !== t) return false;
+    if (q && !m.name.toLowerCase().includes(q) && !m.type.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  renderMora(filtered);
+}
+
+// ── ITEMS ──
+async function loadItems() {
+  const res = await api('/api/items');
+  if (!res.ok) return;
+  allItems = res.items;
+  renderItems(allItems);
+}
+function renderItems(list) {
+  document.getElementById('item-list').innerHTML = list.map(i => `
+    <div class="item-card" style="margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <span class="item-name">${i.name}</span>
+          <span class="item-id">${i.id}</span>
+        </div>
+        <span class="badge ${(RARITY_CLASS[i.rarity] || 'rarity-common')}">${i.rarity || '—'}</span>
+      </div>
+      <div class="item-effect">${i.effect || 'No effect listed'}</div>
+      <div class="item-price">💰 ${i.price || 0} Lucons</div>
+    </div>
+  `).join('');
+}
+function filterItems() {
+  const q = document.getElementById('item-search').value.toLowerCase();
+  const c = document.getElementById('item-cat-filter').value;
+  const filtered = allItems.filter(i => {
+    if (c && i.category !== c) return false;
+    if (q && !i.name.toLowerCase().includes(q) && !i.id.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  renderItems(filtered);
+}
+
+// ── STYLES ──
+async function loadStyles() {
+  const res = await api('/api/styles');
+  if (!res.ok) return;
+  allStyles = res.styles;
+  renderStyles(allStyles);
+}
+function renderStyles(list) {
+  const grid = document.getElementById('style-grid');
+  grid.innerHTML = list.map(s => `
+    <div class="style-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span class="style-name">${s.name}</span>
+        <span class="badge ${(RARITY_CLASS[s.rarity] || 'rarity-common')}">${s.rarity}</span>
+      </div>
+      <div class="style-meta">${TYPE_ICONS[s.type] || ''} ${s.type} · ${s.faction || 'Any Faction'} · Quest: ${s.unlockQuest}</div>
+      ${(s.moves || []).map(m => `
+        <div class="move">
+          <strong>${m.name}</strong> —
+          <span class="move-power">P:${m.power}</span> ·
+          <span class="move-acc">A:${m.accuracy}%</span> ·
+          ⚡${m.energyCost}
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+function filterStyles() {
+  const q = document.getElementById('style-search').value.toLowerCase();
+  const r = document.getElementById('style-rarity-filter').value;
+  const filtered = allStyles.filter(s => {
+    if (r && s.rarity !== r) return false;
+    if (q && !s.name.toLowerCase().includes(q) && !s.type.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  renderStyles(filtered);
+}
+
+// ── TRADING ──
+function filterTrading() {
+  const q = document.getElementById('trade-search').value.toLowerCase();
+  const filtered = allItems.filter(i => {
+    if (q && !i.name.toLowerCase().includes(q) && !i.id.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  renderTrading(filtered);
+}
+function renderTrading(list) {
+  document.getElementById('trade-table').innerHTML = list.sort((a,b) => (b.price||0) - (a.price||0)).map(i => `
+    <tr>
+      <td><strong>${i.name}</strong> <span style="color:var(--text-dim);font-size:0.75rem;">${i.id}</span></td>
+      <td><span class="badge ${(RARITY_CLASS[i.rarity] || 'rarity-common')}">${i.rarity || '—'}</span></td>
+      <td>${i.category || '—'}</td>
+      <td style="color:var(--gold);font-weight:600;">💰 ${i.price || 0}</td>
+      <td style="color:var(--text-dim);font-size:0.8rem;">${i.effect || '—'}</td>
+    </tr>
+  `).join('');
+}
+
+// ── ADMIN ──
+async function adminLogin() {
+  const pass = document.getElementById('admin-pass').value;
+  const res = await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ password: pass }) });
+  if (res.ok) {
+    adminToken = res.token;
+    document.getElementById('admin-login').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    loadAdminData();
+  } else {
+    alert('Invalid password');
+  }
+}
+async function loadAdminData() {
+  const [players, mora, items] = await Promise.all([api('/api/players'), api('/api/mora'), api('/api/items')]);
+  document.getElementById('admin-players').textContent = players.ok ? players.players.length : '—';
+  document.getElementById('admin-mora').textContent = mora.ok ? (Array.isArray(mora.mora) ? mora.mora.length : Object.keys(mora.mora).length) : '—';
+  document.getElementById('admin-items').textContent = items.ok ? items.items.length : '—';
+
+  // Render admin item list
+  if (items.ok) {
+    document.getElementById('admin-item-list').innerHTML = items.items.slice(0, 20).map(i => `
+      <div class="stat-row">
+        <span>${i.name} <span style="color:var(--text-dim);font-size:0.75rem;">${i.id}</span></span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="badge ${(RARITY_CLASS[i.rarity] || 'rarity-common')}">${i.rarity || '—'}</span>
+          <select onchange="updateItemField('${i.id}','rarity',this.value)" style="width:100px;">
+            <option ${i.rarity==='common'?'selected':''}>common</option>
+            <option ${i.rarity==='uncommon'?'selected':''}>uncommon</option>
+            <option ${i.rarity==='rare'?'selected':''}>rare</option>
+            <option ${i.rarity==='epic'?'selected':''}>epic</option>
+            <option ${i.rarity==='legendary'?'selected':''}>legendary</option>
+          </select>
+          <input type="number" value="${i.price||0}" onchange="updateItemField('${i.id}','price',Number(this.value))" style="width:80px;">
+        </div>
+      </div>
+    `).join('');
+  }
+}
+function filterAdminItems() {
+  // Simple client-side filter for admin item list
+  const q = document.getElementById('admin-item-search').value.toLowerCase();
+  document.querySelectorAll('#admin-item-list .stat-row').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+async function updateItemField(itemId, field, value) {
+  await api('/api/items/update', { method: 'POST', body: JSON.stringify({ itemId, field, value }) });
+}
+function adminAction(action) {
+  alert('Admin action: ' + action + ' — will be implemented');
+}
+
+// ── INIT ──
+loadHome();
+loadMora();
+loadItems();
+loadStyles();
+</script>
+</body>
+</html>

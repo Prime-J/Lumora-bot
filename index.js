@@ -85,6 +85,86 @@ app.post('/api/stats/invest', (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// ── Dashboard API: Items ───────────────────────────────────
+app.get('/api/items', (req, res) => {
+  try {
+    const itemsPath = path.join(__dirname, 'data', 'items.json');
+    const items = JSON.parse(fs.readFileSync(itemsPath, 'utf8'));
+    const list = Object.values(items).map(i => ({
+      id: i.id, name: i.name, category: i.category, rarity: i.rarity,
+      price: i.price, effect: i.effect, desc: i.desc, slot: i.slot,
+      faction: i.faction, effects: i.effects,
+    }));
+    res.json({ ok: true, items: list });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+// ── Dashboard API: Styles ──────────────────────────────────
+app.get('/api/styles', (req, res) => {
+  try {
+    const stylesPath = path.join(__dirname, 'data', 'styles.json');
+    const styles = JSON.parse(fs.readFileSync(stylesPath, 'utf8'));
+    res.json({ ok: true, styles: Object.values(styles) });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+// ── Dashboard API: Settings ────────────────────────────────
+const ADMIN_PASSWORD = process.env.ADMIN_PASS || 'lumora2026';
+let adminSessions = {};
+
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body;
+  if (password === ADMIN_PASSWORD) {
+    const token = Math.random().toString(36).slice(2);
+    adminSessions[token] = { at: Date.now() };
+    res.json({ ok: true, token });
+  } else {
+    res.json({ ok: false, error: 'Invalid password' });
+  }
+});
+
+function requireAdmin(req, res, next) {
+  const token = req.headers['x-admin-token'];
+  if (!token || !adminSessions[token]) {
+    return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  }
+  next();
+}
+
+app.get('/api/settings', requireAdmin, (req, res) => {
+  try {
+    const settingsPath = path.join(__dirname, 'data', 'settings.json');
+    const settings = fs.existsSync(settingsPath)
+      ? JSON.parse(fs.readFileSync(settingsPath, 'utf8'))
+      : {};
+    res.json({ ok: true, settings });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/settings', requireAdmin, (req, res) => {
+  try {
+    const settingsPath = path.join(__dirname, 'data', 'settings.json');
+    const current = fs.existsSync(settingsPath)
+      ? JSON.parse(fs.readFileSync(settingsPath, 'utf8'))
+      : {};
+    const updated = { ...current, ...req.body };
+    fs.writeFileSync(settingsPath, JSON.stringify(updated, null, 2));
+    res.json({ ok: true, settings: updated });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/items/update', requireAdmin, (req, res) => {
+  try {
+    const { itemId, field, value } = req.body;
+    const itemsPath = path.join(__dirname, 'data', 'items.json');
+    const items = JSON.parse(fs.readFileSync(itemsPath, 'utf8'));
+    if (!items[itemId]) return res.json({ ok: false, error: 'Item not found' });
+    items[itemId][field] = value;
+    fs.writeFileSync(itemsPath, JSON.stringify(items, null, 2));
+    res.json({ ok: true, item: items[itemId] });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'web', 'index.html'));
 });
