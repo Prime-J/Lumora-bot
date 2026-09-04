@@ -7,9 +7,16 @@ function clamp(n, min, max) {
 }
 
 // XP needed to go from level L -> L+1
+// Uses centralized progression engine if available
 function xpToNextLevel(level) {
-  const lv = Math.max(1, Number(level || 1));
-  return 50 + lv * lv * 10;
+  try {
+    const progression = require('../systems/progression');
+    return progression.calculateXPRequired(level);
+  } catch {
+    // Fallback if progression module not available
+    const lv = Math.max(1, Number(level || 1));
+    return 50 + lv * lv * 10;
+  }
 }
 
 // Pull base stats safely
@@ -214,12 +221,16 @@ function addPlayerXp(player, amount) {
       statPointsGranted = stats.grantPointsForLevels(player, levels);
     } catch {}
     // v0.8.1 — combat-energy max gradually grows with level. +1 max
-    // stamina per level gained. If the bar was already full, top it off.
+    // stamina per level gained.
     if (typeof player.combatMaxEnergy !== "number") player.combatMaxEnergy = 50;
     if (typeof player.combatEnergy    !== "number") player.combatEnergy    = player.combatMaxEnergy;
-    const wasFull = player.combatEnergy >= player.combatMaxEnergy;
     player.combatMaxEnergy += levels;
-    if (wasFull) player.combatEnergy = player.combatMaxEnergy;
+    // Level-up always refills energy to full.
+    player.combatEnergy = player.combatMaxEnergy;
+    // Level-up always refills HP to full.
+    if (typeof player.playerMaxHp !== "number") player.playerMaxHp = 100;
+    if (typeof player.playerHp    !== "number") player.playerHp    = player.playerMaxHp;
+    player.playerHp = player.playerMaxHp;
   }
 
   return {
