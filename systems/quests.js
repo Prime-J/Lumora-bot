@@ -284,6 +284,21 @@ async function cmdQuests(ctx, chatId, senderId, msg) {
       if (req.kind === "chain" && Array.isArray(req.steps)) {
         const sp = a.stepProgress || {};
         const done = req.steps.filter((_, i) => sp[i]).length;
+        {
+          let _hint = "";
+          for (let si = 0; si < req.steps.length; si++) {
+            if (sp[si]) continue;
+            const st = req.steps[si];
+            if (st.kind === "meetNpc") { _hint = String.fromCharCode(10) + String.fromCharCode(0x1f4ac) + " Next: *.whisper " + String(st.npc).toLowerCase() + "*"; break; }
+            if (st.kind === "winBattles") {
+              const cur = Number(sp[si + "_count"] || 0);
+              _hint = String.fromCharCode(10) + String.fromCharCode(0x2694, 0xfe0f) + " Next: win *" + (st.count - cur) + "* more wild battles";
+              if (st.hint) _hint += String.fromCharCode(10) + "   _" + st.hint + "_";
+              break;
+            }
+          }
+          progressLine += _hint;
+        }
         progressLine = `  Progress: *${done}/${req.steps.length}* steps`;
       } else {
         const need = Number(req.count || 1);
