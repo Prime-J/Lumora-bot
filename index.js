@@ -463,7 +463,6 @@ const FACTION_INVITE_MAP = {
     'IRAvs9txWwDHI3l4OVYAak': 'harmony',
     'KzWF6mHUZCN85CkllwB8me': 'purity',
     'CRUuwdU0rBx6j6dRh2Ydh9': 'rift',
-    'HUOV4vTSsSOBzpGcDxosiq': 'none',
 };
 
 // Resolve invite codes to JIDs on first use
@@ -1120,7 +1119,7 @@ function loadSettings() {
     botName: "Lumora",
     eraName: "Lumora: Awakening",
     prefix: ".",
-    linkDescription: "https://chat.whatsapp.com/HUOV4vTSsSOBzpGcDxosiq",
+    linkDescription: "https://chat.whatsapp.com/IRAvs9txWwDHI3l4OVYAak",
     currencyName: "LUCONS",
     ownerNumbers: ["263779982560"],
     media: {
