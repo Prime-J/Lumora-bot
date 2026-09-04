@@ -23,8 +23,16 @@ try { require("dotenv").config(); } catch {}
     "Failed to decrypt message with any known session",
     "Session error:",
     "V1 session storage migration error",
+    // Node.js punycode deprecation (harmless, from WhatsApp internals)
+    "punycode",
   ];
-  const isNoise = (args) => typeof args[0] === "string" && SIGNAL_NOISE.some(p => args[0].includes(p));
+  const isNoise = (args) => {
+    if (typeof args[0] !== "string") return false;
+    if (SIGNAL_NOISE.some(p => args[0].includes(p))) return true;
+    // Suppress Node deprecation warnings from Baileys internals
+    if (args[0].includes("DeprecationWarning")) return true;
+    return false;
+  };
   for (const m of ["info", "warn", "error", "log"]) {
     const orig = console[m].bind(console);
     console[m] = (...args) => { if (!isNoise(args)) orig(...args); };
@@ -1941,7 +1949,19 @@ async function startBot() {
   // Baileys emits connection events from the moment the socket is created — if we
   // await MongoDB or anything else first, those early events get dropped and the bot
   // hangs forever waiting for a connection update that already fired.
-  sock.ev.on("creds.update", saveCreds);
+  // Wrap saveCreds with retry — Windows sometimes throws UNKNOWN on file open
+  const safeSaveCreds = async (...args) => {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await saveCreds(...args);
+        return;
+      } catch (e) {
+        if (attempt < 2) await new Promise(r => setTimeout(r, 200 * (attempt + 1)));
+        else console.warn("[auth] saveCreds failed after 3 attempts:", e.message);
+      }
+    }
+  };
+  sock.ev.on("creds.update", safeSaveCreds);
 
   sock.ev.on("connection.error", (err) => {
     console.log("[socket] Connection error:", err?.message || err);
@@ -1950,7 +1970,7 @@ async function startBot() {
   let spawnStarted = false;
 
   sock.ev.on("connection.update", (update) => {
-    console.log("[socket] Connection update received:", update.connection);
+    if (update.connection) console.log("[socket] Connection update received:", update.connection);
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
