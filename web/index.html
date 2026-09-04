@@ -14,23 +14,19 @@
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
-
-  /* ANIMATED BG */
   .bg-particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: hidden; }
   .bg-particles .orb { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.15; animation: float 20s infinite ease-in-out; }
   .bg-particles .orb:nth-child(1) { width: 300px; height: 300px; background: var(--accent); top: -100px; left: -100px; animation-delay: 0s; }
   .bg-particles .orb:nth-child(2) { width: 250px; height: 250px; background: var(--accent2); bottom: -80px; right: -80px; animation-delay: -7s; }
   .bg-particles .orb:nth-child(3) { width: 200px; height: 200px; background: var(--gold); top: 50%; left: 50%; animation-delay: -14s; }
   @keyframes float { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(30px,-30px) scale(1.1); } 66% { transform: translate(-20px,20px) scale(0.9); } }
-
-  /* NAV */
-  .nav { background: rgba(18,18,26,0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 20px; display: flex; align-items: center; gap: 0; position: sticky; top: 0; z-index: 100; }
-  .nav-logo { display: flex; align-items: center; gap: 10px; padding: 12px 20px 12px 0; border-right: 1px solid var(--border); margin-right: 10px; cursor: pointer; }
-  .nav-logo .logo-icon { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; animation: pulse-glow 3s infinite; }
+  .nav { background: rgba(18,18,26,0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 20px; display: flex; align-items: center; gap: 0; position: sticky; top: 0; z-index: 100; overflow-x: auto; }
+  .nav-logo { display: flex; align-items: center; gap: 10px; padding: 12px 20px 12px 0; border-right: 1px solid var(--border); margin-right: 10px; cursor: pointer; flex-shrink: 0; }
+  .nav-logo .logo-icon { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; animation: pulse-glow 3s infinite; flex-shrink: 0; }
   .nav-logo .logo-icon img { width: 100%; height: 100%; object-fit: cover; }
   @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 10px rgba(0,212,255,0.3); } 50% { box-shadow: 0 0 25px rgba(0,212,255,0.6); } }
   .nav-logo span { font-weight: 800; font-size: 1.1rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 2px; }
-  .nav button { background: none; border: none; color: var(--text-dim); padding: 14px 16px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: all 0.3s; border-bottom: 2px solid transparent; position: relative; }
+  .nav button { background: none; border: none; color: var(--text-dim); padding: 14px 12px; cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: all 0.3s; border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0; }
   .nav button:hover { color: var(--text); background: rgba(255,255,255,0.03); }
   .nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
   .nav button.admin-btn { color: var(--gold); margin-left: auto; }
@@ -39,28 +35,20 @@
   .nav .status-dot.online { background: var(--green); animation: blink 2s infinite; }
   .nav .status-dot.offline { background: var(--red); }
   @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-
-  /* PANELS */
   .panel { display: none; padding: 30px; max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
   .panel.active { display: block; animation: fadeIn 0.4s ease; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   .panel h1 { font-size: 1.8rem; margin-bottom: 5px; }
   .panel .subtitle { color: var(--text-dim); margin-bottom: 25px; font-size: 0.9rem; }
-
-  /* CARDS */
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; transition: all 0.3s; }
   .card:hover { border-color: rgba(0,212,255,0.3); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
   .card h2 { font-size: 1.1rem; margin-bottom: 10px; color: var(--accent); }
   .card h3 { font-size: 0.95rem; margin-bottom: 8px; color: var(--text); }
-
-  /* GRID */
   .grid { display: grid; gap: 16px; }
   .grid-2 { grid-template-columns: repeat(2, 1fr); }
   .grid-3 { grid-template-columns: repeat(3, 1fr); }
   .grid-4 { grid-template-columns: repeat(4, 1fr); }
   @media (max-width: 768px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
-
-  /* STAT CARDS */
   .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; transition: all 0.3s; position: relative; overflow: hidden; }
   .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); opacity: 0; transition: opacity 0.3s; }
   .stat-card:hover::before { opacity: 1; }
@@ -68,8 +56,6 @@
   .stat-card .stat-icon { font-size: 2rem; margin-bottom: 8px; }
   .stat-card .stat-value { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
   .stat-card .stat-label { font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; }
-
-  /* MORA CARDS */
   .mora-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; transition: all 0.3s; cursor: pointer; position: relative; overflow: hidden; }
   .mora-card::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(0,212,255,0.05) 0%, transparent 70%); opacity: 0; transition: opacity 0.3s; }
   .mora-card:hover::after { opacity: 1; }
@@ -78,16 +64,12 @@
   .mora-card .name { font-weight: 600; font-size: 0.9rem; }
   .mora-card .type { font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; }
   .mora-card .rarity { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 6px; }
-
-  /* ITEM CARDS */
   .item-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; transition: all 0.3s; }
   .item-card:hover { border-color: var(--accent2); transform: translateX(4px); }
   .item-card .item-name { font-weight: 600; font-size: 0.9rem; }
   .item-card .item-id { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); }
   .item-card .item-effect { font-size: 0.8rem; color: var(--green); margin-top: 4px; }
   .item-card .item-price { font-size: 0.8rem; color: var(--gold); margin-top: 4px; }
-
-  /* STYLE CARDS */
   .style-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; transition: all 0.3s; }
   .style-card:hover { border-color: var(--accent); }
   .style-card .style-name { font-weight: 700; font-size: 1rem; }
@@ -96,8 +78,6 @@
   .style-card .move:last-child { border: none; }
   .move-power { color: var(--red); }
   .move-acc { color: var(--green); }
-
-  /* EVENTS */
   .event-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; border-left: 4px solid var(--accent); transition: all 0.3s; }
   .event-card:hover { transform: translateX(4px); }
   .event-card.upcoming { border-left-color: var(--gold); }
@@ -105,78 +85,94 @@
   .event-card .event-name { font-weight: 600; }
   .event-card .event-date { font-size: 0.8rem; color: var(--text-dim); }
   .event-card .event-desc { font-size: 0.85rem; color: var(--text-dim); margin-top: 6px; }
-
-  /* BROADCAST */
   .broadcast-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
   .broadcast-box textarea { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 8px; width: 100%; min-height: 100px; resize: vertical; font-family: inherit; font-size: 0.9rem; }
   .broadcast-box textarea:focus { outline: none; border-color: var(--accent); }
   .broadcast-preview { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 10px; font-size: 0.85rem; color: var(--text-dim); white-space: pre-wrap; }
-
-  /* BUTTONS */
-  .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.3s; position: relative; overflow: hidden; }
+  .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.3s; }
   .btn:active { transform: scale(0.97); }
   .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #000; }
   .btn-primary:hover { box-shadow: 0 4px 15px rgba(0,212,255,0.4); }
   .btn-danger { background: linear-gradient(135deg, var(--red), var(--pink)); color: #fff; }
-  .btn-danger:hover { box-shadow: 0 4px 15px rgba(255,68,102,0.4); }
   .btn-success { background: linear-gradient(135deg, var(--green), var(--accent)); color: #000; }
-  .btn-success:hover { box-shadow: 0 4px 15px rgba(0,255,136,0.4); }
   .btn-gold { background: linear-gradient(135deg, var(--gold), var(--orange)); color: #000; }
-  .btn-gold:hover { box-shadow: 0 4px 15px rgba(255,215,0,0.4); }
-
-  /* INPUTS */
-  input, select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; width: 100%; transition: border-color 0.3s; }
+  input, select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; width: 100%; }
   input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.1); }
   label { font-size: 0.8rem; color: var(--text-dim); display: block; margin-bottom: 4px; }
-
-  /* TABLE */
   table { width: 100%; border-collapse: collapse; }
   th { text-align: left; padding: 10px; background: var(--surface2); color: var(--accent); font-size: 0.8rem; border-bottom: 2px solid var(--border); }
   td { padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
   tr:hover td { background: rgba(255,255,255,0.02); }
-
-  /* BADGE */
   .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
   .rarity-common { background: #1b3a1b; color: #4caf50; }
   .rarity-uncommon { background: #1a2a3a; color: #2196f3; }
   .rarity-rare { background: #2a1a2a; color: #9c27b0; }
   .rarity-epic { background: #3a1a0a; color: #ff8844; }
   .rarity-legendary { background: #3a2a0a; color: #ffd700; }
-
-  /* SEARCH */
   .search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
   .search-bar input { flex: 1; }
-
-  /* ADMIN LOGIN */
   .admin-login { max-width: 400px; margin: 60px auto; text-align: center; }
-  .admin-login input { margin-bottom: 10px; }
-
-  /* TOGGLE */
-  .toggle { position: relative; width: 44px; height: 24px; display: inline-block; }
-  .toggle input { opacity: 0; width: 0; height: 0; }
-  .toggle .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #333; border-radius: 12px; cursor: pointer; transition: 0.3s; }
-  .toggle .slider:before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.3s; }
-  .toggle input:checked + .slider { background: var(--green); }
-  .toggle input:checked + .slider:before { transform: translateX(20px); }
-
   .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
-
-  /* HERO */
   .hero { text-align: center; padding: 40px 0; }
   .hero h1 { font-size: 2.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2), var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: title-glow 4s infinite; }
   @keyframes title-glow { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.3); } }
   .hero p { color: var(--text-dim); margin-top: 10px; }
-
-  /* BOT STATUS BAR */
   .bot-status { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
   .bot-status .bs-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; }
   .bot-status .bs-label { color: var(--text-dim); }
   .bot-status .bs-value { font-weight: 600; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
-
-  /* TOAST */
   .toast { position: fixed; bottom: 20px; right: 20px; background: var(--surface); border: 1px solid var(--green); border-radius: 10px; padding: 14px 20px; z-index: 1000; animation: slideUp 0.4s ease; display: none; }
   .toast.error { border-color: var(--red); }
   @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* WIKI STYLES */
+  .wiki-toc { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; }
+  .wiki-toc a { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 18px; text-decoration: none; color: var(--text); font-weight: 600; font-size: 0.85rem; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
+  .wiki-toc a:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,212,255,0.15); }
+  .wiki-section { margin-bottom: 40px; }
+  .wiki-section h2 { font-size: 1.4rem; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .wiki-section h3 { font-size: 1.05rem; color: var(--accent); margin: 20px 0 10px; }
+  .wiki-section p, .wiki-section li { font-size: 0.9rem; line-height: 1.7; color: var(--text-dim); }
+  .wiki-section ul { padding-left: 20px; margin: 10px 0; }
+  .wiki-section li { margin-bottom: 6px; }
+  .faction-card-wiki { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: all 0.3s; }
+  .faction-card-wiki:hover { border-color: var(--accent); }
+  .faction-card-wiki .f-emoji { font-size: 2.5rem; margin-bottom: 10px; }
+  .faction-card-wiki .f-name { font-size: 1.2rem; font-weight: 700; margin-bottom: 6px; }
+  .faction-card-wiki .f-belief { font-style: italic; color: var(--text-dim); margin: 10px 0; font-size: 0.85rem; line-height: 1.6; }
+  .faction-card-wiki .f-stat { display: flex; gap: 8px; margin: 4px 0; font-size: 0.85rem; }
+  .faction-card-wiki .f-stat strong { color: var(--accent); min-width: 80px; }
+  .faction-card-wiki.f-harmony { border-left: 4px solid var(--harmony); }
+  .faction-card-wiki.f-purity { border-left: 4px solid var(--purity); }
+  .faction-card-wiki.f-rift { border-left: 4px solid var(--rift); }
+  .ground-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; transition: all 0.3s; }
+  .ground-card:hover { border-color: var(--accent); }
+  .ground-card .g-name { font-weight: 700; font-size: 1rem; }
+  .ground-card .g-type { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+  .ground-card .g-desc { font-size: 0.85rem; color: var(--text-dim); margin-top: 8px; line-height: 1.5; }
+  .ground-card .g-meta { display: flex; gap: 12px; margin-top: 10px; font-size: 0.8rem; }
+  .progress-bar { background: var(--surface2); border-radius: 6px; height: 8px; overflow: hidden; margin: 6px 0; }
+  .progress-bar .fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.5s ease; }
+  .tip-card { background: linear-gradient(135deg, rgba(0,212,255,0.05), rgba(124,92,255,0.05)); border: 1px solid rgba(0,212,255,0.2); border-radius: 10px; padding: 16px; margin: 12px 0; }
+  .tip-card .tip-title { font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+  .type-chart { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin: 12px 0; }
+  .type-chip { background: var(--surface2); border-radius: 8px; padding: 10px; text-align: center; font-size: 0.8rem; transition: all 0.3s; }
+  .type-chip:hover { background: var(--surface); border: 1px solid var(--accent); }
+  .type-chip .tc-icon { font-size: 1.5rem; }
+  .type-chip .tc-name { font-weight: 600; margin-top: 4px; }
+  .type-chip .tc-count { color: var(--text-dim); font-size: 0.7rem; }
+  .reward-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .reward-row:last-child { border: none; }
+  .reward-icon { font-size: 1.5rem; }
+  .reward-info { flex: 1; }
+  .reward-name { font-weight: 600; font-size: 0.9rem; }
+  .reward-desc { font-size: 0.8rem; color: var(--text-dim); }
+  .event-timeline { position: relative; padding-left: 30px; }
+  .event-timeline::before { content: ''; position: absolute; left: 12px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+  .event-timeline .tl-item { position: relative; margin-bottom: 20px; }
+  .event-timeline .tl-item::before { content: ''; position: absolute; left: -24px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 2px solid var(--bg); }
+  .event-timeline .tl-item.upcoming::before { background: var(--gold); }
+  .event-timeline .tl-item.active::before { background: var(--green); animation: blink 2s infinite; }
 </style>
 </head>
 <body>
@@ -192,10 +188,11 @@
     <span>LUMORA</span>
   </div>
   <button class="active" onclick="showPanel('home',this)"><span class="status-dot" id="status-dot"></span>Home</button>
+  <button onclick="showPanel('wiki',this)">📖 Wiki</button>
+  <button onclick="showPanel('events',this)">📅 Events</button>
   <button onclick="showPanel('mora',this)">🐾 Mora</button>
   <button onclick="showPanel('items',this)">📦 Items</button>
   <button onclick="showPanel('styles',this)">⚔️ Styles</button>
-  <button onclick="showPanel('events',this)">📅 Events</button>
   <button onclick="showPanel('trading',this)">💰 Trading</button>
   <button onclick="showPanel('broadcast',this)">📢 Broadcast</button>
   <button class="admin-btn" onclick="showPanel('admin',this)">🔒 Admin</button>
@@ -207,8 +204,6 @@
     <h1>LUMORA</h1>
     <p>Era of Awakening — WhatsApp RPG</p>
   </div>
-
-  <!-- BOT STATUS BAR -->
   <div class="bot-status">
     <div class="bs-item"><span class="bs-label">🤖 Bot:</span><span class="bs-value" id="bs-status">Checking...</span></div>
     <div class="bs-item"><span class="bs-label">⏱️ Uptime:</span><span class="bs-value" id="bs-uptime">—</span></div>
@@ -218,30 +213,12 @@
     <div class="bs-item"><span class="bs-label">📡 Broadcasts:</span><span class="bs-value" id="bs-broadcasts">—</span></div>
     <div class="bs-item"><span class="bs-label">🧠 RAM:</span><span class="bs-value" id="bs-ram">—</span></div>
   </div>
-
   <div class="grid grid-4">
-    <div class="stat-card">
-      <div class="stat-icon">👥</div>
-      <div class="stat-value" id="home-players">—</div>
-      <div class="stat-label">Players</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">🐾</div>
-      <div class="stat-value" id="home-mora">—</div>
-      <div class="stat-label">Mora Species</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">📦</div>
-      <div class="stat-value" id="home-items">—</div>
-      <div class="stat-label">Items</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">⚔️</div>
-      <div class="stat-value" id="home-styles">—</div>
-      <div class="stat-label">Styles</div>
-    </div>
+    <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value" id="home-players">—</div><div class="stat-label">Players</div></div>
+    <div class="stat-card"><div class="stat-icon">🐾</div><div class="stat-value" id="home-mora">—</div><div class="stat-label">Mora Species</div></div>
+    <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-value" id="home-items">—</div><div class="stat-label">Items</div></div>
+    <div class="stat-card"><div class="stat-icon">⚔️</div><div class="stat-value" id="home-styles">—</div><div class="stat-label">Styles</div></div>
   </div>
-
   <div class="grid grid-2" style="margin-top:16px;">
     <div class="card">
       <h2>📰 Bulletins</h2>
@@ -249,16 +226,544 @@
       <div class="stat-row"><span>🔗 Faction group links updated</span><span style="color:var(--green);font-size:0.75rem;">✓ Fixed</span></div>
       <div class="stat-row"><span>🧪 Consumables crash fix — all items working</span><span style="color:var(--green);font-size:0.75rem;">✓ Fixed</span></div>
       <div class="stat-row"><span>🗺️ Two-step .map with difficulty selection</span><span style="color:var(--green);font-size:0.75rem;">✓ Live</span></div>
+      <div class="stat-row"><span>📊 Dashboard live — admin panel + wiki</span><span style="color:var(--green);font-size:0.75rem;">✓ Live</span></div>
     </div>
     <div class="card">
-      <h2>📅 Upcoming Events</h2>
-      <div class="event-card upcoming" style="margin-bottom:8px;">
-        <div class="event-name">🏆 Faction War Season 1</div>
-        <div class="event-date">Coming Soon</div>
+      <h2>🚀 Quick Start</h2>
+      <div class="stat-row"><span>1. Send <code>.begin</code> to Star</span></div>
+      <div class="stat-row"><span>2. Follow with <code>.register</code></span></div>
+      <div class="stat-row"><span>3. Choose your <code>.faction</code></span></div>
+      <div class="stat-row"><span>4. Explore with <code>.map</code></span></div>
+      <div class="stat-row"><span>5. Hunt with <code>.hunt</code></span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ WIKI ═══════════════ -->
+<div class="panel" id="panel-wiki">
+  <h1>📖 Lumora Wiki</h1>
+  <p class="subtitle">Everything you need to know about the world of Lumora</p>
+
+  <div class="wiki-toc">
+    <a href="#wiki-factions" onclick="scrollWiki('wiki-factions')">⚔️ Factions</a>
+    <a href="#wiki-hunting" onclick="scrollWiki('wiki-hunting')">🗺️ Hunting Grounds</a>
+    <a href="#wiki-mora-types" onclick="scrollWiki('wiki-mora-types')">🐾 Mora Types</a>
+    <a href="#wiki-styles" onclick="scrollWiki('wiki-styles')">🥋 Fighting Styles</a>
+    <a href="#wiki-combat" onclick="scrollWiki('wiki-combat')">⚡ Combat</a>
+    <a href="#wiki-economy" onclick="scrollWiki('wiki-economy')">💰 Economy</a>
+    <a href="#wiki-progression" onclick="scrollWiki('wiki-progression')">📈 Progression</a>
+    <a href="#wiki-items" onclick="scrollWiki('wiki-items')">📦 Items Guide</a>
+    <a href="#wiki-commands" onclick="scrollWiki('wiki-commands')">⌨️ Commands</a>
+  </div>
+
+  <!-- FACTIONS -->
+  <div class="wiki-section" id="wiki-factions">
+    <h2>⚔️ Factions</h2>
+    <p>Upon registering, every player must choose a faction. Your faction determines your group, your allies, and your path through Lumora's world.</p>
+
+    <div class="grid grid-3" style="margin-top:20px;">
+      <div class="faction-card-wiki f-harmony">
+        <div class="f-emoji">🌿</div>
+        <div class="f-name" style="color:var(--harmony);">Harmony Lumorians</div>
+        <div class="f-belief">"Humans and Mora can live together peacefully as one. We must cleanse all the rifts and help all the Mora consumed by Primordial energy."</div>
+        <div class="f-stat"><strong>Strength:</strong> Higher stability + safer bonding path</div>
+        <div class="f-stat"><strong>Weakness:</strong> Less access to risky Rift power paths</div>
+        <div class="f-stat"><strong>Styles:</strong> 🌿 Nature · 💧 Aqua · 💨 Wind · 🪨 Terra</div>
+        <div class="f-stat"><strong>Group:</strong> <a href="https://chat.whatsapp.com/IRAvs9txWwDHI3l4OVYAak" style="color:var(--harmony);">Join Harmony</a></div>
       </div>
-      <div class="event-card upcoming">
-        <div class="event-name">🌙 Rift Surge Event</div>
-        <div class="event-date">Coming Soon</div>
+      <div class="faction-card-wiki f-purity">
+        <div class="f-emoji">⚔️</div>
+        <div class="f-name" style="color:var(--purity);">The Purity Order</div>
+        <div class="f-belief">"The rift must be closed. These beasts were never part of the almighty's creation — they're the Devil's pawns here to corrupt and destroy humanity."</div>
+        <div class="f-stat"><strong>Strength:</strong> More consistent combat/control path</div>
+        <div class="f-stat"><strong>Weakness:</strong> Harder to adapt to chaos and unstable power</div>
+        <div class="f-stat"><strong>Styles:</strong> 🪨 Terra · ❄️ Frost · ⚡ Volt</div>
+        <div class="f-stat"><strong>Group:</strong> <a href="https://chat.whatsapp.com/KzWF6mHUZCN85CkllwB8me" style="color:var(--purity);">Join Purity</a></div>
+      </div>
+      <div class="faction-card-wiki f-rift">
+        <div class="f-emoji">🕶️</div>
+        <div class="f-name" style="color:var(--rift);">The Rift Seekers</div>
+        <div class="f-belief">"The Primordial Rift was a blessing brought to us so we can harness its power and use these Mora for our own benefit."</div>
+        <div class="f-stat"><strong>Strength:</strong> High-risk, high-reward power path</div>
+        <div class="f-stat"><strong>Weakness:</strong> Unstable — harder to control consequences</div>
+        <div class="f-stat"><strong>Styles:</strong> 🌑 Shadow · ⚡ Volt · 🔥 Flame · ❄️ Frost</div>
+        <div class="f-stat"><strong>Group:</strong> <a href="https://chat.whatsapp.com/CRUuwdU0rBx6j6dRh2Ydh9" style="color:var(--rift);">Join Rift</a></div>
+      </div>
+    </div>
+
+    <div class="tip-card">
+      <div class="tip-title">💡 Faction Tips</div>
+      <p>Your faction determines which group you join on WhatsApp. Each faction has exclusive fighting styles. You can switch factions but it costs Lucons and resets your faction rank.</p>
+    </div>
+  </div>
+
+  <!-- HUNTING GROUNDS -->
+  <div class="wiki-section" id="wiki-hunting">
+    <h2>🗺️ Hunting Grounds</h2>
+    <p>Use <code>.map</code> to see available terrains. Select a terrain, then choose your difficulty. Higher difficulty = stronger Mora + better drops + more DΞP.</p>
+
+    <div class="grid grid-3" style="margin-top:16px;">
+      <div class="ground-card" style="border-left:3px solid #4caf50;">
+        <div class="g-name">🌲 Wilderness</div>
+        <div class="g-type">Neutral • Beginner</div>
+        <div class="g-desc">A broad untamed region where all Mora types appear. The safest hunting area for mixed exploration.</div>
+        <div class="g-meta"><span>⚡ 10-22 energy</span><span>🟢 Easy → 🔴 Nightmare</span></div>
+      </div>
+      <div class="ground-card" style="border-left:3px solid #4caf50;">
+        <div class="g-name">🌿 Verdant Wilds</div>
+        <div class="g-type">Nature • Forest</div>
+        <div class="g-desc">A living forest of roots, spores, and thick green aura. Nature Mora thrive here, but hunters can easily lose the path.</div>
+        <div class="g-meta"><span>⚡ 12-25 energy</span><span>🌿 Nature Mora</span></div>
+      </div>
+      <div class="ground-card" style="border-left:3px solid #ffeb3b;">
+        <div class="g-name">⚡ Volt Expanse</div>
+        <div class="g-type">Volt • Storm</div>
+        <div class="g-desc">A thunder-scarred open range where lightning lashes the ground and Volt Mora surge through the storm air.</div>
+        <div class="g-meta"><span>⚡ 14-28 energy</span><span>⚡ Volt Mora</span></div>
+      </div>
+      <div class="ground-card" style="border-left:3px solid #ff5722;">
+        <div class="g-name">🔥 Ashfall Basin</div>
+        <div class="g-type">Flame • Volcanic</div>
+        <div class="g-desc">A basin of burning vents and drifting ash where Flame Mora gather near heat fissures and unstable magma seams.</div>
+        <div class="g-meta"><span>⚡ 16-30 energy</span><span>🔥 Flame Mora</span></div>
+      </div>
+      <div class="ground-card" style="border-left:3px solid #795548;">
+        <div class="g-name">🪨 Terra Shatterfields</div>
+        <div class="g-type">Terra • Ruins</div>
+        <div class="g-desc">Broken plains and fractured rock where the ground shifts violently and Terra Mora emerge from deep fault lines.</div>
+        <div class="g-meta"><span>⚡ 15-29 energy</span><span>🪨 Terra Mora</span></div>
+      </div>
+      <div class="ground-card" style="border-left:3px solid #00bcd4;">
+        <div class="g-name">❄️ Frostreach</div>
+        <div class="g-type">Frost • Frozen</div>
+        <div class="g-desc">A wind-cut frozen frontier where Frost Mora prowl through ice haze and biting cold strips strength from the careless.</div>
+        <div class="g-meta"><span>⚡ 17-31 energy</span><span>❄️ Frost Mora</span></div>
+      </div>
+      <div class="ground-card" style="border-left:3px solid #9c27b0;">
+        <div class="g-name">🌑 Shadow Hollow</div>
+        <div class="g-type">Shadow • Abyss</div>
+        <div class="g-desc">A dim wasteland where light thins, echoes warp, and Shadow Mora move through silence like a second skin.</div>
+        <div class="g-meta"><span>⚡ 19-33 energy</span><span>🌑 Shadow Mora</span></div>
+      </div>
+      <div class="ground-card" style="border-left:3px solid #e91e63;">
+        <div class="g-name">🌀 Rift Scar</div>
+        <div class="g-type">Rift • Endgame</div>
+        <div class="g-desc">A wound in the world where raw Primordial instability gathers. Corrupted sightings are common and survival is never guaranteed.</div>
+        <div class="g-meta"><span>⚡ 22-36 energy</span><span>💀 All Types + Corrupted</span></div>
+      </div>
+    </div>
+
+    <div class="tip-card">
+      <div class="tip-title">🎯 Difficulty Level Requirements</div>
+      <p>🟢 Easy — Level 1+ &nbsp;|&nbsp; 🟡 Standard — Level 5+ &nbsp;|&nbsp; 🟠 Dangerous — Level 15+ &nbsp;|&nbsp; 🔴 Nightmare — Level 30+</p>
+      <p style="margin-top:6px;">Higher difficulties have stronger Mora, better drop rates, and award more DΞP. But if you're under-leveled, the Mora will destroy you.</p>
+    </div>
+  </div>
+
+  <!-- MORA TYPES -->
+  <div class="wiki-section" id="wiki-mora-types">
+    <h2>🐾 Mora Types</h2>
+    <p>Mora are elemental creatures from the Primordial Rift. Each has a type that determines its strengths and weaknesses in combat.</p>
+
+    <div class="type-chart">
+      <div class="type-chip"><div class="tc-icon">💧</div><div class="tc-name">Aqua</div><div class="tc-count">10 species</div></div>
+      <div class="type-chip"><div class="tc-icon">🌿</div><div class="tc-name">Nature</div><div class="tc-count">12 species</div></div>
+      <div class="type-chip"><div class="tc-icon">🪨</div><div class="tc-name">Terra</div><div class="tc-count">14 species</div></div>
+      <div class="type-chip"><div class="tc-icon">⚡</div><div class="tc-name">Volt</div><div class="tc-count">11 species</div></div>
+      <div class="type-chip"><div class="tc-icon">🔥</div><div class="tc-name">Flame</div><div class="tc-count">16 species</div></div>
+      <div class="type-chip"><div class="tc-icon">❄️</div><div class="tc-name">Frost</div><div class="tc-count">8 species</div></div>
+      <div class="type-chip"><div class="tc-icon">🌑</div><div class="tc-name">Shadow</div><div class="tc-count">12 species</div></div>
+      <div class="type-chip"><div class="tc-icon">💨</div><div class="tc-name">Wind</div><div class="tc-count">8 species</div></div>
+      <div class="type-chip"><div class="tc-icon">🐉</div><div class="tc-name">Dragon</div><div class="tc-count">2 species</div></div>
+      <div class="type-chip"><div class="tc-icon">✨</div><div class="tc-name">Light</div><div class="tc-count">3 species</div></div>
+      <div class="type-chip"><div class="tc-icon">🌌</div><div class="tc-name">Cosmic</div><div class="tc-count">2 species</div></div>
+      <div class="type-chip"><div class="tc-icon">👁️</div><div class="tc-name">Void</div><div class="tc-count">2 species</div></div>
+      <div class="type-chip"><div class="tc-icon">💫</div><div class="tc-name">Omni</div><div class="tc-count">1 species</div></div>
+    </div>
+
+    <div class="tip-card">
+      <div class="tip-title">🔗 Type Effectiveness</div>
+      <p>Types follow a strengths/weaknesses chart (like Pokémon). Flame beats Nature, Nature beats Terra, Terra beats Volt, Volt beats Aqua, etc. Check <code>.mora &lt;name&gt;</code> in WhatsApp for detailed stats.</p>
+    </div>
+  </div>
+
+  <!-- FIGHTING STYLES -->
+  <div class="wiki-section" id="wiki-styles">
+    <h2>🥋 Fighting Styles</h2>
+    <p>Fighting styles are combat disciplines unlocked through Scrolls → Quests. Each style has 3 moves with different power, accuracy, and energy costs.</p>
+
+    <h3>How to Unlock</h3>
+    <ol style="padding-left:20px;">
+      <li style="margin:8px 0; color:var(--text-dim);"><strong>Hunt</strong> → Scroll drops randomly (2.5% Common, 1% Rare, 0.3% Epic, 0.1% Legendary)</li>
+      <li style="margin:8px 0; color:var(--text-dim);"><strong>Open</strong> the scroll with <code>.use &lt;scroll name&gt;</code></li>
+      <li style="margin:8px 0; color:var(--text-dim);"><strong>Complete</strong> the linked quest</li>
+      <li style="margin:8px 0; color:var(--text-dim);"><strong>Equip</strong> your new style with <code>.equip-style &lt;name&gt;</code></li>
+    </ol>
+
+    <h3>Style Rarities & Drop Rates</h3>
+    <table style="margin-top:10px;">
+      <thead><tr><th>Rarity</th><th>Drop Rate</th><th>Scrolls</th><th>Difficulty</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge rarity-common">Common</span></td><td>2.5% per hunt</td><td>Windworn, Dawn-Etched</td><td>★☆☆☆☆ Starter</td></tr>
+        <tr><td><span class="badge rarity-rare">Rare</span></td><td>1.0% per hunt</td><td>Tide-Sealed, Iron-Seal, Void-Etched, Ember Tongue, Shieldbearer's, Storm-Torn, Frost-Etched</td><td>★★☆☆☆ Intermediate</td></tr>
+        <tr><td><span class="badge rarity-epic">Epic</span></td><td>0.3% per hunt</td><td>Caligo Vellum, Starlit Codex, Broken Communion, Nightshade Petal, Moonless Codex</td><td>★★★☆☆ Advanced</td></tr>
+        <tr><td><span class="badge rarity-legendary">Legendary</span></td><td>0.1% per hunt</td><td>Lumen Folio, First Keeper's, Hourglass Vellum</td><td>★★★★★ Endgame</td></tr>
+      </tbody>
+    </table>
+
+    <div class="tip-card">
+      <div class="tip-title">⚡ Move Structure</div>
+      <p><strong>Move 1 (Basic)</strong> — Low energy, high accuracy, moderate power<br>
+      <strong>Move 2 (Utility)</strong> — Often 100% accuracy, may heal/buff/drain<br>
+      <strong>Move 3 (Finisher)</strong> — High power, lower accuracy, high energy cost<br><br>
+      Energy regenerates 12% of max per turn. Running out of energy forces you to skip.</p>
+    </div>
+  </div>
+
+  <!-- COMBAT -->
+  <div class="wiki-section" id="wiki-combat">
+    <h2>⚡ Combat System</h2>
+
+    <h3>Wild Battles</h3>
+    <p>When you <code>.hunt</code>, you may encounter wild Mora. You can <code>.attack</code>, <code>.capture</code>, or <code>.flee</code>. Wild Mora have varying levels based on terrain difficulty.</p>
+
+    <h3>NPC Arena</h3>
+    <p>Face named NPCs with unique fighting styles. Each difficulty tier has different NPCs:</p>
+    <table style="margin-top:10px;">
+      <thead><tr><th>Tier</th><th>NPCs</th><th>Fighting Style</th><th>Drop Chance</th></tr></thead>
+      <tbody>
+        <tr><td>🟢 Novice</td><td>Mira, Tolo, Kade</td><td>Wind Step, Sun Walk, Pyrolexis</td><td>15-25%</td></tr>
+        <tr><td>🟡 Warrior</td><td>Lyra, Sereth, Vaan</td><td>Tide Veil, Frost Mantle, Void Sever</td><td>25-40%</td></tr>
+        <tr><td>🟠 Elite</td><td>Veil Crest, Drax, Shadow Wren</td><td>Kataphraxis, Bone Crush, Tenebris</td><td>40-60%</td></tr>
+        <tr><td>🔴 Mythic</td><td>Sage, Sovereign Kael, Kairo</td><td>Anastasis, Frost Mantle+, Lunar Shroud</td><td>60-80%</td></tr>
+      </tbody>
+    </table>
+
+    <h3>PvP Battles</h3>
+    <p>Challenge other players with <code>.battle @player</code>. PvP awards Glory and faction points but does NOT award DΞP. Losers lose a portion of their Honor/Bounty/Resonance.</p>
+
+    <h3>Faction Wars</h3>
+    <p>Periodic faction vs faction battles. Earn Glory for your faction. Top faction controls the Rift for a week and earns exclusive rewards.</p>
+  </div>
+
+  <!-- ECONOMY -->
+  <div class="wiki-section" id="wiki-economy">
+    <h2>💰 Economy</h2>
+
+    <h3>Currency: Lucons</h3>
+    <p>Lucons are the primary currency. Earn them through hunting, daily rewards, bounties, and trading. Spend them at the market, faction market, and on services.</p>
+
+    <h3>Earning Lucons</h3>
+    <ul>
+      <li><code>.daily</code> — Daily login reward (scales with level)</li>
+      <li><code>.weekly</code> — Weekly bonus</li>
+      <li><code>.hunt</code> — Mora encounters drop Lucons</li>
+      <li><code>.bounty</code> — Complete bounty quests for big payouts</li>
+      <li><code>.market sell</code> — Sell items to other players</li>
+    </ul>
+
+    <h3>Spending Lucons</h3>
+    <ul>
+      <li><code>.market</code> — Buy consumables, gear, scrolls</li>
+      <li><code>.f-market</code> — Faction-exclusive items</li>
+      <li><code>.heal</code> — Pay for healing at the Sanctuary</li>
+      <li><code>.travel</code> — Energy cost for teleportation</li>
+    </ul>
+
+    <h3>Faction Points</h3>
+    <p>Earned through raids, missions, and faction wars. Used at the Faction Market for exclusive gear and scrolls.</p>
+  </div>
+
+  <!-- PROGRESSION -->
+  <div class="wiki-section" id="wiki-progression">
+    <h2>📈 Progression</h2>
+
+    <h3>DΞP (Experience)</h3>
+    <p>DΞP is earned through Hunting Grounds and NPC Arena combat. <strong>PvP does NOT award DΞP.</strong> XP requirements scale exponentially:</p>
+    <table style="margin-top:10px;">
+      <thead><tr><th>Level</th><th>DΞP Required</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>1 → 2</td><td>~100</td><td>Hunting Wilderness Easy</td></tr>
+        <tr><td>5 → 6</td><td>~500</td><td>Hunting Standard + NPC Arena</td></tr>
+        <tr><td>10 → 11</td><td>~1,500</td><td>Dangerous terrains</td></tr>
+        <tr><td>20 → 21</td><td>~5,000</td><td>Shadow Hollow + Elite NPCs</td></tr>
+        <tr><td>50 → 51</td><td>~25,000</td><td>Rift Scar Nightmare + Mythic NPCs</td></tr>
+      </tbody>
+    </table>
+
+    <div class="tip-card">
+      <div class="tip-title">⚠️ Anti-Farming</div>
+      <p>Fighting enemies far below your level gives reduced DΞP. Fighting enemies above your level gives an underdog bonus. Always push to harder content.</p>
+    </div>
+
+    <h3>Stats</h3>
+    <p>Players invest stat points into 4 attributes:</p>
+    <ul>
+      <li><strong>Strength</strong> — +Physical Damage, +Critical Chance</li>
+      <li><strong>Agility</strong> — +Speed, +Evasion, +First Strike</li>
+      <li><strong>Vitality</strong> — +Max HP, +HP Regen, +Defense</li>
+      <li><strong>Mora Power</strong> — +Mora Damage, +Capture Rate, +Bond Strength</li>
+    </ul>
+
+    <h3>Honor / Bounty / Resonance</h3>
+    <ul>
+      <li><strong>Honor</strong> — Earned through honorable combat and quests. Lost on death.</li>
+      <li><strong>Bounty</strong> — Earned through bounty quests. Attracts NPC hunters.</li>
+      <li><strong>Resonance</strong> — Earned through Mora bonding and Rift events. Controls Mora power.</li>
+    </ul>
+  </div>
+
+  <!-- ITEMS GUIDE -->
+  <div class="wiki-section" id="wiki-items">
+    <h2>📦 Items Guide</h2>
+
+    <h3>Consumables</h3>
+    <table>
+      <thead><tr><th>Item</th><th>Effect</th><th>How to Use</th></tr></thead>
+      <tbody>
+        <tr><td>Minor Healing Capsule</td><td>Restores 30 HP</td><td><code>.consume healing capsule</code></td></tr>
+        <tr><td>Major Healing Capsule</td><td>Restores 70 HP</td><td><code>.consume major healing capsule</code></td></tr>
+        <tr><td>Energy Capsule</td><td>Restores 25 Energy</td><td><code>.consume energy capsule</code></td></tr>
+        <tr><td>Sun-Dew Tincture</td><td>Restores 50 HP</td><td><code>.consume sun-dew tincture</code></td></tr>
+        <tr><td>Anastasis Draught</td><td>Full HP restore</td><td><code>.consume anastasis draught</code></td></tr>
+        <tr><td>Surge Tonic</td><td>Full combat energy</td><td><code>.consume surge tonic</code></td></tr>
+        <tr><td>Pulse Tonic</td><td>-20% environment damage</td><td><code>.consume pulse tonic</code></td></tr>
+        <tr><td>Stabilizer</td><td>-20% Rift rejection chance</td><td><code>.consume stabilizer</code></td></tr>
+        <tr><td>Reader's Ink</td><td>+3 Intelligence</td><td><code>.consume reader's ink</code></td></tr>
+        <tr><td>Resonance Vial</td><td>+50 Resonance</td><td><code>.consume resonance vial</code></td></tr>
+        <tr><td>Bond Amplifier</td><td>+50 Bond with active Mora</td><td><code>.consume bond amplifier</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Gear</h3>
+    <p>Equip gear with <code>.equip &lt;item name&gt;</code>. Gear provides passive stat bonuses. Unequip with <code>.unequip &lt;item name&gt;</code>.</p>
+
+    <h3>Scrolls</h3>
+    <p>Open scrolls with <code>.use &lt;scroll name&gt;</code>. They unlock fighting style quests. Each scroll links to one specific quest.</p>
+
+    <h3>Mutation Shards</h3>
+    <p>Use <code>.mutate &lt;shard&gt;</code> to evolve your Mora. Mutations alter stats and may unlock new moves.</p>
+  </div>
+
+  <!-- COMMANDS -->
+  <div class="wiki-section" id="wiki-commands">
+    <h2>⌨️ Command Reference</h2>
+    <p>Use the prefix <code>.</code> before every command. Here are the essential commands grouped by system:</p>
+
+    <h3>🎮 Getting Started</h3>
+    <table>
+      <tbody>
+        <tr><td><code>.begin</code></td><td>Meet Star — the bot introduces herself</td></tr>
+        <tr><td><code>.register</code></td><td>Start the registration process</td></tr>
+        <tr><td><code>.username &lt;name&gt;</code></td><td>Set your display name</td></tr>
+        <tr><td><code>.gender &lt;male/female&gt;</code></td><td>Set your gender</td></tr>
+        <tr><td><code>.age &lt;number&gt;</code></td><td>Set your age</td></tr>
+        <tr><td><code>.set-icon</code></td><td>Set your profile icon (send with image)</td></tr>
+        <tr><td><code>.faction &lt;harmony/purity/rift&gt;</code></td><td>Choose your faction</td></tr>
+      </tbody>
+    </table>
+
+    <h3>📊 Profile & Stats</h3>
+    <table>
+      <tbody>
+        <tr><td><code>.profile</code></td><td>View your full profile card</td></tr>
+        <tr><td><code>.stats</code></td><td>View and invest stat points</td></tr>
+        <tr><td><code>.invest &lt;stat&gt; &lt;amount&gt;</code></td><td>Invest points into a stat</td></tr>
+        <tr><td><code>.level</code></td><td>Check your level and DΞP progress</td></tr>
+      </tbody>
+    </table>
+
+    <h3>🗺️ Exploration</h3>
+    <table>
+      <tbody>
+        <tr><td><code>.map</code></td><td>View available hunting terrains</td></tr>
+        <tr><td><code>.travel &lt;terrain&gt;</code></td><td>Travel to a hunting ground</td></tr>
+        <tr><td><code>.hunt</code></td><td>Search for wild Mora encounters</td></tr>
+        <tr><td><code>.explore</code></td><td>Explore the area for items/events</td></tr>
+      </tbody>
+    </table>
+
+    <h3>🐾 Mora</h3>
+    <table>
+      <tbody>
+        <tr><td><code>.mora</code></td><td>View your Mora collection</td></tr>
+        <tr><td><code>.mora &lt;name&gt;</code></td><td>View detailed Mora info</td></tr>
+        <tr><td><code>.choose &lt;1/2/3&gt;</code></td><td>Choose your starter Mora</td></tr>
+        <tr><td><code>.switch &lt;name&gt;</code></td><td>Switch active Mora</td></tr>
+        <tr><td><code>.tamed</code></td><td>View all tamed Mora</td></tr>
+      </tbody>
+    </table>
+
+    <h3>⚔️ Combat</h3>
+    <table>
+      <tbody>
+        <tr><td><code>.attack</code></td><td>Attack in active battle</td></tr>
+        <tr><td><code>.capture</code></td><td>Attempt to capture wild Mora</td></tr>
+        <tr><td><code>.battle @player</code></td><td>Challenge a player to PvP</td></tr>
+        <tr><td><code>.arena &lt;difficulty&gt;</code></td><td>Fight NPC in the arena</td></tr>
+        <tr><td><code>.flee</code></td><td>Escape from battle</td></tr>
+        <tr><td><code>.use &lt;move&gt;</code></td><td>Use a specific move in battle</td></tr>
+        <tr><td><code>.equip-style &lt;name&gt;</code></td><td>Equip a fighting style</td></tr>
+      </tbody>
+    </table>
+
+    <h3>💰 Economy</h3>
+    <table>
+      <tbody>
+        <tr><td><code>.market</code></td><td>Browse the item market</td></tr>
+        <tr><td><code>.buy &lt;item&gt;</code></td><td>Buy an item from the market</td></tr>
+        <tr><td><code>.sell &lt;item&gt;</code></td><td>Sell an item</td></tr>
+        <tr><td><code>.daily</code></td><td>Claim daily reward</td></tr>
+        <tr><td><code>.weekly</code></td><td>Claim weekly reward</td></tr>
+        <tr><td><code>.give @player &lt;amount&gt;</code></td><td>Send Lucons to another player</td></tr>
+        <tr><td><code>.bank</code></td><td>Access the main bank</td></tr>
+      </tbody>
+    </table>
+
+    <h3>🎒 Inventory</h3>
+    <table>
+      <tbody>
+        <tr><td><code>.bag</code></td><td>View your inventory</td></tr>
+        <tr><td><code>.item &lt;name&gt;</code></td><td>View item details</td></tr>
+        <tr><td><code>.consume &lt;item&gt;</code></td><td>Use a consumable item</td></tr>
+        <tr><td><code>.equip &lt;item&gt;</code></td><td>Equip gear</td></tr>
+        <tr><td><code>.unequip &lt;item&gt;</code></td><td>Unequip gear</td></tr>
+        <tr><td><code>.use &lt;scroll&gt;</code></td><td>Open a scroll</td></tr>
+      </tbody>
+    </table>
+
+    <h3>🏆 Social</h3>
+    <table>
+      <tbody>
+        <tr><td><code>.lb</code></td><td>View leaderboards</td></tr>
+        <tr><td><code>.faction</code></td><td>View your faction info</td></tr>
+        <tr><td><code>.f-lb</code></td><td>Faction leaderboard</td></tr>
+        <tr><td><code>.gift @player</code></td><td>Send a gift</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════ EVENTS ═══════════════ -->
+<div class="panel" id="panel-events">
+  <h1>📅 Events & Tournaments</h1>
+  <p class="subtitle">Compete, earn rewards, and shape the fate of Lumora</p>
+
+  <div class="grid grid-2">
+    <div>
+      <h2 style="margin-bottom:16px;">🕐 Event Timeline</h2>
+      <div class="event-timeline">
+        <div class="tl-item active">
+          <div class="event-card active">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div><div class="event-name" style="font-size:1.1rem;">🎮 Grand Opening</div><div class="event-date">Active Now — Permanent</div></div>
+              <span class="badge" style="background:rgba(0,255,136,0.2);color:var(--green);">ACTIVE</span>
+            </div>
+            <div class="event-desc">Lumora is live! All new players start with 350 Lucons + Creation Powder. Register now and choose your faction!</div>
+            <div style="margin-top:10px;">
+              <div class="reward-row"><div class="reward-icon">💰</div><div class="reward-info"><div class="reward-name">350 Lucons</div><div class="reward-desc">Starting bonus for all new players</div></div></div>
+              <div class="reward-row"><div class="reward-icon">✨</div><div class="reward-info"><div class="reward-name">Creation Powder</div><div class="reward-desc">Free crafting material for your first Mora creation</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="tl-item upcoming">
+          <div class="event-card upcoming">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div><div class="event-name" style="font-size:1.1rem;">🏆 Faction War Season 1</div><div class="event-date">Coming Soon — 7-day event</div></div>
+              <span class="badge" style="background:rgba(255,215,0,0.2);color:var(--gold);">UPCOMING</span>
+            </div>
+            <div class="event-desc">All-out faction warfare! Earn Glory through faction-vs-faction battles. The winning faction controls the Rift for a week and earns exclusive rewards.</div>
+            <div style="margin-top:10px;">
+              <div class="reward-row"><div class="reward-icon">🏆</div><div class="reward-info"><div class="reward-name">Glory Points</div><div class="reward-desc">Earned through faction battles — tracked on the season board</div></div></div>
+              <div class="reward-row"><div class="reward-icon">👑</div><div class="reward-info"><div class="reward-name">Rift Control</div><div class="reward-desc">Winning faction gets exclusive Rift access for 7 days</div></div></div>
+              <div class="reward-row"><div class="reward-icon">📜</div><div class="reward-info"><div class="reward-name">Exclusive Scrolls</div><div class="reward-desc">Legendary scrolls only available during War Season</div></div></div>
+              <div class="reward-row"><div class="reward-icon">💰</div><div class="reward-info"><div class="reward-name">10,000 Lucons Pool</div><div class="reward-desc">Split among top contributors in the winning faction</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="tl-item upcoming">
+          <div class="event-card upcoming">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div><div class="event-name" style="font-size:1.1rem;">🌙 Rift Surge Event</div><div class="event-date">Coming Soon — 3-day event</div></div>
+              <span class="badge" style="background:rgba(255,215,0,0.2);color:var(--gold);">UPCOMING</span>
+            </div>
+            <div class="event-desc">Primordial energy surges through the Rift! Shadow Mora spawn rates increase 3x. Exclusive Legendary drops become available. Survival is NOT guaranteed.</div>
+            <div style="margin-top:10px;">
+              <div class="reward-row"><div class="reward-icon">🌙</div><div class="reward-info"><div class="reward-name">3x Shadow Mora Spawns</div><div class="reward-desc">Shadow Hollow and Rift Scar flooded with Mora</div></div></div>
+              <div class="reward-row"><div class="reward-icon">💎</div><div class="reward-info"><div class="reward-name">Exclusive Legendary Drops</div><div class="reward-desc">Items only available during Rift Surge</div></div></div>
+              <div class="reward-row"><div class="reward-icon">⚡</div><div class="reward-info"><div class="reward-name">2x DΞP Bonus</div><div class="reward-desc">Double experience from all hunts during the event</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="tl-item upcoming">
+          <div class="event-card upcoming">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div><div class="event-name" style="font-size:1.1rem;">🏟️ Grand Arena Tournament</div><div class="event-date">Coming Soon — Single-elimination</div></div>
+              <span class="badge" style="background:rgba(255,215,0,0.2);color:var(--gold);">PLANNED</span>
+            </div>
+            <div class="event-desc">1v1 PvP tournament. 32 players enter, 1 survives. Brackets decided by .battle results. Winner earns the Sovereign's Mark (Legendary gear) + 5,000 Lucons.</div>
+            <div style="margin-top:10px;">
+              <div class="reward-row"><div class="reward-icon">🥇</div><div class="reward-info"><div class="reward-name">Sovereign's Mark</div><div class="reward-desc">Legendary gear — +15% damage, +10% accuracy</div></div></div>
+              <div class="reward-row"><div class="reward-icon">💰</div><div class="reward-info"><div class="reward-name">5,000 Lucons</div><div class="reward-desc">Grand prize for the champion</div></div></div>
+              <div class="reward-row"><div class="reward-icon">🏅</div><div class="reward-info"><div class="reward-name">Champion Title</div><div class="reward-desc">Special display title on your profile</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="tl-item upcoming">
+          <div class="event-card upcoming">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div><div class="event-name" style="font-size:1.1rem;">🐉 Mora Migration</div><div class="event-date">Coming Soon — 5-day event</div></div>
+              <span class="badge" style="background:rgba(255,215,0,0.2);color:var(--gold);">PLANNED</span>
+            </div>
+            <div class="event-desc">Rare Dragon and Cosmic Mora appear across ALL terrains. Capture rates boosted. Limited-time Mora species available only during Migration.</div>
+            <div style="margin-top:10px;">
+              <div class="reward-row"><div class="reward-icon">🐉</div><div class="reward-info"><div class="reward-name">Dragon Mora Spawns</div><div class="reward-desc">Rare species appear in every terrain</div></div></div>
+              <div class="reward-row"><div class="reward-icon">🌌</div><div class="reward-info"><div class="reward-name">Cosmic Mora</div><div class="reward-desc">Ultra-rare species available everywhere</div></div></div>
+              <div class="reward-row"><div class="reward-icon">🎯</div><div class="reward-info"><div class="reward-name">2x Capture Rate</div><div class="reward-desc">Easier to catch during Migration</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h2 style="margin-bottom:16px;">📊 Event Rules</h2>
+      <div class="card">
+        <h3>🏆 Faction War Rules</h3>
+        <ul style="padding-left:16px;">
+          <li style="margin:6px 0;color:var(--text-dim);">War lasts 7 days, factions earn Glory through PvP and raids</li>
+          <li style="margin:6px 0;color:var(--text-dim);">Each kill = 10 Glory, each assist = 5 Glory</li>
+          <li style="margin:6px 0;color:var(--text-dim);">Winning faction gets Rift Control buff for 7 days</li>
+          <li style="margin:6px 0;color:var(--text-dim);">All participants earn Lucons based on contribution</li>
+          <li style="margin:6px 0;color:var(--text-dim);">Faction Points are NOT consumed during War</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>🌙 Rift Surge Rules</h3>
+        <ul style="padding-left:16px;">
+          <li style="margin:6px 0;color:var(--text-dim);">Event lasts 3 days — spawns boosted in Shadow Hollow + Rift Scar</li>
+          <li style="margin:6px 0;color:var(--text-dim);">Shadow Mora spawn rate: 3x normal</li>
+          <li style="margin:6px 0;color:var(--text-dim);">DΞP rewards: 2x during event</li>
+          <li style="margin:6px 0;color:var(--text-dim);">Exclusive drops only available during Surge</li>
+          <li style="margin:6px 0;color:var(--text-dim);">Environment damage increased — bring healing items!</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>🏟️ Tournament Rules</h3>
+        <ul style="padding-left:16px;">
+          <li style="margin:6px 0;color:var(--text-dim);">32-player single elimination bracket</li>
+          <li style="margin:6px 0;color:var(--text-dim);">All battles use standard PvP rules</li>
+          <li style="margin:6px 0;color:var(--text-dim);">No consumables allowed in tournament matches</li>
+          <li style="margin:6px 0;color:var(--text-dim);">Players must be Level 20+ to enter</li>
+          <li style="margin:6px 0;color:var(--text-dim);">Winner earns Sovereign's Mark + 5,000 Lucons</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>📅 Recurring Events</h3>
+        <div class="stat-row"><span>🌅 Daily Reset</span><span style="color:var(--text-dim);">Every 24h — dailies refresh</span></div>
+        <div class="stat-row"><span>📅 Weekly Reset</span><span style="color:var(--text-dim);">Every Monday — weeklies + faction missions</span></div>
+        <div class="stat-row"><span>⚔️ Raid Season</span><span style="color:var(--text-dim);">Bi-weekly Kael raids</span></div>
+        <div class="stat-row"><span>🏆 Faction War</span><span style="color:var(--text-dim);">Monthly — 7-day wars</span></div>
       </div>
     </div>
   </div>
@@ -280,6 +785,11 @@
       <option value="Frost">❄️ Frost</option>
       <option value="Wind">💨 Wind</option>
       <option value="Shadow">🌑 Shadow</option>
+      <option value="Dragon">🐉 Dragon</option>
+      <option value="Light">✨ Light</option>
+      <option value="Cosmic">🌌 Cosmic</option>
+      <option value="Void">👁️ Void</option>
+      <option value="Omni">💫 Omni</option>
     </select>
   </div>
   <div class="grid grid-4" id="mora-grid"></div>
@@ -318,33 +828,6 @@
     </select>
   </div>
   <div class="grid grid-2" id="style-grid"></div>
-</div>
-
-<!-- ═══════════════ EVENTS ═══════════════ -->
-<div class="panel" id="panel-events">
-  <h1>📅 Events</h1>
-  <p class="subtitle">Upcoming and active events in Lumora</p>
-  <div class="event-card upcoming" style="margin-bottom:12px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <div><div class="event-name" style="font-size:1.1rem;">🏆 Faction War Season 1</div><div class="event-date">Coming Soon</div></div>
-      <span class="badge" style="background:rgba(255,215,0,0.2);color:var(--gold);">UPCOMING</span>
-    </div>
-    <div class="event-desc">All-out faction warfare. Earn Glory for your faction. Top faction controls the Rift for a week.</div>
-  </div>
-  <div class="event-card upcoming" style="margin-bottom:12px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <div><div class="event-name" style="font-size:1.1rem;">🌙 Rift Surge Event</div><div class="event-date">Coming Soon</div></div>
-      <span class="badge" style="background:rgba(255,215,0,0.2);color:var(--gold);">UPCOMING</span>
-    </div>
-    <div class="event-desc">Primordial energy surges. Shadow Mora spawn rates increased 3x. Exclusive Legendary drops.</div>
-  </div>
-  <div class="event-card active">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <div><div class="event-name" style="font-size:1.1rem;">🎮 Grand Opening</div><div class="event-date">Active Now</div></div>
-      <span class="badge" style="background:rgba(0,255,136,0.2);color:var(--green);">ACTIVE</span>
-    </div>
-    <div class="event-desc">Lumora is live! All players start with 350 Lucons + Creation Powder. Register now!</div>
-  </div>
 </div>
 
 <!-- ═══════════════ TRADING ═══════════════ -->
@@ -442,11 +925,10 @@
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
-const TYPE_ICONS = { Aqua:'💧', Nature:'🌿', Terra:'🪨', Volt:'⚡', Flame:'🔥', Frost:'❄️', Wind:'💨', Shadow:'🌑' };
+const TYPE_ICONS = { Aqua:'💧', Nature:'🌿', Terra:'🪨', Volt:'⚡', Flame:'🔥', Frost:'❄️', Wind:'💨', Shadow:'🌑', Dragon:'🐉', Light:'✨', Cosmic:'🌌', Void:'👁️', Omni:'💫' };
 const RARITY_CLASS = { common:'rarity-common', uncommon:'rarity-uncommon', rare:'rarity-rare', epic:'rarity-epic', legendary:'rarity-legendary' };
 let allMora=[], allItems=[], allStyles=[], adminToken=null, broadcastToken=null;
 
@@ -455,6 +937,11 @@ function showPanel(id, btn) {
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('panel-'+id).classList.add('active');
   if(btn) btn.classList.add('active');
+  window.scrollTo(0,0);
+}
+function scrollWiki(id) {
+  showPanel('wiki', document.querySelectorAll('.nav button')[1]);
+  setTimeout(()=>document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'}), 100);
 }
 async function api(path, opts={}) {
   const headers = {'Content-Type':'application/json'};
