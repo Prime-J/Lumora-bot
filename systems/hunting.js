@@ -43,7 +43,6 @@ const encountersSystem    = require("./encounters");
 const itemsSystem         = require("./items");
 const factionMarketSystem = require("./factionMarket");
 const missionSystem       = require("./factionMissionSystem");
-const testMode            = require("./testMode");
 const buttonsSystem       = require("./buttons");
 const interactiveUI       = require("./interactiveUI");
 
@@ -817,12 +816,7 @@ async function cmdTravel(ctx, chatId, senderId, msg, args = []) {
   const travelPlayer = players?.[senderId];
   if (travelPlayer) {
     regenHuntEnergy(travelPlayer);
-    // 🧪 TEST MODE — refill hunt energy so testers can battle endlessly
-    if (testMode.isTestGroup(chatId)) {
-      travelPlayer.huntEnergy    = travelPlayer.maxHuntEnergy || 100;
-      hunter.huntEnergy          = travelPlayer.huntEnergy;
-      hunter.huntEnergyMax       = travelPlayer.maxHuntEnergy || 100;
-    }
+    
     if (typeof travelPlayer.huntEnergy    === "number") hunter.huntEnergy    = travelPlayer.huntEnergy;
     if (typeof travelPlayer.maxHuntEnergy === "number") hunter.huntEnergyMax = travelPlayer.maxHuntEnergy;
   }
@@ -1030,12 +1024,7 @@ async function cmdHunt(ctx, chatId, senderId, msg) {
   regenHuntEnergy(player);
   const now = Date.now();
 
-  // 🧪 TEST MODE — refill hunt energy so testers can battle endlessly
-  if (testMode.isTestGroup(chatId)) {
-    player.huntEnergy    = player.maxHuntEnergy || 100;
-    hunter.huntEnergy    = player.huntEnergy;
-    hunter.huntEnergyMax = player.maxHuntEnergy || 100;
-  }
+  
 
   // Sync energy from player object to hunter state
   if (typeof player.huntEnergy    === "number") hunter.huntEnergy    = player.huntEnergy;

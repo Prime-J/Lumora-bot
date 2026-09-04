@@ -7,6 +7,9 @@
 "use strict";
 
 const DIVIDER = "━━━━━━━━━━━━━━━━━━━━━━━━━";
+const ui = require("./ui");
+const progression = require("./progression");
+const buttonsSystem = require("./buttons");
 
 // Tier strings (per-Mora `merge` flag in mora.json)
 const TIER_FULL    = "full";
@@ -73,6 +76,32 @@ function getStorageCap(player, key) {
   return Math.max(DEFAULT_STORAGE_CAP, custom);
 }
 
+// ══════════════════════════════════════════════════════════════
+// STORAGE UPGRADES — Lucon sink (M3.1, decision D-2 = Lucons)
+//   cost(n) = BASE + STEP*n + GROWTH*n²   (n = tiers already bought)
+//   1→2: 500 · 2→3: 1000 · 3→4: 1700 · 4→5: 2600 · 5→6: 3700 …
+//   Max cap per type: MAX_STORAGE_CAP. Corrupted variants key with
+//   the @corrupted suffix and upgrade separately.
+// ══════════════════════════════════════════════════════════════
+const STORAGE_UPGRADE_BASE   = 500;
+const STORAGE_UPGRADE_STEP   = 400;
+const STORAGE_UPGRADE_GROWTH = 100;
+const MAX_STORAGE_CAP        = 10;
+
+// Tiers of storage already bought above the default cap.
+function getStorageUpgrades(player, key) {
+  ensureShardFields(player);
+  const custom = Math.floor(Number(player.shardStorage?.[key] || 0));
+  return Math.max(0, custom - DEFAULT_STORAGE_CAP);
+}
+
+// Cost in Lucons for the NEXT tier (+1 cap), or null when maxed.
+function getStorageUpgradeCost(player, key) {
+  if (getStorageCap(player, key) >= MAX_STORAGE_CAP) return null;
+  const n = getStorageUpgrades(player, key);
+  return STORAGE_UPGRADE_BASE + STORAGE_UPGRADE_STEP * n + STORAGE_UPGRADE_GROWTH * n * n;
+}
+
 function getShardCount(player, key) {
   ensureShardFields(player);
   return Number(player.shards?.[key] || 0);
@@ -82,12 +111,20 @@ function findSpeciesByKey(loadMora, key) {
   if (!key) return null;
   const list = loadMora();
   const q = stripCorrupted(String(key).toLowerCase());
-  return list.find(
-    (m) =>
-      String(m.id).toLowerCase() === q ||
-      String(m.name).toLowerCase() === q ||
-      String(m.name).toLowerCase().includes(q)
+  const matchName = (name) => String(name).toLowerCase();
+  // Exact id-or-name always wins.
+  const exact = list.find(
+    (m) => String(m.id).toLowerCase() === q || matchName(m.name) === q
   );
+  if (exact) return exact;
+  // Prefix, then substring — but only when the query identifies exactly
+  // one species. Ambiguous short names must never silently resolve to the
+  // first array match (M2, L-08): a wrong .awaken consumes the shard.
+  const prefixes = list.filter((m) => matchName(m.name).startsWith(q));
+  if (prefixes.length === 1) return prefixes[0];
+  const subs = list.filter((m) => matchName(m.name).includes(q));
+  if (subs.length === 1) return subs[0];
+  return null;
 }
 
 // Drop a corrupted variant — used by Rift's .bind on success.
@@ -215,7 +252,7 @@ async function cmdShards(ctx, chatId, senderId, msg) {
   const { sock, players, loadMora } = ctx;
   const player = players[senderId];
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ You haven't awakened yet. Use *.start*." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ You haven't awakened yet. Use *.register*." }, { quoted: msg });
   }
   ensureShardFields(player);
 
@@ -225,9 +262,9 @@ async function cmdShards(ctx, chatId, senderId, msg) {
   let body;
   if (!entries.length) {
     body =
-      `💎 *YOUR SHARD VAULT*\n${DIVIDER}\n` +
-      `_Empty. Defeat a mergeable Mora to crystallize its essence._\n` +
-      `${DIVIDER}\n` +
+      ui.header('SHARD VAULT', '💎') + `\n\n` +
+      `_Empty. Defeat a mergeable Mora to crystallize its essence._\n\n` +
+      ui.DIV + `\n` +
       (merge
         ? `🌀 Currently merged with *${merge.name}*\n   _.shed to return to base form_\n`
         : `🩶 Base form — no merge active.\n`);
@@ -243,15 +280,18 @@ async function cmdShards(ctx, chatId, senderId, msg) {
       );
       const name = sp?.name || baseKey;
       const tier = sp ? getMergeTier(sp) : null;
-      const tierTag = tier === TIER_FULL ? " 🔥FULL" : tier === TIER_PARTIAL ? " ✨PARTIAL" : "";
-      const corrTag = corrupted ? " ☠CORRUPTED" : "";
+      const tierTag = tier === TIER_FULL ? "🔥 FULL" : tier === TIER_PARTIAL ? "✨ PARTIAL" : "";
+      const corrTag = corrupted ? "☠ CORRUPTED" : "";
       const cap  = getStorageCap(player, key);
-      return `${i + 1}. *${name}*${tierTag}${corrTag}  ×${count}/${cap}`;
+      const badge = [tierTag, corrTag].filter(Boolean).join("  ");
+      return ui.card(`💎 ${name}${badge ? " " + badge : ""}`, '', [
+        { emoji: '📦', label: 'Shards', value: `${count}/${cap}` },
+      ]);
     });
     body =
-      `💎 *YOUR SHARD VAULT*\n${DIVIDER}\n` +
-      lines.join("\n") +
-      `\n${DIVIDER}\n` +
+      ui.header('SHARD VAULT', '💎') + `\n\n` +
+      lines.join(`\n\n`) +
+      `\n\n` + ui.DIV + `\n` +
       (merge
         ? `🌀 Currently merged with *${merge.name}*  _(.shed to revert)_\n`
         : `🩶 Base form — no merge active.\n`) +
@@ -266,7 +306,7 @@ async function cmdAwaken(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers, loadMora } = ctx;
   const player = players[senderId];
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ You haven't awakened yet. Use *.start*." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ You haven't awakened yet. Use *.register*." }, { quoted: msg });
   }
   ensureShardFields(player);
 
@@ -290,7 +330,7 @@ async function cmdAwaken(ctx, chatId, senderId, msg, args = []) {
 
   const species = findSpeciesByKey(loadMora, queryRaw);
   if (!species) {
-    return sock.sendMessage(chatId, { text: `❌ No Mora named *${queryRaw}*.` }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: `❌ No unique Mora matches *${queryRaw}* — type the full name.` }, { quoted: msg });
   }
   if (!isMergeable(species)) {
     return sock.sendMessage(chatId, {
@@ -314,6 +354,9 @@ async function cmdAwaken(ctx, chatId, senderId, msg, args = []) {
   const previous = getCurrentMerge(player);
   clearMergeStatusEffects(player);
   player.currentMerge = buildMergeSnapshot(species, { corrupted: wantCorrupted });
+
+  // 📖 holding a shard means you've met this Mora — unlock its biography
+  markEncountered(player, species);
 
   savePlayers(players);
 
@@ -352,7 +395,7 @@ async function cmdShed(ctx, chatId, senderId, msg) {
   const { sock, players, savePlayers } = ctx;
   const player = players[senderId];
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ You haven't awakened yet. Use *.start*." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ You haven't awakened yet. Use *.register*." }, { quoted: msg });
   }
   ensureShardFields(player);
 
@@ -378,52 +421,129 @@ async function cmdShed(ctx, chatId, senderId, msg) {
   }, { quoted: msg });
 }
 
-// .storage [Mora] — upgrade shard storage for a specific Mora type.
-// Real-money payment infra isn't wired yet — stubbed as "coming soon".
+// .storage [Mora] [buy <n>] — view / purchase shard-storage upgrades.
+// M3.1: replaced the "coming soon" real-money stub with a Lucon sink
+// (decision D-2 = Lucons for v1). Costs: 500 → 1000 → 1700 → 2600 …
+//   *.storage                  — list caps + next costs
+//   *.storage <Mora>           — detail + price for the next tier
+//   *.storage <Mora> buy       — buy +1 cap
+//   *.storage <Mora> buy 3     — buy several tiers at once
+//   *.storage <Mora> buy max   — buy as many as you can afford
+//   *.storage corrupted <Mora> — upgrade the corrupted variant instead
 async function cmdStorage(ctx, chatId, senderId, msg, args = []) {
-  const { sock, players, loadMora } = ctx;
+  const { sock, players, loadMora, savePlayers } = ctx;
   const player = players[senderId];
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
   }
   ensureShardFields(player);
 
-  const queryRaw = args.join(" ").trim();
+  const raw = args.join(" ").trim();
+  const tokens = raw.toLowerCase().split(" ").filter(Boolean);
+  const wantsCorrupted = tokens.includes("corrupted");
+  const buyIdx = tokens.findIndex((t) => ["buy", "upgrade", "confirm"].includes(t));
+  const buyToken = buyIdx !== -1;
+  const buyMax = tokens.includes("max");
+  let count = 0;
+  let countToken = null;
+  if (buyToken) {
+    count = 1; // default: one tier
+    // The count (if any) is the number AFTER the buy word — the first
+    // numeric token may be a species id (e.g. `.storage 70 buy 2`).
+    for (let i = buyIdx + 1; i < tokens.length; i++) {
+      const n = parseInt(tokens[i], 10);
+      if (Number.isFinite(n) && n > 0) { count = n; countToken = tokens[i]; break; }
+    }
+  }
+  if (buyMax) count = Infinity;
+  const STOP = new Set(["corrupted", "buy", "upgrade", "confirm", "max"]);
+  const queryRaw = tokens.filter((t) => t !== countToken && !STOP.has(t)).join(" ");
+
+  // ── No name → list view with live costs ───────────────────
   if (!queryRaw) {
-    // List current per-type caps for shards the player has touched
-    const keys = new Set([
+    const keys = [...new Set([
       ...Object.keys(player.shards || {}),
       ...Object.keys(player.shardStorage || {}),
-    ]);
+    ])];
     const list = loadMora();
-    const lines = [...keys].map((k) => {
-      const sp = list.find((m) => String(m.id).toLowerCase() === k || String(m.name).toLowerCase() === k);
-      const name = sp?.name || k;
-      return `• *${name}* — cap *${getStorageCap(player, k)}*  (have ${getShardCount(player, k)})`;
+    const lines = keys.map((k) => {
+      const corrupted = isCorruptedKey(k);
+      const baseKey = stripCorrupted(k);
+      const sp = list.find((m) => String(m.id).toLowerCase() === baseKey || String(m.name).toLowerCase() === baseKey);
+      const name = corrupted ? `☠ *${sp?.name || baseKey}*` : `*${sp?.name || k}*`;
+      const next = getStorageUpgradeCost(player, k);
+      const costTag = next === null ? "— MAX" : `— next +1: *${next} Lc*`;
+      return `• ${name} — cap *${getStorageCap(player, k)}* (have ${getShardCount(player, k)}) ${costTag}`;
     });
     return sock.sendMessage(chatId, {
       text:
         `🏦 *SHARD STORAGE*\n${DIVIDER}\n` +
         (lines.length ? lines.join("\n") : "_No shard types touched yet._") +
         `\n${DIVIDER}\n` +
-        `Default cap is *${DEFAULT_STORAGE_CAP}* per Mora type.\n` +
-        `💳 *Upgrade with:* *.storage <Mora>*\n` +
-        `_Real-money payment for upgrades is **coming soon** — feature gated until provider integration ships._`,
+        `Default cap *${DEFAULT_STORAGE_CAP}* per type — max *${MAX_STORAGE_CAP}*.\n` +
+        `💳 Upgrade: *.storage <Mora> buy*  (e.g. *.storage Nylon buy 3*)\n` +
+        `_Lucon sink: ${STORAGE_UPGRADE_BASE} → +${STORAGE_UPGRADE_STEP} → grows per tier._`,
     }, { quoted: msg });
   }
 
   const species = findSpeciesByKey(loadMora, queryRaw);
   if (!species) {
-    return sock.sendMessage(chatId, { text: `❌ No Mora named *${queryRaw}*.` }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: `❌ No unique Mora matches *${queryRaw}* — type the full name.` }, { quoted: msg });
   }
-  const cap = getStorageCap(player, shardKey(species));
+  const key = shardKey(species, { corrupted: wantsCorrupted });
+  const tag = wantsCorrupted ? " ☠ corrupted" : "";
+  const cap = getStorageCap(player, key);
+  const next = getStorageUpgradeCost(player, key);
+
+  // ── Detail view (no purchase) ─────────────────────────────
+  if (!buyToken) {
+    const line = next === null
+      ? `Cap is *${cap}/${MAX_STORAGE_CAP}* — **MAXED** for this type.`
+      : `Next +1: *${next} Lucons* → cap *${cap + 1}*.`;
+    return sock.sendMessage(chatId, {
+      text:
+        `💳 *STORAGE — ${species.name}*${tag}\n${DIVIDER}\n` +
+        `Current cap: *${cap}* shard(s)\n` +
+        `${line}\n${DIVIDER}\n` +
+        `Confirm: *.storage ${wantsCorrupted ? "corrupted " : ""}${species.name} buy*\n` +
+        `Multi: *.storage ${species.name} buy 3*  •  Max: *.storage ${species.name} buy max*`,
+    }, { quoted: msg });
+  }
+
+  // ── Purchase ──────────────────────────────────────────────
+  const testFree = false;
+  let totalCost = 0;
+  let bought = 0;
+  const lucons = Number(player.lucons || 0);
+  while (bought < count) {
+    const c = testFree ? 0 : getStorageUpgradeCost(player, key);
+    if (c === null) break; // maxed out
+    if (lucons < totalCost + c) break; // can't afford the next tier
+    totalCost += c;
+    // shardStorage stores the ABSOLUTE cap (owner tool sets it directly),
+    // so each purchase raises it by one from the current cap.
+    player.shardStorage[key] = getStorageCap(player, key) + 1;
+    bought++;
+  }
+
+  if (bought === 0) {
+    const maxed = getStorageCap(player, key) >= MAX_STORAGE_CAP;
+    return sock.sendMessage(chatId, {
+      text: maxed
+        ? `❌ *${species.name}*${tag} storage is already at max (*${MAX_STORAGE_CAP}*).`
+        : `❌ Not enough Lucons — next tier for *${species.name}*${tag} costs *${next} Lc* (you have *${lucons}*).`,
+    }, { quoted: msg });
+  }
+
+  player.lucons = lucons - totalCost;
+  savePlayers(players);
+  const newCap = getStorageCap(player, key);
   return sock.sendMessage(chatId, {
     text:
-      `💳 *STORAGE UPGRADE — ${species.name}*\n${DIVIDER}\n` +
-      `Current cap: *${cap}* shard(s)\n` +
-      `Upgrade: *+1* per purchase\n` +
-      `Cost: _coming soon — real-money payment infra not yet integrated._\n${DIVIDER}\n` +
-      `_For now, every Mora is limited to ${DEFAULT_STORAGE_CAP} shard in your vault._`,
+      `✅ *STORAGE UPGRADED*${tag}\n${DIVIDER}\n` +
+      `*${species.name}* cap → *${newCap}*  (${bought} tier${bought === 1 ? "" : "s"})\n` +
+      `−*${totalCost} Lucons* — balance: *${player.lucons}*\n${DIVIDER}\n` +
+      `Your vault now holds up to *${newCap}* of this type.`,
   }, { quoted: msg });
 }
 
@@ -443,7 +563,7 @@ const DESTROY_FACTION_PTS  = 5;
 async function cmdPurify(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers, loadMora } = ctx;
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
   ensureShardFields(player);
 
   // Faction is lore-flavored, not enforced — any player can perform the rite.
@@ -479,7 +599,7 @@ async function cmdPurify(ctx, chatId, senderId, msg, args = []) {
 
   const species = findSpeciesByKey(loadMora, queryRaw);
   if (!species) {
-    return sock.sendMessage(chatId, { text: `❌ No Mora named *${queryRaw}*.` }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: `❌ No unique Mora matches *${queryRaw}* — type the full name.` }, { quoted: msg });
   }
 
   const corrKey = shardKey(species, { corrupted: true });
@@ -489,7 +609,8 @@ async function cmdPurify(ctx, chatId, senderId, msg, args = []) {
     }, { quoted: msg });
   }
 
-  if (Number(player.lucons || 0) < PURIFY_LUCONS_COST) {
+  const testFree = false;
+  if (!testFree && Number(player.lucons || 0) < PURIFY_LUCONS_COST) {
     return sock.sendMessage(chatId, {
       text: `❌ Purification costs *${PURIFY_LUCONS_COST} Lucons*. You have *${player.lucons || 0}*.`,
     }, { quoted: msg });
@@ -508,7 +629,7 @@ async function cmdPurify(ctx, chatId, senderId, msg, args = []) {
   }
 
   // Convert
-  player.lucons = Number(player.lucons) - PURIFY_LUCONS_COST;
+  if (!testFree) player.lucons = Number(player.lucons) - PURIFY_LUCONS_COST;
   player.shards[corrKey] -= 1;
   if (player.shards[corrKey] <= 0) delete player.shards[corrKey];
   player.shards[normalKey] = normalHave + 1;
@@ -519,7 +640,7 @@ async function cmdPurify(ctx, chatId, senderId, msg, args = []) {
       `🌿 *PURIFIED*\n${DIVIDER}\n` +
       `The corruption sloughs off in a slow rinse of light.\n` +
       `☠ *Corrupted ${species.name}* → 💎 *${species.name}*\n${DIVIDER}\n` +
-      `💰 -${PURIFY_LUCONS_COST} Lucons _(now ${player.lucons})_\n` +
+      `${testFree ? `🧪 FREE (TEST MODE)\n` : `💰 -${PURIFY_LUCONS_COST} Lucons _(now ${player.lucons})_\n`}` +
       `_"What was broken can flow whole again."_`,
   }, { quoted: msg });
 }
@@ -528,7 +649,7 @@ async function cmdPurify(ctx, chatId, senderId, msg, args = []) {
 async function cmdDestroy(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers, loadMora } = ctx;
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
   ensureShardFields(player);
 
   // Faction is lore-flavored, not enforced — any player may shatter a corrupted shard.
@@ -562,7 +683,7 @@ async function cmdDestroy(ctx, chatId, senderId, msg, args = []) {
 
   const species = findSpeciesByKey(loadMora, queryRaw);
   if (!species) {
-    return sock.sendMessage(chatId, { text: `❌ No Mora named *${queryRaw}*.` }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: `❌ No unique Mora matches *${queryRaw}* — type the full name.` }, { quoted: msg });
   }
 
   const corrKey = shardKey(species, { corrupted: true });
@@ -575,7 +696,7 @@ async function cmdDestroy(ctx, chatId, senderId, msg, args = []) {
   // Consume + reward
   player.shards[corrKey] -= 1;
   if (player.shards[corrKey] <= 0) delete player.shards[corrKey];
-  player.resonance = Number(player.resonance || 0) + DESTROY_RESONANCE;
+  progression.addFactionStat(player, DESTROY_RESONANCE);
 
   // Update faction points (file-based, same as wildbattle's faction events)
   let factionPtsLine = "";
@@ -626,7 +747,7 @@ const STARTER_SHARD_OPTIONS = [
 async function cmdChooseShard(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers, loadMora } = ctx;
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
   ensureShardFields(player);
 
   if (player.starterShardChosen) {
@@ -643,17 +764,22 @@ async function cmdChooseShard(ctx, chatId, senderId, msg, args = []) {
 
   const pick = parseInt(args[0], 10);
   if (!Number.isFinite(pick) || pick < 1 || pick > options.length) {
+    const labelToCmd = {};
+    options.forEach((o, i) => {
+      labelToCmd[`💠 ${i + 1}. ${o.name}`] = `.choose-shard ${i + 1}`;
+    });
+    buttonsSystem.mapButtons(labelToCmd);
     const linesOpt = options.map((o, i) =>
-      `*${i + 1}.* 💠 *${o.name}* — ${o.type}\n     _${o.blurb}_`
+      `${i + 1}. 💠 *${o.name}* _(${o.type})_\n   _${o.blurb}_`
     );
-    return sock.sendMessage(chatId, {
-      text:
-        `💎 *CHOOSE YOUR STARTER SHARD*\n${DIVIDER}\n` +
-        `One mergeable shard to begin your path. Use *.awaken <name>* later to merge.\n${DIVIDER}\n` +
-        linesOpt.join("\n\n") +
-        `\n${DIVIDER}\n` +
-        `Pick with *.choose-shard 1-${options.length}*`,
-    }, { quoted: msg });
+    return buttonsSystem.sendButtons(sock, chatId,
+      `💎 *CHOOSE YOUR STARTER SHARD*\n${DIVIDER}\n` +
+      `_Merge it later with .awaken <name>._\n` +
+      linesOpt.join("\n") +
+      `\n\n👉 Tap below 👇`,
+      options.map((o, i) => `💠 ${i + 1}. ${o.name}`),
+      { footer: `Or type: .choose-shard 1-${options.length}`, quoted: msg }
+    );
   }
 
   const chosen = options[pick - 1];
@@ -662,13 +788,15 @@ async function cmdChooseShard(ctx, chatId, senderId, msg, args = []) {
   player.starterShardChosen = true;
   savePlayers(players);
 
-  return sock.sendMessage(chatId, {
-    text:
-      `💎 *STARTER SHARD GRANTED*\n${DIVIDER}\n` +
-      `A *${chosen.name}* shard crystallizes into your vault.\n_${chosen.blurb}_\n${DIVIDER}\n` +
-      `Use *.shards* to view your vault.\n` +
-      `When ready, run *.awaken ${chosen.name}* to merge.`,
-  }, { quoted: msg });
+  buttonsSystem.mapButtons({ "🌲 Start Hunting": `.hunt`, "🎮 Quick Menu": `.menu` });
+  return buttonsSystem.sendButtons(sock, chatId,
+    `💎 *STARTER SHARD GRANTED*\n${DIVIDER}\n` +
+    `A *${chosen.name}* shard crystallizes into your vault.\n_${chosen.blurb}_\n${DIVIDER}\n` +
+    `Merge it anytime with *.awaken ${chosen.name}* — check *.shards* for your vault.\n\n` +
+    `Your setup is complete. Go explore 👇`,
+    ["🌲 Start Hunting", "🎮 Quick Menu"],
+    { footer: `Or type: .hunt`, quoted: msg }
+  );
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -682,7 +810,18 @@ function resolveTargetJid(arg, players, mentionedJids = []) {
   if (mentionedJids && mentionedJids.length) return mentionedJids[0];
   const num = String(arg || "").replace(/^@/, "").replace(/[^0-9]/g, "");
   if (!num) return null;
-  return Object.keys(players).find((j) => j.startsWith(num)) || null;
+  const keys = Object.keys(players);
+  // Exact full-number match wins.
+  const exact = keys.find((j) => j.split("@")[0] === num);
+  if (exact) return exact;
+  // Prefix matching only for full-length numbers (country code + number),
+  // and only when it identifies exactly one player. A short or ambiguous
+  // prefix must never silently resolve to the wrong person (M2, L-03).
+  if (num.length >= 9) {
+    const matches = keys.filter((j) => j.startsWith(num));
+    if (matches.length === 1) return matches[0];
+  }
+  return null;
 }
 
 async function cmdTrade(ctx, chatId, senderId, msg, args = [], opts = {}) {
@@ -706,16 +845,30 @@ async function cmdTrade(ctx, chatId, senderId, msg, args = [], opts = {}) {
 async function cmdTradeOffer(ctx, chatId, senderId, msg, args, opts = {}) {
   const { sock, players, loadMora } = ctx;
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
 
   const targetJid = resolveTargetJid(args[0], players, opts.mentionedJids || (opts.getMentionedJids ? opts.getMentionedJids(msg) : []));
   if (!targetJid || !players[targetJid]) {
+    const looksNumeric = /[0-9]/.test(String(args[0] || ""));
+    const hint = looksNumeric && !String(args[0] || "").includes("@")
+      ? "\n_No unique player matches that number — use the full number or @mention them._"
+      : "";
     return sock.sendMessage(chatId, {
-      text: `❌ Usage: *.trade @user <yourShard> <theirShard>*\nExample: *.trade @1234 Nylon Voltrix*`,
+      text: `❌ Usage: *.trade @user <yourShard> <theirShard>*\nExample: *.trade @1234 Nylon Voltrix*${hint}`,
     }, { quoted: msg });
   }
   if (targetJid === senderId) {
     return sock.sendMessage(chatId, { text: "❌ You can't trade with yourself." }, { quoted: msg });
+  }
+
+  // M2, L-02: never let a third party clobber someone's pending offer.
+  // A recipient with an outstanding offer must accept/reject it first.
+  const existing = pendingTrades.get(targetJid);
+  if (existing && existing.from !== senderId) {
+    return sock.sendMessage(chatId, {
+      text: `❌ @${targetJid.split("@")[0]} already has a pending offer from @${existing.from.split("@")[0]}. They must accept or reject it first.`,
+      mentions: [senderId, targetJid, existing.from],
+    }, { quoted: msg });
   }
 
   const myShardName    = args[1];
@@ -728,8 +881,8 @@ async function cmdTradeOffer(ctx, chatId, senderId, msg, args, opts = {}) {
 
   const mySpecies    = findSpeciesByKey(loadMora, myShardName);
   const theirSpecies = findSpeciesByKey(loadMora, theirShardName);
-  if (!mySpecies)    return sock.sendMessage(chatId, { text: `❌ No Mora named *${myShardName}*.` }, { quoted: msg });
-  if (!theirSpecies) return sock.sendMessage(chatId, { text: `❌ No Mora named *${theirShardName}*.` }, { quoted: msg });
+  if (!mySpecies)    return sock.sendMessage(chatId, { text: `❌ No unique Mora matches *${myShardName}* — type the full name.` }, { quoted: msg });
+  if (!theirSpecies) return sock.sendMessage(chatId, { text: `❌ No unique Mora matches *${theirShardName}* — type the full name.` }, { quoted: msg });
 
   ensureShardFields(player);
   ensureShardFields(players[targetJid]);
@@ -865,6 +1018,22 @@ async function cmdTradeList(ctx, chatId, senderId, msg) {
 // ══════════════════════════════════════════════════════════════
 // EXPORTS
 // ══════════════════════════════════════════════════════════════
+// 📖 MORA BIOGRAPHY — track which Mora a player has encountered.
+// Encountered entries unlock full info in `.mora`. The dex stores
+// canonical mora.json ids (strings) so lookups always resolve.
+function markEncountered(player, speciesOrId) {
+  if (!player) return;
+  if (!Array.isArray(player.dex)) player.dex = [];
+  let id = null;
+  if (speciesOrId && typeof speciesOrId === "object") {
+    id = speciesOrId.baseId ?? speciesOrId.id ?? speciesOrId.moraId ?? null;
+  } else {
+    id = speciesOrId;
+  }
+  id = String(id ?? "").trim();
+  if (id && !player.dex.includes(id)) player.dex.push(id);
+}
+
 module.exports = {
   // commands
   cmdShards,
@@ -876,6 +1045,9 @@ module.exports = {
   cmdPurify,
   cmdDestroy,
   cmdChooseShard,
+
+  // 📖 biography
+  markEncountered,
 
   // helpers used by other systems
   ensureShardFields,
@@ -893,12 +1065,16 @@ module.exports = {
   stripCorrupted,
   getShardCount,
   getStorageCap,
+  getStorageUpgrades,
+  getStorageUpgradeCost,
   buildMergeSnapshot,
 
   // constants
   TIER_FULL,
   TIER_PARTIAL,
   DEFAULT_STORAGE_CAP,
+  MAX_STORAGE_CAP,
+  STORAGE_UPGRADE_BASE,
   DROP_RATE_DEFEAT,
   DROP_RATE_SPAWN_CLAIM,
   CORRUPTED_SUFFIX,

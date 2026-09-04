@@ -1,4 +1,6 @@
 const itemsSystem = require("./items");
+const ui = require("./ui");
+const interactiveUI = require("./interactiveUI");
 
 // ============================
 // UI
@@ -201,56 +203,83 @@ function maybeRotateMarket() {
 
 function formatMarketText(market) {
   const itemsDb = itemsSystem.loadItems();
-  const ui = market.marketUi || {};
-  const header = ui.header || `${DIVIDER}\n🏪 *LUMORA MARKET*\n${DIVIDER}`;
+  const marketUi = market.marketUi || {};
   const footer =
-    ui.footer ||
-    `${DIVIDER}\n🛒 Use: \`.buy <item name or id>\`\n🔔 Use \`.subscribe-market\``;
-  const rareBanner = ui.rareBannerText || "🌟 *RARE ITEM AVAILABLE* 🌟";
+    marketUi.footer ||
+    `${ui.DIV}\n🛒 Use: \`.buy <item name or id>\`\n🔔 Use \`.subscribe-market\``;
+  const rareBanner = marketUi.rareBannerText || "🌟 *RARE ITEM AVAILABLE* 🌟";
 
   const rotation = market.currentRotation || { items: [] };
   const entries = Array.isArray(rotation.items) ? rotation.items : [];
 
   if (!entries.length) {
     return (
-      `${header}\n\n` +
+      ui.header('MARKET', '🏪') + `\n\n` +
       `The stalls are quiet right now.\n` +
       `Try again after the next rotation.\n\n` +
       `${footer}`
     );
   }
 
-  const blocks = [];
-
+  // Group items by rarity
+  const rarityOrder = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+  const groups = {};
   for (const entry of entries) {
     const item = itemsDb[entry.itemId];
     if (!item) continue;
-
-    const merged = {
-      ...item,
-      marketPrice: Number(entry.price ?? item.price ?? 0),
-      marketStock: Math.max(0, Number(entry.stock || 0) - Number(entry.sold || 0)),
-      limited: !!entry.limited,
-    };
-
-    const lines = [];
-    if (itemsSystem.isRareOrHigher(item.rarity)) {
-      lines.push(rareBanner);
-      lines.push("");
-    }
-
-    lines.push(itemsSystem.formatItemLine(merged));
-
-    if (merged.marketStock <= 0) {
-      lines.push("❌ *SOLD OUT*");
-    } else if (merged.limited) {
-      lines.push("⏳ Limited stock");
-    }
-
-    blocks.push(lines.join("\n"));
+    const r = (item.rarity || 'common').toLowerCase();
+    if (!groups[r]) groups[r] = [];
+    groups[r].push({ entry, item });
   }
 
-  return `${header}\n\n${blocks.join(`\n\n${SMALL_DIVIDER}\n\n`)}\n\n${footer}`;
+  const lines = [];
+  lines.push(ui.header('MARKET', '🏪'));
+  lines.push('');
+
+  for (const rarity of rarityOrder) {
+    const items = groups[rarity];
+    if (!items || !items.length) continue;
+
+    const rarityEmoji = { common: '⚪', uncommon: '🟢', rare: '🔵', epic: '🟣', legendary: '🟡' }[rarity] || '⚪';
+    lines.push(ui.subheader(rarity.toUpperCase(), rarityEmoji));
+    lines.push('');
+
+    for (const { entry, item } of items) {
+      const merged = {
+        ...item,
+        marketPrice: Number(entry.price ?? item.price ?? 0),
+        marketStock: Math.max(0, Number(entry.stock || 0) - Number(entry.sold || 0)),
+        limited: !!entry.limited,
+      };
+
+      const icon = itemsSystem.getRarityIcon(item.rarity);
+      if (itemsSystem.isRareOrHigher(item.rarity)) {
+        lines.push(rareBanner);
+        lines.push('');
+      }
+
+      const stockText = merged.marketStock <= 0
+        ? '❌ SOLD OUT'
+        : merged.limited
+          ? `⏳ Limited · 📦 *${merged.marketStock}* left`
+          : `📦 Stock: *${merged.marketStock}*`;
+
+      lines.push(ui.card(`${icon} ${item.name}`, '', [
+        { emoji: '💠', label: 'Rarity', value: item.rarity },
+        { emoji: '💰', label: 'Price', value: `${merged.marketPrice} Lucons` },
+        { emoji: '⚡', label: 'Effect', value: item.effect || 'Passive effect' },
+        ...(item.desc ? [{ emoji: '📜', label: 'Desc', value: item.desc }] : []),
+      ]));
+      lines.push(`  ${stockText}`);
+      lines.push('');
+    }
+  }
+
+  lines.push(ui.DIV);
+  lines.push('');
+  lines.push(footer);
+
+  return lines.join('\n');
 }
 
 function getRotationEntryByQuery(query, market, itemsDb) {
@@ -310,11 +339,46 @@ function buildOwnerMarketItemsText(market) {
 }
 
 async function cmdMarket(ctx, chatId, senderId, msg) {
-  const { sock } = ctx;
+  const { sock, players } = ctx;
 
   const { market } = maybeRotateMarket();
-  const text = formatMarketText(market);
+  const itemsDb = itemsSystem.loadItems();
+  const rotation = market.currentRotation || { items: [] };
+  const entries = Array.isArray(rotation.items) ? rotation.items : [];
 
+  // Build categories for interactive menu
+  const rarityOrder = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+  const categories = [];
+
+  for (const rarity of rarityOrder) {
+    const items = entries
+      .map(e => ({ entry: e, item: itemsDb[e.itemId] }))
+      .filter(x => x.item && (x.item.rarity || 'common').toLowerCase() === rarity);
+    
+    if (items.length > 0) {
+      const rarityEmoji = { common: '⚪', uncommon: '🟢', rare: '🔵', epic: '🟣', legendary: '🟡' }[rarity] || '⚪';
+      categories.push({
+        name: `${rarityEmoji} ${rarity.toUpperCase()}`,
+        items: items.map(({ entry, item }) => ({
+          name: item.name,
+          price: Number(entry.price ?? item.price ?? 0),
+          id: item.id,
+        })),
+      });
+    }
+  }
+
+  // Send interactive list menu
+  if (categories.length > 0) {
+    const player = players?.[senderId];
+    await interactiveUI.sendMarketMenu(sock, chatId, categories, msg);
+    // Also send the detailed text for those who prefer reading
+    const text = formatMarketText(market);
+    return sock.sendMessage(chatId, { text }, { quoted: msg });
+  }
+
+  // Fallback to text only
+  const text = formatMarketText(market);
   return sock.sendMessage(chatId, { text }, { quoted: msg });
 }
 
@@ -325,7 +389,7 @@ async function cmdBuy(ctx, chatId, senderId, msg, args = []) {
   if (!player) {
     return sock.sendMessage(
       chatId,
-      { text: "❌ Register first using `.start`." },
+      { text: "❌ Register first using `.register`." },
       { quoted: msg }
     );
   }
@@ -362,10 +426,11 @@ async function cmdBuy(ctx, chatId, senderId, msg, args = []) {
     );
   }
 
-  const price = Number(entry.price ?? item.price ?? 0);
+  const testFree = false;
+  const price = testFree ? 0 : Number(entry.price ?? item.price ?? 0);
   const money = Number(player.lucons || 0);
 
-  if (money < price) {
+  if (!testFree && money < price) {
     return sock.sendMessage(
       chatId,
       { text: `❌ You need *${price} Lucons* but only have *${money}*.` },
@@ -391,7 +456,7 @@ async function cmdBuy(ctx, chatId, senderId, msg, args = []) {
     );
   }
 
-  player.lucons = Math.max(0, money - price);
+  if (!testFree) player.lucons = Math.max(0, money - price);
   entry.sold = Number(entry.sold || 0) + 1;
 
   savePlayers(players);
@@ -408,7 +473,7 @@ async function cmdBuy(ctx, chatId, senderId, msg, args = []) {
         `🛒 *PURCHASE COMPLETE*\n` +
         `${DIVIDER}\n\n` +
         `${rarityIcon} *${item.name}*\n` +
-        `💰 Price: *${price} Lucons*\n` +
+        `${testFree ? `🧪 Price: *FREE* (TEST MODE)\n` : `💰 Price: *${price} Lucons*\n`}` +
         `📦 Remaining Stock: *${left}*\n` +
         `⚡ Effect: ${item.effect || "None"}\n` +
         `📜 ${item.desc || "No description."}\n\n` +
@@ -660,6 +725,7 @@ async function cmdMarketSet(ctx, chatId, senderId, msg, args = []) {
 
 module.exports = {
   maybeRotateMarket,
+  formatMarketText,
   cmdMarket,
   cmdBuy,
   cmdSubscribeMarket,

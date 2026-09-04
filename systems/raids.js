@@ -213,9 +213,10 @@ async function cmdClaimContract(ctx, chatId, senderId, msg) {
   }
 
   // contract fee: 10% of claimant's balance
+  const testFree = false;
   const bal = Number(p.lucons || 0);
-  const fee = Math.floor(bal * 0.1);
-  if (fee <= 0) return sock.sendMessage(chatId, { text: "❌ You have no Lucons to pay Kael's contract fee." }, { quoted: msg });
+  const fee = testFree ? 0 : Math.floor(bal * 0.1);
+  if (fee <= 0 && !testFree) return sock.sendMessage(chatId, { text: "❌ You have no Lucons to pay Kael's contract fee." }, { quoted: msg });
   p.lucons = bal - fee;
   ctx.savePlayers(players);
 
@@ -263,9 +264,10 @@ async function cmdRaidJoin(ctx, chatId, senderId, msg) {
   if (p.faction !== state.active.faction) return sock.sendMessage(chatId, { text: "🚫 Only members of the raiding faction may join." }, { quoted: msg });
   if (state.active.raiders[senderId]) return sock.sendMessage(chatId, { text: "⚠️ You've already joined this raid." }, { quoted: msg });
 
+  const testFree = false;
   const bal = Number(p.lucons || 0);
-  const fee = Math.floor(bal * 0.1);
-  if (fee <= 0) return sock.sendMessage(chatId, { text: "❌ You have no Lucons to pay the raid entry." }, { quoted: msg });
+  const fee = testFree ? 0 : Math.floor(bal * 0.1);
+  if (fee <= 0 && !testFree) return sock.sendMessage(chatId, { text: "❌ You have no Lucons to pay the raid entry." }, { quoted: msg });
 
   p.lucons = bal - fee;
   ctx.savePlayers(players);
@@ -310,10 +312,13 @@ async function cmdRaidLaunch(ctx, chatId, senderId, msg, args) {
   state.active.phase = "ready";
   saveState(state);
 
+  const roleMentions = [];
   const rolesList = raiderJids.map(j => {
     const r = state.active.raiders[j].role;
     const icon = r === "Frontline" ? "⚔️" : r === "Mid" ? "🎯" : "🛡️";
-    return `${icon} *${getDisplayName(players, j)}* — ${r}`;
+    const phone = j.split("@")[0];
+    roleMentions.push(j);
+    return `${icon} @${phone} *${getDisplayName(players, j)}* — ${r}`;
   }).join("\n");
 
   return sock.sendMessage(chatId, {
@@ -324,6 +329,7 @@ async function cmdRaidLaunch(ctx, chatId, senderId, msg, args) {
       `🎭 *ROLE ASSIGNMENT*\n${rolesList}\n\n` +
       `📖 All raiders must *.ready* to confirm.\n` +
       `📖 Leader: *.reroll-roles* (max 2) · *.raid-kick @user* · *.raid-go* (force start)`,
+    mentions: roleMentions,
   }, { quoted: msg });
 }
 
@@ -347,15 +353,19 @@ async function cmdRerollRoles(ctx, chatId, senderId, msg) {
   assignRoles(state.active, Object.keys(state.active.raiders));
   saveState(state);
 
+  const rerollMentions = [];
   const lines = Object.keys(state.active.raiders).map(j => {
     const r = state.active.raiders[j].role;
     const icon = r === "Frontline" ? "⚔️" : r === "Mid" ? "🎯" : "🛡️";
-    return `${icon} *${getDisplayName(players, j)}* — ${r}`;
+    const phone = j.split("@")[0];
+    rerollMentions.push(j);
+    return `${icon} @${phone} *${getDisplayName(players, j)}* — ${r}`;
   });
   return sock.sendMessage(chatId, {
     text:
       `🎲 *ROLES REROLLED* (${state.active.rerolls}/2)\n\n` +
       lines.join("\n") + `\n\n_All raiders must *.ready* again._`,
+    mentions: rerollMentions,
   }, { quoted: msg });
 }
 
@@ -600,11 +610,14 @@ async function beginEncounterPhase(ctx, state) {
   state.active.encounterRemaining = deployed;  // unassigned defenders
   saveState(state);
 
+  const encounterMentions = [];
   const lines = raiderJids.map(j => {
     const m = assigned[j];
+    const phone = j.split("@")[0];
+    encounterMentions.push(j);
     return m
-      ? `⚔️ *${getDisplayName(players, j)}* meets *${m.name}* (${m.rarity} • Lv ${m.level}) — submitted by ${m.submittedByName}`
-      : `👻 *${getDisplayName(players, j)}* finds empty vault halls.`;
+      ? `⚔️ @${phone} *${getDisplayName(players, j)}* meets *${m.name}* (${m.rarity} • Lv ${m.level}) — submitted by ${m.submittedByName}`
+      : `👻 @${phone} *${getDisplayName(players, j)}* finds empty vault halls.`;
   }).join("\n");
 
   await sock.sendMessage(state.active.chatId, {
@@ -614,6 +627,7 @@ async function beginEncounterPhase(ctx, state) {
       `📖 Raiders: *.raid-attack* to engage assigned treasury Mora.\n` +
       `📖 Defenders: *.engage @raider* to intercept (PvP).\n` +
       `⏳ Encounter phase: *15 minutes*.`,
+    mentions: encounterMentions,
   });
 
   // Auto-resolve empty-slot raiders: they plunder the vault directly
@@ -661,10 +675,11 @@ async function cmdRaidEngage(ctx, chatId, senderId, msg, helpers) {
     saveState(state);
     return sock.sendMessage(chatId, {
       text:
-        `🛡️ *${getDisplayName(players, senderId)}'s ${defMora.mora.name}* crushes *${getDisplayName(players, raiderJid)}'s ${atkMora.mora.name}*!\n\n` +
-        `⛓️ *${getDisplayName(players, raiderJid)}* has been *CAPTURED.*\n` +
+        `🛡️ @${senderId.split("@")[0]} *${getDisplayName(players, senderId)}'s ${defMora.mora.name}* crushes @${raiderJid.split("@")[0]} *${getDisplayName(players, raiderJid)}'s ${atkMora.mora.name}*!\n\n` +
+        `⛓️ @${raiderJid.split("@")[0]} *${getDisplayName(players, raiderJid)}* has been *CAPTURED.*\n` +
         `💸 They will pay a *${CAPTURE_FINE}L* fine at raid end.\n\n` +
         `_Captured raiders can use a *Rift Escape Shard* to break free._`,
+      mentions: [senderId, raiderJid],
     }, { quoted: msg });
   } else {
     // Raider wins — loots defender
@@ -677,8 +692,9 @@ async function cmdRaidEngage(ctx, chatId, senderId, msg, helpers) {
     saveState(state);
     return sock.sendMessage(chatId, {
       text:
-        `💀 *${getDisplayName(players, raiderJid)}'s ${atkMora.mora.name}* overpowers the defender!\n\n` +
-        `💰 Looted: *${loot} Lucons* from ${getDisplayName(players, senderId)}.`,
+        `💀 @${raiderJid.split("@")[0]} *${getDisplayName(players, raiderJid)}'s ${atkMora.mora.name}* overpowers the defender!\n\n` +
+        `💰 Looted: *${loot} Lucons* from @${senderId.split("@")[0]} *${getDisplayName(players, senderId)}*.`,
+      mentions: [raiderJid, senderId],
     }, { quoted: msg });
   }
 }
@@ -884,7 +900,9 @@ async function resolveRaid(ctx, state, reason = "timeout") {
   saveState(state);
 
   const chatId = raid.chatId;
-  await sock.sendMessage(chatId, { text: summary + `_24h cooldown now active for ${FACTION_LABEL[raid.faction]}._` });
+  // Collect all raider JIDs for mentions in summary
+  const summaryMentions = [...new Set([...uncaptured, ...raid.captures])];
+  await sock.sendMessage(chatId, { text: summary + `_24h cooldown now active for ${FACTION_LABEL[raid.faction]}._`, mentions: summaryMentions });
 }
 
 // Called periodically on message traffic — advances state on timeouts
@@ -919,10 +937,13 @@ async function cmdRaidStatus(ctx, chatId, msg) {
   const t = ctx.loadTreasury();
   const tgt = r.target ? t[r.target] : null;
   const wallLine = tgt ? `🧱 ${wallBar(tgt.wallHp, tgt.wallMaxHp)}  ${tgt.wallHp}/${tgt.wallMaxHp}` : "_(no target yet)_";
+  const statusMentions = [];
   const raiderLines = Object.entries(r.raiders).map(([j, info]) => {
     const tag = info.captured ? "⛓️" : info.ready ? "✅" : "⏳";
     const roleIcon = info.role === "Frontline" ? "⚔️" : info.role === "Mid" ? "🎯" : info.role === "Support" ? "🛡️" : "❓";
-    return `${tag} ${roleIcon} *${getDisplayName(players, j)}*${info.role ? ` (${info.role})` : ""}`;
+    const phone = j.split("@")[0];
+    statusMentions.push(j);
+    return `${tag} ${roleIcon} @${phone} *${getDisplayName(players, j)}*${info.role ? ` (${info.role})` : ""}`;
   }).join("\n") || "_no raiders_";
 
   return sock.sendMessage(chatId, {
@@ -934,6 +955,7 @@ async function cmdRaidStatus(ctx, chatId, msg) {
       `${wallLine}\n\n` +
       `💰 Pot: *${r.pot}L*\n\n` +
       `*RAIDERS:*\n${raiderLines}`,
+    mentions: statusMentions,
   }, { quoted: msg });
 }
 

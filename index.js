@@ -348,7 +348,6 @@ const combatLockSystem = require('./systems/combatLock');
 const autoRaidSystem = require('./systems/autoRaid');
 const playerBattleSystem = require('./systems/playerBattle');
 const ownerToolsSystem  = require('./systems/ownerTools');
-const testModeSystem = require('./systems/testMode');
 const meetingsSystem = require('./systems/meetings');
 const buttonsSystem = require('./systems/buttons');
 const { sendButtons } = buttonsSystem;
@@ -1208,8 +1207,6 @@ function denyMarketGroup(sock, chatId, msg) {
   }, { quoted: msg });
 }
 function isHuntAllowedInChat(chatId, settings) {
-  // 🧪 TEST MODE groups get full hunting/battle access
-  if (testModeSystem.isTestGroup(chatId)) return true;
   const hg = settings?.huntingGroups || { enabled: true, allowed: [] };
   if (hg.enabled === false) return false;
   if (!isGroupJid(chatId)) return false;
@@ -1222,8 +1219,6 @@ function denyHuntGroup(sock, chatId, msg) {
   }, { quoted: msg });
 }
 function isArenaAllowedInChat(chatId, settings) {
-  // 🧪 TEST MODE groups get full arena access
-  if (testModeSystem.isTestGroup(chatId)) return true;
   const ag = settings?.arenaGroups || { enabled: false, allowed: [] };
   if (ag.enabled === false) return false;
   if (!isGroupJid(chatId)) return false;
@@ -3502,10 +3497,6 @@ if (command === "uptime") {
         return sock.sendMessage(chatId, { text: hypeText }, { quoted: msg });
       }
 
-      if (command === "testkit") {
-        // 🧪 TEST MODE only — free tester wallet + starter items
-        return testModeSystem.cmdTestKit(ctx, chatId, senderId, msg);
-      }
       if (command === "meeting" || command === "mnotes") {
         // 📋 save & recall meeting decisions (owner-only)
         if (!isOwner) return sock.sendMessage(chatId, { text: "❌ Owner-only command." }, { quoted: msg });
@@ -4711,7 +4702,7 @@ if (command === "choose") {
 
         if (sub === "fetch" || sub === "fill") {
           // Owner can bulk-fetch; testers too (they push the pack in test GCs)
-          if (!isOwner && !testModeSystem.isTestGroup(chatId)) {
+          if (!isOwner) {
             return sock.sendMessage(chatId, { text: "❌ Owner-only command." }, { quoted: msg });
           }
           const limit = parseInt(args[1], 10) || 0;

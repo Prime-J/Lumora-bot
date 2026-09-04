@@ -10,7 +10,6 @@ const path = require("path");
 
 const DIVIDER = "━━━━━━━━━━━━━━━━━━━━━━━━━";
 const STYLE_ASSETS_DIR = path.join(__dirname, "..", "assets", "styles");
-const testMode = require("./testMode");
 const buttonsSystem = require("./buttons");
 
 let _quests = null;
@@ -458,14 +457,13 @@ async function cmdStyles(ctx, chatId, senderId, msg) {
   const ownedIds = player.styles || [];
   const equippedId = getEquippedStyleId(player);
 
-  const testFree = testMode.isTestGroup(chatId);
   const lines = Object.values(styles).map((s) => {
     const owned = ownedIds.includes(s.id);
     const status = owned
       ? (equippedId === s.id
           ? "✅ *EQUIPPED* — active in combat"
           : "🔓 unlocked — *.equip-style <name>* to use it")
-      : testFree ? "🧪 free here — try *.style <name>*" : `🔒 quest: *.quest accept ${s.unlockQuest}*`;
+      : `🔒 quest: *.quest accept ${s.unlockQuest}*`;
     return (
       `• *${s.name}*  _(${s.type})_  — ${status}\n` +
       `  _${s.lore}_\n` +
@@ -509,13 +507,10 @@ async function cmdEquipStyle(ctx, chatId, senderId, msg, args = []) {
   }
 
   if (!player.styles.includes(st.id)) {
-    // TEST MODE: free unlock on equip; everywhere else the quest gate stands.
-    if (!testMode.isTestGroup(chatId)) {
-      return sock.sendMessage(chatId, {
-        text: `❌ You haven't unlocked *${st.name}* yet.\nQuest: *.quest accept ${st.unlockQuest}*`,
-      }, { quoted: msg });
-    }
-    player.styles.push(st.id);
+    return sock.sendMessage(chatId, {
+      text: `❌ You haven’t unlocked *${st.name}* yet.
+Quest: *.quest accept ${st.unlockQuest}*`,
+    }, { quoted: msg });
   }
 
   player.equippedStyle = st.id;
@@ -568,15 +563,7 @@ async function cmdStyleDetail(ctx, chatId, senderId, msg, args = []) {
     return sock.sendMessage(chatId, { text: `❌ No fighting style named *${q}*.\nSee all with *.styles*.` }, { quoted: msg });
   }
 
-  let owned = player.styles.includes(st.id);
-  const testFree = testMode.isTestGroup(chatId);
-  let testUnlocked = false;
-  if (!owned && testFree) {
-    player.styles.push(st.id);
-    ctx.savePlayers(players);
-    owned = true;
-    testUnlocked = true;
-  }
+  const owned = player.styles.includes(st.id);
   const quests = loadQuests();
   const questDef = quests[st.unlockQuest];
   const rarityIcon =
@@ -594,9 +581,7 @@ async function cmdStyleDetail(ctx, chatId, senderId, msg, args = []) {
     return `• *${m.name}*  (${m.power ? `${m.power} dmg, ` : ""}${m.energyCost} EN)${tags.length ? ` _[${tags.join(", ")}]_` : ""}\n     _${m.desc}_`;
   });
 
-  const howTo = testUnlocked
-    ? `🧪 *TEST MODE* — auto-unlocked! It's already in your *.attack* moveset.`
-    : owned
+  const howTo = owned
       ? `✅ *UNLOCKED* — appears in your *.attack* moveset.`
       : questDef
       ? `🔒 *Not yet unlocked.*\n` +
