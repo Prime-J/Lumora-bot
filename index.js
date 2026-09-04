@@ -6921,8 +6921,9 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
         saveWarns(warns);
         const count = warns[tid].length;
         const warnName = players[tid]?.username || '???';
+        const adminName = players[senderId]?.username || '???';
         return sock.sendMessage(chatId, {
-          text: `⚠️ @${tid.split("@")[0]} *${warnName}* has been warned!\n\n📝 Reason: _${reason}_\n⚠️ Total warnings: *${count}*`,
+          text: `⚠️ @${tid.split("@")[0]} *${warnName}* has been warned!\n\n📝 Reason: _${reason}_\n⚠️ Total warnings: *${count}*\n👤 By: *${adminName}*`,
           mentions: [tid],
         }, { quoted: msg });
       }
@@ -6958,8 +6959,9 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
         warns[tid].pop();
         if (!warns[tid].length) delete warns[tid];
         saveWarns(warns);
+        const adminName = players[senderId]?.username || '???';
         return sock.sendMessage(chatId, {
-          text: `✅ Removed latest warning from @${tid.split("@")[0]}.\nRemaining: *${(warns[tid] || []).length}*`,
+          text: `✅ Removed latest warning from @${tid.split("@")[0]}.\nRemaining: *${(warns[tid] || []).length}*\n👤 By: *${adminName}*`,
           mentions: [tid],
         }, { quoted: msg });
       }
@@ -6976,9 +6978,10 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
         if (!target) return sock.sendMessage(chatId, { text: `Use: ${PREFIX}promote @user` }, { quoted: msg });
         try {
           const promoName = players[target]?.username || '???';
+          const adminName = players[senderId]?.username || '???';
           await sock.groupParticipantsUpdate(chatId, [target], "promote");
           return sock.sendMessage(chatId, {
-            text: `👑 @${target.split("@")[0]} *${promoName}* has been promoted to admin!`,
+            text: `👑 @${target.split("@")[0]} *${promoName}* has been promoted to admin!\n👤 By: *${adminName}*`,
             mentions: [target],
           }, { quoted: msg });
         } catch (e) {
@@ -6995,9 +6998,10 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
         if (!target) return sock.sendMessage(chatId, { text: `Use: ${PREFIX}demote @user` }, { quoted: msg });
         try {
           const demoName = players[target]?.username || '???';
+          const adminName = players[senderId]?.username || '???';
           await sock.groupParticipantsUpdate(chatId, [target], "demote");
           return sock.sendMessage(chatId, {
-            text: `⬇️ @${target.split("@")[0]} *${demoName}* has been demoted from admin.`,
+            text: `⬇️ @${target.split("@")[0]} *${demoName}* has been demoted from admin.\n👤 By: *${adminName}*`,
             mentions: [target],
           }, { quoted: msg });
         } catch (e) {
@@ -7016,9 +7020,10 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
         const target = mentioned[0] || replied;
         if (!target) return sock.sendMessage(chatId, { text: `Use: ${PREFIX}kick @user or reply to a message` }, { quoted: msg });
         try {
+          const adminName = players[senderId]?.username || '???';
           await sock.groupParticipantsUpdate(chatId, [target], "remove");
           return sock.sendMessage(chatId, {
-            text: `👢 @${target.split("@")[0]} has been kicked from the group.`,
+            text: `👢 @${target.split("@")[0]} has been kicked from the group.\n👤 By: *${adminName}*`,
             mentions: [target],
           }, { quoted: msg });
         } catch (e) {
@@ -7552,7 +7557,8 @@ if (command === "f-lb") {
         if (command === "unban") {
           delete bansNow[targetId];
           saveBans(bansNow);
-          return mentionTag(sock, chatId, targetId, `✅ Unbanned: {mention}`, msg);
+          const adminName = players[senderId]?.username || '???';
+          return mentionTag(sock, chatId, targetId, `✅ Unbanned: {mention}\n👤 By: *${adminName}*`, msg);
         }
 
         if (command === "autounban") {
@@ -7611,10 +7617,10 @@ if (command === "f-lb") {
         };
 
         saveBans(bansNow);
-
+        const adminName = players[senderId]?.username || '???';
         return mentionTag(
           sock, chatId, targetId,
-          `⛔ Banned: {mention}\n📝 Reason: ${reasonText}` + (minutes ? `\n⏳ Auto-unban: ${minutes} min` : ""),
+          `⛔ Banned: {mention}\n📝 Reason: ${reasonText}` + (minutes ? `\n⏳ Auto-unban: ${minutes} min` : "") + `\n👤 By: *${adminName}*`,
           msg
         );
       }
