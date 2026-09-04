@@ -310,9 +310,9 @@ const FACTION_GROUPS = {};
 
 // Invite-link → faction mapping (used to resolve JIDs at runtime)
 const FACTION_INVITE_MAP = {
-    'G0msNxullTKKEfHVltjlXZ': 'harmony',
-    'IYx4DKOR40w9gze32C9wKQ': 'purity',
-    'EBPQYruOnigJX3jj7X3Npj': 'rift',
+    'IRAvs9txWwDHI3l4OVYAak': 'harmony',
+    'KzWF6mHUZCN85CkllwB8me': 'purity',
+    'CRUuwdU0rBx6j6dRh2Ydh9': 'rift',
     'HUOV4vTSsSOBzpGcDxosiq': 'none',
 };
 
