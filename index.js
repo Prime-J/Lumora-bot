@@ -3445,6 +3445,63 @@ if (command === "uptime") {
         // .equip-style <name> — switch the ONE style active in combat
         return questSystem.cmdEquipStyle(ctx, chatId, senderId, msg, args);
       }
+
+      // ── .styles--wind-step — one-time Star showcase ──
+      if (command === "styles--wind-step") {
+        const p = players[senderId];
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.register*." }, { quoted: msg });
+        if (p.windStepShowcaseSeen) {
+          return sock.sendMessage(chatId, { text: "✨ You already saw Star's Wind Step showcase! Type *.style wind_step* to see it again." }, { quoted: msg });
+        }
+        p.windStepShowcaseSeen = true;
+        savePlayers(players);
+
+        const windStepImg = questSystem.styleImagePath('wind_step');
+        const hypeText =
+          `═══════════════════════════════\n` +
+          `  🌌 *LUMORA — PATCH 1.0.2*\n` +
+          `  🎨 *STYLE SHOWCASE*\n` +
+          `═══════════════════════════════\n\n` +
+          `Hey hey hey, traveler! ✨\n\n` +
+          `It's me, *Star* — your guide through the chaos of Lumora. 💫\n\n` +
+          `I've got something *special* for you today.\n\n` +
+          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+          `🌬️ *WIND STEP*\n` +
+          `_A fluid Lumorian discipline that bends momentum and air._\n\n` +
+          `This is where it all begins. The *first step* — literally. 😏\n\n` +
+          `Wind Step is a *Common* fighting style, which means it's the easiest to get... but don't let that fool you.\n\n` +
+          `The moves? *Gale Kick*, *Sky Step*, *Cyclone Cut*. Fast, fluid, and *never misses* when you need it most. 💨\n\n` +
+          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+          `📋 *HOW TO GET IT:*\n\n` +
+          `1️⃣ Go hunting — type *.hunt* and explore the wilderness\n` +
+          `2️⃣ Hope the wind gods bless you — a *Windworn Scroll* has a chance to drop 🎲\n` +
+          `3️⃣ Open it — type *.open Windworn Scroll* 📜\n` +
+          `4️⃣ Complete the quest — *.quest accept first_breath*\n` +
+          `5️⃣ Meet *Wind Master Reva* — she'll test you ⚔️\n` +
+          `6️⃣ Win 3 battles — and the style is YOURS 🎉\n\n` +
+          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+          `💡 *Star's Tip:* Every fighting style works the same way!\n\n` +
+          `📜 Scroll drops while hunting → 📖 Open the scroll → 📋 Quest starts → ⚔️ Complete the quest → 🥋 Style unlocked!\n\n` +
+          `The rarer the style, the harder the scroll is to find. But that's what makes it *worth it*. 😤🔥\n\n` +
+          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+          `So what are you waiting for? 🏃‍♂️💨\n\n` +
+          `Type *.hunt* right now and start your journey.\n` +
+          `The wind is calling... will you answer? 🌬️✨\n\n` +
+          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+          `_— Star, your guide through Lumora_ 💫\n` +
+          `_Patch 1.0.2 · Style Showcase_`;
+
+        if (windStepImg) {
+          try {
+            return await sock.sendMessage(chatId, {
+              image: fs.readFileSync(windStepImg),
+              caption: hypeText,
+            }, { quoted: msg });
+          } catch { /* fall through to text */ }
+        }
+        return sock.sendMessage(chatId, { text: hypeText }, { quoted: msg });
+      }
+
       if (command === "testkit") {
         // 🧪 TEST MODE only — free tester wallet + starter items
         return testModeSystem.cmdTestKit(ctx, chatId, senderId, msg);

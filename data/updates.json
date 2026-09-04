@@ -1,22 +1,11 @@
 {
   "current": {
-    "version": "0.9.0",
-    "name": "The Awakening Rework",
-    "releasedAt": 1780646400000,
-    "notes": "🌅 *FULL REWORK SHIPPED.*\n\n💎 *Shards & merge* — defeat mergeable wild Mora to crystallize their essence into shards. *.awaken <shard>* shatters one and your form becomes theirs. *.shed* reverts.\n\n🥋 *10 fighting styles* — Wind Step, Sun Walk, Tide Veil, Bone Crush, Void Sever + 5 new Greek/Latin styles: Pyrolexis, Kataphraxis, Tenebris, Astrobolos, Anastasis. Rarity tiers buff damage (rare +5%, epic +12%, legendary +22%).\n\n📜 *Quests via scrolls* — 12 scrolls drop on wild defeats. *.open <name>* DMs you the quest details + a hidden whisper command for chained NPC steps.\n\n🌀 *Player IS the combatant* — wild battles AND PvP (*.battle @user*) both use the new engine. No more party Mora in combat. Stats apply on both sides.\n\n📊 *4 stats* (Melee / Mora / Vit / Speed). Each grants 3 points per level up. *.invest <cat> <n>* to distribute. Melee = +dmg AND +stamina. Vit = +10 HP/pt (no separate Def — Vit absorbed it).\n\n⚔️ *PvP rework* — *.battle @user [stake]* now uses the same engine as wild. Optional Lucons stake, status moves, dodge, rarity buffs all live.\n\n🌐 *Auto-raids* — Kael's teleporter spawns autonomously every 4-10h. First *.respond <victim>* names a different faction; victim must *.engage* Kael together.\n\n🌿 *Faction rites on corrupted shards*: Harmony *.purify*, Purity *.destroy*, Rift *.bind*.\n\n🎁 *Apology gift* — wiped players get 500 Lucons + a rare/epic shard 48 days after launch.\n\n🆕 *Starter pickers* — every new player chooses 1 of 3 starter styles + 1 of 3 starter shards at .start.\n\n🛒 *New items* — Cleansing Vial, Shard Lure, Anastasis Draught, Surge Tonic, Resonance Vial, Reader's Ink, Quest Compass, Sun-Dew Tincture.\n\n💯 Level cap: 100. Linear XP curve."
+    "version": "1.0.2",
+    "name": "Style Showcase",
+    "releasedAt": 1757000000000,
+    "notes": "🌅 *PATCH 1.0.2 — STYLE SHOWCASE*\n\n🥋 *Fighting style art is HERE.* Every style now has a unique icon. See yours with *.style <name>*.\n\n📊 *Web dashboard* — view Mora, items, styles, events, and trade values at your Railway URL.\n\n🎯 *Map rework* — *.map* now shows terrain selection first, then difficulty buttons with level locks.\n\n💊 *Consumables fixed* — healing capsules, energy capsules, and all consumable items now work properly.\n\n👤 *Admin names on moderation* — bans, warns, kicks now show who did it.\n\n🔗 *Faction group links updated* — new working invite links for all 3 factions.\n\n💬 *Star personality* — battle commentary, idle messages, and tips from your guide.\n\n📈 *Progression engine* — scalable XP curves, honor/bounty/resonance system, anti-farming.\n\n🎫 *.styles--wind-step* — Star's guide to the first fighting style. Type it to see!"
   },
-  "pending": {
-    "version": "0.10.0",
-    "name": "Live polish",
-    "stages": [
-      "🖼️ Battle scene canvas — sprite battle frames (unstuck the v0.4.0 backdrop)",
-      "🏪 Shard market board — public listings (currently P2P trade only)",
-      "💳 Storage upgrade payment — real-money +1 storage cap per Mora",
-      "🎒 Items in PvP — wire .use through the new combat engine",
-      "🧹 Drop dead systems/battle.js (old PvP)"
-    ],
-    "notes": "Polishing the live world. Polish only — no more big mechanics shifts for a while."
-  },
+  "pending": null,
   "history": [
     {
       "version": "0.3.0",
