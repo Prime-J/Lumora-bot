@@ -116,6 +116,24 @@ app.get('/api/styles', (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// ── Dashboard API: Style Images ──────────────────────────
+app.get('/api/styles/image/:id', (req, res) => {
+  try {
+    const id = req.params.id;
+    const stylesDir = path.join(__dirname, 'assets', 'styles');
+    for (const ext of ['png', 'jpg', 'jpeg', 'webp']) {
+      const fp = path.join(stylesDir, `${id}.${ext}`);
+      if (fs.existsSync(fp)) {
+        const mime = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp' }[ext];
+        res.setHeader('Content-Type', mime);
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        return fs.createReadStream(fp).pipe(res);
+      }
+    }
+    res.status(404).json({ ok: false, error: 'not found' });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 // ── Dashboard API: Settings ────────────────────────────────
 const ADMIN_PASSWORD = process.env.ADMIN_PASS || 'lumora2026';
 let adminSessions = {};

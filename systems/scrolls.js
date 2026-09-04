@@ -90,7 +90,7 @@ function findScrollByQuery(query) {
 async function cmdScrolls(ctx, chatId, senderId, msg) {
   const { sock, players } = ctx;
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
   ensureScrollFields(player);
 
   const catalog = loadScrolls();
@@ -128,7 +128,7 @@ async function cmdScrolls(ctx, chatId, senderId, msg) {
 async function cmdOpen(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers } = ctx;
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
   ensureScrollFields(player);
 
   const queryRaw = args.join(" ").trim();
@@ -226,15 +226,31 @@ async function cmdOpen(ctx, chatId, senderId, msg, args = []) {
 
   if (imagePath) {
     try {
-      return await sock.sendMessage(chatId, {
+      await sock.sendMessage(chatId, {
         image: fs.readFileSync(imagePath),
         caption: teaseText,
       }, { quoted: msg });
     } catch {
-      // image send failed — fall through to plain text
+      await sock.sendMessage(chatId, { text: teaseText }, { quoted: msg });
     }
+  } else {
+    await sock.sendMessage(chatId, { text: teaseText }, { quoted: msg });
   }
-  return sock.sendMessage(chatId, { text: teaseText }, { quoted: msg });
+
+  // ─── Send the linked style's art as a follow-up image ───
+  if (questDef?.reward?.style) {
+    try {
+      const questSystem = require('./quests');
+      const styleImg = questSystem.styleImagePath(questDef.reward.style);
+      if (styleImg) {
+        const st = questSystem.loadStyles()[questDef.reward.style];
+        await sock.sendMessage(chatId, {
+          image: fs.readFileSync(styleImg),
+          caption: `🥋 *${st?.name || questDef.reward.style}* — your new fighting style unlocked!`,
+        }, { quoted: msg });
+      }
+    } catch { /* style image not found or send failed */ }
+  }
 }
 
 module.exports = {

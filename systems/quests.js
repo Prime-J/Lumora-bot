@@ -9,9 +9,24 @@ const fs   = require("fs");
 const path = require("path");
 
 const DIVIDER = "━━━━━━━━━━━━━━━━━━━━━━━━━";
+const STYLE_ASSETS_DIR = path.join(__dirname, "..", "assets", "styles");
+const testMode = require("./testMode");
+const buttonsSystem = require("./buttons");
 
 let _quests = null;
 let _styles = null;
+
+// Return the absolute path to a style's art if it exists on disk.
+// Operator (Prime) drops PNGs at assets/styles/<styleId>.{png,jpg,jpeg,webp}.
+// These same images double as the Lumora Roblox game icons (see docs/STYLE_ART_PROMPTS.md).
+function styleImagePath(styleId) {
+  if (!styleId) return null;
+  for (const ext of ["png", "jpg", "jpeg", "webp"]) {
+    const p = path.join(STYLE_ASSETS_DIR, `${styleId}.${ext}`);
+    try { if (fs.statSync(p).isFile()) return p; } catch { /* not present */ }
+  }
+  return null;
+}
 
 function loadQuests() {
   if (_quests) return _quests;
@@ -55,30 +70,39 @@ function ensureQuestFields(player) {
 
 // Returns the player's unlocked fighting-style move list, flattened.
 // Used by the combat system to extend the player's moveset.
+// FIX (2-style bug): only the EQUIPPED style's moves are returned —
+// unlocking more styles no longer stacks every moveset into combat.
+function getEquippedStyleId(player) {
+  ensureQuestFields(player);
+  const equipped = player.equippedStyle;
+  if (equipped && player.styles.includes(equipped)) return equipped;
+  return player.styles[0] || null;
+}
+
 function getUnlockedStyleMoves(player) {
   ensureQuestFields(player);
   const styles = loadStyles();
   const out = [];
-  for (const id of player.styles) {
-    const st = styles[id];
-    if (!st) continue;
-    for (const mv of (st.moves || [])) {
-      // Spread mv first so opt-in effect fields (selfHeal/brace/counter/
-      // energyRestore) pass through to the combat handler.
-      out.push({
-        ...mv,
-        name: mv.name,
-        power: Number(mv.power || 0),
-        accuracy: Number(mv.accuracy || 100),
-        energyCost: Number(mv.energyCost || Math.max(3, Math.floor(Number(mv.power || 0) / 8) + 3)),
-        desc: mv.desc || "",
-        source: "style",
-        styleId: id,
-        styleName: st.name,
-        styleType: st.type,
-        styleRarity: String(st.rarity || "common").toLowerCase(),
-      });
-    }
+  const equippedId = getEquippedStyleId(player);
+  if (!equippedId) return out;
+  const st = styles[equippedId];
+  if (!st) return out;
+  for (const mv of (st.moves || [])) {
+    // Spread mv first so opt-in effect fields (selfHeal/brace/counter/
+    // energyRestore) pass through to the combat handler.
+    out.push({
+      ...mv,
+      name: mv.name,
+      power: Number(mv.power || 0),
+      accuracy: Number(mv.accuracy || 100),
+      energyCost: Number(mv.energyCost || Math.max(3, Math.floor(Number(mv.power || 0) / 8) + 3)),
+      desc: mv.desc || "",
+      source: "style",
+      styleId: equippedId,
+      styleName: st.name,
+      styleType: st.type,
+      styleRarity: String(st.rarity || "common").toLowerCase(),
+    });
   }
   return out;
 }
@@ -217,6 +241,8 @@ function applyCompletion(player, questId) {
   const rewards = def.reward || {};
   if (rewards.style && !player.styles.includes(rewards.style)) {
     player.styles.push(rewards.style);
+    // First style unlocked becomes the equipped style automatically.
+    if (!player.equippedStyle) player.equippedStyle = rewards.style;
   }
   if (rewards.lucons) {
     player.lucons = Number(player.lucons || 0) + Number(rewards.lucons);
@@ -237,7 +263,7 @@ function applyCompletion(player, questId) {
 async function cmdQuests(ctx, chatId, senderId, msg) {
   const { sock, players } = ctx;
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
   ensureQuestFields(player);
 
   const quests = loadQuests();
@@ -252,10 +278,21 @@ async function cmdQuests(ctx, chatId, senderId, msg) {
     for (const [qId, a] of active) {
       const def = quests[qId];
       if (!def) continue;
-      const need = Number(def.requirement?.count || 1);
-      const have = Number(a.progress || 0);
+      // L-07 fix: chain quests progress per-step, not via a flat .count.
+      // Render "X of N steps" instead of the old 0/undefined.
+      const req = def.requirement || {};
+      let progressLine;
+      if (req.kind === "chain" && Array.isArray(req.steps)) {
+        const sp = a.stepProgress || {};
+        const done = req.steps.filter((_, i) => sp[i]).length;
+        progressLine = `  Progress: *${done}/${req.steps.length}* steps`;
+      } else {
+        const need = Number(req.count || 1);
+        const have = Number(a.progress || 0);
+        progressLine = `  Progress: *${have}/${need}* battle wins`;
+      }
       sections.push(
-        `• *${def.name}* — ${def.giver}\n  Progress: *${have}/${need}* battle wins\n  Reward: *${def.reward?.style ? `Unlock ${styles[def.reward.style]?.name || def.reward.style}` : "—"}*${def.reward?.lucons ? ` + ${def.reward.lucons} Lucons` : ""}`
+        `• *${def.name}* — ${def.giver}\n${progressLine}\n  Reward: *${def.reward?.style ? `Unlock ${styles[def.reward.style]?.name || def.reward.style}` : "—"}*${def.reward?.lucons ? ` + ${def.reward.lucons} Lucons` : ""}`
       );
     }
   }
@@ -264,9 +301,14 @@ async function cmdQuests(ctx, chatId, senderId, msg) {
   if (available.length) {
     sections.push(`\n📋 *AVAILABLE QUESTS*\n${DIVIDER}`);
     for (const d of available) {
-      const styleName = styles[d.reward?.style]?.name || d.reward?.style;
+      const styleName = d.reward?.style ? styles[d.reward.style]?.name || d.reward.style : null;
+      const rewards = [];
+      if (styleName) rewards.push(`unlock *${styleName}*`);
+      if (d.reward?.lucons) rewards.push(`${d.reward.lucons} Lucons`);
+      if (d.reward?.intelligence) rewards.push(`+${d.reward.intelligence} Intelligence`);
+      if (d.reward?.riftPE) rewards.push(`+${d.reward.riftPE} Rift PE`);
       sections.push(
-        `• *${d.name}* — ${d.giver}\n  _${d.lore}_\n  Reward: unlock *${styleName}*${d.reward?.lucons ? ` + ${d.reward.lucons} Lucons` : ""}\n  Accept: *.quest accept ${d.id}*`
+        `• *${d.name}* — ${d.giver}\n  _${d.lore}_\n  Reward: ${rewards.join(" • ") || "—"}\n  Accept: *.quest accept ${d.id}*`
       );
     }
   }
@@ -289,7 +331,7 @@ async function cmdQuest(ctx, chatId, senderId, msg, args = []) {
   if (!sub || sub === "list") return cmdQuests(ctx, chatId, senderId, msg);
 
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
   ensureQuestFields(player);
 
   if (sub === "accept") {
@@ -305,14 +347,23 @@ async function cmdQuest(ctx, chatId, senderId, msg, args = []) {
     if (player.quests.active[qId]) {
       return sock.sendMessage(chatId, { text: `❌ *${def.name}* is already active.` }, { quoted: msg });
     }
-    player.quests.active[qId] = { progress: 0, startedAt: Date.now() };
+    player.quests.active[qId] = { progress: 0, startedAt: Date.now(), stepProgress: {} };
     savePlayers(players);
+    const req = def.requirement || {};
+    let reqLine;
+    if (req.kind === "chain" && Array.isArray(req.steps)) {
+      reqLine = req.steps.map((st, i) =>
+        `  ${i + 1}. ${st.label || (st.kind === "meetNpc" ? `Meet ${st.npc}` : `Win ${st.count} battles`)}`
+      ).join("\n");
+    } else {
+      reqLine = `  Win *${Number(req.count || 1)}* battles`;
+    }
     return sock.sendMessage(chatId, {
       text:
         `📜 *QUEST ACCEPTED*\n${DIVIDER}\n` +
         `*${def.name}*  —  ${def.giver}\n${DIVIDER}\n` +
         `_${def.lore}_\n\n` +
-        `🎯 Requirement: win *${def.requirement.count}* battles\n` +
+        `🎯 Requirement:\n${reqLine}\n` +
         `🎁 Reward: unlock *${loadStyles()[def.reward?.style]?.name || def.reward?.style || "—"}*` +
         (def.reward?.lucons ? ` + ${def.reward.lucons} Lucons` : ""),
     }, { quoted: msg });
@@ -346,7 +397,7 @@ const STARTER_STYLE_OPTIONS = ["wind_step", "sun_walk", "tide_veil"];
 async function cmdChooseStyle(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers } = ctx;
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
   ensureQuestFields(player);
 
   if (player.starterStyleChosen) {
@@ -359,47 +410,62 @@ async function cmdChooseStyle(ctx, chatId, senderId, msg, args = []) {
   const options = STARTER_STYLE_OPTIONS.map((sid) => styles[sid]).filter(Boolean);
   const pick = parseInt(args[0], 10);
   if (!Number.isFinite(pick) || pick < 1 || pick > options.length) {
+    const labelToCmd = {};
+    options.forEach((s, i) => {
+      labelToCmd[`🥋 ${i + 1}. ${s.name}`] = `.choose-style ${i + 1}`;
+    });
+    buttonsSystem.mapButtons(labelToCmd);
     const lines = options.map((s, i) => {
       const moves = (s.moves || []).map((m) => m.name).join(" • ");
-      return `*${i + 1}.* 🥋 *${s.name}* — ${s.type}\n     _${s.lore}_\n     Moves: ${moves}`;
+      return `${i + 1}. 🥋 *${s.name}* _(${s.type})_\n   Moves: ${moves}`;
     });
-    return sock.sendMessage(chatId, {
-      text:
-        `🥋 *CHOOSE YOUR STARTER STYLE*\n${DIVIDER}\n` +
-        `One fighting style to begin with. You can unlock more later by finding scrolls.\n${DIVIDER}\n` +
-        lines.join("\n\n") +
-        `\n${DIVIDER}\n` +
-        `Pick with *.choose-style 1-${options.length}*`,
-    }, { quoted: msg });
+    return buttonsSystem.sendButtons(sock, chatId,
+      `🥋 *CHOOSE YOUR STARTER STYLE*\n${DIVIDER}\n` +
+      `_Unlock more styles later by finding scrolls._\n` +
+      lines.join("\n") +
+      `\n\n👉 Tap below 👇`,
+      options.map((s, i) => `🥋 ${i + 1}. ${s.name}`),
+      { footer: `Or type: .choose-style 1-${options.length}`, quoted: msg }
+    );
   }
 
   const chosen = options[pick - 1];
   if (!player.styles.includes(chosen.id)) player.styles.push(chosen.id);
+  if (!player.equippedStyle) player.equippedStyle = chosen.id;
   player.starterStyleChosen = true;
   savePlayers(players);
 
-  return sock.sendMessage(chatId, {
-    text:
-      `🥋 *STARTER STYLE LEARNED*\n${DIVIDER}\n` +
-      `*${chosen.name}* — ${chosen.type}\n${DIVIDER}\n` +
-      `_${chosen.lore}_\n\n` +
-      `Moves added to your *.attack* list:\n` +
-      (chosen.moves || []).map((m) => `• *${m.name}*`).join("\n"),
-  }, { quoted: msg });
+  buttonsSystem.mapButtons({ "💎 Pick a Shard": `.choose-shard` });
+  return buttonsSystem.sendButtons(sock, chatId,
+    `🥋 *STARTER STYLE LEARNED*\n${DIVIDER}\n` +
+    `*${chosen.name}* — ${chosen.type}\n` +
+    `_${chosen.lore}_\n\n` +
+    `Moves added to your *.attack* list:\n` +
+    (chosen.moves || []).map((m) => `• *${m.name}*`).join("\n") +
+    `\n\nNext: pick your *starter shard* 👇`,
+    ["💎 Pick a Shard"],
+    { footer: `Or type: .choose-shard`, quoted: msg }
+  );
 }
 
 async function cmdStyles(ctx, chatId, senderId, msg) {
   const { sock, players } = ctx;
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
   ensureQuestFields(player);
 
   const styles = loadStyles();
   const ownedIds = player.styles || [];
+  const equippedId = getEquippedStyleId(player);
 
+  const testFree = testMode.isTestGroup(chatId);
   const lines = Object.values(styles).map((s) => {
     const owned = ownedIds.includes(s.id);
-    const status = owned ? "✅ unlocked" : `🔒 quest: *.quest accept ${s.unlockQuest}*`;
+    const status = owned
+      ? (equippedId === s.id
+          ? "✅ *EQUIPPED* — active in combat"
+          : "🔓 unlocked — *.equip-style <name>* to use it")
+      : testFree ? "🧪 free here — try *.style <name>*" : `🔒 quest: *.quest accept ${s.unlockQuest}*`;
     return (
       `• *${s.name}*  _(${s.type})_  — ${status}\n` +
       `  _${s.lore}_\n` +
@@ -412,8 +478,151 @@ async function cmdStyles(ctx, chatId, senderId, msg) {
       `🥋 *FIGHTING STYLES*\n${DIVIDER}\n` +
       lines.join(`\n\n`) +
       `\n${DIVIDER}\n` +
-      `_Unlocked styles appear in your *.attack* moveset automatically._`,
+      `_Look up a style's art with *.style <name>*_\n` +
+      `_Only your *EQUIPPED* style fights in *.attack* — switch anytime with *.equip-style <name>*._`,
   }, { quoted: msg });
+}
+
+// .equip-style <name> — switch the ONE style active in combat.
+// Unlocks are kept in p.styles; only p.equippedStyle feeds the moveset.
+async function cmdEquipStyle(ctx, chatId, senderId, msg, args = []) {
+  const { sock, players, savePlayers } = ctx;
+  const player = players[senderId];
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
+  ensureQuestFields(player);
+
+  const q = args.join(" ").trim().toLowerCase();
+  if (!q) {
+    return sock.sendMessage(chatId, {
+      text: `❌ Usage: *.equip-style <name>*\nExample: *.equip-style tenebris* — see your styles with *.styles*`,
+    }, { quoted: msg });
+  }
+
+  const styles = loadStyles();
+  const st =
+    Object.values(styles).find((s) => s.id === q) ||
+    Object.values(styles).find((s) => s.name.toLowerCase() === q) ||
+    Object.values(styles).find((s) => s.name.toLowerCase().includes(q)) ||
+    null;
+  if (!st) {
+    return sock.sendMessage(chatId, { text: `❌ No fighting style named *${q}*.\nSee all with *.styles*.` }, { quoted: msg });
+  }
+
+  if (!player.styles.includes(st.id)) {
+    // TEST MODE: free unlock on equip; everywhere else the quest gate stands.
+    if (!testMode.isTestGroup(chatId)) {
+      return sock.sendMessage(chatId, {
+        text: `❌ You haven't unlocked *${st.name}* yet.\nQuest: *.quest accept ${st.unlockQuest}*`,
+      }, { quoted: msg });
+    }
+    player.styles.push(st.id);
+  }
+
+  player.equippedStyle = st.id;
+  savePlayers(players);
+
+  const moves = (st.moves || []).map((m) => `• *${m.name}* — ${m.desc || ""}`).join("\n");
+  const eqText =
+    `🥋 *STYLE EQUIPPED*\n${DIVIDER}\n` +
+    `✅ Now fighting in *${st.name}* _(${st.type})_.\n` +
+    (moves ? `\n*Moves now in .attack:*\n${moves}\n` : "") +
+    `${DIVIDER}\n` +
+    `_Equip a different style anytime: *.equip-style <name>*_`;
+
+  const eqImg = styleImagePath(st.id);
+  if (eqImg) {
+    try {
+      return await sock.sendMessage(chatId, {
+        image: fs.readFileSync(eqImg),
+        caption: eqText,
+      }, { quoted: msg });
+    } catch { /* fall through to text */ }
+  }
+  return sock.sendMessage(chatId, { text: eqText }, { quoted: msg });
+}
+
+// .style <name> — deep-dive on ONE fighting style: art (if dropped),
+// lore, moves, and the quest that unlocks it. This is the "scroll found →
+// look it up" flow Prime asked for: styles carry an image that also serves
+// as the Lumora Roblox game icon.
+async function cmdStyleDetail(ctx, chatId, senderId, msg, args = []) {
+  const { sock, players } = ctx;
+  const player = players[senderId];
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
+  ensureQuestFields(player);
+
+  const q = args.join(" ").trim().toLowerCase();
+  if (!q) {
+    return sock.sendMessage(chatId, {
+      text: `❌ Usage: *.style <name>*\nExample: *.style tenebris* — or see all with *.styles*`,
+    }, { quoted: msg });
+  }
+
+  const styles = loadStyles();
+  const st =
+    Object.values(styles).find((s) => s.id === q) ||
+    Object.values(styles).find((s) => s.name.toLowerCase() === q) ||
+    Object.values(styles).find((s) => s.name.toLowerCase().includes(q)) ||
+    null;
+  if (!st) {
+    return sock.sendMessage(chatId, { text: `❌ No fighting style named *${q}*.\nSee all with *.styles*.` }, { quoted: msg });
+  }
+
+  let owned = player.styles.includes(st.id);
+  const testFree = testMode.isTestGroup(chatId);
+  let testUnlocked = false;
+  if (!owned && testFree) {
+    player.styles.push(st.id);
+    ctx.savePlayers(players);
+    owned = true;
+    testUnlocked = true;
+  }
+  const quests = loadQuests();
+  const questDef = quests[st.unlockQuest];
+  const rarityIcon =
+    st.rarity === "legendary" ? "🌟" :
+    st.rarity === "epic" ? "💎" :
+    st.rarity === "rare" ? "✨" : "🥋";
+
+  const moves = (st.moves || []).map((m) => {
+    const tags = [];
+    if (m.selfHeal) tags.push(`heal ${m.selfHeal}`);
+    if (m.brace) tags.push(`brace`);
+    if (m.counter) tags.push(`counter ${m.counter}`);
+    if (m.energyRestore) tags.push(`+${m.energyRestore} EN`);
+    if (m.neverMisses) tags.push(`never misses`);
+    return `• *${m.name}*  (${m.power ? `${m.power} dmg, ` : ""}${m.energyCost} EN)${tags.length ? ` _[${tags.join(", ")}]_` : ""}\n     _${m.desc}_`;
+  });
+
+  const howTo = testUnlocked
+    ? `🧪 *TEST MODE* — auto-unlocked! It's already in your *.attack* moveset.`
+    : owned
+      ? `✅ *UNLOCKED* — appears in your *.attack* moveset.`
+      : questDef
+      ? `🔒 *Not yet unlocked.*\n` +
+        `Quest: *.quest accept ${questDef.id}*  —  _${questDef.name}_ (${questDef.giver})\n` +
+        `Find the scroll, then open it: scroll drops while hunting, open with *.open <scroll name>*`
+      : `🔒 *Not yet unlocked.*`;
+
+  const text =
+    `${rarityIcon} *${st.name}*  _(${st.type} • ${st.rarity})_\n${DIVIDER}\n` +
+    `_${st.lore}_\n${DIVIDER}\n` +
+    `*Moves:*\n${moves.join("\n") || "_(none)_"}\n${DIVIDER}\n` +
+    (st.faction ? `🏴 Faction: *${st.faction}*\n` : `🌐 Any faction\n`) +
+    howTo;
+
+  const imagePath = styleImagePath(st.id);
+  if (imagePath) {
+    try {
+      return await sock.sendMessage(chatId, {
+        image: fs.readFileSync(imagePath),
+        caption: text,
+      }, { quoted: msg });
+    } catch {
+      // image send failed — fall through to plain text
+    }
+  }
+  return sock.sendMessage(chatId, { text }, { quoted: msg });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -422,7 +631,7 @@ async function cmdStyles(ctx, chatId, senderId, msg) {
 async function cmdWhisper(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers } = ctx;
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
   ensureQuestFields(player);
 
   const npcRaw = args.join(" ").trim();
@@ -487,8 +696,12 @@ module.exports = {
   cmdQuests,
   cmdQuest,
   cmdStyles,
+  cmdStyleDetail,
   cmdChooseStyle,
   cmdWhisper,
+
+  // commands
+  cmdEquipStyle,
 
   // hooks
   onBattleWon,
@@ -499,9 +712,11 @@ module.exports = {
   // helpers
   ensureQuestFields,
   getUnlockedStyleMoves,
+  getEquippedStyleId,
   loadQuests,
   loadStyles,
   reloadCatalog,
   getRarityBuff,
   STYLE_RARITY_BUFF,
+  styleImagePath,
 };

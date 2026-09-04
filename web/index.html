@@ -1055,12 +1055,17 @@ async function loadStyles() {
 function renderStyles(list) {
   document.getElementById('style-grid').innerHTML=list.map(s=>`
     <div class="style-card">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <span class="style-name">${s.name}</span>
-        <span class="badge ${(RARITY_CLASS[s.rarity]||'rarity-common')}">${s.rarity}</span>
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <img src="/api/styles/image/${s.id}" alt="${s.name}" onerror="this.style.display='none'" style="width:80px;height:80px;border-radius:8px;object-fit:cover;border:2px solid var(--border);flex-shrink:0;" />
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="style-name">${s.name}</span>
+            <span class="badge ${(RARITY_CLASS[s.rarity]||'rarity-common')}">${s.rarity}</span>
+          </div>
+          <div class="style-meta">${TYPE_ICONS[s.type]||''} ${s.type} · ${s.faction||'Any Faction'} · Quest: ${s.unlockQuest}</div>
+          ${(s.moves||[]).map(m=>`<div class="move"><strong>${m.name}</strong> — <span class="move-power">P:${m.power}</span> · <span class="move-acc">A:${m.accuracy}%</span> · ⚡${m.energyCost}</div>`).join('')}
+        </div>
       </div>
-      <div class="style-meta">${TYPE_ICONS[s.type]||''} ${s.type} · ${s.faction||'Any Faction'} · Quest: ${s.unlockQuest}</div>
-      ${(s.moves||[]).map(m=>`<div class="move"><strong>${m.name}</strong> — <span class="move-power">P:${m.power}</span> · <span class="move-acc">A:${m.accuracy}%</span> · ⚡${m.energyCost}</div>`).join('')}
     </div>
   `).join('');
 }
