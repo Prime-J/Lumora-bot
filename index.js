@@ -6339,6 +6339,7 @@ if (command === "reset-stats") {
       // ============================
       if (
   command === "map" ||
+  command === "select-terrain" ||
   command === "travel" ||
   command === "proceed" ||
   command === "dismiss" ||
@@ -6363,8 +6364,9 @@ if (command === "reset-stats") {
     });
   }
 
-  if (command === "map")     return huntingSystem.cmdMap(ctx, chatId, senderId, msg);
-  if (command === "travel")  return huntingSystem.cmdTravel(ctx, chatId, senderId, msg, args);
+  if (command === "map")             return huntingSystem.cmdMap(ctx, chatId, senderId, msg);
+  if (command === "select-terrain")  return huntingSystem.cmdSelectTerrain(ctx, chatId, senderId, msg, args);
+  if (command === "travel")          return huntingSystem.cmdTravel(ctx, chatId, senderId, msg, args);
   if (command === "proceed") return huntingSystem.cmdProceed(ctx, chatId, senderId, msg);
   if (command === "dismiss") return huntingSystem.cmdDismiss(ctx, chatId, senderId, msg);
   if (command === "return")  return huntingSystem.cmdReturn(ctx, chatId, senderId, msg);

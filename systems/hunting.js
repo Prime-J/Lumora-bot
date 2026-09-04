@@ -685,53 +685,125 @@ async function handlePlayerDeath(ctx, chatId, senderId, msg) {
 
 // .map — show the Lumora hunting map with current weather
 async function cmdMap(ctx, chatId, senderId, msg) {
-  const { sock } = ctx;
+  const { sock, players } = ctx;
   const grounds  = loadGrounds();
   const state    = loadHuntState();
   const hunter   = ensureHunter(state, senderId);
   getOrRollWeather(hunter);
   saveHuntState(state);
 
-  const mapText  = buildMapText(grounds, hunter);
-  const imgPath  = path.join(__dirname, "../assets/map.jpg");
+  const player = players?.[senderId];
+  const playerLevel = Number(player?.level || 1);
 
-  // 🏔 One-tap travel: every travelable terrain becomes a button (easy diff).
   const TERRAIN_EMOJI = {
     wilderness: "🌲", verdant_wilds: "🌿", volt_expanse: "⚡", ashfall_basin: "🌋",
     terra_shatterfields: "🏜️", frostreach: "❄️", shadow_hollow: "🌑", rift_scar: "🌀",
   };
+
+  // Level requirements for difficulties
+  const DIFF_LEVEL_REQ = { easy: 1, standard: 5, dangerous: 15, nightmare: 30 };
+
   const travelable = Object.values(grounds)
     .filter((g) => g.travelable && g.id !== "capital" && g.difficultyModes?.easy)
     .slice(0, 8);
-  const travelMap = {};
-  travelable.forEach((g) => { travelMap[`${TERRAIN_EMOJI[g.id] || "🌍"} ${g.name}`] = `.travel ${g.id} easy`; });
-  buttonsSystem.mapButtons(travelMap);
-  const travelBtns = travelable.map((g) => `${TERRAIN_EMOJI[g.id] || "🌍"} ${g.name}`);
 
-  const sendMap = async () => {
-    // Send interactive list menu for map
-    const terrainList = Object.values(grounds)
-      .filter((g) => g.travelable && g.id !== "capital")
-      .map((g) => ({
-        name: g.name,
-        id: g.id,
-        difficulty: g.difficultyModes?.easy ? "Easy" : "Normal",
-        levelReq: g.levelReq || 1,
-      }));
-    await interactiveUI.sendMapMenu(sock, chatId, terrainList, msg);
+  // Step 1: Show terrain selection (no difficulty yet)
+  const terrainMap = {};
+  travelable.forEach((g) => { terrainMap[`${TERRAIN_EMOJI[g.id] || "🌍"} ${g.name}`] = `.select-terrain ${g.id}`; });
+  buttonsSystem.mapButtons(terrainMap);
+  const terrainBtns = travelable.map((g) => `${TERRAIN_EMOJI[g.id] || "🌍"} ${g.name}`);
 
-    if (!fs.existsSync(imgPath)) {
-      await sock.sendMessage(chatId, { text: mapText }, { quoted: msg });
-    } else {
-      await sock.sendMessage(chatId, { image: fs.readFileSync(imgPath), caption: mapText }, { quoted: msg });
-    }
-    return buttonsSystem.sendButtons(sock, chatId,
-      `🏔 *GO WHERE?* — _tap a terrain to travel (easy)_`,
-      travelBtns,
-      { footer: `Or type: .travel <terrain> <difficulty>`, quoted: msg }
-    );
+  const mapText =
+    `🗺️ *L U M O R A   M A P*\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+    `Choose a hunting ground.\n` +
+    `Then select your difficulty.\n\n` +
+    `📊 *Your Level:* ${playerLevel}\n\n` +
+    travelable.map(g => {
+      const emoji = TERRAIN_EMOJI[g.id] || "🌍";
+      const diffs = Object.keys(g.difficultyModes || {});
+      return `${emoji} *${g.name}* — _${diffs.length} difficulties_`;
+    }).join("\n") +
+    `\n\n_Tap a terrain to see difficulties 👇_`;
+
+  return buttonsSystem.sendButtons(sock, chatId, mapText, terrainBtns,
+    { footer: `Or type: .select-terrain <id>`, quoted: msg }
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// .select-terrain <id> — Show difficulty options for a terrain
+// ════════════════════════════════════════════════════════════
+async function cmdSelectTerrain(ctx, chatId, senderId, msg, args = []) {
+  const { sock, players } = ctx;
+  const grounds = loadGrounds();
+  const terrainId = args[0];
+  const ground = grounds[terrainId];
+
+  if (!ground || !ground.travelable || terrainId === "capital") {
+    return sock.sendMessage(chatId, { text: "❌ Unknown terrain. Use *.map* to see available locations." }, { quoted: msg });
+  }
+
+  const player = players?.[senderId];
+  const playerLevel = Number(player?.level || 1);
+
+  const TERRAIN_EMOJI = {
+    wilderness: "🌲", verdant_wilds: "🌿", volt_expanse: "⚡", ashfall_basin: "🌋",
+    terra_shatterfields: "🏜️", frostreach: "❄️", shadow_hollow: "🌑", rift_scar: "🌀",
   };
-  return sendMap();
+
+  // Level requirements for difficulties
+  const DIFF_LEVEL_REQ = { easy: 1, standard: 5, dangerous: 15, nightmare: 30 };
+  const DIFF_EMOJI = { easy: "🟢", standard: "🟡", dangerous: "🟠", nightmare: "🔴" };
+
+  const diffs = Object.entries(ground.difficultyModes || {});
+  if (!diffs.length) {
+    return sock.sendMessage(chatId, { text: `❌ No difficulties available for *${ground.name}*.` }, { quoted: msg });
+  }
+
+  // Build difficulty buttons + text
+  const diffBtns = [];
+  const diffMap = {};
+  const diffLines = [];
+
+  for (const [key, mode] of diffs) {
+    const req = DIFF_LEVEL_REQ[key] || 1;
+    const emoji = DIFF_EMOJI[key] || "⚪";
+    const locked = playerLevel < req;
+    const label = `${emoji} ${mode.label}`;
+
+    if (locked) {
+      diffLines.push(`${emoji} *${mode.label}* — 🔒 Level ${req}+ required _(you: Lv ${playerLevel})_`);
+    } else {
+      diffBtns.push(label);
+      diffMap[label] = `.travel ${terrainId} ${key}`;
+      const lvlRange = `Mora Lv ${mode.moraLevelMin}-${mode.moraLevelMax}`;
+      diffLines.push(`${emoji} *${mode.label}* — ${lvlRange} — ⚡${mode.energyCost} energy`);
+    }
+  }
+  buttonsSystem.mapButtons(diffMap);
+
+  const emoji = TERRAIN_EMOJI[terrainId] || "🌍";
+  const text =
+    `${emoji} *${ground.name.toUpperCase()}*\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+    `_"${ground.lore || ground.desc || ''}"_\n\n` +
+    `📊 *Your Level:* ${playerLevel}\n\n` +
+    `*DIFFICULTIES:*\n` +
+    diffLines.join("\n") +
+    `\n\n_Tap a difficulty to travel 👇_`;
+
+  if (!diffBtns.length) {
+    return sock.sendMessage(chatId, {
+      text: `${emoji} *${ground.name}*\n\n` +
+        `❌ You're not high enough level for any difficulty here.\n` +
+        `Level up and come back!`,
+    }, { quoted: msg });
+  }
+
+  return buttonsSystem.sendButtons(sock, chatId, text, diffBtns,
+    { footer: `Or type: .travel ${terrainId} <difficulty>`, quoted: msg }
+  );
 }
 
 // .travel <terrain> <difficulty>
@@ -1616,6 +1688,7 @@ module.exports = {
 
   // Commands (routed from index.js)
   cmdMap,
+  cmdSelectTerrain,
   cmdTravel,
   cmdProceed,
   cmdDismiss,
