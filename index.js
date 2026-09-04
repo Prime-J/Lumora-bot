@@ -3936,7 +3936,7 @@ You're already registered. Use ${PREFIX}profile to check your stats!`,
           });
         }
 
-        // Create player immediately with phone number as username
+        // Create player and start guided onboarding at username step
         const phoneNum = senderId.split('@')[0];
         players[senderId] = {
           username: phoneNum,
@@ -3965,6 +3965,7 @@ You're already registered. Use ${PREFIX}profile to check your stats!`,
           lastHuntRefill: Date.now(),
           inventory: { CREATION_POWDER: 1 },
           creationPowderGranted: true,
+          onboardingStep: "username",
           equipment: {
             core: null,
             charm: null,
@@ -3976,22 +3977,11 @@ You're already registered. Use ${PREFIX}profile to check your stats!`,
         };
         savePlayers(players);
 
-        // Show welcome + faction selection
-        buttonsSystem.mapButtons({
-          '🌿 Harmony': `${PREFIX}faction harmony`,
-          '⚔️ Purity': `${PREFIX}faction purity`,
-          '🕶️ Rift': `${PREFIX}faction rift`,
-        });
-        return sendButtons(sock, chatId,
-          ui.header('WELCOME TO LUMORA', '🌟') + '\n\n' +
-          `Welcome, *${phoneNum}*! Your journey begins now.\n\n` +
-          `Use ${PREFIX}username <name> to set your display name.\n` +
-          `Use ${PREFIX}set-icon with an image to set your profile picture.\n\n` +
-          ui.subheader('CHOOSE YOUR PATH', '⚔️') + '\n' +
-          `_Tap a faction or type: ${PREFIX}faction harmony / purity / rift_`,
-          ['🌿 Harmony', '⚔️ Purity', '🕶️ Rift'],
-          { footer: 'Choose your faction 👇', quoted: msg, mentions: [senderId] }
-        );
+        // Show Star's first guided prompt
+        return sock.sendMessage(chatId, {
+          text: onboardingSystem.stepMessage('username', {}),
+          mentions: [senderId],
+        }, { quoted: msg });
       }
 
       // ── .start — legacy alias for .begin ───────────────────
@@ -4231,6 +4221,15 @@ You're already registered. Use ${PREFIX}profile to check your stats!`,
           return sock.sendMessage(chatId, { text: "❌ Username must be 2-20 characters.", mentions: [senderId] });
         }
         p.username = newName;
+        // If in onboarding, advance to gender step
+        if (p.onboardingStep === 'username') {
+          p.onboardingStep = 'gender';
+          savePlayers(players);
+          return sock.sendMessage(chatId, {
+            text: `✅ Username set to *${newName}*!\n\n` + onboardingSystem.stepMessage('gender', { username: newName }),
+            mentions: [senderId]
+          }, { quoted: msg });
+        }
         savePlayers(players);
         return sock.sendMessage(chatId, {
           text: `✅ Username updated to *${newName}*!`,
@@ -4265,6 +4264,15 @@ You're already registered. Use ${PREFIX}profile to check your stats!`,
           const iconPath = path.join(iconDir, `${senderId}.jpg`);
           fs.writeFileSync(iconPath, buffer);
           players[senderId].profileIcon = iconPath;
+          // If in onboarding, advance to faction step
+          if (players[senderId].onboardingStep === 'icon') {
+            players[senderId].onboardingStep = 'faction';
+            savePlayers(players);
+            return sock.sendMessage(chatId, {
+              text: `✅ Profile icon updated!\n\n` + onboardingSystem.stepMessage('faction', { username: players[senderId].username }),
+              mentions: [senderId]
+            }, { quoted: msg });
+          }
           savePlayers(players);
           return sock.sendMessage(chatId, {
             text: `✅ Profile icon updated!`,
@@ -4330,33 +4338,13 @@ try {
 
 // If in onboarding, advance to mora step
 if (p.onboardingStep === 'faction') {
-  p.onboardingStep = 'mora';
+  p.onboardingStep = 'done';
   savePlayers(players);
 
-  // Build starter options for this faction
-  const factionStarters = {
-    harmony: [2, 11, 14],
-    purity: [1, 3, 13],
-    rift: [5, 7, 15],
-  };
-  const allowedIds = factionStarters[key] || factionStarters.harmony;
-  const starters = moraList.filter(m => allowedIds.includes(m.id));
-
-  const labelToCmd = {};
-  starters.forEach((m, i) => {
-    labelToCmd[`${i + 1}. ${m.name}`] = `${PREFIX}choose ${i + 1}`;
-  });
-  buttonsSystem.mapButtons(labelToCmd);
-
-  const detail = starters
-    .map((m, i) => `${i + 1}. *${m.name}* [${m.type.toUpperCase()}] — _${m.description || 'A mysterious Mora.'}_`)
-    .join('\n');
-
-  return sendButtons(sock, chatId,
-    onboardingSystem.stepMessage('mora', { username: p.username }) + '\n' + detail,
-    starters.map((m, i) => `${i + 1}. ${m.name}`),
-    { footer: `Or type: ${PREFIX}choose <name>`, quoted: msg, mentions: [senderId] }
-  );
+  return sock.sendMessage(chatId, {
+    text: onboardingSystem.stepMessage('complete', { username: p.username }),
+    mentions: [senderId],
+  }, { quoted: msg });
 }
 
 return sock.sendMessage(chatId, {
@@ -6625,8 +6613,61 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
           return sock.sendMessage(chatId, { text: `❌ Choose: *male*, *female*, or *other*` }, { quoted: msg });
         }
         players[senderId].gender = g.charAt(0).toUpperCase() + g.slice(1);
+        // If in onboarding, advance to age step
+        if (players[senderId].onboardingStep === 'gender') {
+          players[senderId].onboardingStep = 'age';
+          savePlayers(players);
+          return sock.sendMessage(chatId, {
+            text: `✅ Gender set to: *${players[senderId].gender}*!\n\n` + onboardingSystem.stepMessage('age', { username: players[senderId].username }),
+            mentions: [senderId]
+          }, { quoted: msg });
+        }
         savePlayers(players);
         return sock.sendMessage(chatId, { text: `✅ Gender set to: *${players[senderId].gender}*` }, { quoted: msg });
+      }
+
+      // ── .age — set age during onboarding ────────────────
+      if (command === "age") {
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
+        const p = players[senderId];
+        const ageInput = args.join(" ").trim();
+        if (!ageInput) {
+          return sock.sendMessage(chatId, {
+            text: onboardingSystem.stepMessage('age', { username: p.username }),
+            mentions: [senderId]
+          }, { quoted: msg });
+        }
+        const age = parseInt(ageInput, 10);
+        if (isNaN(age) || age < 10 || age > 99) {
+          return sock.sendMessage(chatId, { text: "❌ Enter a valid age (*10-99*)." }, { quoted: msg });
+        }
+        p.age = age;
+        // If in onboarding, advance to icon step
+        if (p.onboardingStep === 'age') {
+          p.onboardingStep = 'icon';
+          savePlayers(players);
+          return sock.sendMessage(chatId, {
+            text: `✅ Age set to *${age}*!\n\n` + onboardingSystem.stepMessage('icon', { username: p.username }),
+            mentions: [senderId]
+          }, { quoted: msg });
+        }
+        savePlayers(players);
+        return sock.sendMessage(chatId, { text: `✅ Age set to: *${age}*` }, { quoted: msg });
+      }
+
+      // ── .skip-icon — skip icon during onboarding ─────────
+      if (command === "skip-icon" || command === "skipicon") {
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
+        const p = players[senderId];
+        if (p.onboardingStep === 'icon') {
+          p.onboardingStep = 'faction';
+          savePlayers(players);
+          return sock.sendMessage(chatId, {
+            text: onboardingSystem.stepMessage('faction', { username: p.username }),
+            mentions: [senderId]
+          }, { quoted: msg });
+        }
+        return sock.sendMessage(chatId, { text: "✅ Icon skipped." }, { quoted: msg });
       }
 
       // ============================
@@ -6923,7 +6964,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
         const warnName = players[tid]?.username || '???';
         const adminName = players[senderId]?.username || '???';
         return sock.sendMessage(chatId, {
-          text: `⚠️ @${tid.split("@")[0]} *${warnName}* has been warned!\n\n📝 Reason: _${reason}_\n⚠️ Total warnings: *${count}*\n👤 By: *${adminName}*`,
+          text: `⚠️ @${tid.split("@")[0]} *${warnName}* has been warned!\n\n📝 Reason: _${reason}_\n⚠️ Total warnings: *${count}*\n👤 By: *${adminLabel}*`,
           mentions: [tid],
         }, { quoted: msg });
       }
@@ -6961,7 +7002,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
         saveWarns(warns);
         const adminName = players[senderId]?.username || '???';
         return sock.sendMessage(chatId, {
-          text: `✅ Removed latest warning from @${tid.split("@")[0]}.\nRemaining: *${(warns[tid] || []).length}*\n👤 By: *${adminName}*`,
+          text: `✅ Removed latest warning from @${tid.split("@")[0]}.\nRemaining: *${(warns[tid] || []).length}*\n👤 By: *${adminLabel}*`,
           mentions: [tid],
         }, { quoted: msg });
       }
@@ -6981,7 +7022,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
           const adminName = players[senderId]?.username || '???';
           await sock.groupParticipantsUpdate(chatId, [target], "promote");
           return sock.sendMessage(chatId, {
-            text: `👑 @${target.split("@")[0]} *${promoName}* has been promoted to admin!\n👤 By: *${adminName}*`,
+            text: `👑 @${target.split("@")[0]} *${promoName}* has been promoted to admin!\n👤 By: *${adminLabel}*`,
             mentions: [target],
           }, { quoted: msg });
         } catch (e) {
@@ -7001,7 +7042,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
           const adminName = players[senderId]?.username || '???';
           await sock.groupParticipantsUpdate(chatId, [target], "demote");
           return sock.sendMessage(chatId, {
-            text: `⬇️ @${target.split("@")[0]} *${demoName}* has been demoted from admin.\n👤 By: *${adminName}*`,
+            text: `⬇️ @${target.split("@")[0]} *${demoName}* has been demoted from admin.\n👤 By: *${adminLabel}*`,
             mentions: [target],
           }, { quoted: msg });
         } catch (e) {
@@ -7023,7 +7064,7 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
           const adminName = players[senderId]?.username || '???';
           await sock.groupParticipantsUpdate(chatId, [target], "remove");
           return sock.sendMessage(chatId, {
-            text: `👢 @${target.split("@")[0]} has been kicked from the group.\n👤 By: *${adminName}*`,
+            text: `👢 @${target.split("@")[0]} has been kicked from the group.\n👤 By: *${adminLabel}*`,
             mentions: [target],
           }, { quoted: msg });
         } catch (e) {
@@ -7168,12 +7209,14 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
           const cleanNum = String(num).replace(/\D/g, "");
           const jid = `${cleanNum}@s.whatsapp.net`;
           const displayName = players[jid]?.username || players[jid]?.name || null;
+          const waName = pushNameCache[jid] || pushNameCache[`${cleanNum}@s.whatsapp.net`] || null;
           const tag = displayName ? `@${displayName}` : `@${cleanNum}`;
+          const waLabel = waName ? ` _(${waName})_` : '';
           mentions.push(jid);
           if (throneNum && cleanNum === throneNum) {
-            throneSection = `⚔️👑 *RIGHT-HAND MAN*\n  ${tag}\n\n`;
+            throneSection = `⚔️👑 *RIGHT-HAND MAN*\n  ${tag}${waLabel}\n\n`;
           } else {
-            regularSudos.push(`  *${regularSudos.length + 1}.* ${tag}`);
+            regularSudos.push(`  *${regularSudos.length + 1}.* ${tag}${waLabel}`);
           }
         }
         const sudoSection = regularSudos.length ? `🛡️ *SUDOS*\n${regularSudos.join("\n")}` : "";
@@ -7558,7 +7601,7 @@ if (command === "f-lb") {
           delete bansNow[targetId];
           saveBans(bansNow);
           const adminName = players[senderId]?.username || '???';
-          return mentionTag(sock, chatId, targetId, `✅ Unbanned: {mention}\n👤 By: *${adminName}*`, msg);
+          return mentionTag(sock, chatId, targetId, `✅ Unbanned: {mention}\n👤 By: *${adminLabel}*`, msg);
         }
 
         if (command === "autounban") {
@@ -7620,7 +7663,7 @@ if (command === "f-lb") {
         const adminName = players[senderId]?.username || '???';
         return mentionTag(
           sock, chatId, targetId,
-          `⛔ Banned: {mention}\n📝 Reason: ${reasonText}` + (minutes ? `\n⏳ Auto-unban: ${minutes} min` : "") + `\n👤 By: *${adminName}*`,
+          `⛔ Banned: {mention}\n📝 Reason: ${reasonText}` + (minutes ? `\n⏳ Auto-unban: ${minutes} min` : "") + `\n👤 By: *${adminLabel}*`,
           msg
         );
       }
