@@ -9,7 +9,7 @@
 
 const ui = require("./ui");
 
-const STEPS = ["username", "gender", "age", "icon", "faction"];
+const STEPS = ["username", "gender", "age", "birthday", "icon", "faction"];
 
 // ─── Star's messages for each step ───────────────────────────
 
@@ -56,6 +56,21 @@ function stepMessage(step, data) {
         ]),
         "",
         `_Example: ${".age"} 18_`,
+      ].join("\n");
+
+    case "birthday":
+      return [
+        ui.header("BIRTHDAY", "🎂"),
+        "",
+        `When's your special day, *${name}*?`,
+        "",
+        ui.card("SETUP", "📝", [
+          { emoji: "📅", label: "Command", value: `.birthday DD/MM` },
+          { emoji: "📏", label: "Format", value: "e.g. 15/03" },
+        ]),
+        "",
+        `_Example: ${".birthday"} 15/03_`,
+        `_Type ${".skip-birthday"} to skip 👇_`,
       ].join("\n");
 
     case "icon":
@@ -167,6 +182,18 @@ function validate(step, input) {
       if (isNaN(age) || age < 10 || age > 99)
         return { ok: false, err: "❌ Enter a valid age (*10–99*)." };
       return { ok: true, value: age };
+    }
+
+    case "birthday": {
+      let b = String(input || "").trim();
+      if (b.toLowerCase().startsWith(".birthday")) b = b.slice(9).trim();
+      const parts = b.split("/");
+      if (parts.length !== 2) return { ok: false, err: "❌ Use format *DD/MM* (e.g. 15/03)" };
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10);
+      if (isNaN(day) || isNaN(month) || day < 1 || day > 31 || month < 1 || month > 12)
+        return { ok: false, err: "❌ Invalid date. Day: 1-31, Month: 1-12" };
+      return { ok: true, value: `${day}/${month}` };
     }
 
     case "icon":

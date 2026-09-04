@@ -31,6 +31,8 @@ const COMMANDS = [
   { name: "start",       aliases: [],                category: "game", subcat: "core",       desc: "Awaken (old command, use .begin instead)",    usage: ".start" },
   { name: "set-icon",    aliases: ["icon","seticon"], category: "game", subcat: "core",      desc: "Set your profile icon",                       usage: ".set-icon 5" },
   { name: "gender",      aliases: [],                category: "game", subcat: "core",       desc: "Set your gender",                             usage: ".gender male" },
+  { name: "bio",         aliases: [],                category: "game", subcat: "core",       desc: "Set your profile bio",                        usage: ".bio I am thechosen one" },
+  { name: "birthday",    aliases: ["bday"],          category: "game", subcat: "core",       desc: "Set your birthday (DD/MM)",                   usage: ".birthday 15/03" },
   { name: "reset-stats", aliases: [],                category: "game", subcat: "core",       desc: "Reset stat distribution",                     usage: ".reset-stats" },
   { name: "shardstorage",aliases: ["storage"],       category: "game", subcat: "core",       desc: "Inspect per-Mora vault caps",                 usage: ".shardstorage" },
   { name: "use",         aliases: [],                category: "game", subcat: "core",       desc: "Use an item or ability",                      usage: ".use item" },

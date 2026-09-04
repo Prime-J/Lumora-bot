@@ -4888,19 +4888,6 @@ if (command === "choose") {
           ]) + `\n` +
           (moveNames ? `\n🎴 *Signature moves:* ${moveNames}` : "");
 
-        // Try to send with sprite image; fall back to text-only if no image.
-        const sprite = moraImagePath(mora);
-        if (sprite) {
-          try {
-            const fs = require("fs");
-            return sock.sendMessage(chatId, {
-              image: fs.readFileSync(sprite),
-              caption,
-            }, { quoted: msg });
-          } catch (e) {
-            // fall through to text
-          }
-        }
         return sock.sendMessage(chatId, { text: caption });
       }
 // --- OWNER GAUGE COMMANDS ---
@@ -6373,22 +6360,36 @@ const xpNeeded = xpSystem.playerXpToNextLevel(p.level || 1);
         return `[${merge.name}] (${tierTag})${corrTag}`;
       })();
 
+      // Build bio line
+      const bioLine = p.bio ? `\n📝 *"${p.bio}"*\n` : "";
+      // Build age line
+      const ageLine = p.age ? `🎂 Age: *${p.age}*\n` : "";
+      // Build birthday line
+      const bdayLine = p.birthday ? `🎈 Birthday: *${p.birthday}*\n` : "";
+
       const profileCaption =
         ui.header(username, '⚔️') + `\n\n` +
         (p.title && String(p.title).trim() ? `🏷️ *${p.title}*\n` : "") +
+        (bioLine || "") +
+        ui.DIV + `\n\n` +
         ui.card('STATUS', '📊', [
           { emoji: '🏅', label: 'Rank', value: playerRank },
           { emoji: '📊', label: 'Level', value: `${p.level ?? 1}` },
           { emoji: '⚔️', label: 'Faction', value: factionLine },
-          { emoji: '🆔', label: 'ID', value: normalizeNumberFromJid(targetId) },
+        ]) + `\n\n` +
+        ui.card('PERSONAL', '👤', [
+          { emoji: '🧑', label: 'Gender', value: p.gender || '—' },
+          { emoji: '🎂', label: 'Age', value: p.age ? String(p.age) : '—' },
+          { emoji: '🎈', label: 'Birthday', value: p.birthday || '—' },
         ]) + `\n\n` +
         ui.card('VITALS', '❤️', [
           { emoji: '❤️', label: 'HP', value: `${currentHp}/${maxHp}` },
           { emoji: '⚡', label: 'Energy', value: `${currentEnergy}/${maxEnergy}` },
           { emoji: '🌀', label: 'Merge', value: mergeText },
         ]) + `\n\n` +
-        `${ui.statBar(xpCurrent, xpNeeded)}  _XP to next: ${xpNeeded === Infinity ? 'MAX' : (xpNeeded - xpCurrent)}_\n` +
-        (genderLine || "") +
+        ui.DIV + `\n` +
+        `${ui.statBar(xpCurrent, xpNeeded)}  _XP to next: ${xpNeeded === Infinity ? 'MAX' : (xpNeeded - xpCurrent)}_\n\n` +
+        ui.DIV + `\n\n` +
         (companionLine ? companionLine : "") +
         (streakLine ? streakLine : "") +
         (achTitleLine ? achTitleLine : "") +
@@ -6882,17 +6883,65 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
           return sock.sendMessage(chatId, { text: "❌ Enter a valid age (*10-99*)." }, { quoted: msg });
         }
         p.age = age;
-        // If in onboarding, advance to icon step
+        // If in onboarding, advance to birthday step
         if (p.onboardingStep === 'age') {
-          p.onboardingStep = 'icon';
+          p.onboardingStep = 'birthday';
           savePlayers(players);
           return sock.sendMessage(chatId, {
-            text: `✅ Age set to *${age}*!\n\n` + onboardingSystem.stepMessage('icon', { username: p.username }),
+            text: `✅ Age set to *${age}*!\n\n` + onboardingSystem.stepMessage('birthday', { username: p.username }),
             mentions: [senderId]
           }, { quoted: msg });
         }
         savePlayers(players);
         return sock.sendMessage(chatId, { text: `✅ Age set to: *${age}*` }, { quoted: msg });
+      }
+
+      // ── .birthday — set birthday during onboarding ─────────
+      if (command === "birthday") {
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
+        const p = players[senderId];
+        const bdayInput = args.join(" ").trim();
+        if (!bdayInput) {
+          return sock.sendMessage(chatId, {
+            text: onboardingSystem.stepMessage('birthday', { username: p.username }),
+            mentions: [senderId]
+          }, { quoted: msg });
+        }
+        const parts = bdayInput.split("/");
+        if (parts.length !== 2) {
+          return sock.sendMessage(chatId, { text: "❌ Use format *DD/MM* (e.g. 15/03)" }, { quoted: msg });
+        }
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10);
+        if (isNaN(day) || isNaN(month) || day < 1 || day > 31 || month < 1 || month > 12) {
+          return sock.sendMessage(chatId, { text: "❌ Invalid date. Day: 1-31, Month: 1-12" }, { quoted: msg });
+        }
+        p.birthday = `${day}/${month}`;
+        if (p.onboardingStep === 'birthday') {
+          p.onboardingStep = 'icon';
+          savePlayers(players);
+          return sock.sendMessage(chatId, {
+            text: `✅ Birthday set to *${p.birthday}*!\n\n` + onboardingSystem.stepMessage('icon', { username: p.username }),
+            mentions: [senderId]
+          }, { quoted: msg });
+        }
+        savePlayers(players);
+        return sock.sendMessage(chatId, { text: `✅ Birthday set to: *${p.birthday}*` }, { quoted: msg });
+      }
+
+      // ── .skip-birthday — skip birthday during onboarding ─
+      if (command === "skip-birthday" || command === "skipbirthday") {
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
+        const p = players[senderId];
+        if (p.onboardingStep === 'birthday') {
+          p.onboardingStep = 'icon';
+          savePlayers(players);
+          return sock.sendMessage(chatId, {
+            text: onboardingSystem.stepMessage('icon', { username: p.username }),
+            mentions: [senderId]
+          }, { quoted: msg });
+        }
+        return sock.sendMessage(chatId, { text: "✅ Birthday skipped." }, { quoted: msg });
       }
 
       // ── .skip-icon — skip icon during onboarding ─────────
@@ -6908,6 +6957,30 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
           }, { quoted: msg });
         }
         return sock.sendMessage(chatId, { text: "✅ Icon skipped." }, { quoted: msg });
+      }
+
+      // ── .bio — set/view player bio ──────────────────────
+      if (command === "bio") {
+        if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
+        const p = players[senderId];
+        const bioText = args.join(" ").trim();
+        if (!bioText) {
+          if (p.bio) {
+            return sock.sendMessage(chatId, { text: `📝 *Your bio:*
+${p.bio}
+
+Use: ${PREFIX}bio <text> to change it` }, { quoted: msg });
+          }
+          return sock.sendMessage(chatId, { text: `📝 You don't have a bio yet.
+
+Use: ${PREFIX}bio <text> to set one (max 100 chars)` }, { quoted: msg });
+        }
+        if (bioText.length > 100) {
+          return sock.sendMessage(chatId, { text: `❌ Bio too long! Max *100 characters*. You used *${bioText.length}*.` }, { quoted: msg });
+        }
+        p.bio = bioText;
+        savePlayers(players);
+        return sock.sendMessage(chatId, { text: `✅ Bio updated!\n\n📝 *${bioText}*` }, { quoted: msg });
       }
 
       // ============================

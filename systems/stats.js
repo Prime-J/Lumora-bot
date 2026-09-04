@@ -12,6 +12,9 @@
 
 const DIVIDER = "━━━━━━━━━━━━━━━━━━━━━━━━━";
 
+const buttonsSystem = require("./buttons");
+const ui = require("./ui");
+
 // Point grant per level up (decided 2026-05-28: 3/level, max player level 100)
 const POINTS_PER_LEVEL = 3;
 
@@ -29,6 +32,27 @@ const SPEED_DODGE_CAP        = 0.50;  // 50% max
 // into any single stat. With 3 pts/level and level cap 100 you'd get 297
 // points total — enough to fully max ~3 stats, not all 5.
 const PER_STAT_CAP = 100;
+
+const RANK_TABLE = [
+  [2, "Wanderer"],
+  [5, "Scout"],
+  [8, "Pathfinder"],
+  [12, "Sentinel"],
+  [16, "Warden"],
+  [20, "Commander"],
+  [25, "Champion"],
+  [30, "Overlord"],
+  [40, "Archon"],
+  [50, "Mythic Sovereign"],
+];
+
+function getRankForLevel(level) {
+  let rank = null;
+  for (const [lvl, name] of RANK_TABLE) {
+    if (level >= lvl) rank = name;
+  }
+  return rank || "Unranked";
+}
 
 const CATEGORIES = ["melee", "mora", "vit", "speed"];
 const CATEGORY_ALIASES = {
@@ -114,7 +138,7 @@ function applyMeleeInvest(player, pointsInvested) {
 async function cmdStats(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers } = ctx;
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
   ensureStatFields(player);
 
   const sub = String(args[0] || "").toLowerCase();
@@ -134,36 +158,51 @@ async function cmdStats(ctx, chatId, senderId, msg, args = []) {
   }
 
   // Render
+  const meleePct = Math.min(100, Math.round((player.stats.melee / PER_STAT_CAP) * 100));
+  const moraPct  = Math.min(100, Math.round((player.stats.mora / PER_STAT_CAP) * 100));
+  const vitPct   = Math.min(100, Math.round((player.stats.vit / PER_STAT_CAP) * 100));
+  const spdPct   = Math.min(100, Math.round((player.stats.speed / PER_STAT_CAP) * 100));
+
   const lines = [
-    `╭──────────────────────╮`,
-    `│  📊  *YOUR STATS*       │`,
-    `│  _Lv ${String(player.level || 1).padEnd(3)}                  │`,
-    `╰──────────────────────╯`,
-    ``,
-    `⚔️  *Melee*  ${player.stats.melee}`,
-    `   +${meleeDamageBonus(player)} dmg  •  +${player.stats.melee * MELEE_ENERGY_PER_POINT} stamina`,
-    ``,
-    `🌀  *Mora*   ${player.stats.mora}`,
-    `   +${moraDamageBonus(player)} dmg on merge hits`,
-    ``,
-    `❤️  *Vit*    ${player.stats.vit}`,
-    `   +${vitHpBonus(player)} max HP  _(${player.playerMaxHp || 100} total)_`,
-    ``,
-    `💨  *Speed*  ${player.stats.speed}`,
-    `   ${Math.round(dodgeChance(player) * 100)}% dodge chance`,
-    ``,
-    DIVIDER,
-    player.statPoints > 0
-      ? `🎯  *${player.statPoints}* unspent — drop them with:\n   *.invest <melee|mora|vit|speed> <n>*\n   _shortcut: .invest m 3  •  .invest v 5_`
-      : `_All points spent. Level up to earn more._`,
+    ui.header('STATS', '📊') + `\n` +
+    `  _Lv ${player.level || 1}  ·  ${getRankForLevel(player.level || 1)}_\n\n` +
+    ui.card('DISTRIBUTION', '⚔️', [
+      { emoji: '⚔️', label: 'Melee', value: `${player.stats.melee}/${PER_STAT_CAP}  (+${meleeDamageBonus(player)} dmg)` },
+      { emoji: '🌀', label: 'Mora', value: `${player.stats.mora}/${PER_STAT_CAP}  (+${moraDamageBonus(player)} merge dmg)` },
+      { emoji: '❤️', label: 'Vit', value: `${player.stats.vit}/${PER_STAT_CAP}  (+${vitHpBonus(player)} HP)` },
+      { emoji: '💨', label: 'Speed', value: `${player.stats.speed}/${PER_STAT_CAP}  (${Math.round(dodgeChance(player) * 100)}% dodge)` },
+    ]) + `\n\n` +
+    ui.statBar(player.stats.melee, PER_STAT_CAP) + `  _Melee_\n` +
+    ui.statBar(player.stats.mora, PER_STAT_CAP) + `  _Mora_\n` +
+    ui.statBar(player.stats.vit, PER_STAT_CAP) + `  _Vit_\n` +
+    ui.statBar(player.stats.speed, PER_STAT_CAP) + `  _Speed_\n\n` +
+    ui.DIV + `\n` +
+    (player.statPoints > 0
+      ? `🎯  *${player.statPoints}* unspent — drop them with the buttons below 👇`
+      : `_All points spent. Level up to earn more._`),
   ];
-  return sock.sendMessage(chatId, { text: lines.join("\n") }, { quoted: msg });
+  const buttons = player.statPoints > 0
+    ? ["💪 +1 Melee", "🌀 +1 Mora", "❤️ +1 Vit", "💨 +1 Speed", "🎮 Menu"]
+    : ["🎮 Menu", "⚔ Battle", "🌲 Hunt"];
+  const labelMap = {
+    "💪 +1 Melee": ".invest melee 1",
+    "🌀 +1 Mora": ".invest mora 1",
+    "❤️ +1 Vit": ".invest vit 1",
+    "💨 +1 Speed": ".invest speed 1",
+    "🎮 Menu": ".menu",
+    "⚔ Battle": ".battle",
+    "🌲 Hunt": ".hunt",
+  };
+  buttonsSystem.mapButtons(labelMap);
+  return buttonsSystem.sendButtons(sock, chatId, lines.join("\n"), buttons,
+    { footer: player.statPoints > 0 ? `Each tap spends 1 point` : `What's next? 👇`, quoted: msg }
+  );
 }
 
 async function cmdStatsInvest(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers } = ctx;
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
   ensureStatFields(player);
 
   const cat = getCategory(args[0]);
