@@ -125,7 +125,7 @@ async function cmdParty(ctx, chatId, senderId, msg) {
   const player = players[senderId];
 
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ Register first using `.start`." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Register first using `.register`." }, { quoted: msg });
   }
 
   ensureParty(player);
@@ -143,7 +143,7 @@ async function cmdT2Party(ctx, chatId, senderId, msg, args = []) {
   const player = players[senderId];
 
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ Register first using `.start`." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Register first using `.register`." }, { quoted: msg });
   }
 
   ensureParty(player);
@@ -220,7 +220,7 @@ async function cmdT2Tamed(ctx, chatId, senderId, msg, args = []) {
   const player = players[senderId];
 
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ Register first using `.start`." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Register first using `.register`." }, { quoted: msg });
   }
 
   ensureParty(player);

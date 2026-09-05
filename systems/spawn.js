@@ -259,7 +259,8 @@ function imagePathFor(mora) {
     }
   }
 
-  return null;
+  // No custom art for this Mora → anime art pack fallback.
+  return artpackSystem.artPathFor(mora);
 }
 
 // -------- MOVE POOL LOGIC --------
@@ -486,8 +487,6 @@ async function cmdSpawnRates(ctx, chatId) {
     `Epic: ${pct.epic.toFixed(2)}%  (count ${counts.epic}, weight ${weights.epic})`,
     `Legendary: ${pct.legendary.toFixed(2)}%  (count ${counts.legendary}, weight ${weights.legendary})`,
     `Mythical: ${pct.mythical.toFixed(2)}%  (count ${counts.mythical}, weight ${weights.mythical})`,
-    ``,
-    `🛠️ Tune: edit RARITY_WEIGHTS in systems/spawn.js`,
   ];
 
   return safeSend(sock, chatId, { text: lines.join("\n") });
@@ -504,7 +503,7 @@ async function cmdCatch(ctx, chatId, senderId, args) {
   }
 
   if (!players?.[senderId]) {
-    return safeSend(sock, chatId, { text: "❌ Register first using .start" });
+    return safeSend(sock, chatId, { text: "❌ Register first using .register" });
   }
 
   const guess = String(args.join(" ") || "").trim();
@@ -670,12 +669,24 @@ async function cmdCatch(ctx, chatId, senderId, args) {
   if (!Array.isArray(catcher.moraOwned)) catcher.moraOwned = [];
   catcher.moraOwned.push(owned);
 
+  // ── Spawn-claim shard drop (M2: wire the dormant 15% spawn rate) ──
+  // Catch has its own small chance to crystallize a shard of the caught
+  // species. Runs before savePlayers so the shard persists with the catch.
+  let shardDropLine = "";
+  try {
+    const shardSystem = require("./shards");
+    const dropMsg = shardSystem.dropShardOnDefeat(catcher, species, { source: "spawn" });
+    if (dropMsg) shardDropLine = "\n\n" + dropMsg;
+  } catch {}
+
   // ── Mission hook ─────────────────────────────────────────
   try { missionSystem.onMoraCaught(senderId, catchFaction, species.type); } catch {}
 
-  savePlayers(players);
+  // Clear the spawn FIRST so a crash between the two saves can't leave the
+  // same mora catchable twice (players.json is written second).
   gs.active = null;
   saveState(state);
+  savePlayers(players);
 
   const harmonyBonus = catchFaction === "harmony" ? "\n🌿 *Harmony Bond Bonus:* +10 Lucons!" : "";
   const description = species.description ? `\n\n_${species.description}_` : "";
@@ -685,7 +696,8 @@ async function cmdCatch(ctx, chatId, senderId, args) {
     text:
       `✅ @${senderId.split("@")[0]} tamed *${species.name}*${rarityLabel}! 🎉${description}\n\n` +
       `🔮 *${species.name}* is now in your tamed Mora.` +
-      harmonyBonus,
+      harmonyBonus +
+      shardDropLine,
     mentions: [senderId],
   });
 }

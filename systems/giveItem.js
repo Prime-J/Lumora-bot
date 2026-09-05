@@ -18,7 +18,7 @@ async function cmdGiveItem(ctx, chatId, senderId, msg, args = [], helpers = {}) 
   if (!sender) {
     return sock.sendMessage(
       chatId,
-      { text: "❌ Register first using `.start`." },
+      { text: "❌ Register first using `.register`." },
       { quoted: msg }
     );
   }

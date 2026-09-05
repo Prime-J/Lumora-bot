@@ -229,7 +229,7 @@ Owner is Prime / full name prime j — the Architect, the young master. Star is 
 const LUMORA_COMMANDS = `
 ALL VALID LUMORA COMMANDS (prefix: ".") — never suggest a command not in this list. If something a user wants doesn't exist, say so honestly, don't invent.
 
-GETTING STARTED: .lumora .start .choose .profile .set-username .set-icon .gender .mora .tamed .claim-gift .guide .tutorial .tip .rules
+GETTING STARTED: .lumora .begin .register .choose .profile .set-username .set-icon .gender .mora .tamed .claim-gift .guide .tutorial .tip .rules
 ECONOMY: .daily .weekly .give .transfer-lcr .transfer-reob .reverse .tamed-give .gitem .exchange (lucons→LCR) .donate <amt> [lucons|lcr] (feed treasury) .crystals
 MARKET: .market .buy .subscribe-market .unsubscribe-market .summon-merchant (Pro) .black-market (Pro) .buy-bm
 PRO: .pro-info .pro .pro-daily .pro-market .pbuy
@@ -575,7 +575,7 @@ async function receiveGift(ctx, chatId, senderId, msg, amount) {
   const ownerJid = (ctx.settings?.ownerNumbers || [])[0];
   const player = players[normJid(senderId)];
 
-  if (!player) return ctx.sock.sendMessage(chatId, { text: "❌ You're not registered. Use `.start` first." }, { quoted: msg });
+  if (!player) return ctx.sock.sendMessage(chatId, { text: "❌ You're not registered. Use `.register` first." }, { quoted: msg });
   if (!Number.isFinite(amount) || amount <= 0) return ctx.sock.sendMessage(chatId, { text: "❌ Use: `.gift-star <amount>`" }, { quoted: msg });
   if ((player.lucons || 0) < amount) return ctx.sock.sendMessage(chatId, { text: "❌ Not enough Lucons." }, { quoted: msg });
 

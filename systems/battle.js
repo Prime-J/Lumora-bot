@@ -13,6 +13,7 @@ const factionMarketSystem = require("./factionMarket");
 const missionSystem       = require("./factionMissionSystem");
 const { generateBattleVsImage } = require("../factionCanvas");
 const { getBattleCommentary } = require("./botPersonality");
+const progression         = require("./progression");
 
 function clamp(n, min, max) {
   const x = Number(n);
@@ -237,8 +238,21 @@ function typeMultiplier(attType, defType) {
 const battlesByGroup = new Map();
 const challengesByGroup = new Map();
 
+// Battles left untouched for 10 minutes are treated as abandoned (players
+// went silent or left the group). getBattle() clears them lazily so a group
+// can never be permanently locked out of new battles until restart.
+const BATTLE_IDLE_MS = 10 * 60 * 1000;
+
 function getBattle(groupId) {
-  return battlesByGroup.get(groupId) || null;
+  const b = battlesByGroup.get(groupId) || null;
+  if (!b) return null;
+  const lastAction = Number(b.lastActionAt || b.startedAt || 0);
+  if (lastAction && Date.now() - lastAction > BATTLE_IDLE_MS) {
+    battlesByGroup.delete(groupId);
+    return null;
+  }
+  b.lastActionAt = Date.now();
+  return b;
 }
 
 function setBattle(groupId, state) {
@@ -430,6 +444,7 @@ async function cmdAccept(ctx, chatId, senderId, msg) {
     activeIndex: { [aJid]: aIdx, [bJid]: bIdx },
     pending: {},
     startedAt: Date.now(),
+    lastActionAt: Date.now(),
     battleType: "pvp",
   };
 
@@ -682,12 +697,7 @@ async function cmdUse(ctx, chatId, senderId, msg, args = []) {
   const owned = itemsSystem.getItemQuantity(player, item.id);
   if (owned <= 0) return sock.sendMessage(chatId, { text: `❌ You don't have any *${item.name}*.` }, { quoted: msg });
 
-  // Faction scroll check
-  if (item.category === "scroll" && item.faction && player.faction !== item.faction) {
-    return sock.sendMessage(chatId, {
-      text: `🚫 *${item.name}* is a *${item.faction}* scroll. It doesn't respond to your faction.`,
-    }, { quoted: msg });
-  }
+  // (Faction scroll barrier removed — any faction can use any scroll)
 
   const effects = item.category === "scroll"
     ? (inventorySystem.SCROLL_EFFECTS[item.id] || {})
@@ -817,8 +827,15 @@ async function cmdForfeit(ctx, chatId, senderId, msg) {
   const gain = auraSystem.calcAuraGain(winner, loser);
   auraSystem.addAura(winner, gain);
 
-  const playerXpGain = 40;
+  // Use progression engine for XP calculation
+  const enemy = { level: loser.level || 1, difficulty: 'medium' };
+  const xpResult = progression.calculateXPReward(winner, enemy, { baseReward: 40 });
+  const playerXpGain = xpResult.amount;
   const winnerPlayerXp = xpSystem.addPlayerXp(winner, playerXpGain);
+
+  // Apply PvP death penalty to loser
+  const pvpDeathPenalty = progression.calculatePvPDeathPenalty(loser, winner);
+  const penaltyResult = progression.applyDeathPenalty(loser, pvpDeathPenalty);
 
   savePlayers(players);
   clearBattle(chatId);
@@ -1215,7 +1232,10 @@ async function endIfBattleOver(ctx, chatId, msg) {
   const winMoraXp = baseXp;
   const loseMoraXp = Math.floor(baseXp * 0.5);
 
-  const winPlayerXp = 50 + loserLv * 3;
+  // Use progression engine for XP calculation
+  const enemy = { level: loserLv, difficulty: 'medium' };
+  const xpResult = progression.calculateXPReward(winnerP, enemy, { baseReward: 50 });
+  const winPlayerXp = xpResult.amount;
   const losePlayerXp = Math.floor(winPlayerXp * 0.5);
 
   let winnerMoraLevelText = "";
@@ -1335,6 +1355,10 @@ async function endIfBattleOver(ctx, chatId, msg) {
       }
     }
   }
+
+  // Apply PvP death penalty to loser
+  const pvpDeathPenalty = progression.calculatePvPDeathPenalty(loserP, winnerP);
+  const penaltyResult = progression.applyDeathPenalty(loserP, pvpDeathPenalty);
 
   savePlayers(players);
   clearBattle(chatId);

@@ -15,6 +15,7 @@
 
 const fs   = require("fs");
 const path = require("path");
+const ui = require("./ui");
 
 const progressSystem = require("./factionProgressSystem");
 
@@ -398,16 +399,16 @@ async function cmdMissions(ctx, chatId, senderId, msg) {
 
   return sock.sendMessage(chatId, {
     text:
-      `${DIV}\n` +
-      `📋  *FACTION MISSIONS*\n` +
-      `${titleCase(player.faction).toUpperCase()} — Week *${week.split("-W")[1]}*\n` +
-      `${DIV}\n\n` +
-      `Completed this week: *${completedCount}/${missions.length}*\n\n` +
-      `${SDIV}\n\n` +
-      lines.join(`\n\n${SDIV}\n\n`) +
-      `\n\n${DIV}\n` +
-      `📖 Use *.complete <ID>* to claim a ready mission.\n` +
-      `_Example: .complete HM_01_`,
+      ui.header("FACTION MISSIONS", "📋") + '\n\n' +
+      ui.card(`${titleCase(player.faction).toUpperCase()}`, "📋", [
+        { emoji: "📅", label: "Week", value: week.split("-W")[1] },
+        { emoji: "✅", label: "Completed", value: `${completedCount}/${missions.length}` },
+      ]) + '\n\n' +
+      ui.subheader("MISSIONS", "📜") + '\n\n' +
+      lines.join(`\n\n${ui.DIV}\n\n`) +
+      `\n\n${ui.divider()}\n` +
+      `📖 Use *${'.complete'} <ID>* to claim a ready mission.\n` +
+      `_Example: ${'.complete'} HM_01_`,
   }, { quoted: msg });
 }
 
@@ -475,17 +476,16 @@ async function cmdComplete(ctx, chatId, senderId, msg, args = []) {
 
   return sock.sendMessage(chatId, {
     text:
-      `${DIV}\n` +
-      `${mission.icon}  *MISSION COMPLETE!*\n` +
-      `${DIV}\n\n` +
-      `*${mission.title}*\n` +
-      `📜 _${mission.desc}_\n\n` +
-      `🎁 *REWARDS*\n` +
-      `├ 🏛 Faction Points: *+${mission.rewardFP}*\n` +
-      `├ 🌟 Player XP:      *+${mission.rewardXP}*\n` +
-      `└ 💰 Lucons:         *+${mission.rewardLucons}*\n\n` +
-      `💳 Balance: *${player.lucons}*\n` +
-      `${DIV}`,
+      ui.header("MISSION COMPLETE!", mission.icon) + '\n\n' +
+      ui.card(mission.title, mission.icon, [
+        { emoji: "📜", label: "Objective", value: mission.desc.replace(/\*/g, '') },
+      ]) + '\n\n' +
+      ui.card("REWARDS", "🎁", [
+        { emoji: "🏛️", label: "Faction Points", value: `+${mission.rewardFP}` },
+        { emoji: "🌟", label: "Player XP", value: `+${mission.rewardXP}` },
+        { emoji: "💰", label: "Lucons", value: `+${mission.rewardLucons}` },
+      ]) + '\n\n' +
+      `💳 Balance: *${player.lucons}*`,
   }, { quoted: msg });
 }
 

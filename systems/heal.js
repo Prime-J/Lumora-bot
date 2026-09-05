@@ -27,7 +27,7 @@ async function cmdHeal(ctx, chatId, senderId) {
   const { sock, players, savePlayers, battleSystem } = ctx;
 
   const p = players[senderId];
-  if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using .start" });
+  if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
 
   // ✅ Block ONLY if THIS player is in an active battle in THIS group
   try {

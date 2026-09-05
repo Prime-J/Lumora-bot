@@ -1,18 +1,21 @@
 const fs = require('fs');
+const ui = require('./systems/ui');
+const progression = require('./systems/progression');
+const interactiveUI = require('./systems/interactiveUI');
 
-// 🧮 SCORING SYSTEM: Adjust these weights to balance your leaderboard!
+// 🧮 SCORING SYSTEM: Uses centralized progression engine
 function calculateTotalScore(p) {
-    const aura = p.aura || 0;
+    const result = progression.calculateLeaderboardScore(p);
+    const factionStat = progression.getFactionStat(p);
     const tamedCount = Array.isArray(p.moraOwned) ? p.moraOwned.length : 0;
-    const lucons = p.lucons || 0; // Assuming 'lucons' is the key in your player database
+    const lucons = p.lucons || 0;
 
-    // Formula: 1 Aura = 1 point | 1 Tamed Mora = 100 points | 1 Lucon = 0.5 points
-    // (You can change these multipliers to whatever you want!)
-    const score = (aura*100) + (tamedCount * 2) + Math.floor(lucons) ;
-    
     return {
-        total: score,
-        aura,
+        total: result.total,
+        factionStat,
+        aura: p.aura || 0,
+        dep: p.xp || 0,
+        level: p.level || 1,
         tamed: tamedCount,
         lucons
     };
@@ -31,22 +34,47 @@ function getGlobalLeaderboardData(players) {
 function getGlobalLeaderboard(players) {
     const sorted = getGlobalLeaderboardData(players);
 
-    let text = "🌌 *LUMORA GLOBAL LEADERBOARD* 🌌\n_Top 10 strongest souls in the Dominion_\n\n";
+    const lines = [];
+    lines.push(ui.header('LEADERBOARD', '🏆'));
+    lines.push('  _Top 10 strongest souls in the Dominion_');
+    lines.push('');
 
-    sorted.forEach((p, i) => {
-        const rankNum = (i + 1).toString().padStart(2, '0'); // Makes #01, #02, etc.
-        const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "🔹";
-        
-        text += `┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
-        text += `┃ ${medal} *#${rankNum}* • *${p.username || "Unknown"}*\n`;
-        text += `┃ 💠 *Total Score:* ${p.stats.total.toLocaleString()}\n`;
-        text += `┃ ├ 🔮 Aura: ${p.stats.aura.toLocaleString()}\n`;
-        text += `┃ ├ 🐾 Tamed: ${p.stats.tamed}\n`;
-        text += `┃ └ 💰 Lucons: ${p.stats.lucons.toLocaleString()}\n`;
-        text += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
-    });
-    
-    return text;
+    // Top 3 highlighted
+    const medals = ['🥇', '🥈', '🥉'];
+    for (let i = 0; i < Math.min(3, sorted.length); i++) {
+        const p = sorted[i];
+        const score = p.stats.total.toLocaleString();
+        lines.push(ui.card(`${medals[i]} #${i + 1}`, '', [
+            { emoji: '👤', label: 'Player', value: p.username || 'Unknown' },
+            { emoji: '💠', label: 'Score', value: score },
+            { emoji: '🔮', label: 'Aura', value: String(p.stats.aura) },
+            { emoji: '🐾', label: 'Tamed', value: String(p.stats.tamed) },
+            { emoji: '💰', label: 'Lucons', value: p.stats.lucons.toLocaleString() },
+        ]));
+        lines.push('');
+    }
+
+    // #1 gets a stat bar for visual flair
+    if (sorted.length > 0) {
+        const maxScore = sorted[0].stats.total;
+        lines.push(ui.statBar(maxScore, maxScore));
+        lines.push('  _#1 total power_');
+        lines.push('');
+    }
+
+    // Ranks 4-10 compact
+    if (sorted.length > 3) {
+        lines.push(ui.DIV);
+        lines.push('');
+        for (let i = 3; i < sorted.length; i++) {
+            const p = sorted[i];
+            const rank = (i + 1).toString().padStart(2, ' ');
+            lines.push(`  🔹 *#${rank}*  ${p.username || 'Unknown'}  —  💠 ${p.stats.total.toLocaleString()}`);
+        }
+        lines.push('');
+    }
+
+    return lines.join('\n');
 }
 
 function getFactionLeaderboard(players, factionName) {
@@ -56,31 +84,48 @@ function getFactionLeaderboard(players, factionName) {
         "rift": "🕶️ Rift Seekers"
     };
 
-    // Filter by faction, sort by resonance
+    const statKey = progression.getFactionStatKey(factionName);
+    const statEmoji = progression.getFactionStatEmoji(factionName);
+
     const sorted = Object.values(players)
         .filter(p => p.faction === factionName)
-        .map(p => ({ ...p, resonance: p.resonance || 0, stats: calculateTotalScore(p) }))
-        .sort((a, b) => b.resonance - a.resonance)
+        .map(p => ({ ...p, factionStat: progression.getFactionStat(p), stats: calculateTotalScore(p) }))
+        .sort((a, b) => b.factionStat - a.factionStat)
         .slice(0, 10);
 
     if (sorted.length === 0) return `🌑 No members found in ${factionMap[factionName]}.`;
 
-    let text = `🚩 *${factionMap[factionName].toUpperCase()}* 🚩\n_Top Contributors by Resonance_\n\n`;
+    const lines = [];
+    lines.push(ui.header(factionMap[factionName], '🚩'));
+    lines.push(`  _Top Contributors by ${statKey.charAt(0).toUpperCase() + statKey.slice(1)}_`);
+    lines.push('');
 
-    sorted.forEach((p, i) => {
-        const rankNum = (i + 1).toString().padStart(2, '0');
-        const icon = i === 0 ? "👑" : "▫️";
+    // #1 highlighted
+    if (sorted.length > 0) {
+        const p = sorted[0];
+        lines.push(ui.card('👑 #1', '', [
+            { emoji: '👤', label: 'Player', value: p.username || 'Unknown' },
+            { emoji: statEmoji, label: statKey.charAt(0).toUpperCase() + statKey.slice(1), value: p.factionStat.toLocaleString() },
+            { emoji: '⭐', label: 'Level', value: String(p.stats.level) },
+            { emoji: '🐾', label: 'Tamed', value: String(p.stats.tamed) },
+            { emoji: '💰', label: 'Lucons', value: p.stats.lucons.toLocaleString() },
+        ]));
+        lines.push('');
+    }
 
-        text += `┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
-        text += `┃ ${icon} *#${rankNum}* • *${p.username || "Unknown"}*\n`;
-        text += `┃ 🌀 *Resonance:* ${p.resonance.toLocaleString()}\n`;
-        text += `┃ ├ 🔮 Aura: ${p.stats.aura.toLocaleString()}\n`;
-        text += `┃ ├ 🐾 Tamed: ${p.stats.tamed}\n`;
-        text += `┃ └ 💰 Lucons: ${p.stats.lucons.toLocaleString()}\n`;
-        text += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
-    });
+    // Ranks 2-10 compact
+    if (sorted.length > 1) {
+        lines.push(ui.DIV);
+        lines.push('');
+        for (let i = 1; i < sorted.length; i++) {
+            const p = sorted[i];
+            const rank = (i + 1).toString().padStart(2, ' ');
+            lines.push(`  ▫️ *#${rank}*  ${p.username || 'Unknown'}  —  ${statEmoji} ${p.factionStat.toLocaleString()}  |  ⭐ Lv.${p.stats.level}`);
+        }
+        lines.push('');
+    }
 
-    return text;
+    return lines.join('\n');
 }
 
 // Function to check and announce new leaders based on total power
@@ -106,4 +151,4 @@ async function checkNewLeader(sock, chatId, players, factionsData) {
     return changed; // To tell index.js to save factions.json
 }
 
-module.exports = { getGlobalLeaderboard, getGlobalLeaderboardData, getFactionLeaderboard, checkNewLeader };
+module.exports = { getGlobalLeaderboard, getGlobalLeaderboardData, getFactionLeaderboard, checkNewLeader, sendLeaderboardMenu: interactiveUI.sendLeaderboardMenu };

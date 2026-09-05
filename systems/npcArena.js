@@ -14,6 +14,10 @@
 
 const fs   = require("fs");
 const path = require("path");
+// M2.6: real combat lock (wildbattle + PvP maps) — the old player.inBattle
+// flag was never set by any engine, so the arena-entry guard was dead code.
+const combatLock  = require("./combatLock");
+const progression = require("./progression");
 
 // ── PATHS ────────────────────────────────────────────────────
 const ARENA_STATE_FILE = path.join(__dirname, "../data/arena_state.json");
@@ -822,7 +826,7 @@ async function cmdArena(ctx, chatId, senderId, msg) {
   }
 
   const player    = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Register first using *.start*" }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Register first using *.register*" }, { quoted: msg });
 
   const aura      = Number(player.aura || 0);
   const used      = getDailyCount(state, senderId);
@@ -909,7 +913,7 @@ async function cmdChallenge(ctx, chatId, senderId, msg, args) {
   }
 
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Register first using *.start*" }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Register first using *.register*" }, { quoted: msg });
 
   if (getBattle(state, chatId, senderId)) {
     return sock.sendMessage(chatId, {
@@ -919,9 +923,9 @@ async function cmdChallenge(ctx, chatId, senderId, msg, args) {
     }, { quoted: msg });
   }
 
-  if (player.inBattle) {
+  if (combatLock.isInCombat(chatId, senderId)) {
     return sock.sendMessage(chatId, {
-      text: "❌ You cannot enter the Arena while in a PvP duel. Finish your battle first.",
+      text: "❌ You cannot enter the Arena while locked in combat. Finish your battle first.",
     }, { quoted: msg });
   }
 
@@ -1111,7 +1115,7 @@ async function cmdNpcChallenge(ctx, chatId, senderId, msg, args) {
   }
 
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Register first using *.start*" }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Register first using *.register*" }, { quoted: msg });
 
   if (getBattle(state, chatId, senderId)) {
     return sock.sendMessage(chatId, {
@@ -1121,9 +1125,9 @@ async function cmdNpcChallenge(ctx, chatId, senderId, msg, args) {
     }, { quoted: msg });
   }
 
-  if (player.inBattle) {
+  if (combatLock.isInCombat(chatId, senderId)) {
     return sock.sendMessage(chatId, {
-      text: "❌ You cannot enter the Arena while in a PvP duel. Finish your battle first.",
+      text: "❌ You cannot enter the Arena while locked in combat. Finish your battle first.",
     }, { quoted: msg });
   }
 
@@ -1557,10 +1561,17 @@ async function resolveEnd(ctx, chatId, senderId, msg, state, battle, players, pl
     recordWin(state, senderId, battle.npcName);
     saveState(state);
 
-    const baseXp       = 65 + tier.levelRange[1] * 4;
-    const playerXpGain = Math.max(5, Math.floor(baseXp * tier.xpMult * mult * REWARD_NERF));
-    const auraGain     = Math.max(1, Math.floor(tier.auraReward * mult * REWARD_NERF));
-    const moraXpGain   = Math.max(3, Math.floor(baseXp * 0.5 * tier.xpMult * mult * REWARD_NERF));
+    // Use progression engine for XP calculation
+    const npcLevel = tier.levelRange ? Math.floor((tier.levelRange[0] + tier.levelRange[1]) / 2) : 10;
+    const enemy = { level: npcLevel, difficulty: battle.npcDifficulty || 'medium', isBoss: tier.isBoss || false };
+    const xpResult = progression.calculateXPReward(player, enemy, {
+      baseReward: 65,
+      difficulty: battle.npcDifficulty || 'medium',
+    });
+    const baseXp       = xpResult.amount;
+    const playerXpGain = Math.max(5, Math.floor(baseXp * tier.xpMult * mult));
+    const auraGain     = Math.max(1, Math.floor(tier.auraReward * mult));
+    const moraXpGain   = Math.max(3, Math.floor(baseXp * 0.5 * tier.xpMult * mult));
 
     const levelUps = [];
     for (const mora of party) {
@@ -1625,11 +1636,25 @@ async function resolveEnd(ctx, chatId, senderId, msg, state, battle, players, pl
 
   // ── PLAYER LOSES ──────────────────────────────────────────
   saveState(state);
-  const consolXp  = Math.max(5, Math.floor(25 * tier.xpMult));
+  // Use progression engine for consolation XP (reduced amount)
+  const consolEnemy = { level: npcLevel || 10, difficulty: battle.npcDifficulty || 'medium' };
+  const consolResult = progression.calculateXPReward(player, consolEnemy, { baseReward: 25 });
+  const consolXp  = Math.max(5, Math.floor(consolResult.amount * tier.xpMult));
   const auraFine  = tier.fineOnLoss;
   xpSystem.addPlayerXp(player, consolXp);
   if (auraFine > 0) auraSystem.removeAura(player, auraFine);
+  
+  // Apply death penalty — lose some faction stat
+  const deathPenalty = progression.calculateNPCDeathPenalty(player, {
+    name: battle.npcName,
+    level: npcLevel || 10,
+  });
+  const penaltyResult = progression.applyDeathPenalty(player, deathPenalty);
+  
   savePlayers(players);
+  
+  const statEmoji = progression.getFactionStatEmoji(player.faction);
+  const statKey = progression.getFactionStatKey(player.faction);
 
   return sock.sendMessage(chatId, {
     text:
@@ -1641,8 +1666,9 @@ async function resolveEnd(ctx, chatId, senderId, msg, state, battle, players, pl
       `📊 *O U T C O M E*\n` +
       `${THIN_DIV}\n` +
       `▸ 🔵 Aura penalty:     *-${auraFine}*\n` +
-      `▸ 📊 Consolation XP:   *+${consolXp}*\n\n` +
-      `_"Every Lumorian who fell here came back. The Rift doesn't forget effort."_\n\n` +
+      `▸ 📊 Consolation XP:   *+${consolXp}*\n` +
+      (penaltyResult.actualLoss > 0 ? `▸ ${statEmoji} Death penalty:  *-${penaltyResult.actualLoss} ${statKey.charAt(0).toUpperCase() + statKey.slice(1)}*\n` : ``) +
+      `\n_"Every Lumorian who fell here came back. The Rift doesn't forget effort."_\n\n` +
       `Use *.heal* then *.npc ${battle.tierKey}* to try again.\n` +
       `${DIVIDER}`,
   }, { quoted: msg });

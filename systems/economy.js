@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 const factionMarketSystem = require("./factionMarket");
+const buttonsSystem       = require("./buttons");
 
 const DATA_DIR = path.join(__dirname, "..", "data");
 const TX_FILE = path.join(DATA_DIR, "transactions.json");
@@ -96,7 +97,7 @@ async function cmdDaily(ctx, chatId, senderId) {
   const { sock, players, savePlayers } = ctx;
 
   if (!players[senderId]) {
-    return sock.sendMessage(chatId, { text: "❌ Register first using .start" });
+    return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
   }
 
   const p = players[senderId];
@@ -208,16 +209,22 @@ async function cmdDaily(ctx, chatId, senderId) {
   const nextDaily = formatUntil(nextDailyResetMs(now, now), now);
   const lastWeekly = Number(p.lastWeeklyAt || 0);
   const nextWeekly = lastWeekly ? formatUntil(nextWeeklyResetMs(now, lastWeekly), now) : "available now";
-  return sock.sendMessage(chatId, {
-    text:
-      `✅ *Daily Claimed!*\n\n` +
-      `💰 *+${finalReward} Lucons*\n` +
-      `${streakLine}\n` +
-      `🏦 Balance: *${p.lucons}*\n\n` +
-      `🕒 Next *.daily*: ${nextDaily}\n` +
-      `📅 Next *.weekly*: ${nextWeekly}` +
-      taxNote,
+  buttonsSystem.mapButtons({
+    "🎮 Menu": ".menu",
+    "🌲 Hunt": ".hunt",
+    "⚔ Battle": ".battle",
   });
+  return buttonsSystem.sendButtons(sock, chatId,
+    `✅ *Daily Claimed!*\n\n` +
+    `💰 *+${finalReward} Lucons*\n` +
+    `${streakLine}\n` +
+    `🏦 Balance: *${p.lucons}*\n\n` +
+    `🕒 Next *.daily*: ${nextDaily}\n` +
+    `📅 Next *.weekly*: ${nextWeekly}` +
+    taxNote,
+    ["🎮 Menu", "🌲 Hunt", "⚔ Battle"],
+    { footer: `What's next? 👇` }
+  );
 }
 
 // ===== Weekly claim: 350 lucons =====
@@ -225,7 +232,7 @@ async function cmdWeekly(ctx, chatId, senderId) {
   const { sock, players, savePlayers } = ctx;
 
   if (!players[senderId]) {
-    return sock.sendMessage(chatId, { text: "❌ Register first using .start" });
+    return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
   }
 
   const p = players[senderId];
@@ -300,15 +307,21 @@ async function cmdWeekly(ctx, chatId, senderId) {
   const lastDaily2 = Number(p.lastDailyAt || 0);
   const nextDailyW = lastDaily2 ? formatUntil(nextDailyResetMs(now, lastDaily2), now) : "available now";
   const nextWeeklyW = formatUntil(nextWeeklyResetMs(now, now), now);
-  return sock.sendMessage(chatId, {
-    text:
-      `✅ *Weekly Claimed!*\n\n` +
-      `💰 *+${reward} Lucons*\n` +
-      `🏦 Balance: *${p.lucons}*\n\n` +
-      `📅 Next *.weekly*: ${nextWeeklyW}\n` +
-      `🕒 Next *.daily*: ${nextDailyW}` +
-      wNote,
+  buttonsSystem.mapButtons({
+    "🎮 Menu": ".menu",
+    "🌲 Hunt": ".hunt",
+    "⚔ Battle": ".battle",
   });
+  return buttonsSystem.sendButtons(sock, chatId,
+    `✅ *Weekly Claimed!*\n\n` +
+    `💰 *+${reward} Lucons*\n` +
+    `🏦 Balance: *${p.lucons}*\n\n` +
+    `📅 Next *.weekly*: ${nextWeeklyW}\n` +
+    `🕒 Next *.daily*: ${nextDailyW}` +
+    wNote,
+    ["🎮 Menu", "🌲 Hunt", "⚔ Battle"],
+    { footer: `What's next? 👇` }
+  );
 }
 
 // ===== Give lucons with transaction code =====
@@ -318,7 +331,7 @@ async function cmdGive(ctx, chatId, senderId, msg, args, helpers) {
   const { getMentionedJids, getRepliedJid, toUserJidFromArg, normJid } = helpers;
 
   if (!players[senderId]) {
-    return sock.sendMessage(chatId, { text: "❌ Register first using .start" });
+    return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
   }
 
   const mentioned = getMentionedJids(msg).map(normJid);
@@ -351,8 +364,8 @@ async function cmdGive(ctx, chatId, senderId, msg, args, helpers) {
   if (target === senderId) return sock.sendMessage(chatId, { text: "😑 You can’t give yourself lucons." });
 
   const amount = Number(amountStr);
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return sock.sendMessage(chatId, { text: "❌ Amount must be a positive number." });
+  if (!Number.isFinite(amount) || amount <= 0 || !Number.isInteger(amount)) {
+    return sock.sendMessage(chatId, { text: "❌ Amount must be a whole positive number." });
   }
 
   if (!players[target]) {
@@ -402,7 +415,7 @@ async function cmdReverse(ctx, chatId, senderId, args) {
   const { sock, players, savePlayers } = ctx;
 
   if (!players[senderId]) {
-    return sock.sendMessage(chatId, { text: "❌ Register first using .start" });
+    return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
   }
 
   const rawCode = String(args[0] || "").trim();

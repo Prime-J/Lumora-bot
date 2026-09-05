@@ -243,7 +243,7 @@ async function cmdProStatus(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers } = ctx;
   const player = players[senderId];
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ Register first using `.start`." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Register first using `.register`." }, { quoted: msg });
   }
 
   const firstArg = String(args[0] || "").toLowerCase().trim();
@@ -336,7 +336,7 @@ async function cmdProDaily(ctx, chatId, senderId, msg) {
   const { sock, players, savePlayers } = ctx;
   const player = players[senderId];
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ Register first using `.start`." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Register first using `.register`." }, { quoted: msg });
   }
   if (!hasActivePro(player)) {
     return sock.sendMessage(chatId, { text: "❌ No active Mark. See *.pro-info* for tiers." }, { quoted: msg });
@@ -375,7 +375,7 @@ async function cmdExchange(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers } = ctx;
   const player = players[senderId];
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ Register first using `.start`." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Register first using `.register`." }, { quoted: msg });
   }
 
   const amt = Number(args[0]);
@@ -563,7 +563,7 @@ async function cmdProMarket(ctx, chatId, senderId, msg) {
   const { sock, players } = ctx;
   const player = players[senderId];
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ Register first using `.start`." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Register first using `.register`." }, { quoted: msg });
   }
   const pro = ensureProState(player);
 
@@ -591,7 +591,7 @@ async function cmdProBuy(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers } = ctx;
   const player = players[senderId];
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ Register first using `.start`." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Register first using `.register`." }, { quoted: msg });
   }
 
   const query = String(args[0] || "").toLowerCase().trim().replace(/\s+/g, "_");
@@ -650,7 +650,7 @@ async function cmdAutocatch(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers } = ctx;
   const player = players[senderId];
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ Register first using `.start`." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Register first using `.register`." }, { quoted: msg });
   }
   if (!hasActivePro(player)) {
     return sock.sendMessage(chatId, { text: "❌ Auto-catch is a Mark perk. See *.pro-info*." }, { quoted: msg });

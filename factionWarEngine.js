@@ -327,9 +327,10 @@ function withdrawPlayer(playerId) {
 
 // Get bracket text for viewing
 function getBracketText(playersDB) {
-  if (war.status === "idle") return "No war is active right now.";
+  if (war.status === "idle") return { text: "No war is active right now.", mentions: [] };
 
   const lines = [];
+  const mentions = [];
   lines.push(`*FACTION WAR #${war.warCount}*  —  Round ${war.round}`);
   lines.push(`Status: *${war.status.toUpperCase()}*`);
   lines.push(`Fighters: ${war.participants.length}\n`);
@@ -338,29 +339,38 @@ function getBracketText(playersDB) {
     lines.push(`*REGISTERED FIGHTERS:*`);
     for (const p of war.participants) {
       const fIcon = p.faction === "harmony" ? "🌿" : p.faction === "purity" ? "⚔️" : p.faction === "rift" ? "🔶" : "⚡";
-      lines.push(`  ${fIcon} ${p.username} (${p.faction})`);
+      const phone = p.id.split("@")[0];
+      lines.push(`  ${fIcon} @${phone} *${p.username}* (${p.faction})`);
+      mentions.push(p.id);
     }
     lines.push(`\nUse *.war join* to enter!`);
-    return lines.join("\n");
+    return { text: lines.join("\n"), mentions };
   }
 
   lines.push(`┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈`);
 
   for (let i = 0; i < war.matches.length; i++) {
     const m = war.matches[i];
-    const p1Name = war.participants.find((x) => x.id === m.p1)?.username || playersDB?.[m.p1]?.username || "???";
-    const p2Name = m.p2 ? (war.participants.find((x) => x.id === m.p2)?.username || playersDB?.[m.p2]?.username || "???") : "BYE";
+    const p1 = war.participants.find((x) => x.id === m.p1) || playersDB?.[m.p1];
+    const p2 = m.p2 ? (war.participants.find((x) => x.id === m.p2) || playersDB?.[m.p2]) : null;
+    const p1Name = p1?.username || "???";
+    const p2Name = p2?.username || "BYE";
 
     let statusIcon = "⏳";
     if (m.status === "active") statusIcon = "⚡";
     if (m.status === "done") statusIcon = "✅";
 
-    let winnerMark = "";
-    if (m.winner === m.p1) winnerMark = ` 🏆`;
-    if (m.winner === m.p2) winnerMark = ` 🏆`;
+    const p1Phone = m.p1?.split("@")[0];
+    const p2Phone = m.p2?.split("@")[0];
+    const p1Display = m.winner === m.p1
+      ? `@${p1Phone} *${p1Name}* 🏆`
+      : (p1Phone ? `@${p1Phone} *${p1Name}*` : `*${p1Name}*`);
+    const p2Display = m.winner === m.p2
+      ? `@${p2Phone} *${p2Name}* 🏆`
+      : (p2Phone ? `@${p2Phone} *${p2Name}*` : `*${p2Name}*`);
 
-    const p1Display = m.winner === m.p1 ? `*${p1Name}* 🏆` : p1Name;
-    const p2Display = m.winner === m.p2 ? `*${p2Name}* 🏆` : p2Name;
+    if (p1Phone && m.p1) mentions.push(m.p1);
+    if (p2Phone && m.p2) mentions.push(m.p2);
 
     lines.push(`${statusIcon} Match ${i + 1}:  ${p1Display}  vs  ${p2Display}`);
   }
@@ -372,10 +382,12 @@ function getBracketText(playersDB) {
   lines.push(`\n*STANDINGS:*`);
   for (const p of sorted) {
     const fIcon = p.faction === "harmony" ? "🌿" : p.faction === "purity" ? "⚔️" : p.faction === "rift" ? "🔶" : "⚡";
-    lines.push(`  ${fIcon} ${p.username}  W:${p.wins} L:${p.losses}`);
+    const phone = p.id.split("@")[0];
+    lines.push(`  ${fIcon} @${phone} *${p.username}*  W:${p.wins} L:${p.losses}`);
+    if (!mentions.includes(p.id)) mentions.push(p.id);
   }
 
-  return lines.join("\n");
+  return { text: lines.join("\n"), mentions };
 }
 
 function getMatchIntro() {

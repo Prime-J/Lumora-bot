@@ -12,6 +12,8 @@
 
 const fs   = require("fs");
 const path = require("path");
+const ui           = require("./ui");
+const botPersonality = require("./botPersonality");
 
 const DIVIDER         = "━━━━━━━━━━━━━━━━━━━━━━━━━";
 const STATE_FILE      = path.join(__dirname, "..", "data", "auto_raid_state.json");
@@ -171,13 +173,17 @@ async function tickAutoRaid(ctx) {
 async function broadcastSpawn(ctx, cfg, state) {
   const { sock } = ctx;
   const minLeft = cfg.responseWindowMin;
+  const starComment = botPersonality.getBattleCommentary("startBattle");
   const text =
-    `🌀 *KAEL'S TELEPORTER HAS OPENED*\n${DIVIDER}\n` +
+    ui.header("KAEL'S TELEPORTER", "🌀") + '\n\n' +
     `A void-tear hangs in the air. Kael is somewhere on the other side.\n\n` +
-    `_The first faction to *.respond <victim>* names a different faction\n` +
+    `_The first faction to *${'.respond'} <victim>* names a different faction\n` +
     `as Kael's target. That faction must fight him together to survive._\n\n` +
-    `⏳ Response window: *${minLeft} minute${minLeft === 1 ? "" : "s"}*\n` +
-    `${DIVIDER}\n_"The faction that hesitates is the one that loses."_`;
+    ui.card("TELEPORTER", "⏳", [
+      { emoji: "⏳", label: "Response", value: `${minLeft} min${minLeft === 1 ? '' : 's'}` },
+    ]) + '\n\n' +
+    `_"The faction that hesitates is the one that loses."_\n\n` +
+    `✨ *Star:* ${starComment}`;
 
   for (const f of FACTIONS) {
     const gid = cfg.factionGroups[f];
@@ -190,7 +196,7 @@ async function broadcastSpawn(ctx, cfg, state) {
 async function cmdRespond(ctx, chatId, senderId, msg, args = []) {
   const { sock, players } = ctx;
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
   if (!player.faction) return sock.sendMessage(chatId, { text: "❌ You need a faction to respond to a teleporter." }, { quoted: msg });
 
   const state = loadState();
@@ -202,7 +208,7 @@ async function cmdRespond(ctx, chatId, senderId, msg, args = []) {
   }
   if (state.responder) {
     return sock.sendMessage(chatId, {
-      text: `❌ @${state.responder.jid.split("@")[0]} (${FACTION_LABEL[state.responder.faction]}) already responded — Kael is targeting *${FACTION_LABEL[state.victim]}*.`,
+      text: `❌ @${state.responder.jid} (${FACTION_LABEL[state.responder.faction]}) already responded — Kael is targeting *${FACTION_LABEL[state.victim]}*.`,
       mentions: [state.responder.jid],
     }, { quoted: msg });
   }
@@ -237,15 +243,22 @@ async function cmdRespond(ctx, chatId, senderId, msg, args = []) {
   adjustFactionPoints(player.faction, +RESPONDER_REWARD_FAC_PTS);
 
   // Broadcast to all faction groups
+  const starComment = botPersonality.getBattleCommentary("startBattle");
   const announce =
-    `⚔️ *RESPONSE LOCKED*\n${DIVIDER}\n` +
-    `@${senderId.split("@")[0]} (${FACTION_LABEL[player.faction]}) named *${FACTION_LABEL[victimRaw]}* as the victim.\n\n` +
-    `🌀 Kael now hunts *${FACTION_LABEL[victimRaw]}*.\n` +
-    `❤️ Kael HP: *${state.kaelHp}/${state.kaelHpMax}*  _(scaled to ${memberCount} members)_\n` +
-    `⏳ Raid duration: *${cfg.raidDurationMin} minutes*\n\n` +
-    `📜 Victim faction members: use *.engage* to take a swing at Kael.\n` +
-    `${DIVIDER}\n` +
-    `🎁 Responder reward: *+${RESPONDER_REWARD_LUCONS} Lucons*, *+${RESPONDER_REWARD_FAC_PTS}* faction points to *${FACTION_LABEL[player.faction]}*.`;
+    ui.header("RESPONSE LOCKED", "⚔️") + '\n\n' +
+    `@${senderId} (${FACTION_LABEL[player.faction]}) named *${FACTION_LABEL[victimRaw]}* as the victim.\n\n` +
+    ui.card("RAID STATUS", "🌀", [
+      { emoji: "🎯", label: "Target", value: FACTION_LABEL[victimRaw] },
+      { emoji: "❤️", label: "Kael HP", value: `${state.kaelHp}/${state.kaelHpMax}` },
+      { emoji: "⏳", label: "Duration", value: `${cfg.raidDurationMin} min` },
+      { emoji: "👥", label: "Members", value: `${memberCount} defenders` },
+    ]) + '\n\n' +
+    `📜 Victim faction members: use *${'.engage'}* to take a swing at Kael.\n\n` +
+    ui.card("REWARD", "🎁", [
+      { emoji: "💰", label: "Lucons", value: `+${RESPONDER_REWARD_LUCONS}` },
+      { emoji: "🏷️", label: "FP", value: `+${RESPONDER_REWARD_FAC_PTS}` },
+    ]) + '\n\n' +
+    `✨ *Star:* ${starComment}`;
 
   for (const f of FACTIONS) {
     const gid = cfg.factionGroups[f];
@@ -260,7 +273,7 @@ async function cmdRespond(ctx, chatId, senderId, msg, args = []) {
 async function cmdEngage(ctx, chatId, senderId, msg) {
   const { sock, players, statSystem } = ctx;
   const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+  if (!player) return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
 
   const state = loadState();
   if (state.phase !== "active") {
@@ -289,10 +302,24 @@ async function cmdEngage(ctx, chatId, senderId, msg) {
   state.engagements.push({ jid: senderId, dmg, at: Date.now() });
   saveState(state);
 
+  // Star commentary based on damage
+  let starComment = "";
+  if (dmg >= 50) {
+    starComment = botPersonality.getBattleCommentary("bigHit");
+  } else if (state.kaelHp <= 0) {
+    starComment = botPersonality.getBattleCommentary("faint");
+  }
+
+  const hpPct = Math.round((state.kaelHp / state.kaelHpMax) * 100);
   const text =
-    `⚔️ @${senderId.split("@")[0]} struck Kael for *${dmg}* damage!\n` +
-    `❤️ Kael HP: *${state.kaelHp}/${state.kaelHpMax}*\n` +
-    (state.kaelHp <= 0 ? `\n💥 *KAEL HAS FALLEN!*` : "");
+    ui.header("ENGAGEMENT", "⚔️") + '\n\n' +
+    `@${senderId} struck Kael for *${dmg}* damage!\n\n` +
+    ui.card("KAEL STATUS", "❤️", [
+      { emoji: "❤️", label: "HP", value: `${state.kaelHp}/${state.kaelHpMax}` },
+      { emoji: "📊", label: "Remaining", value: `${hpPct}%` },
+    ]) +
+    (state.kaelHp <= 0 ? `\n\n💥 *KAEL HAS FALLEN!*` : "") +
+    (starComment ? `\n\n✨ *Star:* ${starComment}` : "");
 
   await sock.sendMessage(chatId, { text, mentions: [senderId] }, { quoted: msg });
 
@@ -310,30 +337,40 @@ async function endRaid(ctx, state, reason) {
 
   if (reason === "no_response") {
     summary =
-      `🌫 *TELEPORTER CLOSED*\n${DIVIDER}\n` +
-      `No faction responded in time. Kael withdraws into the void, unsated.\n` +
+      ui.header("TELEPORTER CLOSED", "🌫") + '\n\n' +
+      `No faction responded in time. Kael withdraws into the void, unsated.\n\n` +
       `_No spoils. No losses. The Rift took the silence as an answer._`;
   } else if (reason === "victim_wins") {
     const dmgLeaders = [...state.engagements].sort((a, b) => b.dmg - a.dmg).slice(0, 3);
     adjustTreasury(state.victim, +VICTIM_WIN_LUCONS);
     adjustFactionPoints(state.victim, +VICTIM_WIN_FAC_PTS);
+    const starComment = botPersonality.getBattleCommentary("bigHit");
     summary =
-      `🏆 *${FACTION_LABEL[state.victim]} DEFEATED KAEL*\n${DIVIDER}\n` +
-      `Top damage:\n` +
-      (dmgLeaders.map((e, i) => `${i + 1}. @${e.jid.split("@")[0]} — ${e.dmg} dmg`).join("\n") || "_(no engagements)_") +
-      `\n${DIVIDER}\n` +
-      `🎁 +*${VICTIM_WIN_LUCONS}* Lucons to *${FACTION_LABEL[state.victim]}* treasury\n` +
-      `🏷 +*${VICTIM_WIN_FAC_PTS}* faction points\n` +
-      `_"Survival is the only proof Kael respects."_`;
+      ui.header(`${FACTION_LABEL[state.victim]} DEFEATED KAEL`, "🏆") + '\n\n' +
+      ui.card("TOP DAMAGE", "⚔️", dmgLeaders.map((e, i) => ({
+        emoji: i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉',
+        label: `#${i+1}`,
+        value: `${e.dmg} dmg`
+      }))) + '\n\n' +
+      ui.card("REWARDS", "🎁", [
+        { emoji: "💰", label: "Lucons", value: `+${VICTIM_WIN_LUCONS}` },
+        { emoji: "🏷️", label: "FP", value: `+${VICTIM_WIN_FAC_PTS}` },
+      ]) + '\n\n' +
+      `_"Survival is the only proof Kael respects."_\n\n` +
+      `✨ *Star:* ${starComment}`;
   } else if (reason === "timeout") {
     adjustTreasury(state.victim, -VICTIM_LOSE_LUCONS);
     adjustFactionPoints(state.victim, -VICTIM_LOSE_FAC_PTS);
+    const starComment = botPersonality.getBattleCommentary("miss");
     summary =
-      `💀 *KAEL WINS — ${FACTION_LABEL[state.victim]} BLED OUT*\n${DIVIDER}\n` +
-      `Time ran out. ${state.engagements.length} member${state.engagements.length === 1 ? "" : "s"} tried. None were enough.\n${DIVIDER}\n` +
-      `💸 -*${VICTIM_LOSE_LUCONS}* Lucons from *${FACTION_LABEL[state.victim]}* treasury\n` +
-      `🏷 -*${VICTIM_LOSE_FAC_PTS}* faction points\n` +
-      `_"Hesitation has a price."_`;
+      ui.header(`KAEL WINS — ${FACTION_LABEL[state.victim]} BLED OUT`, "💀") + '\n\n' +
+      `Time ran out. ${state.engagements.length} member${state.engagements.length === 1 ? "" : "s"} tried. None were enough.\n\n` +
+      ui.card("LOSSES", "💸", [
+        { emoji: "💰", label: "Lucons", value: `-${VICTIM_LOSE_LUCONS}` },
+        { emoji: "🏷️", label: "FP", value: `-${VICTIM_LOSE_FAC_PTS}` },
+      ]) + '\n\n' +
+      `_"Hesitation has a price."_\n\n` +
+      `✨ *Star:* ${starComment}`;
   }
 
   // History trim — keep last 20
@@ -346,6 +383,9 @@ async function endRaid(ctx, state, reason) {
     engagements: state.engagements.length,
   });
   if (state.history.length > 20) state.history.shift();
+
+  // Collect all engager JIDs for mentions in summary (before clearing)
+  const engagerJids = state.engagements.map(e => e.jid);
 
   // Reset core fields
   state.phase = "idle";
@@ -360,11 +400,10 @@ async function endRaid(ctx, state, reason) {
   delete state._nextSpawnAt;
   saveState(state);
   setLastResolvedAt(Date.now());
-
   for (const f of FACTIONS) {
     const gid = cfg.factionGroups[f];
     if (!gid) continue;
-    try { await sock.sendMessage(gid, { text: summary }); } catch {}
+    try { await sock.sendMessage(gid, { text: summary, mentions: engagerJids }); } catch {}
   }
   return state;
 }
@@ -381,29 +420,35 @@ async function cmdRaidStatus(ctx, chatId, senderId, msg) {
       ? `Next spawn possible in ~${Math.ceil(cdMs / 3600_000)}h`
       : `Spawn window open — Kael could appear any time`;
     return sock.sendMessage(chatId, {
-      text: `🌀 *AUTO-RAID STATUS*\n${DIVIDER}\nNo active raid.\n${cdLabel}`,
+      text: ui.header("AUTO-RAID STATUS", "🌀") + '\n\n' +
+        ui.card("STATUS", "📋", [
+          { emoji: "🌀", label: "Raid", value: "No active raid" },
+          { emoji: "⏳", label: "Spawn", value: cdLabel },
+        ]),
     }, { quoted: msg });
   }
 
   if (state.phase === "waiting_response") {
     const minLeft = Math.max(0, Math.ceil((state.responseDeadline - Date.now()) / 60_000));
     return sock.sendMessage(chatId, {
-      text:
-        `🌀 *TELEPORTER OPEN*\n${DIVIDER}\n` +
-        `Awaiting first response.\n⏳ ${minLeft} min left.`,
+      text: ui.header("TELEPORTER OPEN", "🌀") + '\n\n' +
+        ui.card("AWAITING RESPONSE", "⏳", [
+          { emoji: "⏳", label: "Time left", value: `${minLeft} min` },
+        ]),
     }, { quoted: msg });
   }
 
   if (state.phase === "active") {
     const minLeft = Math.max(0, Math.ceil((state.raidDeadline - Date.now()) / 60_000));
     return sock.sendMessage(chatId, {
-      text:
-        `⚔️ *RAID IN PROGRESS*\n${DIVIDER}\n` +
-        `Responder: *${FACTION_LABEL[state.responder.faction]}*\n` +
-        `Victim:    *${FACTION_LABEL[state.victim]}*\n` +
-        `Kael HP:   *${state.kaelHp}/${state.kaelHpMax}*\n` +
-        `Engagements: ${state.engagements.length}\n` +
-        `⏳ ${minLeft} min left`,
+      text: ui.header("RAID IN PROGRESS", "⚔️") + '\n\n' +
+        ui.card("RAID STATUS", "⚔️", [
+          { emoji: "🎯", label: "Responder", value: FACTION_LABEL[state.responder.faction] },
+          { emoji: "💀", label: "Target", value: FACTION_LABEL[state.victim] },
+          { emoji: "❤️", label: "Kael HP", value: `${state.kaelHp}/${state.kaelHpMax}` },
+          { emoji: "👥", label: "Engagements", value: state.engagements.length },
+          { emoji: "⏳", label: "Time left", value: `${minLeft} min` },
+        ]),
     }, { quoted: msg });
   }
 

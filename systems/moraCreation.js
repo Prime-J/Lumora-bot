@@ -187,7 +187,7 @@ async function cmdCreateMora(ctx, chatId, senderId, msg, args = []) {
   const player = players[senderId];
 
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ Register first using *.start*." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Register first using *.register*." }, { quoted: msg });
   }
 
   // Check if creation is allowed in this group (owners bypass restrictions)

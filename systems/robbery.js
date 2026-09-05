@@ -73,7 +73,7 @@ async function cmdRob(ctx, chatId, senderId, msg, args, helpers) {
   const { getMentionedJids, getRepliedJid } = helpers;
 
   const robber = players[senderId];
-  if (!robber) return sock.sendMessage(chatId, { text: "❌ Register first using *.start*." }, { quoted: msg });
+  if (!robber) return sock.sendMessage(chatId, { text: "❌ Register first using *.register*." }, { quoted: msg });
 
   // KO check
   const koLeft = isKnockedOut(senderId);

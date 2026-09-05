@@ -115,7 +115,7 @@ async function cmdEquip(ctx, chatId, senderId, msg, args = []) {
   if (!player) {
     return sock.sendMessage(
       chatId,
-      { text: "❌ Register first using `.start`." },
+      { text: "❌ Register first using `.register`." },
       { quoted: msg }
     );
   }
@@ -181,7 +181,7 @@ async function cmdUnequip(ctx, chatId, senderId, msg, args = []) {
   if (!player) {
     return sock.sendMessage(
       chatId,
-      { text: "❌ Register first using `.start`." },
+      { text: "❌ Register first using `.register`." },
       { quoted: msg }
     );
   }
@@ -237,7 +237,7 @@ async function cmdEradicate(ctx, chatId, senderId, msg, args = []) {
   if (!player) {
     return sock.sendMessage(
       chatId,
-      { text: "❌ Register first using `.start`." },
+      { text: "❌ Register first using `.register`." },
       { quoted: msg }
     );
   }

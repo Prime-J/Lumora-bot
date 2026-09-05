@@ -41,6 +41,26 @@ function calcEnergyCost(move) {
 }
 
 // ============================
+// RARITY POWER (fair curve)
+// ============================
+// Rarity increases raw power along a mapped, fair curve so rarer Mora are
+// stronger but never overwhelming. Applied wherever combatants are built
+// from a species (wild/owned Mora stats, merged forms in PvE + PvP).
+const RARITY_POWER = {
+  common:    1.00,
+  uncommon:  1.04,
+  rare:      1.09,
+  epic:      1.16,
+  legendary: 1.25,
+  mythic:    1.35,
+};
+
+function getRarityPower(rarity) {
+  const r = String(rarity || "common").trim().toLowerCase();
+  return Number(RARITY_POWER[r] || 1.0);
+}
+
+// ============================
 // TYPE EFFECTIVENESS
 // ============================
 const TYPE_CHART = {
@@ -124,4 +144,6 @@ module.exports = {
   calcEnergyCost,
   getTypeMultiplier,
   calcDamage,
+  getRarityPower,
+  RARITY_POWER,
 };

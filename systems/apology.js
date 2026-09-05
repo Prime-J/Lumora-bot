@@ -51,7 +51,7 @@ async function cmdGift(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers, loadMora } = ctx;
   const player = players[senderId];
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
   }
 
   const sub = String(args[0] || "").toLowerCase();
@@ -124,7 +124,7 @@ async function cmdGiftClaim(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers, loadMora } = ctx;
   const player = players[senderId];
   if (!player) {
-    return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
   }
   if (!player.wipedAt) {
     return sock.sendMessage(chatId, {
@@ -148,31 +148,49 @@ async function cmdGiftClaim(ctx, chatId, senderId, msg, args = []) {
     }, { quoted: msg });
   }
 
-  // Resolve species against the giftable set
+  // Resolve species against the giftable set. Exact name wins; prefix and
+  // substring only resolve when unambiguous (M2, L-08) — a wrong pick would
+  // otherwise be consumed forever.
   const giftable = getGiftableShards(loadMora);
   const q = queryRaw.toLowerCase();
-  const species =
-    giftable.find((m) => m.name.toLowerCase() === q) ||
-    giftable.find((m) => m.name.toLowerCase().includes(q));
+  let species = giftable.find((m) => m.name.toLowerCase() === q);
+  if (!species) {
+    const prefixes = giftable.filter((m) => m.name.toLowerCase().startsWith(q));
+    if (prefixes.length === 1) species = prefixes[0];
+  }
+  if (!species) {
+    const subs = giftable.filter((m) => m.name.toLowerCase().includes(q));
+    if (subs.length === 1) species = subs[0];
+  }
   if (!species) {
     return sock.sendMessage(chatId, {
-      text: `❌ *${queryRaw}* isn't on the rare/epic gift list. See *.gift list*.`,
+      text: `❌ *${queryRaw}* isn't on the rare/epic gift list, or it's ambiguous. Use the full name from *.gift list*.`,
     }, { quoted: msg });
   }
 
   // Grant Lucons
   player.lucons = Number(player.lucons || 0) + GIFT_LUCONS;
 
-  // Grant shard via shardSystem so cap is respected
+  // Grant shard via shardSystem so cap is respected. The gift must never
+  // be consumed on failure (M2, L-04): if the shard can't be delivered we
+  // roll the Lucons back and leave the claim unmarked.
   let shardLine = "";
   try {
     const shardSystem = require("./shards");
     shardSystem.ensureShardFields(player);
+    const key = shardSystem.shardKey(species);
+    const before = shardSystem.getShardCount(player, key);
     // Bypass the random drop check — use forceDrop:true to guarantee delivery
     const dropMsg = shardSystem.dropShardOnDefeat(player, species, { forceDrop: true });
+    if (shardSystem.getShardCount(player, key) <= before) {
+      throw new Error(`vault full for ${species.name} (${shardSystem.getShardCount(player, key)}/${shardSystem.getStorageCap(player, key)})`);
+    }
     shardLine = dropMsg || `💎 *${species.name}* shard added to your vault.`;
   } catch (e) {
-    shardLine = `(shard grant error: ${e?.message || e})`;
+    player.lucons = Number(player.lucons || 0) - GIFT_LUCONS;
+    return sock.sendMessage(chatId, {
+      text: `❌ Gift delivery failed — *nothing was consumed*, try again or pick another shard.\n_(reason: ${e?.message || e})_`,
+    }, { quoted: msg });
   }
 
   player.apologyClaimed = true;

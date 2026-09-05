@@ -26,7 +26,7 @@ async function cmdTamedGive(ctx, chatId, senderId, msg, args, helpers) {
   const { sock, players, savePlayers } = ctx;
   const { getMentionedJids, getRepliedJid, toUserJidFromArg, normJid } = helpers;
 
-  if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .start" });
+  if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
 
   const mentioned = getMentionedJids(msg).map(normJid);
   const replied = getRepliedJid(msg);

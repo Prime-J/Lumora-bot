@@ -11,7 +11,6 @@
 "use strict";
 
 const itemsSystem = require("./items");
-const { generateInventoryCard, PER_PAGE } = require("./inventoryCanvas");
 
 const DIVIDER      = "━━━━━━━━━━━━━━━━━━━━━━━━━";
 const SMALL_DIVIDER = "─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─";
@@ -826,7 +825,9 @@ async function cmdInventory(ctx, chatId, senderId, msg, args = []) {
   await interactiveUI.sendInventoryMenu(sock, chatId, player.inventory || {}, msg);
 
   // Visual inventory — falls back to the text card if render fails or it's empty.
+  // Canvas module is optional (excluded from deploy for now); lazy-require it.
   try {
+    const { generateInventoryCard } = require("./inventoryCanvas");
     const card = await generateInventoryCard(player, { page });
     if (card) {
       const itemsDb = itemsSystem.loadItems();

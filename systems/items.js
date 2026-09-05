@@ -6,6 +6,7 @@ const path = require("path");
 // ============================
 const DATA_DIR = path.join(__dirname, "..", "data");
 const ITEMS_FILE = path.join(DATA_DIR, "items.json");
+const ITEM_ASSETS_DIR = path.join(__dirname, "..", "assets", "items");
 const MARKET_FILE = path.join(DATA_DIR, "market.json");
 const FACTION_MARKET_FILE = path.join(DATA_DIR, "factionMarket.json");
 const SUBSCRIBERS_FILE = path.join(DATA_DIR, "subscribers.json");
@@ -104,6 +105,18 @@ function rarityRank(rarity = "Common") {
 
 function isRareOrHigher(rarity = "Common") {
   return rarityRank(rarity) >= rarityRank("Rare");
+}
+
+// Return the absolute path to an item's art if it exists on disk.
+// Operator (Prime) drops PNGs at assets/items/<itemId>.{png,jpg,jpeg,webp}.
+// The bot falls back to procedural placeholder tiles when no art is present.
+function itemImagePath(itemId) {
+  if (!itemId) return null;
+  for (const ext of ["png", "jpg", "jpeg", "webp"]) {
+    const p = path.join(ITEM_ASSETS_DIR, `${itemId}.${ext}`);
+    try { if (fs.statSync(p).isFile()) return p; } catch { /* not present */ }
+  }
+  return null;
 }
 
 // ============================
@@ -315,7 +328,10 @@ function addItem(player, itemId, qty = 1, itemsDb = null) {
     return { ok: false, reason: "Item not found." };
   }
 
-  const amount = Math.max(1, Number(qty || 1));
+  const amount = qty === undefined ? 1 : Number(qty);
+  if (!Number.isFinite(amount) || amount < 1) {
+    return { ok: false, reason: "Invalid quantity." };
+  }
   const check = canAddItemToInventory(player, itemId, amount, items);
   if (!check.ok) return check;
 
@@ -326,7 +342,10 @@ function addItem(player, itemId, qty = 1, itemsDb = null) {
 function removeItem(player, itemId, qty = 1) {
   ensurePlayerItemData(player);
 
-  const amount = Math.max(1, Number(qty || 1));
+  const amount = qty === undefined ? 1 : Number(qty);
+  if (!Number.isFinite(amount) || amount < 1) {
+    return { ok: false, reason: "Invalid quantity." };
+  }
   const current = Number(player.inventory[itemId] || 0);
 
   if (current < amount) {
@@ -470,23 +489,6 @@ function applyDurabilityDamage(player, chance = 0.4, excludeSlots = []) {
   }
 
   return results;
-}
-
-// ============================
-// CONSUMABLES HELPERS
-// ============================
-function useConsumable(player, itemId) {
-  const item = getItemById(itemId);
-  if (!item || item.category !== "consumable") return { ok: false, reason: "Not usable" };
-
-  const match = item.effect.match(/Restores (\d+)/);
-  if (match) {
-    const restore = Number(match[1]);
-    player.huntingEnergy = (player.huntingEnergy || 0) + restore;
-  }
-
-  removeItem(player, itemId, 1);
-  return { ok: true, message: `${item.name} used.` };
 }
 
 // ============================
@@ -635,6 +637,7 @@ module.exports = {
   getRarityIcon,
   rarityRank,
   isRareOrHigher,
+  itemImagePath,
   formatItemLine,
   formatGearDetails,
   sortItemsByRarityThenName,

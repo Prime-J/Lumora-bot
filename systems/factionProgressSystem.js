@@ -12,21 +12,32 @@ const FP_FILE = path.join(__dirname, "..", "data", "faction_points.json")
 // LOAD / SAVE
 // ============================
 function loadFactions() {
-  if (!fs.existsSync(FILE)) {
-    const base = {
-      harmony: { points: 0, wins: 0 },
-      purity: { points: 0, wins: 0 },
-      rift: { points: 0, wins: 0 }
+  try {
+    if (!fs.existsSync(FILE)) {
+      const base = {
+        harmony: { points: 0, wins: 0 },
+        purity: { points: 0, wins: 0 },
+        rift: { points: 0, wins: 0 }
+      }
+      fs.writeFileSync(FILE, JSON.stringify(base, null, 2))
+      return base
     }
-    fs.writeFileSync(FILE, JSON.stringify(base, null, 2))
-    return base
-  }
 
-  return JSON.parse(fs.readFileSync(FILE))
+    const raw = fs.readFileSync(FILE, "utf8")
+    return raw ? JSON.parse(raw) : { harmony: { points: 0, wins: 0 }, purity: { points: 0, wins: 0 }, rift: { points: 0, wins: 0 } }
+  } catch (e) {
+    // Corrupted / mid-write file — fall back instead of crashing the command.
+    console.log("[factionProgress] loadFactions error:", e?.message || e)
+    return { harmony: { points: 0, wins: 0 }, purity: { points: 0, wins: 0 }, rift: { points: 0, wins: 0 } }
+  }
 }
 
 function saveFactions(data) {
-  fs.writeFileSync(FILE, JSON.stringify(data, null, 2))
+  try {
+    fs.writeFileSync(FILE, JSON.stringify(data, null, 2))
+  } catch (e) {
+    console.log("[factionProgress] saveFactions error:", e?.message || e)
+  }
 }
 
 // ============================
@@ -93,8 +104,20 @@ function endSeason() {
   return winner
 }
 
+// ============================
+// RESET POINTS (hard wipe, no winner)
+// ============================
+function resetPoints() {
+  const data = loadFactions();
+  for (const f in data) {
+    data[f].points = 0;
+  }
+  saveFactions(data);
+}
+
 module.exports = {
   addFactionPoints,
   endSeason,
-  loadFactions
+  loadFactions,
+  resetPoints
 }

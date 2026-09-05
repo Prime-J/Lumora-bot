@@ -44,7 +44,10 @@ function saveBankSettings(s) {
 }
 
 function ensureBank(player) {
-  if (typeof player.bankBalance !== "number") player.bankBalance = 0;
+  // Coerce instead of nuking: a string/"500" or null from a legacy save
+  // would otherwise silently wipe the player's vault.
+  const bb = Number(player.bankBalance);
+  player.bankBalance = Number.isFinite(bb) ? Math.max(0, Math.floor(bb)) : 0;
   // Auto-register anyone who has historically used the vault — keeps
   // legacy depositors from being locked out by the new gate.
   if (typeof player.bankRegistered !== "boolean") {
@@ -111,7 +114,7 @@ function applyDepositTax(amount) {
 async function cmdBank(ctx, chatId, senderId, msg, args) {
   const { sock, players, savePlayers } = ctx;
   const p = players[senderId];
-  if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using *.start*." }, { quoted: msg });
+  if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using *.register*." }, { quoted: msg });
   ensureBank(p);
 
   const sub = String(args[0] || "").toLowerCase();
@@ -377,6 +380,7 @@ async function cmdBankVault(ctx, chatId, msg, isOwner, senderJid) {
       `🥇 Largest single vault: *${topName}* — ${topAmt.toLocaleString()}L\n` +
       `🏦 Tax pool: *${(s.totalTaxPool || 0).toLocaleString()}L*\n\n` +
       `Bank Owner: *${s.bankOwnerName}*${s.bankOwnerJid ? ` (@${String(s.bankOwnerJid).split("@")[0]})` : " — Architect"}`,
+    mentions: s.bankOwnerJid ? [s.bankOwnerJid] : [],
   }, { quoted: msg });
 }
 

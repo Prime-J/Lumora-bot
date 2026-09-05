@@ -30,6 +30,9 @@ let _stats = null;
 function stats() { if (!_stats) _stats = require("./stats"); return _stats; }
 let _quests = null;
 function quests() { if (!_quests) _quests = require("./quests"); return _quests; }
+const buttonsSystem = require("./buttons");
+const botPersonality = require("./botPersonality");
+const progression    = require("./progression");
 
 function clamp(n, lo, hi) {
   const x = Number(n);
@@ -52,6 +55,19 @@ const CHALLENGE_TTL_MS = 60_000; // 1 minute to accept
 function getBattle(chatId)         { return pvpBattles.get(chatId) || null; }
 function setBattle(chatId, state)  { pvpBattles.set(chatId, state); }
 function clearBattle(chatId)       { pvpBattles.delete(chatId); }
+
+// M2.6: force-release any PvP duel this player is in, across all chats.
+// Used by the owner .ow reset tool — the old p.inBattle flag was never set.
+function clearAllPvPFor(senderId) {
+  let n = 0;
+  for (const [chatId, b] of pvpBattles) {
+    if (b && (b.p1 === senderId || b.p2 === senderId)) {
+      pvpBattles.delete(chatId);
+      n++;
+    }
+  }
+  return n;
+}
 function getChallenge(chatId) {
   const ch = pvpChallenges.get(chatId);
   if (!ch) return null;
@@ -99,7 +115,7 @@ async function cmdBattle(ctx, chatId, senderId, msg, args = []) {
 
   const challenger = players[senderId];
   if (!challenger) {
-    return sock.sendMessage(chatId, { text: "❌ Use *.start* first." }, { quoted: msg });
+    return sock.sendMessage(chatId, { text: "❌ Use *.register* first." }, { quoted: msg });
   }
   wb().ensurePlayerCombatFields(challenger);
 
@@ -162,15 +178,22 @@ async function cmdBattle(ctx, chatId, senderId, msg, args = []) {
     createdAt: Date.now(),
   });
 
+  const nameOf = (jid) => {
+    const p = players[jid];
+    const u = p?.username && String(p.username).trim() ? String(p.username).trim() : String(jid).split("@")[0];
+    return u;
+  };
+
   const stakeLine = stake > 0 ? `\n💰 Stake: *${stake} Lucons*` : "";
-  return sock.sendMessage(chatId, {
-    text:
-      `⚔️ *PvP CHALLENGE*\n${DIVIDER}\n` +
-      `@${senderId.split("@")[0]} challenges @${targetJid.split("@")[0]}!${stakeLine}\n${DIVIDER}\n` +
-      `Target: respond with *.accept* or *.reject*.\n` +
-      `Expires in 60s.`,
-    mentions: [senderId, targetJid],
-  }, { quoted: msg });
+  buttonsSystem.mapButtons({ "✅ Accept": ".accept", "❌ Reject": ".reject" });
+  return buttonsSystem.sendButtons(sock, chatId,
+    `⚔️ *PvP CHALLENGE*\n${DIVIDER}\n` +
+    `*${nameOf(senderId)}* (@${senderId.split("@")[0]}) challenges ` +
+    `*${nameOf(targetJid)}* (@${targetJid.split("@")[0]})!${stakeLine}\n${DIVIDER}\n` +
+    `_Expires in 60s._`,
+    ["✅ Accept", "❌ Reject"],
+    { footer: `Target taps to respond 👇`, quoted: msg, mentions: [senderId, targetJid] }
+  );
 }
 
 // .accept
@@ -230,15 +253,25 @@ async function cmdAccept(ctx, chatId, senderId, msg) {
 
   const stakeLine = ch.stake > 0 ? `\n💰 Stake: *${ch.stake} Lucons*` : "";
   const header = renderBattleHeader(players, state);
-  return sock.sendMessage(chatId, {
-    text:
-      `⚔️ *BATTLE BEGINS*\n${DIVIDER}\n` +
-      `@${state.p1.split("@")[0]}  vs  @${state.p2.split("@")[0]}${stakeLine}\n${DIVIDER}\n` +
-      `${header}\n\n` +
-      `🌀 First to swing: @${firstJid.split("@")[0]}\n` +
-      `Use *.attack* to view your moves, *.attack <n>* to strike, *.charge* to refresh energy, *.forfeit* to bail.`,
-    mentions: [state.p1, state.p2, firstJid],
-  }, { quoted: msg });
+  buttonsSystem.mapButtons({
+    "⚔ Attack": ".attack",
+    "⚡ Charge": ".charge",
+    "🏳 Forfeit": ".forfeit",
+  });
+  const nameOf = (jid) => {
+    const p = players[jid];
+    const u = p?.username && String(p.username).trim() ? String(p.username).trim() : String(jid).split("@")[0];
+    return u;
+  };
+  return buttonsSystem.sendButtons(sock, chatId,
+    `⚔️ *BATTLE BEGINS*\n${DIVIDER}\n` +
+    `*${nameOf(state.p1)}* (@${state.p1.split("@")[0]})  vs  ` +
+    `*${nameOf(state.p2)}* (@${state.p2.split("@")[0]})${stakeLine}\n${DIVIDER}\n` +
+    `${header}\n\n` +
+    `🌀 First to swing: @${firstJid.split("@")[0]}`,
+    ["⚔ Attack", "⚡ Charge", "🏳 Forfeit"],
+    { footer: `Your turn — tap to act 👇`, quoted: msg, mentions: [state.p1, state.p2] }
+  );
 }
 
 // .reject
@@ -280,11 +313,19 @@ async function cmdAttack(ctx, chatId, senderId, msg, args = []) {
   const moveset = wb().buildPlayerMoveset(attacker, loadMora);
   const pickRaw = args.join(" ").trim();
   if (!pickRaw) {
-    return sock.sendMessage(chatId, {
-      text:
-        `🎴 *Your moves* — pick with *.attack <n>*\n\n` +
-        wb().renderPlayerMoveset(moveset, attacker),
-    }, { quoted: msg });
+    const moveLabels = moveset.slice(0, 6).map((m, i) => `${i + 1}. ${m.name}`);
+    const allLabels = moveLabels.concat(["⚡ Charge", "🏳 Forfeit"]).slice(0, 8);
+    const labelMap = {};
+    moveset.slice(0, 6).forEach((m, i) => { labelMap[`${i + 1}. ${m.name}`] = `.attack ${i + 1}`; });
+    labelMap["⚡ Charge"] = ".charge";
+    labelMap["🏳 Forfeit"] = ".forfeit";
+    buttonsSystem.mapButtons(labelMap);
+    return buttonsSystem.sendButtons(sock, chatId,
+      `🎴 *Your moves* — _tap one to fire_\n\n` +
+      wb().renderPlayerMoveset(moveset, attacker),
+      allLabels,
+      { footer: `Or type: .attack <n>`, quoted: msg }
+    );
   }
 
   const move = wb().resolvePlayerMove(pickRaw, moveset);
@@ -414,13 +455,22 @@ async function cmdAttack(ctx, chatId, senderId, msg, args = []) {
         : rarityPct >= 0.05 ? "  ✨*RARE!*"
         : "";
 
+      // Star commentary based on battle events
+      let starComment = "";
+      if (crit || res.mult >= 1.2) {
+        starComment = botPersonality.getBattleCommentary("bigHit");
+      } else if (res.dmg <= 5) {
+        starComment = botPersonality.getBattleCommentary("miss");
+      }
+
       logs.push(
         `⚔️ @${senderId.split("@")[0]}${tag} used *${move.name}* → *${res.dmg}* to @${defenderJid.split("@")[0]}` +
         (crit ? "  ✨*CRIT!*" : "") +
         effTxt +
         (corruptedActive ? "  ☠*CORRUPTED!*" : "") +
         rarityTag +
-        (braceHalved ? "  🛡*BRACED — halved!*" : "")
+        (braceHalved ? "  🛡*BRACED — halved!*" : "") +
+        (starComment ? `\n\n✨ *Star:* ${starComment}` : "")
       );
       if (counterDealt) {
         attacker.playerHp = Math.max(0, Number(attacker.playerHp || 0) - counterDealt);
@@ -455,10 +505,16 @@ async function cmdAttack(ctx, chatId, senderId, msg, args = []) {
   savePlayers(players);
 
   const header = renderBattleHeader(players, state);
-  return sock.sendMessage(chatId, {
-    text: `${logs.join("\n")}\n\n${header}\n\n🌀 Now: @${state.turnOwner.split("@")[0]}`,
-    mentions: [state.p1, state.p2, state.turnOwner],
-  }, { quoted: msg });
+  buttonsSystem.mapButtons({
+    "⚔ Attack": ".attack",
+    "⚡ Charge": ".charge",
+    "🏳 Forfeit": ".forfeit",
+  });
+  return buttonsSystem.sendButtons(sock, chatId,
+    `${logs.join("\n")}\n\n${header}\n\n🌀 Now: @${state.turnOwner.split("@")[0]}`,
+    ["⚔ Attack", "⚡ Charge", "🏳 Forfeit"],
+    { footer: `Your turn — tap to act 👇`, quoted: msg, mentions: [state.turnOwner] }
+  );
 }
 
 // .charge — spend turn for energy
@@ -481,11 +537,16 @@ async function cmdCharge(ctx, chatId, senderId, msg) {
   savePlayers(players);
 
   const header = renderBattleHeader(players, state);
-  return sock.sendMessage(chatId, {
-    text:
-      `🔋 @${senderId.split("@")[0]} focused — +${gain} energy.\n\n${header}\n\n🌀 Now: @${defenderJid.split("@")[0]}`,
-    mentions: [state.p1, state.p2, defenderJid],
-  }, { quoted: msg });
+  buttonsSystem.mapButtons({
+    "⚔ Attack": ".attack",
+    "⚡ Charge": ".charge",
+    "🏳 Forfeit": ".forfeit",
+  });
+  return buttonsSystem.sendButtons(sock, chatId,
+    `🔋 @${senderId.split("@")[0]} focused — +${gain} energy.\n\n${header}\n\n🌀 Now: @${defenderJid.split("@")[0]}`,
+    ["⚔ Attack", "⚡ Charge", "🏳 Forfeit"],
+    { footer: `Your turn — tap to act 👇`, quoted: msg, mentions: [defenderJid] }
+  );
 }
 
 // .forfeit
@@ -545,14 +606,30 @@ async function finishBattle(ctx, chatId, msg, state, winnerJid, loserJid, logs =
     }
   }
 
-  // Player XP — winner gets a healthy bump, loser still learns a little
-  const winXp = 60;
-  const loseXp = 25;
-  const wRes = xpSystem.addPlayerXp(W, winXp);
-  const lRes = xpSystem.addPlayerXp(L, loseXp);
+  // PvP does NOT award DΞP — it awards Faction Stat (Honor/Bounty/Resonance)
+  // Use progression engine for PvP reward calculation
+  const pvpResult = progression.calculatePvPReward(W, L, {
+    recentKills: W._recentKills?.[L.id] || 0,
+  });
+  const factionStatGained = pvpResult.reward;
+  const factionStatLost = pvpResult.loserPenalty.amount;
+
+  // Apply faction stat changes
+  progression.addFactionStat(W, factionStatGained);
+  progression.subtractFactionStat(L, factionStatLost);
+
+  // Track recent kills for anti-farm
+  if (!W._recentKills) W._recentKills = {};
+  W._recentKills[L.id] = (W._recentKills[L.id] || 0) + 1;
+  // Reset after 24 hours (tracked by timestamp)
+  W._recentKillTimestamps = W._recentKillTimestamps || {};
+  W._recentKillTimestamps[L.id] = Date.now();
+
+  const factionStatKey = progression.getFactionStatKey(W.faction);
+  const factionStatEmoji = progression.getFactionStatEmoji(W.faction);
   const xpLine =
-    `🌟 XP — winner +${winXp}${wRes.leveledUp ? ` 🆙 +${wRes.levels}` : ""}` +
-    `  •  loser +${loseXp}${lRes.leveledUp ? ` 🆙 +${lRes.levels}` : ""}`;
+    `${factionStatEmoji} *${factionStatKey.charAt(0).toUpperCase() + factionStatKey.slice(1)}* — winner +${factionStatGained}  •  loser -${factionStatLost}` +
+    (pvpResult.modifiers.length ? ` _(${pvpResult.modifiers.join(', ')})_` : '');
 
   // Faction points — only if both factioned
   let factionLine = "";
@@ -594,4 +671,5 @@ module.exports = {
   cmdForfeit,
   getBattle,
   clearBattle,
+  clearAllPvPFor,
 };
