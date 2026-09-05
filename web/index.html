@@ -947,8 +947,17 @@ async function api(path, opts={}) {
   const headers = {'Content-Type':'application/json'};
   if(adminToken) headers['X-Admin-Token']=adminToken;
   if(broadcastToken) headers['X-Admin-Token']=broadcastToken;
-  const res = await fetch(path, {...opts, headers:{...headers,...opts.headers}});
-  return res.json();
+  try {
+    const res = await fetch(path, {...opts, headers:{...headers,...opts.headers}});
+    if(!res.ok) {
+      const err = await res.json().catch(()=>({error:'HTTP '+res.status}));
+      return { ok:false, error: err.error || ('HTTP '+res.status) };
+    }
+    return await res.json();
+  } catch(e) {
+    console.error('API error:', path, e.message);
+    return { ok:false, error: e.message };
+  }
 }
 function toast(msg, isError) {
   const t=document.getElementById('toast');
@@ -996,8 +1005,8 @@ function animateNumber(id, target) {
 
 // MORA
 async function loadMora() {
-  const res=await api('/api/mora'); if(!res.ok)return;
-  allMora=Array.isArray(res.mora)?res.mora:Object.values(res.mora);
+  const res=await api('/api/mora'); if(!res.ok){toast('Failed to load Mora',true);return;}
+  allMora=Array.isArray(res.mora)?res.mora:Object.values(res.mora)||[];
   renderMora(allMora);
 }
 function renderMora(list) {
@@ -1022,8 +1031,8 @@ function filterMora() {
 
 // ITEMS
 async function loadItems() {
-  const res=await api('/api/items'); if(!res.ok)return;
-  allItems=res.items; renderItems(allItems);
+  const res=await api('/api/items'); if(!res.ok){toast('Failed to load items',true);return;}
+  allItems=res.items||[]; renderItems(allItems);
 }
 function renderItems(list) {
   document.getElementById('item-list').innerHTML=list.map(i=>`
