@@ -8064,6 +8064,37 @@ Try: *.help-game* or *.help-bot*`,
         } catch {}
         return;
       } }
+      // - .test--native-flow - test native interactive flow -
+      if (command === "test--native-flow" || command === "test--native") {
+        return interactiveUI.sendNativeFlow(sock, chatId, {
+          title: "🏪 LUMORA MARKET",
+          body: `💰 Your Lucons: *${players[senderId]?.lucons || 0} LC
+Featured
+⚔️ Ember Blade — 8,000 LC
+🧪 XP Elixir — 2,500 LC
+📜 Wind Step Scroll — SOLD OUT
+
+Select an item below to inspect it.`,
+          buttons: ["⚔️ Weapons", "📜 Scrolls", "🧪 Consumables", "💎 Rare", "🛒 My Purchases"],
+          buttonCmds: [".market weapons", ".market scrolls", ".market consumables", ".market rare", ".market purchases"],
+          replyOpts: { quoted: msg },
+          fallbackText: `🏪 LUMORA MARKET
+💰 Your Lucons: ${players[senderId]?.lucons || 0} LC
+
+Featured
+⚔️ Ember Blade — 8,000 LC
+🧪 XP Elixir — 2,500 LC
+📜 Wind Step Scroll — SOLD OUT
+
+Select an item below to inspect it.
+
+1. ⚔️ Weapons
+2. 📜 Scrolls
+3. 🧪 Consumables
+4. 💎 Rare
+5. 🛒 My Purchases`,
+        });
+      }
       if (command === "factioninfo" || command === "faction" && !args[0]) {
         const p = players[senderId];
         if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
