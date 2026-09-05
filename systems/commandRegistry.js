@@ -162,7 +162,7 @@ const COMMANDS = [
 
   // ── 🎯 Quests & Progression ──
   { name: "quests",      aliases: ["quest"],         category: "game", subcat: "progression",desc: "View active quests",                           usage: ".quests" },
-  { name: "whisper",     aliases: [],                category: "game", subcat: "progression",desc: "Hidden command (revealed by scrolls)",         usage: ".whisper npc" },
+  { name: "whisper",     aliases: [],                category: "game", subcat: "progression",desc: "Speak to a quest NPC — your active quest tells you who to meet", usage: ".whisper npc" },
   { name: "claim-ref",   aliases: [],                category: "game", subcat: "progression",desc: "Claim referral reward",                        usage: ".claim-ref" },
   { name: "pick-ref",    aliases: [],                category: "game", subcat: "progression",desc: "Pick referral reward",                         usage: ".pick-ref choice" },
   { name: "myref",       aliases: [],                category: "game", subcat: "progression",desc: "Share your referral code",                     usage: ".myref" },

@@ -9,7 +9,7 @@
 // ║    • auto-accepts the linked quest (if not already accepted)  ║
 // ║    • reveals the quest text + requirements                    ║
 // ║    • +1 Intelligence to the player                            ║
-// ║    • DMs any hidden commands tied to active quest steps       ║
+// ║    • DMs the quest with its per-step commands                 ║
 // ╚═══════════════════════════════════════════════════════════════╝
 "use strict";
 
@@ -163,8 +163,6 @@ async function cmdOpen(ctx, chatId, senderId, msg, args = []) {
 
   let questBlockForDm = "";
   let alreadyMsg = "";
-  let hiddenDmLines = [];
-  let chainGated = false;
 
   if (!questDef) {
     questBlockForDm = `_(scroll's linked quest "${questId}" is missing from data/quests.json)_`;
@@ -175,21 +173,11 @@ async function cmdOpen(ctx, chatId, senderId, msg, args = []) {
   } else {
     player.quests.active[questId] = { progress: 0, startedAt: Date.now(), stepProgress: {} };
     questBlockForDm = questSystem.renderQuestDetail(questDef);
-    chainGated = questDef.requirement?.kind === "chain";
-
-    // Hidden commands hint
-    if (questDef.hiddenCommands && typeof questDef.hiddenCommands === "object") {
-      hiddenDmLines.push(`🔮 *Hidden commands unlocked for "${questDef.name}":*`);
-      for (const [npc, info] of Object.entries(questDef.hiddenCommands)) {
-        hiddenDmLines.push(`  • When you reach *${npc}*, run: *.${info.cmd}*`);
-      }
-      hiddenDmLines.push(`_Don't share these. They only work while the quest is active._`);
-    }
   }
 
   savePlayers(players);
 
-  // ─── DM the full quest detail (+ hidden commands) to the player ───
+  // ─── DM the full quest detail to the player ───
   // Group chat only sees a short tease. This keeps the quest text
   // private and reduces spam in shared chats.
   let dmSent = false;
@@ -197,8 +185,7 @@ async function cmdOpen(ctx, chatId, senderId, msg, args = []) {
     const dmText =
       `📜 *${scroll.name}* — opened\n${DIVIDER}\n` +
       `_${scroll.lore}_\n${DIVIDER}\n` +
-      `${questBlockForDm}` +
-      (hiddenDmLines.length ? `\n\n${hiddenDmLines.join("\n")}` : "");
+      `${questBlockForDm}`;
     try {
       await sock.sendMessage(senderId, { text: dmText });
       dmSent = true;
@@ -214,15 +201,12 @@ async function cmdOpen(ctx, chatId, senderId, msg, args = []) {
     : dmSent
       ? `📜 *${scroll.name} — opened*\n` +
         `🧠 *+1 Intelligence*  _(now ${player.intelligence})_\n` +
-        (chainGated
-          ? `_The quest log + hidden command have been DM'd to you. Check your private chat to begin._`
-          : `_Quest details DM'd to you. Check your private chat._`)
+        `_Quest details DM'd to you — check your private chat to begin._`
       : // DM failed — print everything inline as the fallback
         `📜 *SCROLL OPENED — ${scroll.name}*\n${DIVIDER}\n` +
         `_${scroll.lore}_\n` +
         `🧠 *+1 Intelligence*  _(now ${player.intelligence})_\n${DIVIDER}\n` +
-        questBlockForDm +
-        (hiddenDmLines.length ? `\n\n${hiddenDmLines.join("\n")}` : "");
+        questBlockForDm;
 
   if (imagePath) {
     try {

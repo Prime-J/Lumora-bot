@@ -185,6 +185,98 @@ function allStepsDone(steps, active) {
   return true;
 }
 
+// ── Guided-flow helpers ──
+// Every quest view shows the player the EXACT next action instead of
+// leaving them stuck on "find this NPC somewhere".
+
+// Human label for one quest step.
+function stepLabel(st, i) {
+  return (
+    st.label ||
+    (st.kind === "meetNpc"    ? `Meet ${st.npc}` :
+     st.kind === "winBattles" ? `Win ${st.count} battles` :
+     String(st.kind || "step " + (i + 1)))
+  );
+}
+
+// The literal command a player types to complete a step, if any.
+function stepCommand(st, def) {
+  if (!st) return null;
+  if (st.kind === "meetNpc") {
+    // Prefer the hidden command registered for this NPC, fall back to .whisper <npc>
+    const hc = def?.hiddenCommands?.[st.npc]?.cmd;
+    if (hc) return "." + String(hc).replace(/^\./, "");
+    return `.whisper ${String(st.npc || "").toLowerCase()}`;
+  }
+  if (st.kind === "winBattles") return null; // done via .hunt / battles
+  return null;
+}
+
+// Progress counters for a winBattles step.
+function stepCount(st, active, i) {
+  const sp = active?.stepProgress || {};
+  return Number(sp[i + "_count"] || 0);
+}
+
+// Battles still needed to clear a winBattles step.
+function battlesLeft(st, active, i) {
+  return Math.max(0, Number(st.count || 1) - stepCount(st, active, i));
+}
+
+// Index of the first step not yet completed, or -1 when all are done.
+function firstPendingIdx(steps, sp) {
+  for (let i = 0; i < steps.length; i++) if (!sp[i]) return i;
+  return -1;
+}
+
+// Text describing exactly what to do for the NEXT pending step.
+// Returns null when every step is done.
+function nextStepGuide(def, active) {
+  const req = def?.requirement || {};
+  if (req.kind !== "chain" || !Array.isArray(req.steps)) return null;
+  const idx = firstPendingIdx(req.steps, active?.stepProgress || {});
+  if (idx < 0) return null;
+  const st = req.steps[idx];
+  const base = stepLabel(st, idx);
+  if (st.kind === "meetNpc") {
+    return `👉 *Next:* ${base}\n   💬 How: type *${stepCommand(st, def)}* to speak to ${st.npc}`;
+  }
+  if (st.kind === "winBattles") {
+    const left = battlesLeft(st, active, idx);
+    let line = `👉 *Next:* ${base}`;
+    if (st.hint) line += `\n   _${st.hint}_`;
+    line += `\n   ⚔️ How: fight wild Mora with *.hunt* — ${left} more win${left === 1 ? "" : "s"} needed`;
+    return line;
+  }
+  return `👉 *Next:* ${base}`;
+}
+
+// Per-step status lines: ✅ done / 🔄 next / ⬜ later.
+function stepStatusLines(def, active) {
+  const req = def?.requirement || {};
+  if (req.kind !== "chain" || !Array.isArray(req.steps)) return [];
+  const sp = active?.stepProgress || {};
+  const next = firstPendingIdx(req.steps, sp);
+  const lines = [];
+  req.steps.forEach((st, i) => {
+    const label = stepLabel(st, i);
+    if (sp[i]) {
+      lines.push(`  ✅ ${label}`);
+    } else if (i === next) {
+      const cmd = stepCommand(st, def);
+      const how = cmd
+        ? ` — *${cmd}*`
+        : st.kind === "winBattles"
+        ? ` — fight with *.hunt* (${battlesLeft(st, active, i)} left)`
+        : "";
+      lines.push(`  🔄 ${label}${how}`);
+    } else {
+      lines.push(`  ⬜ ${label}`);
+    }
+  });
+  return lines;
+}
+
 // Render a single quest's detail block for messages (used by .quest, .open).
 function renderQuestDetail(def) {
   if (!def) return "_(missing quest)_";
@@ -200,14 +292,11 @@ function renderQuestDetail(def) {
     lines.push(`  • Win *${req.count}* battles`);
   } else if (req.kind === "chain" && Array.isArray(req.steps)) {
     req.steps.forEach((st, i) => {
-      const label =
-        st.label ||
-        (st.kind === "meetNpc"   ? `Meet ${st.npc}` :
-         st.kind === "winBattles" ? `Win ${st.count} battles` :
-         st.kind === "deliverItem" ? `Deliver ${st.item} to ${st.to}` :
-         st.kind);
+      const label = stepLabel(st, i);
+      const cmd = stepCommand(st, def);
       const hint = st.hint ? `\n     _${st.hint}_` : "";
-      lines.push(`  ${i + 1}. ${label}${hint}`);
+      const cmdLine = cmd ? `\n     ⌨️ *${cmd}*` : "";
+      lines.push(`  ${i + 1}. ${label}${hint}${cmdLine}`);
     });
   } else {
     lines.push(`  • ${req.kind || "unspecified"}`);
@@ -284,22 +373,8 @@ async function cmdQuests(ctx, chatId, senderId, msg) {
       if (req.kind === "chain" && Array.isArray(req.steps)) {
         const sp = a.stepProgress || {};
         const done = req.steps.filter((_, i) => sp[i]).length;
-        {
-          let _hint = "";
-          for (let si = 0; si < req.steps.length; si++) {
-            if (sp[si]) continue;
-            const st = req.steps[si];
-            if (st.kind === "meetNpc") { _hint = String.fromCharCode(10) + String.fromCharCode(0x1f4ac) + " Next: *.whisper " + String(st.npc).toLowerCase() + "*"; break; }
-            if (st.kind === "winBattles") {
-              const cur = Number(sp[si + "_count"] || 0);
-              _hint = String.fromCharCode(10) + String.fromCharCode(0x2694, 0xfe0f) + " Next: win *" + (st.count - cur) + "* more wild battles";
-              if (st.hint) _hint += String.fromCharCode(10) + "   _" + st.hint + "_";
-              break;
-            }
-          }
-          progressLine += _hint;
-        }
-        progressLine = `  Progress: *${done}/${req.steps.length}* steps`;
+        const statusLines = stepStatusLines(def, a);
+        progressLine = `  Progress: *${done}/${req.steps.length}* steps\n${statusLines.join("\n")}`;
       } else {
         const need = Number(req.count || 1);
         const have = Number(a.progress || 0);
@@ -366,19 +441,24 @@ async function cmdQuest(ctx, chatId, senderId, msg, args = []) {
     const req = def.requirement || {};
     let reqLine;
     if (req.kind === "chain" && Array.isArray(req.steps)) {
-      reqLine = req.steps.map((st, i) =>
-        `  ${i + 1}. ${st.label || (st.kind === "meetNpc" ? `Meet ${st.npc}` : `Win ${st.count} battles`)}`
-      ).join("\n");
+      reqLine = req.steps.map((st, i) => {
+        const cmd = stepCommand(st, def);
+        const hint = st.hint ? `\n     _${st.hint}_` : "";
+        const cmdLine = cmd ? `\n     ⌨️ *${cmd}*` : "";
+        return `  ${i + 1}. ${stepLabel(st, i)}${hint}${cmdLine}`;
+      }).join("\n");
     } else {
       reqLine = `  Win *${Number(req.count || 1)}* battles`;
     }
+    const nextGuide = nextStepGuide(def, player.quests.active[qId]);
     return sock.sendMessage(chatId, {
       text:
         `📜 *QUEST ACCEPTED*\n${DIVIDER}\n` +
         `*${def.name}*  —  ${def.giver}\n${DIVIDER}\n` +
         `_${def.lore}_\n\n` +
         `🎯 Requirement:\n${reqLine}\n` +
-        `🎁 Reward: unlock *${loadStyles()[def.reward?.style]?.name || def.reward?.style || "—"}*` +
+        (nextGuide ? `\n${nextGuide}\n` : "") +
+        `\n🎁 Reward: unlock *${loadStyles()[def.reward?.style]?.name || def.reward?.style || "—"}*` +
         (def.reward?.lucons ? ` + ${def.reward.lucons} Lucons` : ""),
     }, { quoted: msg });
   }
@@ -666,7 +746,18 @@ async function cmdWhisper(ctx, chatId, senderId, msg, args = []) {
     lines.push(`> _"${matchedDef.info.phrase}"_`);
     lines.push(``);
     for (const a of advanced) {
-      lines.push(`📜 *${a.def.name}* — step ${a.stepIdx + 1} complete: ${a.step.label || `Meet ${a.step.npc}`}`);
+      lines.push(`📜 *${a.def.name}* — step ${a.stepIdx + 1} complete: ${stepLabel(a.step, a.stepIdx)}`);
+    }
+    // Guide the player to the NEXT step of each advanced quest.
+    lines.push(``);
+    for (const a of advanced) {
+      const next = nextStepGuide(a.def, player.quests.active[a.qId]);
+      if (next) {
+        lines.push(`🧭 *${a.def.name}* — keep going!`);
+        lines.push(next);
+      } else {
+        lines.push(`🧭 *${a.def.name}* — all steps complete. Claiming reward…`);
+      }
     }
   } else {
     lines.push(`*${matchedDef.npc}* nods, but the moment passes — that step is already done or not yet open.`);
