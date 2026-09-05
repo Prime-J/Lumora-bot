@@ -1049,11 +1049,11 @@ function filterItems() {
 
 // STYLES
 async function loadStyles() {
-  const res=await api('/api/styles'); if(!res.ok)return;
-  allStyles=res.styles; renderStyles(allStyles);
+  const res=await api('/api/styles'); if(!res.ok){toast('Failed to load styles',true);return;}
+  allStyles=res.styles||[]; renderStyles(allStyles);
 }
 function renderStyles(list) {
-  document.getElementById('style-grid').innerHTML=list.map(s=>`
+  document.getElementById('style-grid').innerHTML=(list||[]).map(s=>`
     <div class="style-card">
       <div style="display:flex;gap:12px;align-items:flex-start;">
         <img src="/api/styles/image/${s.id}" alt="${s.name}" onerror="this.style.display='none'" style="width:80px;height:80px;border-radius:8px;object-fit:cover;border:2px solid var(--border);flex-shrink:0;" />
@@ -1062,8 +1062,8 @@ function renderStyles(list) {
             <span class="style-name">${s.name}</span>
             <span class="badge ${(RARITY_CLASS[s.rarity]||'rarity-common')}">${s.rarity}</span>
           </div>
-          <div class="style-meta">${TYPE_ICONS[s.type]||''} ${s.type} · ${s.faction||'Any Faction'} · Quest: ${s.unlockQuest}</div>
-          ${(s.moves||[]).map(m=>`<div class="move"><strong>${m.name}</strong> — <span class="move-power">P:${m.power}</span> · <span class="move-acc">A:${m.accuracy}%</span> · ⚡${m.energyCost}</div>`).join('')}
+          <div class="style-meta">${TYPE_ICONS[s.type]||''} ${s.type} · ${s.faction?s.faction:'Any Faction'} · Quest: ${s.unlockQuest?s.unlockQuest:'—'}</div>
+          ${!s.moves||s.moves.length===0?'':'<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">' + (s.moves||[]).map(m=>`<div class="move"><strong>${m.name}</strong> — <span class="move-power">P:${m.power}</span> · <span class="move-acc">A:${m.accuracy}%</span> · ⚡${m.energyCost}`</div>').join('')}
         </div>
       </div>
     </div>
@@ -1098,8 +1098,8 @@ function renderTrading(list) {
 async function broadcastLogin() {
   const pass=document.getElementById('broadcast-pass').value;
   const res=await api('/api/admin/login',{method:'POST',body:JSON.stringify({password:pass})});
-  if(res.ok){broadcastToken=res.token;document.getElementById('broadcast-login').style.display='none';document.getElementById('broadcast-panel').style.display='block';toast('Logged in!');}
-  else toast('Invalid password',true);
+  if(res.ok){broadcastToken=res.token;document.getElementById('broadcast-login').style.display='none';document.getElementById('broadcast-panel').style.display='block';toast('✅ Logged in!');}
+  else {toast('❌ Invalid password',true);document.getElementById('broadcast-pass').value='';}
 }
 function updateBroadcastPreview() {
   const msg=document.getElementById('broadcast-msg').value;
@@ -1118,8 +1118,8 @@ async function sendBroadcast() {
 async function adminLogin() {
   const pass=document.getElementById('admin-pass').value;
   const res=await api('/api/admin/login',{method:'POST',body:JSON.stringify({password:pass})});
-  if(res.ok){adminToken=res.token;document.getElementById('admin-login').style.display='none';document.getElementById('admin-panel').style.display='block';loadAdminData();toast('Admin logged in!');}
-  else toast('Invalid password',true);
+  if(res.ok){adminToken=res.token;document.getElementById('admin-login').style.display='none';document.getElementById('admin-panel').style.display='block';loadAdminData();toast('✅ Admin logged in!');}
+  else {toast('❌ Invalid password',true);document.getElementById('admin-pass').value='';}
 }
 async function loadAdminData() {
   const [players,mora,items] = await Promise.all([api('/api/players'),api('/api/mora'),api('/api/items')]);
