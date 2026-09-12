@@ -363,6 +363,8 @@ const tutorialSystem = require('./systems/tutorial');
 const adminTokens = require('./systems/adminTokens');
 const artpackSystem = require('./systems/artpack');
 const mongoDb = require('./db/mongo');
+const downloadSystem = require('./systems/downloads');
+const logoSystem = require('./systems/logos');
 
 // ============================
 // NEW COMMANDS — shown in .help for 12 hours after addedAt
@@ -8139,6 +8141,19 @@ Select an item below to inspect it.`,
             `🕶 Rift Seekers — high-risk, high-reward power\n\n` +
             `Use *${PREFIX}help* to get commands.`,
         });
+      }
+
+      // ============================
+      // 📥 DOWNLOADS + 🎨 LOGO — route maps owned by the modules
+      // ============================
+      if (downloadSystem.ROUTES[command]) {
+        return downloadSystem.ROUTES[command](sock, chatId, msg, args, PREFIX);
+      }
+      if (command === "logo") {
+        return logoSystem.handleLogo(sock, chatId, msg, args, PREFIX);
+      }
+      if (logoSystem.SHORTCUTS.has(command)) {
+        return logoSystem.handleLogo(sock, chatId, msg, args, PREFIX, command);
       }
 
       return sock.sendMessage(chatId, { text: `❓ Unknown command. Use *${PREFIX}help*` });

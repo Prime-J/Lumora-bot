@@ -210,6 +210,23 @@ const COMMANDS = [
   { name: "q",           aliases: ["quote"],         category: "bot", subcat: "media",      desc: "Quote reply → sticker",                       usage: ".q" },
   { name: "artpic",      aliases: ["art","art-pack","artpack"], category: "bot", subcat: "media",     desc: "Fetch anime artwork",                         usage: ".artpic" },
 
+  // ── 📥 Downloads (verified-live sources only) ──
+  { name: "tiktok",      aliases: ["tt"],            category: "bot", subcat: "downloads",  desc: "Download a TikTok video (no watermark)",       usage: ".tiktok <URL>" },
+  { name: "tiktokmp3",   aliases: ["ttmp3"],         category: "bot", subcat: "downloads",  desc: "Extract TikTok audio as MP3",                  usage: ".tiktokmp3 <URL>" },
+  { name: "twitter",     aliases: ["x"],             category: "bot", subcat: "downloads",  desc: "Download tweet media (image/video)",           usage: ".twitter <URL>" },
+  { name: "ytinfo",      aliases: ["yt"],            category: "bot", subcat: "downloads",  desc: "YouTube info card (title/author/thumb)",       usage: ".ytinfo <URL>" },
+  { name: "dl",          aliases: ["download"],      category: "bot", subcat: "downloads",  desc: "Universal downloader — auto-detects platform", usage: ".dl <URL>" },
+
+  // ── 🎨 Logo generator ──
+  { name: "logo",        aliases: [],                category: "bot", subcat: "logos",      desc: "Generate styled text logo",                    usage: ".logo <style> [color] [size] <text>" },
+  { name: "neon",        aliases: [],                category: "bot", subcat: "logos",      desc: "Shortcut: .logo neon <text>",                  usage: ".neon <text>" },
+  { name: "gradient",    aliases: [],                category: "bot", subcat: "logos",      desc: "Shortcut: .logo gradient <text>",              usage: ".gradient <text>" },
+  { name: "galaxy",      aliases: [],                category: "bot", subcat: "logos",      desc: "Shortcut: .logo galaxy <text>",                usage: ".galaxy <text>" },
+  { name: "glitch",      aliases: [],                category: "bot", subcat: "logos",      desc: "Shortcut: .logo glitch <text>",                usage: ".glitch <text>" },
+  { name: "fire",        aliases: [],                category: "bot", subcat: "logos",      desc: "Shortcut: .logo fire <text>",                  usage: ".fire <text>" },
+  { name: "gold",        aliases: [],                category: "bot", subcat: "logos",      desc: "Shortcut: .logo gold <text>",                  usage: ".gold <text>" },
+  { name: "ice",         aliases: [],                category: "bot", subcat: "logos",      desc: "Shortcut: .logo ice <text>",                   usage: ".ice <text>" },
+
   // ── 🎮 Entertainment ──
   { name: "8ball",       aliases: [],                category: "bot", subcat: "entertainment", desc: "Magic 8-ball — ask a question",              usage: ".8ball Will I win?" },
   { name: "flip",        aliases: ["coinflip"],      category: "bot", subcat: "entertainment", desc: "Coin flip",                                usage: ".flip" },
@@ -366,6 +383,8 @@ const GAME_CATEGORIES = [
 
 const BOT_CATEGORIES = [
   { id: "media",        emoji: "🎵", name: "Media",        desc: "Stickers, images, quotes" },
+  { id: "downloads",    emoji: "📥", name: "Downloads",    desc: "TikTok, Twitter/X, YouTube info" },
+  { id: "logos",        emoji: "🎨", name: "Logos",        desc: "Styled text logo generator" },
   { id: "entertainment",emoji: "🎮", name: "Entertainment",desc: "Fun games, rolls, roasts" },
   { id: "utility",      emoji: "🛠️", name: "Utilities",   desc: "AFK, links, bug reports" },
   { id: "ai",           emoji: "🤖", name: "AI / Prijo",  desc: "Steward AI controls" },
