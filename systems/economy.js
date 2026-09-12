@@ -93,36 +93,7 @@ function displayName(players, jid) {
 }
 
 // ===== Daily claim: 100 lucons =====
-// ── Bible verse of the day ──────────────────────────────────
-const BIBLE_VERSES = [
-  { ref: "Proverbs 3:5-6", text: "Trust in the LORD with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight."
-  },
-  { ref: "Proverbs 11:25", text: "A generous person will prosper; whoever refreshes others will be refreshed."
-  },
-  { ref: "Proverbs 13:11", text: "Dishonest money dwindles away, but whoever gathers money little by little makes it grow."
-  },
-  { ref: "Proverbs 14:23", text: "All hard work brings a profit, but mere talk leads only to poverty."
-  },
-  { ref: "Proverbs 16:3", text: "Commit to the LORD whatever you do, and he will establish your plans."
-  },
-  { ref: "Proverbs 21:5", text: "The plans of the diligent lead to profit as surely as haste leads to poverty."
-  },
-  { ref: "Proverbs 22:1", text: "A good name is more desirable than great riches; to be esteemed is better than silver or gold."
-  },
-  { ref: "Proverbs 28:20", text: "Whoever can be trusted with very little can also be trusted with much."
-  },
-  { ref: "Psalms 82:6", text: "You are gods, children of the Most High, all of you."
-  },
-];
-
-const LUMORA_MOTTO_VERSE = BIBLE_VERSES.find(v => v.ref === "Psalms 82:6");
-
-function getDailyVerse() {
-  // 30% chance of the Lumora motto, 70% random Proverb
-  if (Math.random() < 0.3) return LUMORA_MOTTO_VERSE;
-  const proverbs = BIBLE_VERSES.filter(v => v.ref !== "Psalms 82:6");
-  return proverbs[Math.floor(Math.random() * proverbs.length)];
-}
+const { getVerse, appendVerse } = require('./bibleVerses');
 
 async function cmdDaily(ctx, chatId, senderId) {
   const { sock, players, savePlayers } = ctx;
@@ -237,7 +208,7 @@ async function cmdDaily(ctx, chatId, senderId) {
 
   const streakLine = `🔥 *Login Streak:* Day ${p.loginStreak} (+${streakBonus} bonus)`;
   const taxNote = lines.length ? `\n\n${lines.join("\n\n")}` : "";
-  const verse = getDailyVerse();
+  const verse = getVerse();
   const verseNote = `\n\n📖 *${verse.ref}*\n_${verse.text}_`;
   const nextDaily = formatUntil(nextDailyResetMs(now, now), now);
   const lastWeekly = Number(p.lastWeeklyAt || 0);
@@ -341,7 +312,7 @@ async function cmdWeekly(ctx, chatId, senderId) {
   const lastDaily2 = Number(p.lastDailyAt || 0);
   const nextDailyW = lastDaily2 ? formatUntil(nextDailyResetMs(now, lastDaily2), now) : "available now";
   const nextWeeklyW = formatUntil(nextWeeklyResetMs(now, now), now);
-  const verse = getDailyVerse();
+  const verse = getVerse();
   buttonsSystem.mapButtons({
     "🎮 Menu": ".menu",
     "🌲 Hunt": ".hunt",

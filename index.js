@@ -334,6 +334,7 @@ const MU = require('./systems/messageUtils');
 const interactiveUI = require('./systems/interactiveUI');
 const flowMarket    = require('./systems/flowMarket');
 const helpUI = require('./systems/helpUI');
+const { appendVerse, getVerse } = require('./systems/bibleVerses');
 const FACTION_FILE = './data/faction_state.json';
 const lb = require('./leaderboard');
 const factionsData = JSON.parse(fs.readFileSync('./data/factions.json'));
@@ -3052,7 +3053,7 @@ if (command === "cancel") {
 
       if (command === "menu") {
         // Redirect to the new help system
-        return sendButtons(sock, chatId, helpUI.buildMainMenuText(players[senderId]), ["🎮 Game Menu", "🛡️ Bot Menu"], { footer: "Tap a section or type .help-game / .help-bot", quoted: msg });
+        return sendButtons(sock, chatId, appendVerse(helpUI.buildMainMenuText(players[senderId])), ["🎮 Game Menu", "🛡️ Bot Menu"], { footer: "Tap a section or type .help-game / .help-bot", quoted: msg });
       }
       if (command === "update" || command === "updates") {
         return updatesSystem.cmdUpdate(ctx, chatId, msg);
@@ -7976,7 +7977,7 @@ if (command === "f-lb") {
 
         // ── .help — Main menu ──
         if (command === "help") {
-          const text = helpUI.buildMainMenuText(p);
+          const text = appendVerse(helpUI.buildMainMenuText(p));
           buttonsSystem.mapButtons({
             "🎮 Game Menu": `${PREFIX}help-game`,
             "🛡️ Bot Menu": `${PREFIX}help-bot`,
