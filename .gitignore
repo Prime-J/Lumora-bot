@@ -2,4 +2,3 @@ node_modules
 .env
 
 # M0 security scrub (2026-08-11)
-auth/
