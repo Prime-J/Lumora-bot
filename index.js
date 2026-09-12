@@ -327,7 +327,6 @@ const partySystem = require("./systems/party");
 const missionSystem = require("./systems/factionMissionSystem")
 const factionProgressSystem = require("./systems/factionProgressSystem");
 const fEngine = require('./factionWarEngine');
-const { generateFactionGraph, generateFacPointsCard, generateBattleVsImage } = require('./factionCanvas');
 const botPersonality = require('./systems/botPersonality');
 const onboardingSystem = require('./systems/onboarding');
 const ui = require('./systems/ui');
@@ -339,12 +338,10 @@ const FACTION_FILE = './data/faction_state.json';
 const lb = require('./leaderboard');
 const factionsData = JSON.parse(fs.readFileSync('./data/factions.json'));
 
-const { generateVsCanvas, generateBracketCanvas, generateWarResultCanvas } = require('./warCanvas');
 const miscSystem = require('./systems/misc');
 const arenaSystem = require('./systems/npcArena');
 const proSystem = require('./systems/pro');
 const moraCreationSystem = require('./systems/moraCreation');
-const raidsSystem = require('./systems/raids');
 const starSystem = require('./systems/star');
 const updatesSystem = require('./systems/updates');
 const bankSystem = require('./systems/bank');
@@ -356,7 +353,6 @@ const statSystem  = require('./systems/stats');
 const apologySystem = require('./systems/apology');
 const scrollSystem  = require('./systems/scrolls');
 const combatLockSystem = require('./systems/combatLock');
-const autoRaidSystem = require('./systems/autoRaid');
 const playerBattleSystem = require('./systems/playerBattle');
 const ownerToolsSystem  = require('./systems/ownerTools');
 const meetingsSystem = require('./systems/meetings');
@@ -365,15 +361,7 @@ const { sendButtons } = buttonsSystem;
 const tutorialSystem = require('./systems/tutorial');
 const adminTokens = require('./systems/adminTokens');
 const artpackSystem = require('./systems/artpack');
-const { generateRankCard, generateRankUpCard } = require('./systems/rankCardCanvas');
-const { generateWealthCard, findWealthRank, buildWealthLb } = require('./systems/wealthCanvas');
-const { generateAlverahCard } = require('./systems/alverahCanvas');
 const mongoDb = require('./db/mongo');
-const { generateMoraCard } = require('./systems/moraCardCanvas');
-const { generateProfileCard } = require('./systems/profileCardCanvas');
-const { generateBattleResult } = require('./systems/battleResultCanvas');
-const { generateAchievementUnlock, generateAchievementCard } = require('./systems/achievementUnlockCanvas');
-const { generateLeaderboard } = require('./systems/leaderboardCanvas');
 
 // ============================
 // NEW COMMANDS — shown in .help for 12 hours after addedAt
@@ -2513,6 +2501,12 @@ sock.ev.removeAllListeners("messages.upsert");
         }
       }
 
+      if (!isCommand) return;
+
+      const args = text.slice(PREFIX.length).trim().split(/\s+/);
+      let command = (args.shift() || "").toLowerCase();
+      botStats.commandsParsed++;
+
       // ── STYLE QUEST DRAMA COMMANDS (.sq-proceed / .sq-retreat / .sq-fight / .sacrifice) ──
       if (isCommand && (command.startsWith("sq-") || command === "sacrifice")) {
         try {
@@ -2526,12 +2520,6 @@ sock.ev.removeAllListeners("messages.upsert");
           return sock.sendMessage(chatId, { text: "❌ Style trial error — try again." }, { quoted: msg });
         }
       }
-
-      if (!isCommand) return;
-
-      const args = text.slice(PREFIX.length).trim().split(/\s+/);
-      let command = (args.shift() || "").toLowerCase();
-      botStats.commandsParsed++;
 
       // ── OWNER TOOLBOX (.ow) — registered EARLY so it works even mid-battle ──
       // Superset router: native toolbox subs are handled here; anything else falls
@@ -2847,16 +2835,7 @@ if (command === "war") {
   // .war bracket
   if (sub === "bracket" || sub === "status" || sub === "view") {
     const bracket = fEngine.getBracketText(players);
-    try {
-      const bracketImg = await generateBracketCanvas(fEngine.war, players);
-      return sock.sendMessage(chatId, {
-        image: bracketImg,
-        caption: bracket.text,
-        mentions: bracket.mentions,
-      }, { quoted: msg });
-    } catch {
-      return sock.sendMessage(chatId, { text: bracket.text, mentions: bracket.mentions }, { quoted: msg });
-    }
+    return sock.sendMessage(chatId, { text: bracket.text, mentions: bracket.mentions }, { quoted: msg });
   }
 
   // .war winner @user (owner - report match result)
@@ -2874,35 +2853,29 @@ if (command === "war") {
       // WAR IS OVER - apply rewards and show results
       const rewards = fEngine.applyWarRewards(players, savePlayers);
 
-      try {
-        const resultImg = await generateWarResultCanvas(result.champion, result.runnerUp, fEngine.war, players);
-        const champName = players[result.champion]?.username || "???";
-        const ruName = players[result.runnerUp]?.username || "???";
-        const champPhone = result.champion?.split("@")[0];
-        const ruPhone = result.runnerUp?.split("@")[0];
+      const champName = players[result.champion]?.username || "???";
+      const ruName = players[result.runnerUp]?.username || "???";
+      const champPhone = result.champion?.split("@")[0];
+      const ruPhone = result.runnerUp?.split("@")[0];
 
-        const rewardMentions = [];
-        const rewardLines = rewards.map(r => {
-          const icon = r.tier === "champion" ? "👑" : r.tier === "runnerUp" ? "🥈" : r.tier === "winner" ? "✅" : "📦";
-          const rPhone = r.id?.split("@")[0];
-          if (rPhone && r.id) rewardMentions.push(r.id);
-          return rPhone
-            ? `  ${icon} @${rPhone} *${r.username}*: +${r.lucons} Lucons, +${r.aura} Aura, +${r.resonance} Resonance`
-            : `  ${icon} *${r.username}*: +${r.lucons} Lucons, +${r.aura} Aura, +${r.resonance} Resonance`;
-        });
+      const rewardMentions = [];
+      const rewardLines = rewards.map(r => {
+        const icon = r.tier === "champion" ? "👑" : r.tier === "runnerUp" ? "🥈" : r.tier === "winner" ? "✅" : "📦";
+        const rPhone = r.id?.split("@")[0];
+        if (rPhone && r.id) rewardMentions.push(r.id);
+        return rPhone
+          ? `  ${icon} @${rPhone} *${r.username}*: +${r.lucons} Lucons, +${r.aura} Aura, +${r.resonance} Resonance`
+          : `  ${icon} *${r.username}*: +${r.lucons} Lucons, +${r.aura} Aura, +${r.resonance} Resonance`;
+      });
 
-        await sock.sendMessage(chatId, {
-          image: resultImg,
-          caption:
-            `🏆 *FACTION WAR #${fEngine.war.warCount} ENDED!*\n\n` +
-            `👑 Champion: @${champPhone} *${champName}*\n` +
-            `🥈 Runner-Up: @${ruPhone} *${ruName}*\n\n` +
-            `*REWARDS:*\n${rewardLines.join("\n")}`,
-          mentions: [result.champion, result.runnerUp, ...rewardMentions],
-        });
-      } catch (e) {
-        await sock.sendMessage(chatId, { text: `🏆 *WAR OVER!* Champion: *${winnerName}*\nRewards have been distributed!` });
-      }
+      await sock.sendMessage(chatId, {
+        text:
+          `🏆 *FACTION WAR #${fEngine.war.warCount} ENDED!*\n\n` +
+          `👑 Champion: @${champPhone} *${champName}*\n` +
+          `🥈 Runner-Up: @${ruPhone} *${ruName}*\n\n` +
+          `*REWARDS:*\n${rewardLines.join("\n")}`,
+        mentions: [result.champion, result.runnerUp, ...rewardMentions],
+      });
       return;
     }
 
@@ -2919,29 +2892,12 @@ if (command === "war") {
     // Show next matchup
     const nextMatch = fEngine.showNextMatch();
     if (nextMatch) {
-      const np1 = players[nextMatch.p1];
-      const np2 = players[nextMatch.p2];
-      try {
-        const vsImg = await generateVsCanvas(np1, np2, `WAR #${fEngine.war.warCount} - ROUND ${fEngine.war.round}`);
-        const p1Name = players[nextMatch.p1]?.username || '???';
-        const p2Name = players[nextMatch.p2]?.username || '???';
-        await sock.sendMessage(chatId, {
-          image: vsImg,
-          caption:
-            `⚔️ *NEXT MATCH*\n\n` +
-            `_${fEngine.getMatchIntro()}_\n\n` +
-            `@${String(nextMatch.p1).split("@")[0]} *${p1Name}*  vs  @${String(nextMatch.p2).split("@")[0]} *${p2Name}*\n\n` +
-            `Use *.ready* when prepared!`,
-          mentions: [nextMatch.p1, nextMatch.p2],
-        });
-      } catch {
-        const p1Name = players[nextMatch.p1]?.username || '???';
-        const p2Name = players[nextMatch.p2]?.username || '???';
-        await sock.sendMessage(chatId, {
-          text: `⚔️ *NEXT MATCH:* @${String(nextMatch.p1).split("@")[0]} *${p1Name}* vs @${String(nextMatch.p2).split("@")[0]} *${p2Name}*\nUse *.ready* when prepared!`,
-          mentions: [nextMatch.p1, nextMatch.p2],
-        });
-      }
+      const p1Name = players[nextMatch.p1]?.username || '???';
+      const p2Name = players[nextMatch.p2]?.username || '???';
+      await sock.sendMessage(chatId, {
+        text: `⚔️ *NEXT MATCH:* @${String(nextMatch.p1).split("@")[0]} *${p1Name}* vs @${String(nextMatch.p2).split("@")[0]} *${p2Name}*\nUse *.ready* when prepared!`,
+        mentions: [nextMatch.p1, nextMatch.p2],
+      });
     }
     return;
   }
@@ -2982,27 +2938,16 @@ if (command === "war-start") {
   if (match) {
     const p1 = players[match.p1];
     const p2 = players[match.p2];
-    try {
-      const vsImg = await generateVsCanvas(p1, p2, `WAR #${fEngine.war.warCount}`);
-      const m1Name = p1?.username || '???';
-      const m2Name = p2?.username || '???';
-      await sock.sendMessage(chatId, {
-        image: vsImg,
-        caption:
-          `⚔️ *FACTION WAR #${fEngine.war.warCount} HAS BEGUN!*\n\n` +
-          `_${fEngine.getMatchIntro()}_\n\n` +
-          `First Match:\n@${String(match.p1).split("@")[0]} *${m1Name}*  vs  @${String(match.p2).split("@")[0]} *${m2Name}*\n\n` +
-          `Use *.ready* when prepared!`,
-        mentions: [match.p1, match.p2],
-      });
-    } catch {
-      const m1Name = p1?.username || '???';
-      const m2Name = p2?.username || '???';
-      await sock.sendMessage(chatId, {
-        text: `⚔️ *WAR BEGUN!*\nFirst Match: @${String(match.p1).split("@")[0]} *${m1Name}* vs @${String(match.p2).split("@")[0]} *${m2Name}*`,
-        mentions: [match.p1, match.p2],
-      });
-    }
+    const m1Name = p1?.username || '???';
+    const m2Name = p2?.username || '???';
+    await sock.sendMessage(chatId, {
+      text:
+        `⚔️ *FACTION WAR #${fEngine.war.warCount} HAS BEGUN!*\n\n` +
+        `_${fEngine.getMatchIntro()}_\n\n` +
+        `First Match:\n@${String(match.p1).split("@")[0]} *${m1Name}*  vs  @${String(match.p2).split("@")[0]} *${m2Name}*\n\n` +
+        `Use *.ready* when prepared!`,
+      mentions: [match.p1, match.p2],
+    });
   }
   return;
 }
@@ -3161,32 +3106,17 @@ if (command === "cancel") {
         }
       } catch {}
 
-      // ── Rank-up reveal tick ──
-      // After any command, if the player's level pushed them into a new
-      // rank tier since we last saw them, fire the reveal canvas in this
-      // chat. Marker is stamped on the player so it never double-fires.
+      // ── Rank-up reveal tick — text only (canvas layer removed) ──
       try {
         const _p2 = players[senderId];
         if (_p2) {
           const promo = ranksSystem.checkRankUpTick(_p2);
           if (promo) {
-            (async () => {
-              try {
-                const card = await generateRankUpCard(_p2, promo.oldRank, promo.newRank);
-                await sock.sendMessage(chatId, {
-                  image: card,
-                  caption: `🎉 *${_p2.username || "Lumorian"}* ascended to *${promo.newRank.name}*!`,
-                  mentions: [senderId],
-                });
-              } catch (e) {
-                console.log("[rank-up reveal]", e?.message || e);
-                await sock.sendMessage(chatId, {
-                  text: `🎉 *${_p2.username || "Lumorian"}* — RANK UP!\n\n*${promo.oldRank.name}* → *${promo.newRank.name}* (Lv ${_p2.level})`,
-                  mentions: [senderId],
-                });
-              }
-              try { savePlayers(players); } catch {}
-            })();
+            await sock.sendMessage(chatId, {
+              text: `🎉 *${_p2.username || "Lumorian"}* ascended to *${promo.newRank.name}*! (Lv ${_p2.level})`,
+              mentions: [senderId],
+            });
+            try { savePlayers(players); } catch {}
           }
         }
       } catch {}
@@ -3221,8 +3151,7 @@ if (command === "cancel") {
       if (command === "bank-vault" || command === "bankvault" || command === "vault-audit") {
         return bankSystem.cmdBankVault(ctx, chatId, msg, isOwner, senderId);
       }
-      // PUBLIC: Alverah portrait + welcome / registration card
-      // Anyone can run this — it's the bank's storefront.
+      // PUBLIC: bank storefront (canvas layer removed)
       if (command === "main-bank" || command === "mainbank") {
         const s = bankSystem.loadBankSettings();
         const p = players[senderId] || null;
@@ -3268,40 +3197,16 @@ if (command === "cancel") {
           `• ${'.bank register'} — open a vault\n` +
           `• ${'.bank deposit <amt>'} / ${'.bank withdraw <amt>'}\n` +
           `• ${'.bank'} — your balances\n` +
-          `• ${'.wealth'} — wealth ledger card`;
+          `• ${'.wealth'} — wealth ledger`;
 
-        try {
-          // Public card uses Alverah's image only — no internal numbers.
-          const card = await generateAlverahCard({
-            ownerName: s.bankOwnerName || "Alverah",
-            ownerHandle,
-            totalBanked: 0,        // hidden from public card
-            depositors: 0,
-            taxPool: 0,
-            depositTaxOn: !!s.depositTaxOn,
-            depositTaxPct: Number(s.depositTaxPct || 0),
-            claimTaxNote: "Coin trusted to stone never bleeds in the alley.",
-            topVault: { name: "—", amount: 0 },
-            publicMode: true,
-          });
-          await sock.sendMessage(chatId, {
-            image: card,
-            caption,
-            mentions: s.bankOwnerJid ? [s.bankOwnerJid] : [],
-          }, { quoted: msg });
-        } catch (e) {
-          console.log("[main-bank]", e?.message || e);
-          await sock.sendMessage(chatId, {
-            text: caption,
-            mentions: s.bankOwnerJid ? [s.bankOwnerJid] : [],
-          }, { quoted: msg });
-        }
+        await sock.sendMessage(chatId, {
+          text: caption,
+          mentions: s.bankOwnerJid ? [s.bankOwnerJid] : [],
+        }, { quoted: msg });
         return;
       }
 
-      // PRIVATE: full internal ledger canvas — Architect or Bank Owner only.
-      // Same Alverah image but the caption surfaces total banked, tax pool,
-      // depositors, top vault, etc.
+      // PRIVATE: internal ledger — Architect or Bank Owner only (canvas layer removed)
       if (command === "bank-info" || command === "bankinfo" || command === "main-bank-info") {
         const s = bankSystem.loadBankSettings();
         if (!isOwner && !bankSystem.isBankOwner(senderId)) {
@@ -3320,42 +3225,17 @@ if (command === "cancel") {
           }
         }
         const ownerHandle = s.bankOwnerJid ? String(s.bankOwnerJid).split("@")[0] : null;
-        try {
-          const card = await generateAlverahCard({
-            ownerName: s.bankOwnerName || "Alverah",
-            ownerHandle,
-            totalBanked,
-            depositors,
-            taxPool: Number(s.totalTaxPool || 0),
-            depositTaxOn: !!s.depositTaxOn,
-            depositTaxPct: Number(s.depositTaxPct || 0),
-            claimTaxNote: "Wealthier Lumorians pay a larger cut on every .daily / .weekly when banked.",
-            topVault: { name: topName, amount: topAmt },
-            publicMode: false,
-          });
-          await sock.sendMessage(chatId, {
-            image: card,
-            caption:
-              `🏛️ *INTERNAL BANK LEDGER*\n\n` +
-              `Steward: *${s.bankOwnerName || "Alverah"}*${ownerHandle ? ` (@${ownerHandle})` : ""}\n` +
-              `📦 Total banked: *${totalBanked.toLocaleString()}L*\n` +
-              `🏛️ Tax pool: *${(s.totalTaxPool || 0).toLocaleString()}L*\n` +
-              `👥 Depositors: *${depositors}*\n` +
-              `🥇 Top vault: *${topName}* — ${topAmt.toLocaleString()}L\n` +
-              `${s.depositTaxOn ? `🟢 Deposit tax: ON @ ${s.depositTaxPct}%` : "⚪ Deposit tax: OFF"}`,
-            mentions: s.bankOwnerJid ? [s.bankOwnerJid] : [],
-          }, { quoted: msg });
-        } catch (e) {
-          console.log("[bank-info]", e?.message || e);
-          await sock.sendMessage(chatId, {
-            text:
-              `🏛️ *INTERNAL BANK LEDGER*\n\n` +
-              `Steward: *${s.bankOwnerName || "Alverah"}*${ownerHandle ? ` (@${ownerHandle})` : ""}\n` +
-              `📦 Total banked: *${totalBanked.toLocaleString()}L*\n` +
-              `🏛️ Tax pool: *${(s.totalTaxPool || 0).toLocaleString()}L*\n` +
-              `👥 Depositors: *${depositors}*`,
-          }, { quoted: msg });
-        }
+        await sock.sendMessage(chatId, {
+          text:
+            `🏛️ *INTERNAL BANK LEDGER*\n\n` +
+            `Steward: *${s.bankOwnerName || "Alverah"}*${ownerHandle ? ` (@${ownerHandle})` : ""}\n` +
+            `📦 Total banked: *${totalBanked.toLocaleString()}L*\n` +
+            `🏛️ Tax pool: *${(s.totalTaxPool || 0).toLocaleString()}L*\n` +
+            `👥 Depositors: *${depositors}*\n` +
+            `🥇 Top vault: *${topName}* — ${topAmt.toLocaleString()}L\n` +
+            `${s.depositTaxOn ? `🟢 Deposit tax: ON @ ${s.depositTaxPct}%` : "⚪ Deposit tax: OFF"}`,
+          mentions: s.bankOwnerJid ? [s.bankOwnerJid] : [],
+        }, { quoted: msg });
         return;
       }
 
@@ -3371,19 +3251,10 @@ if (command === "cancel") {
       if (command === "rank") {
         const p = players[senderId];
         if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using *.begin*." }, { quoted: msg });
-        try {
-          const card = await generateRankCard(p);
-          await sock.sendMessage(chatId, {
-            image: card,
-            caption: `🎖️ *${ranksSystem.rankForLevel(p.level || 1).name}* — Lv ${p.level || 1}`,
-          }, { quoted: msg });
-        } catch (e) {
-          console.log("[rank-card]", e?.message || e);
-          const r = ranksSystem.rankForLevel(p.level || 1);
-          await sock.sendMessage(chatId, {
-            text: `🎖️ *${r.name}* — Lv ${p.level || 1}\n_(rank card render failed — text fallback)_`,
-          }, { quoted: msg });
-        }
+        const r = ranksSystem.rankForLevel(p.level || 1);
+        await sock.sendMessage(chatId, {
+          text: `🎖️ *${r.name}* — Lv ${p.level || 1}`,
+        }, { quoted: msg });
         return;
       }
       // ── WEALTH ──
@@ -3392,22 +3263,13 @@ if (command === "cancel") {
         if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using *.begin*." }, { quoted: msg });
         bankSystem.ensureBank(p);
         const { position, total } = findWealthRank(players, senderId);
-        try {
-          const card = await generateWealthCard(p, position, total);
-          await sock.sendMessage(chatId, {
-            image: card,
-            caption: `💰 *${p.username || "Lumorian"}* — wealth ledger`,
-          }, { quoted: msg });
-        } catch (e) {
-          console.log("[wealth-card]", e?.message || e);
-          const wallet = (p.lucons || 0).toLocaleString();
-          const bank = (p.bankBalance || 0).toLocaleString();
-          const tot = ((p.lucons || 0) + (p.bankBalance || 0)).toLocaleString();
-          const rank = position ? `#${position} / ${total}` : "Unranked";
-          await sock.sendMessage(chatId, {
-            text: `💰 *WEALTH LEDGER*\n\n💼 Wallet: *${wallet}L*\n🏦 Bank: *${bank}L*\n💎 Total: *${tot}L*\n📊 Wealth Rank: *${rank}*`,
-          }, { quoted: msg });
-        }
+        const wallet = (p.lucons || 0).toLocaleString();
+        const bank = (p.bankBalance || 0).toLocaleString();
+        const tot = ((p.lucons || 0) + (p.bankBalance || 0)).toLocaleString();
+        const rank = position ? `#${position} / ${total}` : "Unranked";
+        await sock.sendMessage(chatId, {
+          text: `💰 *WEALTH LEDGER*\n\n💼 Wallet: *${wallet}L*\n🏦 Bank: *${bank}L*\n💎 Total: *${tot}L*\n📊 Wealth Rank: *${rank}*`,
+        }, { quoted: msg });
         return;
       }
       if (command === "wealth-lb" || command === "wealthlb" || command === "wlb") {
@@ -3658,16 +3520,6 @@ if (command === "uptime") {
       }
       if (command === "whisper") {
         return questSystem.cmdWhisper(ctx, chatId, senderId, msg, args);
-      }
-      // ── Auto-raids (v0.7.0) ─────────────────────────────────
-      if (command === "respond") {
-        return autoRaidSystem.cmdRespond(ctx, chatId, senderId, msg, args);
-      }
-      if (command === "engage") {
-        return autoRaidSystem.cmdEngage(ctx, chatId, senderId, msg);
-      }
-      if (command === "raid-status" || command === "raidstatus") {
-        return autoRaidSystem.cmdRaidStatus(ctx, chatId, senderId, msg);
       }
       if (command === "gear") {
         return gearSystem.cmdGear(ctx, chatId, senderId, msg, args, {
@@ -3985,11 +3837,8 @@ if (command === "facprogress" || command === "factionprogress") {
     `_200 Lucons were deducted from your account to access this terminal._`;
 
   // Generate Image
-  const imageBuffer = await generateFactionGraph(pts, seasonNum, style);
-
   return sock.sendMessage(chatId, { 
-    image: imageBuffer, 
-    caption: caption 
+    text: caption 
   }, { quoted: msg });
 }
 
@@ -6119,62 +5968,6 @@ if (command === "buy-bm") {
         }, { quoted: msg });
       }
 
-      // ================= RAIDS =================
-      try { await raidsSystem.tickRaid(ctx); } catch (e) { console.log("[tickRaid]", e?.message || e); }
-      try { raidsSystem.tickKael(ctx); } catch (e) { console.log("[tickKael]", e?.message || e); }
-      // v0.7.0 auto-raids: piggyback on every message tick (cheap state read)
-      try { await autoRaidSystem.tickAutoRaid(ctx); } catch (e) { console.log("[tickAutoRaid]", e?.message || e); }
-
-      if (command === "summon-kael" || command === "summonkael") {
-        return raidsSystem.cmdSummonKael(ctx, chatId, senderId, msg);
-      }
-      if (command === "claim-raidcontract" || command === "claimraidcontract" || command === "claim-contract") {
-        return raidsSystem.cmdClaimContract(ctx, chatId, senderId, msg);
-      }
-      if (command === "raid") {
-        const sub = (args[0] || "").toLowerCase();
-        if (sub === "join") return raidsSystem.cmdRaidJoin(ctx, chatId, senderId, msg);
-        if (sub === "launch") return raidsSystem.cmdRaidLaunch(ctx, chatId, senderId, msg, args.slice(1));
-        if (sub === "status") return raidsSystem.cmdRaidStatus(ctx, chatId, msg);
-        if (sub === "history") return raidsSystem.cmdRaidHistory(ctx, chatId, msg);
-        return sock.sendMessage(chatId, { text: "📖 *.raid join* | *.raid launch <faction>* | *.raid status* | *.raid history*" }, { quoted: msg });
-      }
-      if (command === "raid-attack" || command === "raidattack") {
-        return raidsSystem.cmdRaidAttackEncounter(ctx, chatId, senderId, msg);
-      }
-      if (command === "raid-reinforce" || command === "raidreinforce") {
-        return raidsSystem.cmdRaidReinforce(ctx, chatId, senderId, msg);
-      }
-      if (command === "engage" || command === "raid-engage") {
-        return raidsSystem.cmdRaidEngage(ctx, chatId, senderId, msg, { getMentionedJids, normJid });
-      }
-      if (command === "reroll-roles" || command === "rerollroles") {
-        return raidsSystem.cmdRerollRoles(ctx, chatId, senderId, msg);
-      }
-      if (command === "ready") {
-        return raidsSystem.cmdReady(ctx, chatId, senderId, msg);
-      }
-      if (command === "raid-go" || command === "raidgo") {
-        return raidsSystem.cmdRaidGo(ctx, chatId, senderId, msg);
-      }
-      if (command === "raid-kick" || command === "raidkick") {
-        return raidsSystem.cmdRaidKick(ctx, chatId, senderId, msg, { getMentionedJids, normJid });
-      }
-      if (command === "escape" || command === "raid-escape") {
-        return raidsSystem.cmdEscapeCapture(ctx, chatId, senderId, msg);
-      }
-      if (command === "add-raidgroup" || command === "addraidgroup") {
-        return raidsSystem.cmdAddRaidGroup(ctx, chatId, senderId, msg);
-      }
-      if (command === "remove-raidgroup" || command === "removeraidgroup") {
-        return raidsSystem.cmdRemoveRaidGroup(ctx, chatId, senderId, msg);
-      }
-      if (command === "raids-on") return raidsSystem.cmdRaidsToggle(ctx, chatId, senderId, msg, true);
-      if (command === "raids-off") return raidsSystem.cmdRaidsToggle(ctx, chatId, senderId, msg, false);
-      if (command === "raid-end" || command === "raidend") {
-        return raidsSystem.cmdForceEnd(ctx, chatId, senderId, msg);
-      }
-
       // ================= CLAIM LUMORA V2 LOYALTY GIFT =================
       if (command === "claim-gift" || command === "claimgift") {
         const p = players[senderId];
@@ -6245,11 +6038,8 @@ if (command === "buy-bm") {
       // ================= FACTION POINTS =================
       if (command === "facpoints" || command === "factionpoints") {
         const fp = loadFactionPoints();
-        const { generateFacPointsCard } = require('./factionCanvas');
-        const fpImage = await generateFacPointsCard(fp);
         return sock.sendMessage(chatId, {
-          image: fpImage,
-          caption: `🌌 *FACTION POINTS — Season Standing*\n_Points earned through missions, battles & submissions._`,
+          text: `🌌 *FACTION POINTS — Season Standing*\n_Points earned through missions, battles & submissions._`,
         }, { quoted: msg });
       }
 
@@ -7243,16 +7033,7 @@ Use: ${PREFIX}bio <text> to set one (max 100 chars)` }, { quoted: msg });
             achLine,
         }, { quoted: msg });
 
-        // Send visual cards for new achievements
-        for (const achKey of newAch) {
-          try {
-            const ach = ACHIEVEMENTS[achKey];
-            const achCard = await generateAchievementUnlock(ach, p);
-            await sock.sendMessage(chatId, { image: achCard });
-          } catch (e) {
-            console.log("Achievement card generation failed:", e.message);
-          }
-        }
+        // Achievements text path only — visual cards removed
 
         return;
       }
@@ -7907,15 +7688,11 @@ if (command === "lb") {
           totalCreations: p.totalCreations || 0,
         }));
 
-      if (topPlayers.length > 0) {
-        const lbCard = await generateLeaderboard(topPlayers, "level");
-        await sock.sendMessage(chatId, { image: lbCard });
-      }
+      await sock.sendMessage(chatId, { text });
     } catch (e) {
-      console.log("Leaderboard card generation failed:", e.message);
+      console.log("Leaderboard generation failed:", e.message);
+      await sock.sendMessage(chatId, { text });
     }
-
-    await sock.sendMessage(chatId, { text });
 }
 
 // --- COMMAND: FACTION LEADERBOARD ---
