@@ -3031,10 +3031,11 @@ if (command === "cancel") {
         const domain =
           process.env.RAILWAY_PUBLIC_DOMAIN ||
           process.env.RAILWAY_PUBLIC_APP_URL ||
-          process.env.APP_URL;
+          process.env.APP_URL ||
+          process.env.RAILWAY_STATIC_URL;
         const url = domain
           ? /^https?:\/\//.test(domain) ? domain : `https://${domain}`
-          : `http://localhost:${port}`;
+          : `https://lumora-bot-production.up.railway.app`;
         return sock.sendMessage(chatId, {
           text:
             `🌌 *LUMORA WIKI*\n━━━━━━━━━━━━━━━━━━━━\n` +
