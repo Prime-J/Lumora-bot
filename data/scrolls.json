@@ -94,5 +94,45 @@
     "dropWeight": 1,
     "lore": "Heavier than it should be. Three sigils glow when held: a moon, a leaf, a chain.",
     "grantsQuest": "the_first_keeper"
+  },
+  "storm_torn_scroll": {
+    "id": "storm_torn_scroll",
+    "name": "Storm-Torn Scroll",
+    "rarity": "rare",
+    "dropWeight": 9,
+    "lore": "Singed along one edge and still faintly humming. A bolt of blue is inked where a signature should be.",
+    "grantsQuest": "the_thunder_road"
+  },
+  "frost_etched_scroll": {
+    "id": "frost_etched_scroll",
+    "name": "Frost-Etched Scroll",
+    "rarity": "rare",
+    "dropWeight": 8,
+    "lore": "Cold to the touch. The ink is made of rime, and it does not smudge no matter how you hold it.",
+    "grantsQuest": "the_winter_oath"
+  },
+  "nightshade_petal": {
+    "id": "nightshade_petal",
+    "name": "Nightshade Petal Scroll",
+    "rarity": "epic",
+    "dropWeight": 4,
+    "lore": "A pressed black petal falls out when you unroll it. It sings — very quietly, very insistently.",
+    "grantsQuest": "the_poisoned_garden"
+  },
+  "moonless_codex": {
+    "id": "moonless_codex",
+    "name": "Moonless Codex",
+    "rarity": "epic",
+    "dropWeight": 4,
+    "lore": "The pages are blank until you hold them to darkness — then they fill with a road that ends where you stand.",
+    "grantsQuest": "the_moonless_road"
+  },
+  "hourglass_vellum": {
+    "id": "hourglass_vellum",
+    "name": "Hourglass Vellum",
+    "rarity": "legendary",
+    "dropWeight": 1,
+    "lore": "Sand inside the parchment flows upward. Time, it suggests, is a matter of opinion.",
+    "grantsQuest": "the_keepers_hour"
   }
 }

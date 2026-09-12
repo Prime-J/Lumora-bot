@@ -241,6 +241,17 @@ function mentionText(jid, text) {
 
 function getWildBattleSystem() { return require("./wildbattle"); }
 
+// M4: resolve/expire any ignored pending discovery, then roll a new one.
+// Returns the discovery (already set pending) or null. One owner of the
+// pending lifecycle so .hunt and .proceed stay identical.
+function maybeDiscovery(player, hunter, ground) {
+  const discoveries = require("./discoveries");
+  if (discoveries.getPending(hunter)) discoveries.clearPending(hunter);
+  const disc = discoveries.rollDiscovery(player, ground);
+  if (disc) discoveries.setPending(hunter, disc);
+  return disc;
+}
+
 function ensurePlayerVitals(player) {
   if (!player || typeof player !== "object") return;
   if (typeof player.playerMaxHp !== "number") player.playerMaxHp = 100;
@@ -921,6 +932,27 @@ async function cmdProceed(ctx, chatId, senderId, msg) {
 
   if (player.playerHp <= 0) return handlePlayerDeath(ctx, chatId, senderId, msg);
 
+  // ── M4: arrival discovery roll (same machinery as .hunt) ──
+  try {
+    const disc = maybeDiscovery(player, hunter, ground);
+    if (disc) {
+      saveHuntState(state);
+      buttonsSystem.mapButtons({
+        "🚪 ENTER": ".discover-enter",
+        "↩️ LEAVE": ".discover-leave",
+        "🗺 Map": ".map",
+      });
+      return buttonsSystem.sendButtons(sock, chatId,
+        `${mentionText(senderId, `{mention} arrived at *${ground.name}*`)}\n\n` +
+        `🔦 *On the way, you found ${disc.place}!*\n${SDIV}\n${disc.text}`,
+        ["🚪 ENTER", "↩️ LEAVE", "🗺 Map"],
+        { footer: `Dare the depths? 👇`, quoted: msg }
+      );
+    }
+  } catch (e) {
+    console.log("arrival discovery error:", e?.message || e);
+  }
+
   const payload = mentionText(
     senderId,
     `${DIV}\n` +
@@ -943,6 +975,14 @@ async function cmdProceed(ctx, chatId, senderId, msg) {
     ["🌲 Hunt", "🗺 Map", "🏠 Return"],
     { footer: `Tap to continue 👇`, quoted: msg }
   );
+}
+
+// .discover-enter / .discover-leave — M4 themed discovery resolution
+async function cmdDiscoverEnter(ctx, chatId, senderId, msg) {
+  return require("./discoveries").cmdEnter(ctx, chatId, senderId, msg);
+}
+async function cmdDiscoverLeave(ctx, chatId, senderId, msg) {
+  return require("./discoveries").cmdLeave(ctx, chatId, senderId, msg);
 }
 
 // .dismiss
@@ -1125,6 +1165,20 @@ async function cmdHunt(ctx, chatId, senderId, msg) {
   // ─ Lucky streak boost ────────────────────────────────────
   const streakBoost = hunter.huntStreak >= 5 ? 0.15 : 0;
 
+  // ─ Quest-material roll (M3) — non-certain drop of the player's ──
+  // active style-trial materials, scaled by rarity.
+  let questMatText = "";
+  try {
+    const sqs = require("./styleQuests");
+    const mat = sqs.rollQuestMaterial(player, ground);
+    if (mat) {
+      itemsSystem.addItem(player, mat.id, 1);
+      questMatText = `\n🪶 *${mat.name}* — quest material for your trial! (${mat.pct}% find)`;
+    }
+  } catch (e) {
+    console.log("quest material drop error:", e?.message || e);
+  }
+
   // ─ RIFT: PE overflow check after terrain strain ───────────
   try {
     const _peExplosions = factionMarketSystem.checkPeOverflow(player);
@@ -1136,6 +1190,29 @@ async function cmdHunt(ctx, chatId, senderId, msg) {
       saveHuntState(state);
     }
   } catch {}
+
+  // ── M4: DISCOVERY ROLL — themed cave/ruin encounter, non-trivial ──
+  // Resolves/replaces any ignored pending discovery first (no stuck state).
+  try {
+    const disc = maybeDiscovery(player, hunter, ground);
+    if (disc) {
+      saveHuntState(state);
+      savePlayers(players);
+      const dPayload =
+        `${introText}🔦 *You found ${disc.place}!*\n${SDIV}\n${disc.text}\n\n` +
+        `_Enter to risk and explore — or leave it be._${statusFooter}`;
+      buttonsSystem.mapButtons({
+        "🚪 ENTER": ".discover-enter",
+        "↩️ LEAVE": ".discover-leave",
+      });
+      return buttonsSystem.sendButtons(sock, chatId, dPayload,
+        ["🚪 ENTER", "↩️ LEAVE"],
+        { footer: `Dare the depths? 👇`, quoted: msg }
+      );
+    }
+  } catch (e) {
+    console.log("discovery roll error:", e?.message || e);
+  }
 
   // ─ Build encounter ────────────────────────────────────────
   const moraDb = typeof loadMora === "function" ? loadMora() : [];
@@ -1165,7 +1242,8 @@ async function cmdHunt(ctx, chatId, senderId, msg) {
     buildTerrainDamageText(strainResult, "hunt") +
     buildTerrainDamageText(idleDamage, "hunt") +
     buildPulseText(pulseResult) +
-    relicText;
+    relicText +
+    questMatText;
 
   // ── WILD / CORRUPTED ────────────────────────────────────
   if (encounter.type === "wild" || encounter.type === "corrupted") {
@@ -1683,6 +1761,8 @@ module.exports = {
   cmdDismiss,
   cmdReturn,
   cmdHunt,
+  cmdDiscoverEnter,
+  cmdDiscoverLeave,
   cmdPick,
   cmdPass,
   cmdTrack,

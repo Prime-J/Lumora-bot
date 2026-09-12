@@ -368,11 +368,7 @@ async function cmdMarket(ctx, chatId, senderId, msg) {
     }
   }
 
-  // Send interactive list menu
   if (categories.length > 0) {
-    const player = players?.[senderId];
-    await interactiveUI.sendMarketMenu(sock, chatId, categories, msg);
-    // Also send the detailed text for those who prefer reading
     const text = formatMarketText(market);
     return sock.sendMessage(chatId, { text }, { quoted: msg });
   }

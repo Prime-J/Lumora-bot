@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumora — Fighting Styles Manual</title>
+<style>
+  @page { margin: 1.5cm; size: A4; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a1a; color: #e0e0e0; line-height: 1.6; padding: 20px; max-width: 900px; margin: 0 auto; }
+  h1 { text-align: center; font-size: 2.2em; color: #c9a0ff; margin: 30px 0 5px; letter-spacing: 4px; }
+  h2 { color: #7b68ee; font-size: 1.5em; margin: 35px 0 15px; border-bottom: 2px solid #333; padding-bottom: 8px; }
+  h3 { color: #e8d5ff; font-size: 1.2em; margin: 25px 0 10px; }
+  .subtitle { text-align: center; color: #888; font-style: italic; margin-bottom: 30px; font-size: 0.95em; }
+  .toc { background: #111; border: 1px solid #333; border-radius: 8px; padding: 20px 30px; margin: 20px 0 30px; }
+  .toc a { color: #9b8bff; text-decoration: none; display: block; padding: 4px 0; }
+  .toc a:hover { color: #c9a0ff; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 0.9em; }
+  th { background: #1a1a2e; color: #c9a0ff; padding: 10px 12px; text-align: left; border-bottom: 2px solid #444; }
+  td { padding: 8px 12px; border-bottom: 1px solid #222; }
+  tr:hover td { background: #111; }
+  .style-card { background: #0f0f1f; border: 1px solid #2a2a4a; border-radius: 10px; padding: 20px; margin: 20px 0; page-break-inside: avoid; }
+  .style-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .style-name { font-size: 1.3em; color: #e8d5ff; font-weight: bold; }
+  .rarity-common { border-left: 4px solid #4caf50; }
+  .rarity-rare { border-left: 4px solid #2196f3; }
+  .rarity-epic { border-left: 4px solid #9c27b0; }
+  .rarity-legendary { border-left: 4px solid #ffd700; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.75em; font-weight: bold; }
+  .badge-common { background: #1b3a1b; color: #4caf50; }
+  .badge-rare { background: #1a2a3a; color: #2196f3; }
+  .badge-epic { background: #2a1a2a; color: #9c27b0; }
+  .badge-legendary { background: #3a2a0a; color: #ffd700; }
+  .lore { color: #888; font-style: italic; margin: 10px 0; padding-left: 15px; border-left: 2px solid #333; }
+  .meta { color: #999; font-size: 0.85em; margin: 8px 0; }
+  .meta span { margin-right: 15px; }
+  .move-table { margin: 10px 0; }
+  .move-table td:first-child { font-weight: bold; color: #c9a0ff; }
+  .move-power { color: #ff6b6b; }
+  .move-acc { color: #51cf66; }
+  .move-energy { color: #74c0fc; }
+  .best-for { background: #111; padding: 8px 12px; border-radius: 6px; margin-top: 10px; font-size: 0.9em; }
+  .best-for strong { color: #c9a0ff; }
+  .divider { border: none; border-top: 1px solid #333; margin: 30px 0; }
+  .section-intro { color: #999; margin-bottom: 15px; }
+  .faction-table td:first-child { font-size: 1.1em; }
+  .drop-table td:nth-child(3) { color: #51cf66; font-weight: bold; }
+  .comparison-table td:nth-child(4) { color: #51cf66; }
+  .comparison-table td:nth-child(4).no { color: #666; }
+  .footer { text-align: center; color: #555; margin-top: 40px; padding: 20px; border-top: 1px solid #222; font-size: 0.85em; }
+  @media print {
+    body { background: #fff; color: #222; }
+    h1 { color: #333; }
+    h2 { color: #444; border-color: #ccc; }
+    h3 { color: #222; }
+    .style-card { background: #f9f9f9; border-color: #ddd; }
+    .style-name { color: #111; }
+    .lore { color: #666; border-color: #ccc; }
+    .badge-common { background: #e8f5e9; }
+    .badge-rare { background: #e3f2fd; }
+    .badge-epic { background: #f3e5f5; }
+    .badge-legendary { background: #fff8e1; }
+    th { background: #eee; color: #333; }
+    td { border-color: #ddd; }
+    .toc { background: #f5f5f5; border-color: #ddd; }
+    .best-for { background: #f0f0f0; }
+  }
+</style>
+</head>
+<body>
+
+<h1>⚔️ LUMORA</h1>
+<p class="subtitle">Fighting Styles Manual — The Complete Guide to Combat Disciplines</p>
+<p style="text-align:center; color:#666; font-style:italic; margin-bottom:30px;">"Every style is a language. The Rift teaches fluency through pain." — The Eternal Mora Sage</p>
+
+<div class="toc">
+<h3 style="margin-top:0; color:#c9a0ff;">📖 Contents</h3>
+<a href="#how-they-work">1. How Fighting Styles Work</a>
+<a href="#how-to-get">2. How to Get a Fighting Style</a>
+<a href="#moves">3. How Moves Work</a>
+<a href="#types">4. Type Matchups</a>
+<a href="#common">5. Common Styles (2)</a>
+<a href="#rare">6. Rare Styles (7)</a>
+<a href="#epic">7. Epic Styles (4)</a>
+<a href="#legendary">8. Legendary Styles (2)</a>
+<a href="#factions">9. Faction Exclusive Styles</a>
+<a href="#drops">10. Scroll Drop Rates</a>
+<a href="#reference">11. Quick Reference</a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="how-they-work">1. How Fighting Styles Work</h2>
+<p>Each Lumorian can equip <strong>one fighting style</strong> at a time. A fighting style gives your character <strong>3 unique moves</strong> that you can use in PvP and NPC battles.</p>
+<ul style="margin:10px 0 10px 20px;">
+  <li>Your fighting style moves are <strong>separate</strong> from your Mora's moves</li>
+  <li>You alternate between your moves and your Mora's moves in battle</li>
+  <li>Higher-tier styles have more powerful moves but cost more energy</li>
+  <li>Change your equipped style anytime with <code>.equip-style &lt;name&gt;</code></li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="how-to-get">2. How to Get a Fighting Style</h2>
+<p style="background:#111; padding:15px; border-radius:8px; font-family:monospace; text-align:center; margin:10px 0;">
+  <span style="color:#4caf50;">Hunt</span> → <span style="color:#2196f3;">Scroll drops</span> → <span style="color:#9c27b0;">Open in DM</span> → <span style="color:#ffd700;">Secret code</span> → <span style="color:#ff6b6b;">Scroll Trial</span> → <span style="color:#51cf66;">Style unlocked!</span>
+</p>
+<table>
+  <tr><th>Step</th><th>Command</th><th>What Happens</th></tr>
+  <tr><td>1. Get a Scroll</td><td><code>.hunt</code></td><td>Scrolls drop randomly during hunts (~5.4% total chance)</td></tr>
+  <tr><td>2. Open the Scroll</td><td><code>.open &lt;scroll&gt;</code></td><td>Opened in your DM — reveals the briefing + your personal one-time secret code</td></tr>
+  <tr><td>3. Speak the Code</td><td><code>&lt;code&gt;</code> in any GC</td><td>Starts the Scroll Trial — story, challenger, teacher; retreat anytime, resumable by re-speaking the code</td></tr>
+  <tr><td>4. Pay the Teacher</td><td><code>.sacrifice</code> + Lucon fee</td><td>Materials from hunts (hints given) + fee; meet the level gate and the style is yours</td></tr>
+  <tr><td>5. Equip Style</td><td><code>.equip-style &lt;name&gt;</code></td><td>Style moves become available in battle</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="moves">3. How Moves Work</h2>
+<p>Each style has <strong>3 moves</strong>:</p>
+<table>
+  <tr><th>Move Slot</th><th>Type</th><th>Description</th></tr>
+  <tr><td><strong>Move 1</strong></td><td>Basic</td><td>Low energy cost, high accuracy, moderate power</td></tr>
+  <tr><td><strong>Move 2</strong></td><td>Utility</td><td>Often 100% accuracy, may heal/buff/drain</td></tr>
+  <tr><td><strong>Move 3</strong></td><td>Finisher</td><td>High power, lower accuracy, high energy cost</td></tr>
+</table>
+<p style="margin-top:10px;"><strong>Energy</strong> regenerates 12% of max per turn. Running out forces you to skip.</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="types">4. Type Matchups</h2>
+<table>
+  <tr><th>Attacking</th><th>Strong Against (1.25x)</th><th>Weak Against (0.75x)</th></tr>
+  <tr><td>🔥 Flame</td><td>Nature, Frost</td><td>Aqua, Terra</td></tr>
+  <tr><td>💧 Aqua</td><td>Flame, Terra</td><td>Nature, Volt</td></tr>
+  <tr><td>🪨 Terra</td><td>Volt, Flame</td><td>Aqua, Wind, Nature</td></tr>
+  <tr><td>⚡ Volt</td><td>Aqua, Wind</td><td>Terra</td></tr>
+  <tr><td>🌿 Nature</td><td>Aqua, Terra</td><td>Flame, Frost</td></tr>
+  <tr><td>❄️ Frost</td><td>Wind, Nature</td><td>Flame</td></tr>
+  <tr><td>💨 Wind</td><td>Terra, Frost</td><td>Volt</td></tr>
+  <tr><td>🌑 Shadow</td><td>Shadow (1.1x)</td><td>—</td></tr>
+</table>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="common">5. Common Styles</h2>
+<p class="section-intro">Starting styles available to all factions. Complete beginner quests to unlock.</p>
+
+<div class="style-card rarity-common">
+  <div class="style-header">
+    <span class="style-name">🌬️ Wind Step</span>
+    <span class="badge badge-common">🟢 COMMON</span>
+  </div>
+  <div class="meta">
+    <span>💨 Wind</span>
+    <span>🌍 Any Faction</span>
+    <span>📜 Quest: first_breath</span>
+    <span>⭐ ★☆☆☆☆</span>
+  </div>
+  <p class="lore">"A fluid Lumorian discipline that bends momentum and air. Practitioners strike from impossible angles."</p>
+  <table class="move-table">
+    <tr><th>Move</th><th>Power</th><th>Accuracy</th><th>Energy</th><th>Description</th></tr>
+    <tr><td>Gale Kick</td><td class="move-power">38</td><td class="move-acc">95%</td><td class="move-energy">4</td><td>A whipping kick carried on a gust of wind</td></tr>
+    <tr><td>Sky Step</td><td class="move-power">28</td><td class="move-acc">100%</td><td class="move-energy">5</td><td>Leap upward — <strong>cannot miss</strong></td></tr>
+    <tr><td>Cyclone Cut</td><td class="move-power">62</td><td class="move-acc">88%</td><td class="move-energy">8</td><td>A spinning blade of compressed air</td></tr>
+  </table>
+  <div class="best-for"><strong>Best for:</strong> Beginners who want reliable hits and a strong finisher.</div>
+</div>
+
+<div class="style-card rarity-common">
+  <div class="style-header">
+    <span class="style-name">☀️ Sun Walk</span>
+    <span class="badge badge-common">🟢 COMMON</span>
+  </div>
+  <div class="meta">
+    <span>☀️ Solar</span>
+    <span>🌍 Any Faction</span>
+    <span>📜 Quest: first_dawn</span>
+    <span>⭐ ★☆☆☆☆</span>
+  </div>
+  <p class="lore">"A radiant style taught only in the Sanctuary's inner courtyard. Each step burns its impression into the air."</p>
+  <table class="move-table">
+    <tr><th>Move</th><th>Power</th><th>Accuracy</th><th>Energy</th><th>Description</th></tr>
+    <tr><td>Solar Step</td><td class="move-power">40</td><td class="move-acc">95%</td><td class="move-energy">4</td><td>A scorching forward stride</td></tr>
+    <tr><td>Flare Palm</td><td class="move-power">32</td><td class="move-acc">100%</td><td class="move-energy">5</td><td>A bright palm-strike that dazzles</td></tr>
+    <tr><td>Dawn Pillar</td><td class="move-power">70</td><td class="move-acc">85%</td><td class="move-energy">9</td><td>Call down a column of solar fire</td></tr>
+  </table>
+  <div class="best-for"><strong>Best for:</strong> Players who want raw damage over precision.</div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="rare">6. Rare Styles</h2>
+<p class="section-intro">Faction-locked or rare scroll drops. Require quest completion.</p>
+
+<div class="style-card rarity-rare">
+  <div class="style-header">
+    <span class="style-name">🌊 Tide Veil</span>
+    <span class="badge badge-rare">🔵 RARE</span>
+  </div>
+  <div class="meta">
+    <span>💧 Aqua</span>
+    <span>🌿 Harmony Exclusive</span>
+    <span>📜 Quest: tides_of_sanctuary</span>
+    <span>⭐ ★★☆☆☆</span>
+  </div>
+  <p class="lore">"Harmony's defensive water form, taught by the Sanctuary's tide-keepers."</p>
+  <table class="move-table">
+    <tr><th>Move</th><th>Power</th><th>Accuracy</th><th>Energy</th><th>Description</th></tr>
+    <tr><td>Mending Wave</td><td class="move-power">0</td><td class="move-acc">100%</td><td class="move-energy">6</td><td>💚 <strong>Heals 18 HP</strong> to yourself</td></tr>
+    <tr><td>Ripple Strike</td><td class="move-power">35</td><td class="move-acc">95%</td><td class="move-energy">4</td><td>A flowing palm-strike</td></tr>
+    <tr><td>Drown Press</td><td class="move-power">58</td><td class="move-acc">90%</td><td class="move-energy">7</td><td>Heavy water press</td></tr>
+  </table>
+  <div class="best-for"><strong>Best for:</strong> Defensive players who want sustain.</div>
+</div>
+
+<div class="style-card rarity-rare">
+  <div class="style-header">
+    <span class="style-name">🪨 Bone Crush</span>
+    <span class="badge badge-rare">🔵 RARE</span>
+  </div>
+  <div class="meta">
+    <span>🪨 Stone</span>
+    <span>⚔️ Purity Exclusive</span>
+    <span>📜 Quest: oath_of_iron</span>
+    <span>⭐ ★★☆☆☆</span>
+  </div>
+  <p class="lore">"The Purity Order's strike-discipline: no flourish, no waste. Every motion ends in a fracture."</p>
+  <table class="move-table">
+    <tr><th>Move</th><th>Power</th><th>Accuracy</th><th>Energy</th><th>Description</th></tr>
+    <tr><td>Bone Hammer</td><td class="move-power">50</td><td class="move-acc">92%</td><td class="move-energy">5</td><td>Straight crush</td></tr>
+    <tr><td>Iron Stance</td><td class="move-power">0</td><td class="move-acc">100%</td><td class="move-energy">4</td><td>Defensive stance</td></tr>
+    <tr><td>Pillar Drop</td><td class="move-power">75</td><td class="move-acc">82%</td><td class="move-energy">9</td><td>Massive overhead strike</td></tr>
+  </table>
+  <div class="best-for"><strong>Best for:</strong> High-damage dealers who can afford to miss sometimes.</div>
+</div>
+
+<div class="style-card rarity-rare">
+  <div class="style-header">
+    <span class="style-name">🌑 Void Sever</span>
+    <span class="badge badge-rare">🔵 RARE</span>
+  </div>
+  <div class="meta">
+    <span>🌑 Void</span>
+    <span>🕶️ Rift Exclusive</span>
+    <span>📜 Quest: void_initiation</span>
+    <span>⭐ ★★★☆☆</span>
+  </div>
+  <p class="lore">"Rift-tongue carving. Each strike pulls a thread of substance out of the world."</p>
+  <table class="move-table">
+    <tr><th>Move</th><th>Power</th><th>Accuracy</th><th>Energy</th><th>Description</th></tr>
+    <tr><td>Sever Line</td><td class="move-power">42</td><td class="move-acc">95%</td><td class="move-energy">5</td><td>Clean void cut</td></tr>
+    <tr><td>Void Drain</td><td class="move-power">30</td><td class="move-acc">100%</td><td class="move-energy">5</td><td>Drains energy from target</td></tr>
+    <tr><td>Null Eclipse</td><td class="move-power">80</td><td class="move-acc">80%</td><td class="move-energy">10</td><td>Devastating void finisher</td></tr>
+  </table>
+  <div class="best-for"><strong>Best for:</strong> Rift players who want high-risk, high-reward.</div>
+</div>
+
+<div class="style-card rarity-rare">
+  <div class="style-header">
+    <span class="style-name">🔥 Pyrolexis</span>
+    <span class="badge badge-rare">🔵 RARE</span>
+  </div>
+  <div class="meta">
+    <span>🔥 Fire</span>
+    <span>🌍 Any Faction</span>
+    <span>📜 Quest: rite_of_embers</span>
+    <span>⭐ ★★★☆☆</span>
+  </div>
+  <p class="lore">"A spoken-art discipline — every motion is a word of flame."</p>
+  <table class="move-table">
+    <tr><th>Move</th><th>Power</th><th>Accuracy</th><th>Energy</th><th>Description</th></tr>
+    <tr><td>Logos Ardens</td><td class="move-power">36</td><td class="move-acc">95%</td><td class="move-energy">4</td><td>Burning word-strike</td></tr>
+    <tr><td>Crepitus</td><td class="move-power">30</td><td class="move-acc">100%</td><td class="move-energy">5</td><td>Crackling flame burst</td></tr>
+    <tr><td>Hekatombe</td><td class="move-power">72</td><td class="move-acc">82%</td><td class="move-energy">9</td><td>Fire eruption</td></tr>
+  </table>
+  <div class="best-for"><strong>Best for:</strong> Balanced fighters who want fire-type coverage.</div>
+</div>
+
+<div class="style-card rarity-rare">
+  <div class="style-header">
+    <span class="style-name">🛡️ Kataphraxis</span>
+    <span class="badge badge-rare">🔵 RARE</span>
+  </div>
+  <div class="meta">
+    <span>🪨 Stone</span>
+    <span>🌿 Harmony Exclusive</span>
+    <span>📜 Quest: vow_of_the_shield</span>
+    <span>⭐ ★★★☆☆</span>
+  </div>
+  <p class="lore">"Harmony's heavy-plate counter-form — turtle-shell defense."</p>
+  <table class="move-table">
+    <tr><th>Move</th><th>Power</th><th>Accuracy</th><th>Energy</th><th>Description</th></tr>
+    <tr><td>Phalanx Step</td><td class="move-power">34</td><td class="move-acc">95%</td><td class="move-energy">4</td><td>Shield advance</td></tr>
+    <tr><td>Aegis Stance</td><td class="move-power">0</td><td class="move-acc">100%</td><td class="move-energy">4</td><td>Counter stance</td></tr>
+    <tr><td>Citadel</td><td class="move-power">0</td><td class="move-acc">100%</td><td class="move-energy">7</td><td>Full defense</td></tr>
+  </table>
+  <div class="best-for"><strong>Best for:</strong> Tank players who want to outlast opponents.</div>
+</div>
+
+<div class="style-card rarity-rare">
+  <div class="style-header">
+    <span class="style-name">⚡ Fulgur Strike</span>
+    <span class="badge badge-rare">🔵 RARE</span>
+  </div>
+  <div class="meta">
+    <span>⚡ Storm</span>
+    <span>🌍 Any Faction</span>
+    <span>📜 Quest: the_thunder_road</span>
+    <span>⭐ ★★★☆☆</span>
+  </div>
+  <p class="lore">"A storm-road discipline — every strike is the thunder's echo."</p>
+  <table class="move-table">
+    <tr><th>Move</th><th>Power</th><th>Accuracy</th><th>Energy</th><th>Description</th></tr>
+    <tr><td>Celer Fulmen</td><td class="move-power">40</td><td class="move-acc">95%</td><td class="move-energy">4</td><td>Lightning jab</td></tr>
+    <tr><td>Tonitrui Pes</td><td class="move-power">32</td><td class="move-acc">100%</td><td class="move-energy">5</td><td>Thunder stomp</td></tr>
+    <tr><td>Caerulea Flagrum</td><td class="move-power">72</td><td class="move-acc">85%</td><td class="move-energy">9</td><td>Storm lash</td></tr>
+  </table>
+  <div class="best-for"><strong>Best for:</strong> Fast attackers who want speed + power.</div>
+</div>
+
+<div class="style-card rarity-rare">
+  <div class="style-header">
+    <span class="style-name">❄️ Frost Mantle</span>
+    <span class="badge badge-rare">🔵 RARE</span>
+  </div>
+  <div class="meta">
+    <span>❄️ Frost</span>
+    <span>⚔️ Purity Exclusive</span>
+    <span>📜 Quest: the_winter_oath</span>
+    <span>⭐ ★★★☆☆</span>
+  </div>
+  <p class="lore">"The Order's cold sentinel form — frost does not argue, it simply ends things."</p>
+  <table class="move-table">
+    <tr><th>Move</th><th>Power</th><th>Accuracy</th><th>Energy</th><th>Description</th></tr>
+    <tr><td>Glacies Ictus</td><td class="move-power">38</td><td class="move-acc">95%</td><td class="move-energy">4</td><td>Ice strike</td></tr>
+    <tr><td>Aegis Frigus</td><td class="move-power">0</td><td class="move-acc">100%</td><td class="move-energy">4</td><td>Frost shield</td></tr>
+    <tr><td>Pruina Occasus</td><td class="move-power">68</td><td class="move-acc">87%</td><td class="move-energy">8</td><td>Blizzard finisher</td></tr>
+  </table>
+  <div class="best-for"><strong>Best for:</strong> Purity players who want defensive ice combat.</div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="epic">7. Epic Styles</h2>
+<p class="section-intro">Hard to get. Require epic scroll drops and challenging quests.</p>
+
+<div class="style-card rarity-epic">
+  <div class="style-header">
+    <span class="style-name">🌑 Tenebris</span>
+    <span class="badge badge-epic">🟣 EPIC</span>
+  </div>
+  <div class="meta">
+    <span>🌑 Void</span>
+    <span>🕶️ Rift Exclusive</span>
+    <span>📜 Quest: covenant_of_caligo</span>
+    <span>⭐ ★★★★☆</span>
+  </div>
+  <p class="lore">"Latin: tenebrae (darkness). A Rift-borne shadow art — quieter than Void Sever, and far more lethal."</p>
+  <table class="move-table">
+    <tr><th>Move</th><th>Power</th><th>Accuracy</th><th>Energy</th><th>Description</th></tr>
+    <tr><td>Umbra Caedere</td><td class="move-power">44</td><td class="move-acc">95%</td><td class="move-energy">5</td><td>Shadow cut</td></tr>
+    <tr><td>Noctis Vorax</td><td class="move-power">36</td><td class="move-acc">100%</td><td class="move-energy">6</td><td>Night drain — siphons energy</td></tr>
+    <tr><td>Eclipsis</td><td class="move-power">92</td><td class="move-acc">80%</td><td class="move-energy">11</td><td>Eclipse obliteration</td></tr>
+  </table>
+  <div class="best-for"><strong>Best for:</strong> Rift players who want the most powerful void style.</div>
+</div>
+
+<div class="style-card rarity-epic">
+  <div class="style-header">
+    <span class="style-name">⭐ Astrobolos</span>
+    <span class="badge badge-epic">🟣 EPIC</span>
+  </div>
+  <div class="meta">
+    <span>☀️ Solar</span>
+    <span>🌍 Any Faction</span>
+    <span>📜 Quest: starlit_passage</span>
+    <span>⭐ ★★★★☆</span>
+  </div>
+  <p class="lore">"Greek: astrobolos (star-thrown). A celestial striking art — radiant, devastating."</p>
+  <table class="move-table">
+    <tr><th>Move</th><th>Power</th><th>Accuracy</th><th>Energy</th><th>Description</th></tr>
+    <tr><td>Stella Cadens</td><td class="move-power">46</td><td class="move-acc">92%</td><td class="move-energy">5</td><td>Falling star strike</td></tr>
+    <tr><td>Sidereum Ictus</td><td class="move-power">34</td><td class="move-acc">100%</td><td class="move-energy">5</td><td>Star strike</td></tr>
+    <tr><td>Nova Igne</td><td class="move-power">88</td><td class="move-acc">82%</td><td class="move-energy">10</td><td>Supernova explosion</td></tr>
+  </table>
+  <div class="best-for"><strong>Best for:</strong> Players who want celestial power with any faction.</div>
+</div>
+
+<div class="style-card rarity-epic">
+  <div class="style-header">
+    <span class="style-name">🌿 Venomsong</span>
+    <span class="badge badge-epic">🟣 EPIC</span>
+  </div>
+  <div class="meta">
+    <span>☠️ Toxic</span>
+    <span>🌿 Harmony Exclusive</span>
+    <span>📜 Quest: the_poisoned_garden</span>
+    <span>⭐ ★★★★☆</span>
+  </div>
+  <p class="lore">"Harmony's hidden garden-form — this is what mercy looks like to those who refuse it."</p>
+  <table class="move-table">
+    <tr><th>Move</th><th>Power</th><th>Accuracy</th><th>Energy</th><th>Description</th></tr>
+    <tr><td>Cantus Veneni</td><td class="move-power">36</td><td class="move-acc">95%</td><td class="move-energy">4</td><td>Poison melody</td></tr>
+    <tr><td>Virus Lenis</td><td class="move-power">28</td><td class="move-acc">100%</td><td class="move-energy">5</td><td>Gentle toxin — applies poison</td></tr>
+    <tr><td>Requiem Noctis</td><td class="move-power">80</td><td class="move-acc">84%</td><td class="move-energy">10</td><td>Death requiem</td></tr>
+  </table>
+  <div class="best-for"><strong>Best for:</strong> Harmony players who want poison damage-over-time.</div>
+</div>
+
+<div class="style-card rarity-epic">
+  <div class="style-header">
+    <span class="style-name">🌙 Lunar Shroud</span>
+    <span class="badge badge-epic">🟣 EPIC</span>
+  </div>
+  <div class="meta">
+    <span>🌙 Lunar</span>
+    <span>🕶️ Rift Exclusive</span>
+    <span>📜 Quest: the_moonless_road</span>
+    <span>⭐ ★★★★☆</span>
+  </div>
+  <p class="lore">"Rift-tongue night-art, danced only under the dark moon."</p>
+  <table class="move-table">
+    <tr><th>Move</th><th>Power</th><th>Accuracy</th><th>Energy</th><th>Description</th></tr>
+    <tr><td>Umbra Lunae</td><td class="move-power">42</td><td class="move-acc">95%</td><td class="move-energy">5</td><td>Moon shadow strike</td></tr>
+    <tr><td>Tenebris Adsum</td><td class="move-power">34</td><td class="move-acc">100%</td><td class="move-energy">5</td><td>Darkness arrives</td></tr>
+    <tr><td>Eclipsis Plena</td><td class="move-power">86</td><td class="move-acc">82%</td><td class="move-energy">11</td><td>Full eclipse</td></tr>
+  </table>
+  <div class="best-for"><strong>Best for:</strong> Rift players who want night-themed devastation.</div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="legendary">8. Legendary Styles</h2>
+<p class="section-intro">Endgame styles. The most powerful disciplines in Lumora.</p>
+
+<div class="style-card rarity-legendary">
+  <div class="style-header">
+    <span class="style-name">✨ Anastasis</span>
+    <span class="badge badge-legendary">🟡 LEGENDARY</span>
+  </div>
+  <div class="meta">
+    <span>☀️ Solar</span>
+    <span>🌿 Harmony Exclusive</span>
+    <span>📜 Quest: the_mercy_rising</span>
+    <span>⭐ ★★★★★</span>
+  </div>
+  <p class="lore">"Greek: anastasis (rising, resurrection). The Sanctuary's most sacred discipline — taught only to those who have earned the right to bring others back."</p>
+  <table class="move-table">
+    <tr><th>Move</th><th>Power</th><th>Accuracy</th><th>Energy</th><th>Description</th></tr>
+    <tr><td>Lux Lenis</td><td class="move-power">26</td><td class="move-acc">100%</td><td class="move-energy">4</td><td>Gentle light — always hits</td></tr>
+    <tr><td>Velamen Sanans</td><td class="move-power">0</td><td class="move-acc">100%</td><td class="move-energy">7</td><td>💚 <strong>Healing veil</strong> — restores HP</td></tr>
+    <tr><td>Resurgentia</td><td class="move-power">105</td><td class="move-acc">80%</td><td class="move-energy">12</td><td>💥 <strong>Resurrection strike</strong> — highest damage in the game</td></tr>
+  </table>
+  <div class="best-for"><strong>Best for:</strong> The ultimate healer/nuker hybrid. Harmony's crown jewel.</div>
+</div>
+
+<div class="style-card rarity-legendary">
+  <div class="style-header">
+    <span class="style-name">⏳ Chrono Vow</span>
+    <span class="badge badge-legendary">🟡 LEGENDARY</span>
+  </div>
+  <div class="meta">
+    <span>⏳ Time</span>
+    <span>🌍 Any Faction</span>
+    <span>📜 Quest: the_keepers_hour</span>
+    <span>⭐ ★★★★★</span>
+  </div>
+  <p class="lore">"The oldest style in the Chronicle, older than the factions. Chrono Vow does not fight time — it negotiates with it."</p>
+  <table class="move-table">
+    <tr><th>Move</th><th>Power</th><th>Accuracy</th><th>Energy</th><th>Description</th></tr>
+    <tr><td>Momentum Fractum</td><td class="move-power">44</td><td class="move-acc">100%</td><td class="move-energy">5</td><td>Time fracture — <strong>never misses</strong></td></tr>
+    <tr><td>Tempus Inversum</td><td class="move-power">0</td><td class="move-acc">100%</td><td class="move-energy">6</td><td>⏪ <strong>Time reversal</strong> — reverses damage</td></tr>
+    <tr><td>Ultima Hora</td><td class="move-power">100</td><td class="move-acc">80%</td><td class="move-energy">12</td><td>💥 <strong>Final hour</strong> — catastrophic finisher</td></tr>
+  </table>
+  <div class="best-for"><strong>Best for:</strong> The ultimate endgame style. Available to any faction.</div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="factions">9. Faction Exclusive Styles</h2>
+<table class="faction-table">
+  <tr><th>Faction</th><th>Exclusive Styles</th></tr>
+  <tr><td>🌿 <strong>Harmony</strong></td><td>Tide Veil · Kataphraxis · Venomsong · Anastasis</td></tr>
+  <tr><td>⚔️ <strong>Purity</strong></td><td>Bone Crush · Frost Mantle</td></tr>
+  <tr><td>🕶️ <strong>Rift</strong></td><td>Void Sever · Tenebris · Lunar Shroud</td></tr>
+  <tr><td>🌍 <strong>Any</strong></td><td>Wind Step · Sun Walk · Pyrolexis · Fulgur Strike · Astrobolos · Chrono Vow</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="drops">10. Scroll Drop Rates</h2>
+<table class="drop-table">
+  <tr><th>Scroll Rarity</th><th>Drop Rate</th><th>Per 100 Hunts</th></tr>
+  <tr><td>Common</td><td>2.5%</td><td>~2-3 scrolls</td></tr>
+  <tr><td>Rare</td><td>1.0%</td><td>~1 scroll</td></tr>
+  <tr><td>Epic</td><td>0.3%</td><td>~1 every 300 hunts</td></tr>
+  <tr><td>Legendary</td><td>0.1%</td><td>~1 every 1000 hunts</td></tr>
+</table>
+<p style="margin-top:10px;"><strong>Total chance of ANY scroll dropping: ~5.4% per hunt.</strong></p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="reference">11. Quick Reference</h2>
+
+<h3>Commands</h3>
+<table>
+  <tr><th>Command</th><th>Description</th></tr>
+  <tr><td><code>.styles</code></td><td>View all available fighting styles</td></tr>
+  <tr><td><code>.equip-style &lt;name&gt;</code></td><td>Equip a fighting style</td></tr>
+  <tr><td><code>.unequip &lt;style&gt;</code></td><td>Remove your current style</td></tr>
+  <tr><td><code>.open &lt;scroll&gt;</code></td><td>Open a scroll in DM — reveals your secret code</td></tr>
+  <tr><td><code>&lt;code&gt;</code> in any GC</td><td>Start / resume the Scroll Trial</td></tr>
+  <tr><td><code>.sq-proceed / .sq-retreat / .sq-fight</code></td><td>Trial: advance · pause · challenge the NPC</td></tr>
+  <tr><td><code>.sacrifice</code></td><td>Hand trial materials to the teacher</td></tr>
+  <tr><td><code>.quest</code></td><td>View your active quests</td></tr>
+</table>
+
+<h3>Style Comparison</h3>
+<table class="comparison-table">
+  <tr><th>Style</th><th>Type</th><th>Max Power</th><th>Heal?</th><th>Faction</th></tr>
+  <tr><td>Wind Step</td><td>💨 Wind</td><td>62</td><td class="no">—</td><td>Any</td></tr>
+  <tr><td>Sun Walk</td><td>☀️ Solar</td><td>70</td><td class="no">—</td><td>Any</td></tr>
+  <tr><td>Tide Veil</td><td>💧 Aqua</td><td>58</td><td>✅ 18 HP</td><td>Harmony</td></tr>
+  <tr><td>Bone Crush</td><td>🪨 Stone</td><td>75</td><td class="no">—</td><td>Purity</td></tr>
+  <tr><td>Void Sever</td><td>🌑 Void</td><td>80</td><td class="no">—</td><td>Rift</td></tr>
+  <tr><td>Pyrolexis</td><td>🔥 Fire</td><td>72</td><td class="no">—</td><td>Any</td></tr>
+  <tr><td>Kataphraxis</td><td>🪨 Stone</td><td>34</td><td>🛡️ Shield</td><td>Harmony</td></tr>
+  <tr><td>Fulgur Strike</td><td>⚡ Storm</td><td>72</td><td class="no">—</td><td>Any</td></tr>
+  <tr><td>Frost Mantle</td><td>❄️ Frost</td><td>68</td><td>🛡️ Shield</td><td>Purity</td></tr>
+  <tr><td>Tenebris</td><td>🌑 Void</td><td>92</td><td class="no">—</td><td>Rift</td></tr>
+  <tr><td>Astrobolos</td><td>☀️ Solar</td><td>88</td><td class="no">—</td><td>Any</td></tr>
+  <tr><td>Venomsong</td><td>☠️ Toxic</td><td>80</td><td class="no">—</td><td>Harmony</td></tr>
+  <tr><td>Lunar Shroud</td><td>🌙 Lunar</td><td>86</td><td class="no">—</td><td>Rift</td></tr>
+  <tr><td><strong>Anastasis</strong></td><td>☀️ Solar</td><td><strong>105</strong></td><td>✅ Heal</td><td>Harmony</td></tr>
+  <tr><td><strong>Chrono Vow</strong></td><td>⏳ Time</td><td><strong>100</strong></td><td>✅ Reverse</td><td>Any</td></tr>
+</table>
+
+<div class="footer">
+  <p>⚔️ LUMORA — Fighting Styles Manual</p>
+  <p>Document version 1.0 · Lumora Rework v0.9.0 · September 2026</p>
+  <p style="margin-top:10px; font-size:0.8em;">To save as PDF: Press Ctrl+P → Select "Save as PDF" → Save</p>
+</div>
+
+</body>
+</html>

@@ -8,13 +8,45 @@
     "requirement": {
       "kind": "chain",
       "steps": [
-        { "kind": "meetNpc",    "npc": "Reva", "label": "Find Wind Master Reva at the cliff-temple", "hint": "She answers only to the breath she taught you." },
-        { "kind": "winBattles", "count": 3,   "label": "Survive 3 wild battles after meeting her" }
+        {
+          "kind": "meetNpc",
+          "npc": "Reva",
+          "label": "Find Wind Master Reva at the cliff-temple",
+          "hint": "She answers only to the breath she taught you."
+        },
+        {
+          "kind": "winBattles",
+          "count": 3,
+          "label": "Survive 3 wild battles after meeting her"
+        }
       ]
     },
-    "reward": { "style": "wind_step", "lucons": 100 },
-    "hiddenCommands": { "Reva": { "cmd": "whisper reva", "phrase": "The wind remembers what was promised." } },
-    "completedFlavor": "Reva nods slowly. \"You moved when the wind moved. That is the first step.\" Wind Step is yours."
+    "reward": {
+      "style": "wind_step",
+      "lucons": 100
+    },
+    "hiddenCommands": {
+      "Reva": {
+        "cmd": "whisper reva",
+        "phrase": "The wind remembers what was promised."
+      }
+    },
+    "completedFlavor": "Reva nods slowly. \"You moved when the wind moved. That is the first step.\" Wind Step is yours.",
+    "teachReq": {
+      "lucons": 1500,
+      "materials": [
+        {
+          "id": "MAT_006",
+          "qty": 3,
+          "hint": "Sky-Shard Feathers molt from Wind-type Mora — hunt where Zephyra and Gustling roam (wind terrains)."
+        },
+        {
+          "id": "MAT_007",
+          "qty": 1,
+          "hint": "Galestone Chips come from windswept cliffs — rare hunt finds; keep hunting, they are not certain."
+        }
+      ]
+    }
   },
   "first_dawn": {
     "id": "first_dawn",
@@ -25,13 +57,45 @@
     "requirement": {
       "kind": "chain",
       "steps": [
-        { "kind": "meetNpc",    "npc": "Iyra", "label": "Find Sun Priestess Iyra in the dawn courtyard", "hint": "She speaks only to those who can name the sun's first hour." },
-        { "kind": "winBattles", "count": 5,   "label": "Win 5 wild battles after she sees you" }
+        {
+          "kind": "meetNpc",
+          "npc": "Iyra",
+          "label": "Find Sun Priestess Iyra in the dawn courtyard",
+          "hint": "She speaks only to those who can name the sun's first hour."
+        },
+        {
+          "kind": "winBattles",
+          "count": 5,
+          "label": "Win 5 wild battles after she sees you"
+        }
       ]
     },
-    "reward": { "style": "sun_walk", "lucons": 150 },
-    "hiddenCommands": { "Iyra": { "cmd": "whisper iyra", "phrase": "I came in time for the burning." } },
-    "completedFlavor": "Iyra closes her eyes. \"The sun has marked you.\" Sun Walk is yours."
+    "reward": {
+      "style": "sun_walk",
+      "lucons": 150
+    },
+    "hiddenCommands": {
+      "Iyra": {
+        "cmd": "whisper iyra",
+        "phrase": "I came in time for the burning."
+      }
+    },
+    "completedFlavor": "Iyra closes her eyes. \"The sun has marked you.\" Sun Walk is yours.",
+    "teachReq": {
+      "lucons": 1800,
+      "materials": [
+        {
+          "id": "MAT_002",
+          "qty": 2,
+          "hint": "Aura Crystals gather around Light-type Mora — hunt the bright open terrains (Wilderness outskirts)."
+        },
+        {
+          "id": "MAT_003",
+          "qty": 2,
+          "hint": "Mora Fangs drop from defeated Mora on any hunt — fight often, drops are not certain."
+        }
+      ]
+    }
   },
   "tides_of_sanctuary": {
     "id": "tides_of_sanctuary",
@@ -42,13 +106,45 @@
     "requirement": {
       "kind": "chain",
       "steps": [
-        { "kind": "meetNpc",    "npc": "Solen", "label": "Find Tide-Keeper Solen at the reflecting pool", "hint": "He recognizes only the hand that has learned to fold." },
-        { "kind": "winBattles", "count": 6,    "label": "Win 6 wild battles after he sees you" }
+        {
+          "kind": "meetNpc",
+          "npc": "Solen",
+          "label": "Find Tide-Keeper Solen at the reflecting pool",
+          "hint": "He recognizes only the hand that has learned to fold."
+        },
+        {
+          "kind": "winBattles",
+          "count": 6,
+          "label": "Win 6 wild battles after he sees you"
+        }
       ]
     },
-    "reward": { "style": "tide_veil", "lucons": 180 },
-    "hiddenCommands": { "Solen": { "cmd": "whisper solen", "phrase": "I have learned to yield." } },
-    "completedFlavor": "Solen touches the pool. The ripples follow you out. Tide Veil is yours."
+    "reward": {
+      "style": "tide_veil",
+      "lucons": 180
+    },
+    "hiddenCommands": {
+      "Solen": {
+        "cmd": "whisper solen",
+        "phrase": "I have learned to yield."
+      }
+    },
+    "completedFlavor": "Solen touches the pool. The ripples follow you out. Tide Veil is yours.",
+    "teachReq": {
+      "lucons": 2200,
+      "materials": [
+        {
+          "id": "MAT_002",
+          "qty": 3,
+          "hint": "Aura Crystals pool where Aqua Mora gather — hunt the water-flavored wilds (Verdant Wilds watersides)."
+        },
+        {
+          "id": "CRY_002",
+          "qty": 1,
+          "hint": "Core Crystals surface rarely on any hunt — persistence, not luck-safety."
+        }
+      ]
+    }
   },
   "oath_of_iron": {
     "id": "oath_of_iron",
@@ -59,13 +155,45 @@
     "requirement": {
       "kind": "chain",
       "steps": [
-        { "kind": "meetNpc",    "npc": "Vance", "label": "Find Hierarch Vance in the iron yard", "hint": "He answers only to a phrase that costs the speaker something." },
-        { "kind": "winBattles", "count": 7,    "label": "Win 7 wild battles after Vance accepts you" }
+        {
+          "kind": "meetNpc",
+          "npc": "Vance",
+          "label": "Find Hierarch Vance in the iron yard",
+          "hint": "He answers only to a phrase that costs the speaker something."
+        },
+        {
+          "kind": "winBattles",
+          "count": 7,
+          "label": "Win 7 wild battles after Vance accepts you"
+        }
       ]
     },
-    "reward": { "style": "bone_crush", "lucons": 200 },
-    "hiddenCommands": { "Vance": { "cmd": "whisper vance", "phrase": "I am the blade, not the hand." } },
-    "completedFlavor": "Vance hands you the whetstone. \"The Order recognizes you.\" Bone Crush is yours."
+    "reward": {
+      "style": "bone_crush",
+      "lucons": 200
+    },
+    "hiddenCommands": {
+      "Vance": {
+        "cmd": "whisper vance",
+        "phrase": "I am the blade, not the hand."
+      }
+    },
+    "completedFlavor": "Vance hands you the whetstone. \"The Order recognizes you.\" Bone Crush is yours.",
+    "teachReq": {
+      "lucons": 2200,
+      "materials": [
+        {
+          "id": "MAT_003",
+          "qty": 3,
+          "hint": "Mora Fangs drop from defeated Mora — the Order counts only fangs you took yourself (Terra Shatterfields hunts)."
+        },
+        {
+          "id": "MAT_005",
+          "qty": 1,
+          "hint": "Shadow Resin is a rare hunt find — darker drops come from Shadow Hollow edges."
+        }
+      ]
+    }
   },
   "void_initiation": {
     "id": "void_initiation",
@@ -76,13 +204,50 @@
     "requirement": {
       "kind": "chain",
       "steps": [
-        { "kind": "meetNpc",    "npc": "Kael", "label": "Find Rift-Tongue Kael past the rift gate", "hint": "He answers to a name he never gave." },
-        { "kind": "winBattles", "count": 8,   "label": "Win 8 wild battles after Kael accepts you" }
+        {
+          "kind": "meetNpc",
+          "npc": "Kael",
+          "label": "Find Rift-Tongue Kael past the rift gate",
+          "hint": "He answers to a name he never gave."
+        },
+        {
+          "kind": "winBattles",
+          "count": 8,
+          "label": "Win 8 wild battles after Kael accepts you"
+        }
       ]
     },
-    "reward": { "style": "void_sever", "lucons": 220 },
-    "hiddenCommands": { "Kael": { "cmd": "whisper kael", "phrase": "I have not come to ask." } },
-    "completedFlavor": "Kael smiles — somewhere behind his face. \"Now you can cut.\" Void Sever is yours."
+    "reward": {
+      "style": "void_sever",
+      "lucons": 220
+    },
+    "hiddenCommands": {
+      "Kael": {
+        "cmd": "whisper kael",
+        "phrase": "I have not come to ask."
+      }
+    },
+    "completedFlavor": "Kael smiles — somewhere behind his face. \"Now you can cut.\" Void Sever is yours.",
+    "teachReq": {
+      "lucons": 2500,
+      "materials": [
+        {
+          "id": "MAT_001",
+          "qty": 4,
+          "hint": "Rift Dust gathers near unstable zones — hunt Rift Scar for the richest dust."
+        },
+        {
+          "id": "MAT_005",
+          "qty": 2,
+          "hint": "Shadow Resin seeps from Shadow Hollow hunts — rare; keep at it."
+        },
+        {
+          "id": "MAT_007",
+          "qty": 1,
+          "hint": "Galestone Chips from windswept cliffs — rare hunt finds anywhere the wind howls."
+        }
+      ]
+    }
   },
   "broken_communion": {
     "id": "broken_communion",
@@ -90,8 +255,14 @@
     "giver": "Rift-Tongue Kael",
     "faction": "rift",
     "lore": "\"You've felt the corruption in your shards,\" Kael whispers. \"Bring me four more bound by chain. Prove you can carry the noise.\"",
-    "requirement": { "kind": "winBattles", "count": 10 },
-    "reward": { "lucons": 350, "riftPE": 25 },
+    "requirement": {
+      "kind": "winBattles",
+      "count": 10
+    },
+    "reward": {
+      "lucons": 350,
+      "riftPE": 25
+    },
     "completedFlavor": "Kael nods. The shards in your vault hum more loudly now. You feel the Rift watching back."
   },
   "rite_of_embers": {
@@ -103,13 +274,45 @@
     "requirement": {
       "kind": "chain",
       "steps": [
-        { "kind": "meetNpc",    "npc": "Phlox", "label": "Find Speaker Phlox at the stone-garden brazier", "hint": "She replies only to a word the speaker can feel in the throat." },
-        { "kind": "winBattles", "count": 5,    "label": "Win 5 wild battles after she accepts you" }
+        {
+          "kind": "meetNpc",
+          "npc": "Phlox",
+          "label": "Find Speaker Phlox at the stone-garden brazier",
+          "hint": "She replies only to a word the speaker can feel in the throat."
+        },
+        {
+          "kind": "winBattles",
+          "count": 5,
+          "label": "Win 5 wild battles after she accepts you"
+        }
       ]
     },
-    "reward": { "style": "pyrolexis", "lucons": 200 },
-    "hiddenCommands": { "Phlox": { "cmd": "whisper phlox", "phrase": "The fire is already in my mouth." } },
-    "completedFlavor": "Phlox tilts her head once. The coal flares brighter. Pyrolexis is yours."
+    "reward": {
+      "style": "pyrolexis",
+      "lucons": 200
+    },
+    "hiddenCommands": {
+      "Phlox": {
+        "cmd": "whisper phlox",
+        "phrase": "The fire is already in my mouth."
+      }
+    },
+    "completedFlavor": "Phlox tilts her head once. The coal flares brighter. Pyrolexis is yours.",
+    "teachReq": {
+      "lucons": 2200,
+      "materials": [
+        {
+          "id": "MAT_003",
+          "qty": 2,
+          "hint": "Mora Fangs from Flame Mora hunts — Ashfall Basin is the kiln of fangs."
+        },
+        {
+          "id": "CRY_002",
+          "qty": 1,
+          "hint": "Core Crystals are uncommon hunt finds — the fire keeps its own vault."
+        }
+      ]
+    }
   },
   "vow_of_the_shield": {
     "id": "vow_of_the_shield",
@@ -120,13 +323,45 @@
     "requirement": {
       "kind": "chain",
       "steps": [
-        { "kind": "meetNpc",    "npc": "Aspis", "label": "Find Aspis the Quiet in the lower colonnade", "hint": "Recognized only by those who name what they would die to keep behind them." },
-        { "kind": "winBattles", "count": 6,    "label": "Win 6 wild battles after his vigil accepts you" }
+        {
+          "kind": "meetNpc",
+          "npc": "Aspis",
+          "label": "Find Aspis the Quiet in the lower colonnade",
+          "hint": "Recognized only by those who name what they would die to keep behind them."
+        },
+        {
+          "kind": "winBattles",
+          "count": 6,
+          "label": "Win 6 wild battles after his vigil accepts you"
+        }
       ]
     },
-    "reward": { "style": "kataphraxis", "lucons": 240 },
-    "hiddenCommands": { "Aspis": { "cmd": "whisper aspis", "phrase": "I will not let it pass." } },
-    "completedFlavor": "Aspis lifts the shield by a hand's breadth and lowers it again. The vow is taken. Kataphraxis is yours."
+    "reward": {
+      "style": "kataphraxis",
+      "lucons": 240
+    },
+    "hiddenCommands": {
+      "Aspis": {
+        "cmd": "whisper aspis",
+        "phrase": "I will not let it pass."
+      }
+    },
+    "completedFlavor": "Aspis lifts the shield by a hand's breadth and lowers it again. The vow is taken. Kataphraxis is yours.",
+    "teachReq": {
+      "lucons": 2200,
+      "materials": [
+        {
+          "id": "MAT_004",
+          "qty": 2,
+          "hint": "Purity Ash is refined by the Order — rare find on Terra Shatterfields hunts."
+        },
+        {
+          "id": "CRY_001",
+          "qty": 3,
+          "hint": "Shard Crystals reinforce walls — common finds on most hunts."
+        }
+      ]
+    }
   },
   "covenant_of_caligo": {
     "id": "covenant_of_caligo",
@@ -137,13 +372,51 @@
     "requirement": {
       "kind": "chain",
       "steps": [
-        { "kind": "meetNpc",    "npc": "Caligo", "label": "Find Caligo on the cold stretch of road at dusk", "hint": "He answers only when the speaker accepts being unseen." },
-        { "kind": "winBattles", "count": 10,    "label": "Win 10 wild battles in the dark after he covenants with you" }
+        {
+          "kind": "meetNpc",
+          "npc": "Caligo",
+          "label": "Find Caligo on the cold stretch of road at dusk",
+          "hint": "He answers only when the speaker accepts being unseen."
+        },
+        {
+          "kind": "winBattles",
+          "count": 10,
+          "label": "Win 10 wild battles in the dark after he covenants with you"
+        }
       ]
     },
-    "reward": { "style": "tenebris", "lucons": 400, "intelligence": 3 },
-    "hiddenCommands": { "Caligo": { "cmd": "whisper caligo", "phrase": "Let me be unseen." } },
-    "completedFlavor": "Caligo nods, and the road forgets him. He does not look back at you. Tenebris is yours."
+    "reward": {
+      "style": "tenebris",
+      "lucons": 400,
+      "intelligence": 3
+    },
+    "hiddenCommands": {
+      "Caligo": {
+        "cmd": "whisper caligo",
+        "phrase": "Let me be unseen."
+      }
+    },
+    "completedFlavor": "Caligo nods, and the road forgets him. He does not look back at you. Tenebris is yours.",
+    "teachReq": {
+      "lucons": 3000,
+      "materials": [
+        {
+          "id": "MAT_005",
+          "qty": 3,
+          "hint": "Shadow Resin seeps from Shadow Hollow — the dark keeps its resin close."
+        },
+        {
+          "id": "MAT_001",
+          "qty": 3,
+          "hint": "Rift Dust from Rift Scar hunts — unstable ground sheds it."
+        },
+        {
+          "id": "MAT_007",
+          "qty": 2,
+          "hint": "Galestone Chips from wind-carved cliffs — rare; not every hunt gives one."
+        }
+      ]
+    }
   },
   "starlit_passage": {
     "id": "starlit_passage",
@@ -154,13 +427,46 @@
     "requirement": {
       "kind": "chain",
       "steps": [
-        { "kind": "meetNpc",    "npc": "Selene", "label": "Find Selene on the circular hill after sundown", "hint": "She replies only to those who have stopped trying to catch up with her." },
-        { "kind": "winBattles", "count": 10,    "label": "Win 10 wild battles after she walks beside you once" }
+        {
+          "kind": "meetNpc",
+          "npc": "Selene",
+          "label": "Find Selene on the circular hill after sundown",
+          "hint": "She replies only to those who have stopped trying to catch up with her."
+        },
+        {
+          "kind": "winBattles",
+          "count": 10,
+          "label": "Win 10 wild battles after she walks beside you once"
+        }
       ]
     },
-    "reward": { "style": "astrobolos", "lucons": 450, "intelligence": 3 },
-    "hiddenCommands": { "Selene": { "cmd": "whisper selene", "phrase": "I am no longer chasing." } },
-    "completedFlavor": "Selene continues her loop. After a step, you realize she has folded a piece of the night into your hand. Astrobolos is yours."
+    "reward": {
+      "style": "astrobolos",
+      "lucons": 450,
+      "intelligence": 3
+    },
+    "hiddenCommands": {
+      "Selene": {
+        "cmd": "whisper selene",
+        "phrase": "I am no longer chasing."
+      }
+    },
+    "completedFlavor": "Selene continues her loop. After a step, you realize she has folded a piece of the night into your hand. Astrobolos is yours.",
+    "teachReq": {
+      "lucons": 3000,
+      "materials": [
+        {
+          "id": "MAT_002",
+          "qty": 4,
+          "hint": "Aura Crystals gather under starry skies — hunt Wilderness and Verdant Wilds at night rotations."
+        },
+        {
+          "id": "CRY_003",
+          "qty": 1,
+          "hint": "Prismatic Crystals are rare hunt finds in any weather — keep watching the ground."
+        }
+      ]
+    }
   },
   "the_mercy_rising": {
     "id": "the_mercy_rising",
@@ -171,13 +477,46 @@
     "requirement": {
       "kind": "chain",
       "steps": [
-        { "kind": "meetNpc",    "npc": "Eleos", "label": "Find Eleos in the unnamed garden", "hint": "She greets only the bearer who is ready to give themselves." },
-        { "kind": "winBattles", "count": 12,    "label": "Win 12 wild battles after her blessing" }
+        {
+          "kind": "meetNpc",
+          "npc": "Eleos",
+          "label": "Find Eleos in the unnamed garden",
+          "hint": "She greets only the bearer who is ready to give themselves."
+        },
+        {
+          "kind": "winBattles",
+          "count": 12,
+          "label": "Win 12 wild battles after her blessing"
+        }
       ]
     },
-    "reward": { "style": "anastasis", "lucons": 800, "intelligence": 8 },
-    "hiddenCommands": { "Eleos": { "cmd": "whisper eleos", "phrase": "Spend me." } },
-    "completedFlavor": "Eleos closes her eyes. The dead plants stir, just once, as if remembering. Anastasis is yours."
+    "reward": {
+      "style": "anastasis",
+      "lucons": 800,
+      "intelligence": 8
+    },
+    "hiddenCommands": {
+      "Eleos": {
+        "cmd": "whisper eleos",
+        "phrase": "Spend me."
+      }
+    },
+    "completedFlavor": "Eleos closes her eyes. The dead plants stir, just once, as if remembering. Anastasis is yours.",
+    "teachReq": {
+      "lucons": 3500,
+      "materials": [
+        {
+          "id": "CRY_003",
+          "qty": 2,
+          "hint": "Prismatic Crystals — rare finds on any hunt; mercy is expensive."
+        },
+        {
+          "id": "MAT_004",
+          "qty": 2,
+          "hint": "Purity Ash from Terra Shatterfields — rare, and only for the worthy."
+        }
+      ]
+    }
   },
   "the_first_keeper": {
     "id": "the_first_keeper",
@@ -188,18 +527,296 @@
     "requirement": {
       "kind": "chain",
       "steps": [
-        { "kind": "meetNpc",    "npc": "Reva",  "label": "Find Wind Master Reva at the cliff-temple",      "hint": "Hidden command will be DM'd when you accept." },
-        { "kind": "meetNpc",    "npc": "Vance", "label": "Find Hierarch Vance in the iron yard",          "hint": "Speak the right word at the right place." },
-        { "kind": "meetNpc",    "npc": "Kael",  "label": "Find Rift-Tongue Kael past the rift gate",       "hint": "He answers to a name he never gave." },
-        { "kind": "winBattles", "count": 5,    "label": "Survive 5 wild battles after meeting all three" }
+        {
+          "kind": "meetNpc",
+          "npc": "Reva",
+          "label": "Find Wind Master Reva at the cliff-temple",
+          "hint": "Hidden command will be DM'd when you accept."
+        },
+        {
+          "kind": "meetNpc",
+          "npc": "Vance",
+          "label": "Find Hierarch Vance in the iron yard",
+          "hint": "Speak the right word at the right place."
+        },
+        {
+          "kind": "meetNpc",
+          "npc": "Kael",
+          "label": "Find Rift-Tongue Kael past the rift gate",
+          "hint": "He answers to a name he never gave."
+        },
+        {
+          "kind": "winBattles",
+          "count": 5,
+          "label": "Survive 5 wild battles after meeting all three"
+        }
       ]
     },
-    "reward": { "lucons": 1000, "intelligence": 10 },
+    "reward": {
+      "lucons": 1000,
+      "intelligence": 10
+    },
     "hiddenCommands": {
-      "Reva":  { "cmd": "whisper reva",  "phrase": "The wind remembers what was promised." },
-      "Vance": { "cmd": "whisper vance", "phrase": "I am the blade, not the hand." },
-      "Kael":  { "cmd": "whisper kael",  "phrase": "I have not come to ask." }
+      "Reva": {
+        "cmd": "whisper reva",
+        "phrase": "The wind remembers what was promised."
+      },
+      "Vance": {
+        "cmd": "whisper vance",
+        "phrase": "I am the blade, not the hand."
+      },
+      "Kael": {
+        "cmd": "whisper kael",
+        "phrase": "I have not come to ask."
+      }
     },
     "completedFlavor": "The three figures meet you on a road that wasn't there yesterday. They say nothing. The scroll dissolves. You feel — older."
+  },
+  "the_thunder_road": {
+    "id": "the_thunder_road",
+    "name": "The Thunder Road",
+    "giver": "Storm-Rider Kestrel",
+    "faction": null,
+    "lore": "On the ridge above the capital, Kestrel balances on a lightning-scarred stone. \"The storm does not wait for you to be ready. Neither do I. Catch me on the road — or don't.\"",
+    "requirement": {
+      "kind": "chain",
+      "steps": [
+        {
+          "kind": "meetNpc",
+          "npc": "Kestrel",
+          "label": "Find Storm-Rider Kestrel on the ridge",
+          "hint": "She answers only to the sound of the sky."
+        },
+        {
+          "kind": "winBattles",
+          "count": 7,
+          "label": "Win 7 wild battles after she sees you"
+        }
+      ]
+    },
+    "reward": {
+      "style": "fulgur_strike",
+      "lucons": 240
+    },
+    "hiddenCommands": {
+      "Kestrel": {
+        "cmd": "whisper kestrel",
+        "phrase": "The sky does not ask permission."
+      }
+    },
+    "completedFlavor": "Kestrel touches two fingers to the scarred stone, then to your chest. The storm, for one heartbeat, answers you instead. Fulgur Strike is yours.",
+    "teachReq": {
+      "lucons": 2500,
+      "materials": [
+        {
+          "id": "CRY_002",
+          "qty": 2,
+          "hint": "Core Crystals hold a charge — uncommon finds, better odds on Volt Expanse hunts."
+        },
+        {
+          "id": "MAT_002",
+          "qty": 2,
+          "hint": "Aura Crystals hum near Volt Mora — Volt Expanse hunts."
+        }
+      ]
+    }
+  },
+  "the_winter_oath": {
+    "id": "the_winter_oath",
+    "name": "The Winter Oath",
+    "giver": "Sentinel Yrsa",
+    "faction": "purity",
+    "lore": "Yrsa stands guard at the frozen pass, breath clouding around a face that has not warmed in years. \"The Order endures because it does not bend. Prove you can stand still longer than the cold.\"",
+    "requirement": {
+      "kind": "chain",
+      "steps": [
+        {
+          "kind": "meetNpc",
+          "npc": "Yrsa",
+          "label": "Find Sentinel Yrsa at the frozen pass",
+          "hint": "She has not asked a question in a decade. She will ask you one."
+        },
+        {
+          "kind": "winBattles",
+          "count": 8,
+          "label": "Win 8 wild battles after Yrsa accepts you"
+        }
+      ]
+    },
+    "reward": {
+      "style": "frost_mantle",
+      "lucons": 260
+    },
+    "hiddenCommands": {
+      "Yrsa": {
+        "cmd": "whisper yrsa",
+        "phrase": "The cold and I are one."
+      }
+    },
+    "completedFlavor": "Yrsa breaks a piece of frost from the gate and presses it into your hand. It does not melt. Frost Mantle is yours.",
+    "teachReq": {
+      "lucons": 2500,
+      "materials": [
+        {
+          "id": "CRY_001",
+          "qty": 4,
+          "hint": "Shard Crystals frost over on cold hunts — common finds in Frostreach."
+        },
+        {
+          "id": "MAT_003",
+          "qty": 2,
+          "hint": "Mora Fangs from Frost Mora — Frostreach hunts."
+        }
+      ]
+    }
+  },
+  "the_poisoned_garden": {
+    "id": "the_poisoned_garden",
+    "name": "The Poisoned Garden",
+    "giver": "Garden-Mother Solenne",
+    "faction": "harmony",
+    "lore": "Behind the Sanctuary's flower wall lies a garden no one tends. Solenne kneels among the nightshade. \"You think mercy is soft. Let me show you what it grows.\"",
+    "requirement": {
+      "kind": "chain",
+      "steps": [
+        {
+          "kind": "meetNpc",
+          "npc": "Solenne",
+          "label": "Find Garden-Mother Solenne in the hidden garden",
+          "hint": "She notices who does not flinch from the thorns."
+        },
+        {
+          "kind": "winBattles",
+          "count": 9,
+          "label": "Win 9 wild battles after she plants the seed"
+        }
+      ]
+    },
+    "reward": {
+      "style": "venomsong",
+      "lucons": 320
+    },
+    "hiddenCommands": {
+      "Solenne": {
+        "cmd": "whisper solenne",
+        "phrase": "Even the gentle bite when cornered."
+      }
+    },
+    "completedFlavor": "Solenne gives you a single nightshade flower. \"Carry it where you fight.\" When you look down, the stem is singing. Venomsong is yours.",
+    "teachReq": {
+      "lucons": 3000,
+      "materials": [
+        {
+          "id": "MAT_003",
+          "qty": 3,
+          "hint": "Mora Fangs from Nature Mora — Verdant Wilds hunts, where the garden grows."
+        },
+        {
+          "id": "MAT_005",
+          "qty": 2,
+          "hint": "Shadow Resin from Shadow Hollow — the garden trades with the dark."
+        }
+      ]
+    }
+  },
+  "the_moonless_road": {
+    "id": "the_moonless_road",
+    "name": "The Moonless Road",
+    "giver": "Veiled One Morwen",
+    "faction": "rift",
+    "lore": "Morwen walks the road at the hour the moon refuses to rise. \"The Rift gave us the dark so we would stop fearing what hides in it. Walk with me where the light ends.\"",
+    "requirement": {
+      "kind": "chain",
+      "steps": [
+        {
+          "kind": "meetNpc",
+          "npc": "Morwen",
+          "label": "Find Veiled One Morwen on the moonless road",
+          "hint": "She answers to a phrase that has no moon in it."
+        },
+        {
+          "kind": "winBattles",
+          "count": 10,
+          "label": "Win 10 wild battles after she veils you"
+        }
+      ]
+    },
+    "reward": {
+      "style": "lunar_shroud",
+      "lucons": 350,
+      "riftPE": 5
+    },
+    "hiddenCommands": {
+      "Morwen": {
+        "cmd": "whisper morwen",
+        "phrase": "I walk where the light ends."
+      }
+    },
+    "completedFlavor": "Morwen lifts her veil for the first time — there is nothing beneath it but the dark you've learned to carry. Lunar Shroud is yours.",
+    "teachReq": {
+      "lucons": 3000,
+      "materials": [
+        {
+          "id": "MAT_005",
+          "qty": 3,
+          "hint": "Shadow Resin from Shadow Hollow hunts — rare; the road keeps its receipts."
+        },
+        {
+          "id": "CRY_002",
+          "qty": 2,
+          "hint": "Core Crystals from deep hunts — uncommon everywhere, certain nowhere."
+        }
+      ]
+    }
+  },
+  "the_keepers_hour": {
+    "id": "the_keepers_hour",
+    "name": "The Keeper's Hour",
+    "giver": "Keeper Chronis",
+    "faction": null,
+    "lore": "Chronis keeps a sundial that casts no shadow. \"Everyone fights the clock. The Keeper's line learned to shake its hand. One hour — that is all I offer. Do not waste it.\"",
+    "requirement": {
+      "kind": "chain",
+      "steps": [
+        {
+          "kind": "meetNpc",
+          "npc": "Chronis",
+          "label": "Find Keeper Chronis at the shadowless sundial",
+          "hint": "He waits for the one who asks for the hour itself."
+        },
+        {
+          "kind": "winBattles",
+          "count": 12,
+          "label": "Win 12 wild battles after the hour begins"
+        }
+      ]
+    },
+    "reward": {
+      "style": "chrono_vow",
+      "lucons": 600,
+      "intelligence": 6
+    },
+    "hiddenCommands": {
+      "Chronis": {
+        "cmd": "whisper chronis",
+        "phrase": "I ask for the hour itself."
+      }
+    },
+    "completedFlavor": "Chronis turns the sundial once. The shadow returns — and lands, for one moment, behind you. Chrono Vow is yours.",
+    "teachReq": {
+      "lucons": 4000,
+      "materials": [
+        {
+          "id": "MAT_008",
+          "qty": 2,
+          "hint": "Chrono Shards surface rarely near rift-scarred ground (Rift Scar) — time runs thin there."
+        },
+        {
+          "id": "CRY_003",
+          "qty": 1,
+          "hint": "Prismatic Crystals — rare finds in any weather; the hour tests patience above all."
+        }
+      ]
+    }
   }
 }

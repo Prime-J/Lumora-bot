@@ -544,7 +544,7 @@
     "price": 35,
     "stock": 10,
     "storageCost": 1,
-    "effect": "heal",
+    "effect": "Restores 30 HP",
     "value": 30,
     "desc": "A small capsule filled with condensed vitality energy.",
     "effects": {
@@ -561,7 +561,7 @@
     "price": 90,
     "stock": 6,
     "storageCost": 1,
-    "effect": "heal",
+    "effect": "Restores 70 HP",
     "value": 70,
     "desc": "A stronger high value healing capsule used before dangerous hunts.",
     "effects": {
@@ -578,7 +578,7 @@
     "price": 40,
     "stock": 10,
     "storageCost": 1,
-    "effect": "energy",
+    "effect": "Restores 30 Energy",
     "value": 25,
     "desc": "A capsule filled with concentrated energy to quickly restore your vitality.",
     "effects": {
@@ -1101,7 +1101,7 @@
   "MUT_001": {
     "id": "MUT_001",
     "name": "Mutation Shard",
-    "category": "consumable",
+    "category": "special",
     "rarity": "Rare",
     "marketType": "normal",
     "rotates": true,
@@ -1114,7 +1114,7 @@
   "MUT_002": {
     "id": "MUT_002",
     "name": "Primal Catalyst",
-    "category": "consumable",
+    "category": "special",
     "rarity": "Epic",
     "marketType": "normal",
     "rotates": true,
@@ -1135,12 +1135,15 @@
     "stock": 2,
     "storageCost": 0,
     "effect": "+50 companion bond points instantly.",
-    "desc": "A resonance crystal that amplifies the bond between a Lumorian and their companion Mora."
+    "desc": "A resonance crystal that amplifies the bond between a Lumorian and their companion Mora.",
+    "effects": {
+      "bondBoost": 50
+    }
   },
   "CREATION_POWDER": {
     "id": "CREATION_POWDER",
     "name": "Creation Powder",
-    "category": "consumable",
+    "category": "special",
     "rarity": "Mythic",
     "marketType": "pro",
     "rotates": false,
@@ -1153,7 +1156,7 @@
   "REOB": {
     "id": "REOB",
     "name": "Reob",
-    "category": "consumable",
+    "category": "special",
     "rarity": "Mythic",
     "marketType": "pro",
     "rotates": false,
@@ -1230,7 +1233,7 @@
   "RES_001": {
     "id": "RES_001",
     "name": "Rift Escape Shard",
-    "category": "consumable",
+    "category": "special",
     "rarity": "Rare",
     "marketType": "faction",
     "rotates": true,
@@ -1307,7 +1310,6 @@
       "mask": true
     }
   },
-
   "SHARD_VIAL": {
     "id": "SHARD_VIAL",
     "name": "Cleansing Vial",
@@ -1324,7 +1326,6 @@
       "purifyShard": true
     }
   },
-
   "SHARD_LURE": {
     "id": "SHARD_LURE",
     "name": "Shard Lure",
@@ -1341,7 +1342,6 @@
       "forceShardDropNext": true
     }
   },
-
   "HP_TINCTURE": {
     "id": "HP_TINCTURE",
     "name": "Sun-Dew Tincture",
@@ -1358,7 +1358,6 @@
       "heal": 50
     }
   },
-
   "HP_TONIC_FULL": {
     "id": "HP_TONIC_FULL",
     "name": "Anastasis Draught",
@@ -1375,7 +1374,6 @@
       "healFull": true
     }
   },
-
   "ENERGY_TONIC": {
     "id": "ENERGY_TONIC",
     "name": "Surge Tonic",
@@ -1392,7 +1390,6 @@
       "energyRefill": true
     }
   },
-
   "RESONANCE_VIAL": {
     "id": "RESONANCE_VIAL",
     "name": "Resonance Vial",
@@ -1409,7 +1406,6 @@
       "resonanceBoost": 50
     }
   },
-
   "READERS_INK": {
     "id": "READERS_INK",
     "name": "Reader's Ink",
@@ -1426,7 +1422,6 @@
       "intelligenceBoost": 3
     }
   },
-
   "QUEST_COMPASS": {
     "id": "QUEST_COMPASS",
     "name": "Quest Compass",
@@ -1442,5 +1437,41 @@
     "effects": {
       "questHintRefresh": true
     }
+  },
+  "MAT_006": {
+    "id": "MAT_006",
+    "name": "Sky-Shard Feather",
+    "category": "material",
+    "rarity": "Common",
+    "marketType": "normal",
+    "price": 120,
+    "storageCost": 0,
+    "effect": "Quest material — wind-style trials",
+    "desc": "A feather gone semi-crystalline from thin high-altitude aether. Molted by wind Mora; prized by teachers of the wind disciplines.",
+    "dropHint": "Defeat Wind-type Mora while hunting (Zephyra, Gustling, Stormix grounds)."
+  },
+  "MAT_007": {
+    "id": "MAT_007",
+    "name": "Galestone Chip",
+    "category": "material",
+    "rarity": "Uncommon",
+    "marketType": "normal",
+    "price": 450,
+    "storageCost": 0,
+    "effect": "Quest material — wind-style trials",
+    "desc": "A splinter of stone carved smooth by centuries of unbroken gale. Only cliffs where the wind never stops will produce these.",
+    "dropHint": "Rare find while hunting anywhere the wind howls — windswept terrains and cliff hunts."
+  },
+  "MAT_008": {
+    "id": "MAT_008",
+    "name": "Chrono Shard",
+    "category": "material",
+    "rarity": "Epic",
+    "marketType": "normal",
+    "price": 1200,
+    "storageCost": 0,
+    "effect": "Quest material — time-style trials",
+    "desc": "A sliver of hourglass glass that remembers both directions. Warm at one end, cold at the other.",
+    "dropHint": "Surfaces rarely on hunts near rift-scarred ground, where time runs thin."
   }
 }

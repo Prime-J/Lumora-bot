@@ -7,11 +7,31 @@
     "faction": null,
     "lore": "A fluid Lumorian discipline that bends momentum and air. Practitioners strike from impossible angles.",
     "moves": [
-      { "name": "Gale Kick",   "power": 38, "accuracy": 95, "energyCost": 4, "desc": "A whipping kick carried on a gust of wind." },
-      { "name": "Sky Step",    "power": 28, "accuracy": 100, "energyCost": 5, "neverMisses": true, "desc": "Leap upward — your next move comes from above. Cannot miss." },
-      { "name": "Cyclone Cut", "power": 62, "accuracy": 88, "energyCost": 8, "desc": "A spinning blade of compressed air." }
+      {
+        "name": "Gale Kick",
+        "power": 38,
+        "accuracy": 95,
+        "energyCost": 4,
+        "desc": "A whipping kick carried on a gust of wind."
+      },
+      {
+        "name": "Sky Step",
+        "power": 28,
+        "accuracy": 100,
+        "energyCost": 5,
+        "neverMisses": true,
+        "desc": "Leap upward — your next move comes from above. Cannot miss."
+      },
+      {
+        "name": "Cyclone Cut",
+        "power": 62,
+        "accuracy": 88,
+        "energyCost": 8,
+        "desc": "A spinning blade of compressed air."
+      }
     ],
-    "unlockQuest": "first_breath"
+    "unlockQuest": "first_breath",
+    "levelReq": 0
   },
   "sun_walk": {
     "id": "sun_walk",
@@ -21,11 +41,30 @@
     "faction": null,
     "lore": "A radiant style taught only in the Sanctuary's inner courtyard. Each step burns its impression into the air.",
     "moves": [
-      { "name": "Solar Step",  "power": 40, "accuracy": 95, "energyCost": 4, "desc": "A scorching forward stride." },
-      { "name": "Flare Palm",  "power": 32, "accuracy": 100, "energyCost": 5, "desc": "A bright palm-strike that dazzles." },
-      { "name": "Dawn Pillar", "power": 70, "accuracy": 85, "energyCost": 9, "desc": "Call down a column of solar fire." }
+      {
+        "name": "Solar Step",
+        "power": 40,
+        "accuracy": 95,
+        "energyCost": 4,
+        "desc": "A scorching forward stride."
+      },
+      {
+        "name": "Flare Palm",
+        "power": 32,
+        "accuracy": 100,
+        "energyCost": 5,
+        "desc": "A bright palm-strike that dazzles."
+      },
+      {
+        "name": "Dawn Pillar",
+        "power": 70,
+        "accuracy": 85,
+        "energyCost": 9,
+        "desc": "Call down a column of solar fire."
+      }
     ],
-    "unlockQuest": "first_dawn"
+    "unlockQuest": "first_dawn",
+    "levelReq": 0
   },
   "tide_veil": {
     "id": "tide_veil",
@@ -35,11 +74,31 @@
     "faction": "harmony",
     "lore": "Harmony's defensive water form, taught by the Sanctuary's tide-keepers. Strikes ride the rhythm of breath and current.",
     "moves": [
-      { "name": "Mending Wave", "power": 0,  "accuracy": 100, "energyCost": 6, "selfHeal": 18, "desc": "A soft wave — restores 18 HP to yourself instead of dealing damage." },
-      { "name": "Ripple Strike", "power": 35, "accuracy": 95, "energyCost": 4, "desc": "A flowing palm-strike that washes back." },
-      { "name": "Drown Press", "power": 58, "accuracy": 90, "energyCost": 7, "desc": "A heavy press of compressed water; slows the target." }
+      {
+        "name": "Mending Wave",
+        "power": 0,
+        "accuracy": 100,
+        "energyCost": 6,
+        "selfHeal": 18,
+        "desc": "A soft wave — restores 18 HP to yourself instead of dealing damage."
+      },
+      {
+        "name": "Ripple Strike",
+        "power": 35,
+        "accuracy": 95,
+        "energyCost": 4,
+        "desc": "A flowing palm-strike that washes back."
+      },
+      {
+        "name": "Drown Press",
+        "power": 58,
+        "accuracy": 90,
+        "energyCost": 7,
+        "desc": "A heavy press of compressed water; slows the target."
+      }
     ],
-    "unlockQuest": "tides_of_sanctuary"
+    "unlockQuest": "tides_of_sanctuary",
+    "levelReq": 8
   },
   "bone_crush": {
     "id": "bone_crush",
@@ -49,11 +108,32 @@
     "faction": "purity",
     "lore": "The Purity Order's strike-discipline: no flourish, no waste. Every motion ends in a fracture.",
     "moves": [
-      { "name": "Bone Hammer", "power": 50, "accuracy": 92, "energyCost": 5, "desc": "A heavy overhead strike." },
-      { "name": "Iron Stance", "power": 0,  "accuracy": 100, "energyCost": 4, "brace": true, "counter": 20, "desc": "Brace — next incoming hit halved AND counter-strikes for 20 damage." },
-      { "name": "Pillar Drop", "power": 75, "accuracy": 82, "energyCost": 9, "desc": "A devastating overhead — slow but crushing." }
+      {
+        "name": "Bone Hammer",
+        "power": 50,
+        "accuracy": 92,
+        "energyCost": 5,
+        "desc": "A heavy overhead strike."
+      },
+      {
+        "name": "Iron Stance",
+        "power": 0,
+        "accuracy": 100,
+        "energyCost": 4,
+        "brace": true,
+        "counter": 20,
+        "desc": "Brace — next incoming hit halved AND counter-strikes for 20 damage."
+      },
+      {
+        "name": "Pillar Drop",
+        "power": 75,
+        "accuracy": 82,
+        "energyCost": 9,
+        "desc": "A devastating overhead — slow but crushing."
+      }
     ],
-    "unlockQuest": "oath_of_iron"
+    "unlockQuest": "oath_of_iron",
+    "levelReq": 8
   },
   "void_sever": {
     "id": "void_sever",
@@ -63,11 +143,31 @@
     "faction": "rift",
     "lore": "Rift-tongue carving. Each strike pulls a thread of substance out of the world and consumes it.",
     "moves": [
-      { "name": "Sever Line",  "power": 42, "accuracy": 95, "energyCost": 5, "desc": "A clean cut across nothing — that takes something with it." },
-      { "name": "Void Drain",  "power": 30, "accuracy": 100, "energyCost": 5, "energyRestore": 6, "desc": "Drain energy — deal 30 damage AND restore 6 of your own combat energy." },
-      { "name": "Null Eclipse", "power": 80, "accuracy": 80, "energyCost": 10, "desc": "Collapse a sliver of the void onto your target." }
+      {
+        "name": "Sever Line",
+        "power": 42,
+        "accuracy": 95,
+        "energyCost": 5,
+        "desc": "A clean cut across nothing — that takes something with it."
+      },
+      {
+        "name": "Void Drain",
+        "power": 30,
+        "accuracy": 100,
+        "energyCost": 5,
+        "energyRestore": 6,
+        "desc": "Drain energy — deal 30 damage AND restore 6 of your own combat energy."
+      },
+      {
+        "name": "Null Eclipse",
+        "power": 80,
+        "accuracy": 80,
+        "energyCost": 10,
+        "desc": "Collapse a sliver of the void onto your target."
+      }
     ],
-    "unlockQuest": "void_initiation"
+    "unlockQuest": "void_initiation",
+    "levelReq": 8
   },
   "pyrolexis": {
     "id": "pyrolexis",
@@ -77,11 +177,31 @@
     "faction": null,
     "lore": "From the Greek pyr (fire) and lexis (speech). A spoken-art discipline — every move is a syllable the world cannot ignore.",
     "moves": [
-      { "name": "Logos Ardens",  "power": 36, "accuracy": 95, "energyCost": 4, "desc": "Latin: 'burning word'. A short utterance that ignites the air around the target." },
-      { "name": "Crepitus",      "power": 30, "accuracy": 100, "energyCost": 5, "neverMisses": true, "desc": "Latin: 'crackling'. Hisses across the gap and lands without fail." },
-      { "name": "Hekatombe",     "power": 72, "accuracy": 82, "energyCost": 9, "desc": "Greek: 'great fire-offering'. A roaring finisher — slow to speak, devastating to hear." }
+      {
+        "name": "Logos Ardens",
+        "power": 36,
+        "accuracy": 95,
+        "energyCost": 4,
+        "desc": "Latin: 'burning word'. A short utterance that ignites the air around the target."
+      },
+      {
+        "name": "Crepitus",
+        "power": 30,
+        "accuracy": 100,
+        "energyCost": 5,
+        "neverMisses": true,
+        "desc": "Latin: 'crackling'. Hisses across the gap and lands without fail."
+      },
+      {
+        "name": "Hekatombe",
+        "power": 72,
+        "accuracy": 82,
+        "energyCost": 9,
+        "desc": "Greek: 'great fire-offering'. A roaring finisher — slow to speak, devastating to hear."
+      }
     ],
-    "unlockQuest": "rite_of_embers"
+    "unlockQuest": "rite_of_embers",
+    "levelReq": 8
   },
   "kataphraxis": {
     "id": "kataphraxis",
@@ -91,11 +211,33 @@
     "faction": "harmony",
     "lore": "From the Greek kataphraktos (fully armored). Harmony's heavy-plate counter-form, taught to those who would shield others before themselves.",
     "moves": [
-      { "name": "Phalanx Step", "power": 34, "accuracy": 95, "energyCost": 4, "desc": "A measured advance behind raised guard." },
-      { "name": "Aegis Stance", "power": 0,  "accuracy": 100, "energyCost": 4, "brace": true, "counter": 25, "desc": "Greek: 'shield-stance'. Brace — next incoming hit halved AND counter-strikes for 25 damage." },
-      { "name": "Citadel",      "power": 0,  "accuracy": 100, "energyCost": 7, "selfHeal": 22, "desc": "Latin: 'small city, fortress'. Withdraw, brace, and restore 22 HP." }
+      {
+        "name": "Phalanx Step",
+        "power": 34,
+        "accuracy": 95,
+        "energyCost": 4,
+        "desc": "A measured advance behind raised guard."
+      },
+      {
+        "name": "Aegis Stance",
+        "power": 0,
+        "accuracy": 100,
+        "energyCost": 4,
+        "brace": true,
+        "counter": 25,
+        "desc": "Greek: 'shield-stance'. Brace — next incoming hit halved AND counter-strikes for 25 damage."
+      },
+      {
+        "name": "Citadel",
+        "power": 0,
+        "accuracy": 100,
+        "energyCost": 7,
+        "selfHeal": 22,
+        "desc": "Latin: 'small city, fortress'. Withdraw, brace, and restore 22 HP."
+      }
     ],
-    "unlockQuest": "vow_of_the_shield"
+    "unlockQuest": "vow_of_the_shield",
+    "levelReq": 8
   },
   "tenebris": {
     "id": "tenebris",
@@ -105,11 +247,31 @@
     "faction": "rift",
     "lore": "Latin: tenebrae (darkness, gloom). A Rift-borne shadow art — quieter than Void Sever, hungrier.",
     "moves": [
-      { "name": "Umbra Caedere", "power": 44, "accuracy": 95, "energyCost": 5, "desc": "Latin: 'to slay in shadow'. The strike arrives before the sound." },
-      { "name": "Noctis Vorax",  "power": 36, "accuracy": 100, "energyCost": 6, "selfHeal": 12, "desc": "Latin: 'night-devourer'. Bite that returns 12 HP to the caster." },
-      { "name": "Eclipsis",      "power": 92, "accuracy": 80, "energyCost": 11, "desc": "Latin: 'eclipse'. A finisher that briefly removes the target from the world." }
+      {
+        "name": "Umbra Caedere",
+        "power": 44,
+        "accuracy": 95,
+        "energyCost": 5,
+        "desc": "Latin: 'to slay in shadow'. The strike arrives before the sound."
+      },
+      {
+        "name": "Noctis Vorax",
+        "power": 36,
+        "accuracy": 100,
+        "energyCost": 6,
+        "selfHeal": 12,
+        "desc": "Latin: 'night-devourer'. Bite that returns 12 HP to the caster."
+      },
+      {
+        "name": "Eclipsis",
+        "power": 92,
+        "accuracy": 80,
+        "energyCost": 11,
+        "desc": "Latin: 'eclipse'. A finisher that briefly removes the target from the world."
+      }
     ],
-    "unlockQuest": "covenant_of_caligo"
+    "unlockQuest": "covenant_of_caligo",
+    "levelReq": 15
   },
   "astrobolos": {
     "id": "astrobolos",
@@ -119,11 +281,31 @@
     "faction": null,
     "lore": "Greek: astrobolos (star-thrown, struck by stars). A celestial striking art — said to be taught beyond the rim of any temple.",
     "moves": [
-      { "name": "Stella Cadens",   "power": 46, "accuracy": 92, "energyCost": 5, "desc": "Latin: 'falling star'. A ranged punch of compressed light." },
-      { "name": "Sidereum Ictus",  "power": 34, "accuracy": 100, "energyCost": 5, "neverMisses": true, "desc": "Latin: 'starry blow'. Cannot miss." },
-      { "name": "Nova Igne",       "power": 88, "accuracy": 82, "energyCost": 10, "desc": "Latin: 'with new fire'. The horizon briefly turns white." }
+      {
+        "name": "Stella Cadens",
+        "power": 46,
+        "accuracy": 92,
+        "energyCost": 5,
+        "desc": "Latin: 'falling star'. A ranged punch of compressed light."
+      },
+      {
+        "name": "Sidereum Ictus",
+        "power": 34,
+        "accuracy": 100,
+        "energyCost": 5,
+        "neverMisses": true,
+        "desc": "Latin: 'starry blow'. Cannot miss."
+      },
+      {
+        "name": "Nova Igne",
+        "power": 88,
+        "accuracy": 82,
+        "energyCost": 10,
+        "desc": "Latin: 'with new fire'. The horizon briefly turns white."
+      }
     ],
-    "unlockQuest": "starlit_passage"
+    "unlockQuest": "starlit_passage",
+    "levelReq": 15
   },
   "anastasis": {
     "id": "anastasis",
@@ -133,10 +315,206 @@
     "faction": "harmony",
     "lore": "Greek: anastasis (rising, resurrection). The Sanctuary's most sacred discipline — taught to almost no one, and only after great loss.",
     "moves": [
-      { "name": "Lux Lenis",      "power": 26, "accuracy": 100, "energyCost": 4, "selfHeal": 10, "neverMisses": true, "desc": "Latin: 'gentle light'. Deals quiet damage and returns 10 HP." },
-      { "name": "Velamen Sanans", "power": 0,  "accuracy": 100, "energyCost": 7, "selfHeal": 35, "desc": "Latin: 'healing veil'. Restore 35 HP." },
-      { "name": "Resurgentia",    "power": 105, "accuracy": 80, "energyCost": 12, "desc": "Latin: 'rising again'. A final, blinding strike — only spoken when the bearer is ready to spend all of themselves." }
+      {
+        "name": "Lux Lenis",
+        "power": 26,
+        "accuracy": 100,
+        "energyCost": 4,
+        "selfHeal": 10,
+        "neverMisses": true,
+        "desc": "Latin: 'gentle light'. Deals quiet damage and returns 10 HP."
+      },
+      {
+        "name": "Velamen Sanans",
+        "power": 0,
+        "accuracy": 100,
+        "energyCost": 7,
+        "selfHeal": 35,
+        "desc": "Latin: 'healing veil'. Restore 35 HP."
+      },
+      {
+        "name": "Resurgentia",
+        "power": 105,
+        "accuracy": 80,
+        "energyCost": 12,
+        "desc": "Latin: 'rising again'. A final, blinding strike — only spoken when the bearer is ready to spend all of themselves."
+      }
     ],
-    "unlockQuest": "the_mercy_rising"
+    "unlockQuest": "the_mercy_rising",
+    "levelReq": 25
+  },
+  "fulgur_strike": {
+    "id": "fulgur_strike",
+    "name": "Fulgur Strike",
+    "type": "Storm",
+    "rarity": "rare",
+    "faction": null,
+    "lore": "Latin: fulgur (lightning flash). A storm-road discipline — every strike is the thunder that arrives a heartbeat after the flash, learned on the ridge where the sky keeps score.",
+    "moves": [
+      {
+        "name": "Celer Fulmen",
+        "power": 40,
+        "accuracy": 95,
+        "energyCost": 4,
+        "desc": "Latin: 'swift lightning'. A crackling jab that arrives before the arm looks committed."
+      },
+      {
+        "name": "Tonitrui Pes",
+        "power": 32,
+        "accuracy": 100,
+        "energyCost": 5,
+        "neverMisses": true,
+        "desc": "Latin: 'thunder-foot'. You move inside the gap the thunder leaves. Cannot miss."
+      },
+      {
+        "name": "Caerulea Flagrum",
+        "power": 72,
+        "accuracy": 85,
+        "energyCost": 9,
+        "desc": "Latin: 'blue whip'. A drawn arc of storm-light that splits the air — slow to charge, brutal to eat."
+      }
+    ],
+    "unlockQuest": "the_thunder_road",
+    "levelReq": 10
+  },
+  "frost_mantle": {
+    "id": "frost_mantle",
+    "name": "Frost Mantle",
+    "type": "Frost",
+    "rarity": "rare",
+    "faction": "purity",
+    "lore": "The Order's cold sentinel form, taught in the high passes. Frost does not argue — it simply arrives and stays, and this style believes the same.",
+    "moves": [
+      {
+        "name": "Glacies Ictus",
+        "power": 38,
+        "accuracy": 95,
+        "energyCost": 4,
+        "desc": "Latin: 'ice-strike'. A knuckle driven in with winter's patience."
+      },
+      {
+        "name": "Aegis Frigus",
+        "power": 0,
+        "accuracy": 100,
+        "energyCost": 4,
+        "brace": true,
+        "counter": 22,
+        "desc": "Latin: 'cold shield'. Brace — the next hit is halved and the attacker takes 22 frost damage."
+      },
+      {
+        "name": "Pruina Occasus",
+        "power": 68,
+        "accuracy": 87,
+        "energyCost": 8,
+        "desc": "Latin: 'frost-fall'. A heavy blow that coats the target in rime and slows their next move."
+      }
+    ],
+    "unlockQuest": "the_winter_oath",
+    "levelReq": 10
+  },
+  "venomsong": {
+    "id": "venomsong",
+    "name": "Venomsong",
+    "type": "Toxic",
+    "rarity": "epic",
+    "faction": "harmony",
+    "lore": "Harmony's hidden garden-form. The Sanctuary teaches mercy — and this is what mercy sounds like when it has been patient for a very long time.",
+    "moves": [
+      {
+        "name": "Cantus Veneni",
+        "power": 36,
+        "accuracy": 95,
+        "energyCost": 4,
+        "desc": "Latin: 'song of venom'. A darting strike that leaves a singing ache."
+      },
+      {
+        "name": "Virus Lenis",
+        "power": 28,
+        "accuracy": 100,
+        "energyCost": 5,
+        "selfHeal": 14,
+        "neverMisses": true,
+        "desc": "Latin: 'gentle poison'. Deals quiet damage and returns 14 HP — mercy with teeth."
+      },
+      {
+        "name": "Requiem Noctis",
+        "power": 80,
+        "accuracy": 84,
+        "energyCost": 10,
+        "desc": "Latin: 'night requiem'. A bloom of dark pollen that takes the breath before the strike lands."
+      }
+    ],
+    "unlockQuest": "the_poisoned_garden",
+    "levelReq": 15
+  },
+  "lunar_shroud": {
+    "id": "lunar_shroud",
+    "name": "Lunar Shroud",
+    "type": "Lunar",
+    "rarity": "epic",
+    "faction": "rift",
+    "lore": "Rift-tongue night-art, danced only under the dark moon. The Shroud is not a defense — it is the absence the moon leaves behind when it turns away.",
+    "moves": [
+      {
+        "name": "Umbra Lunae",
+        "power": 42,
+        "accuracy": 95,
+        "energyCost": 5,
+        "desc": "Latin: 'shadow of the moon'. A strike thrown from a place the light just vacated."
+      },
+      {
+        "name": "Tenebris Adsum",
+        "power": 34,
+        "accuracy": 100,
+        "energyCost": 5,
+        "energyRestore": 7,
+        "neverMisses": true,
+        "desc": "Latin: 'I take the dark'. Deals damage and recycles 7 combat energy."
+      },
+      {
+        "name": "Eclipsis Plena",
+        "power": 86,
+        "accuracy": 82,
+        "energyCost": 11,
+        "desc": "Latin: 'full eclipse'. The world goes dark for exactly one breath — and then the strike is already over."
+      }
+    ],
+    "unlockQuest": "the_moonless_road",
+    "levelReq": 15
+  },
+  "chrono_vow": {
+    "id": "chrono_vow",
+    "name": "Chrono Vow",
+    "type": "Time",
+    "rarity": "legendary",
+    "faction": null,
+    "lore": "The oldest style in the Chronicle, older than the factions. Chrono Vow does not move faster — it moves when you are not ready. Only the Keeper's line has ever completed it.",
+    "moves": [
+      {
+        "name": "Momentum Fractum",
+        "power": 44,
+        "accuracy": 100,
+        "energyCost": 5,
+        "neverMisses": true,
+        "desc": "Latin: 'broken moment'. The strike lands in the instant between your heartbeat and your awareness. Cannot miss."
+      },
+      {
+        "name": "Tempus Inversum",
+        "power": 0,
+        "accuracy": 100,
+        "energyCost": 6,
+        "selfHeal": 24,
+        "desc": "Latin: 'reversed time'. Rewind your body by a breath — restore 24 HP."
+      },
+      {
+        "name": "Ultima Hora",
+        "power": 100,
+        "accuracy": 80,
+        "energyCost": 12,
+        "desc": "Latin: 'the final hour'. A strike that arrives from an hour that has not happened yet — the Keeper's finisher."
+      }
+    ],
+    "unlockQuest": "the_keepers_hour",
+    "levelReq": 25
   }
 }

@@ -821,9 +821,6 @@ async function cmdInventory(ctx, chatId, senderId, msg, args = []) {
   const name = player.username?.trim() || "Unnamed Lumorian";
   const page = Math.max(1, parseInt(args[0], 10) || 1);
 
-  // Send interactive list menu for inventory browsing
-  await interactiveUI.sendInventoryMenu(sock, chatId, player.inventory || {}, msg);
-
   // Visual inventory — falls back to the text card if render fails or it's empty.
   // Canvas module is optional (excluded from deploy for now); lazy-require it.
   try {

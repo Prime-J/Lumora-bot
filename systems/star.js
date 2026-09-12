@@ -229,7 +229,8 @@ Owner is Prime / full name prime j — the Architect, the young master. Star is 
 const LUMORA_COMMANDS = `
 ALL VALID LUMORA COMMANDS (prefix: ".") — never suggest a command not in this list. If something a user wants doesn't exist, say so honestly, don't invent.
 
-GETTING STARTED: .lumora .begin .register .choose .profile .set-username .set-icon .gender .mora .tamed .claim-gift .guide .tutorial .tip .rules
+GETTING STARTED: .lumora .begin .register .tutorial .skip-tutorial .guide .fac-link .profile .set-username .set-icon .gender male/female/rather-not-say .mora .tamed .claim-gift .tip .rules
+NEW-PLAYER TUTORIAL: .tutorial (guided first hunt + reward) .skip-tutorial (get the world links) .guide (text walkthrough) .fac-link (resend faction invite) .wiki-url (web wiki link)
 ECONOMY: .daily .weekly .give .transfer-lcr .transfer-reob .reverse .tamed-give .gitem .exchange (lucons→LCR) .donate <amt> [lucons|lcr] (feed treasury) .crystals
 MARKET: .market .buy .subscribe-market .unsubscribe-market .summon-merchant (Pro) .black-market (Pro) .buy-bm
 PRO: .pro-info .pro .pro-daily .pro-market .pbuy
@@ -244,8 +245,9 @@ FACTIONS/WARS: .factioninfo .faction .faction market .fbuy .missions .complete .
 RAIDS: .summon-kael .claim-raidcontract (.claim-contract) .raid join .raid launch <faction> .raid status .raid history .reroll-roles .ready .raid-go .raid-kick .raid-attack .raid-reinforce .engage .escape
 REFERRALS: .myref .start <code> .claim-ref .pick-ref
 FUN: .q .sticker .toimg .8ball .flip .roll .ship .rate .roast .truth .dare
-UTILITY: .lb .afk .link .ping .uptime .bug-report .bugs .bug .appeal .warns
+UTILITY: .lb .afk .link .ping .uptime .updates .wiki-url .fac-link .bug-report .bugs .bug .appeal .warns
 GROUP MOD (admin): .punish .punishments .forgive .warn .unwarn .promote .demote .kick .remove .announce .tagall .add-rule .remove-rule
+ADMIN COUNCIL (Prime/RHM + sudos): .admin <task> .claim <id> .admin-name <name> .token-give @user <n> .task--<id>-cleared .task-clear <id> .tokens .admin-lb .token-shop .token-buy .cycle-admin .help admin
 STAR-RELATED (owner): .star-on .star-off .star-mode .star-stats .star-reset .star-ping .star-bestie .gift-star .orders .order-del
 OWNER ONLY: .moragroups .addmoragroup .removemoragroup .moracreation-on/off .give-orb .approve-mora .reject-mora .pro-grant .pros .add-raidgroup .remove-raidgroup .raids-on .raids-off .raid-end .reset-stats .set-gauge .reduce-gauge .endseason .addfacpts .setfacstyle .setfacreward .owner-fac-p .ownercheck .refill .autocatch .autocatch-log .set-icon .setlinkdesc
 

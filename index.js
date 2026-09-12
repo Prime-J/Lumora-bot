@@ -261,6 +261,8 @@ app.get('/', (req, res) => {
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
+  botBootComplete = true;
+  console.log("[flowMarket] server listening — interactive market gate open");
 });
 
 const pino = require("pino");
@@ -329,7 +331,9 @@ const { generateFactionGraph, generateFacPointsCard, generateBattleVsImage } = r
 const botPersonality = require('./systems/botPersonality');
 const onboardingSystem = require('./systems/onboarding');
 const ui = require('./systems/ui');
+const MU = require('./systems/messageUtils');
 const interactiveUI = require('./systems/interactiveUI');
+const flowMarket    = require('./systems/flowMarket');
 const helpUI = require('./systems/helpUI');
 const FACTION_FILE = './data/faction_state.json';
 const lb = require('./leaderboard');
@@ -358,6 +362,8 @@ const ownerToolsSystem  = require('./systems/ownerTools');
 const meetingsSystem = require('./systems/meetings');
 const buttonsSystem = require('./systems/buttons');
 const { sendButtons } = buttonsSystem;
+const tutorialSystem = require('./systems/tutorial');
+const adminTokens = require('./systems/adminTokens');
 const artpackSystem = require('./systems/artpack');
 const { generateRankCard, generateRankUpCard } = require('./systems/rankCardCanvas');
 const { generateWealthCard, findWealthRank, buildWealthLb } = require('./systems/wealthCanvas');
@@ -454,6 +460,7 @@ const startTime = Date.now();
 // ── Bot Stats (dashboard-facing) ─────────────────────────
 const botStats = { commandsParsed: 0, luconsSpent: 0, messagesSent: 0, broadcastsSent: 0 };
 global._lumoraSock = null; // set when connected
+let botBootComplete = false; // becomes true once server is listening AND socket is open
 function getBotUptime() {
   const ms = Date.now() - startTime;
   const s = Math.floor(ms / 1000) % 60;
@@ -492,9 +499,9 @@ const FACTION_GROUPS = {};
 
 // Invite-link → faction mapping (used to resolve JIDs at runtime)
 const FACTION_INVITE_MAP = {
-    'IRAvs9txWwDHI3l4OVYAak': 'harmony',
+    'IRAvs9txWwDHI3i4OVYAak': 'harmony',
     'KzWF6mHUZCN85CkllwB8me': 'purity',
-    'CRUuwdU0rBx6j6dRh2Ydh9': 'rift',
+    'CRUuwDUoRbX6j6dRh2Ydh9': 'rift',
 };
 
 // Resolve invite codes to JIDs on first use
@@ -695,7 +702,7 @@ const ACHIEVEMENTS = {
   hunter_50:     { title: "Master Hunter",      desc: "Complete 50 hunts",             icon: "🏹", aura: 12, reward: { lucons: 3500 } },
   streak_7:      { title: "Devoted",            desc: "7-day login streak",            icon: "🔥", aura: 3,  reward: { lucons: 700 } },
   streak_30:     { title: "Unbreakable",        desc: "30-day login streak",           icon: "⚡", aura: 12, reward: { lucons: 5000, lcr: 3 } },
-  faction_500:   { title: "Faction Loyalist",   desc: "Earn 500 resonance",            icon: "🚩", aura: 10, reward: { lucons: 2000 } },
+  faction_500:   { title: "Faction Loyalist",   desc: "Earn 500 of your faction's reputation (Resonance / Bounty / Honour)",            icon: "🚩", aura: 10, reward: { lucons: 2000 } },
   companion_100: { title: "Soulbound",          desc: "Reach 100 companion bond",      icon: "💞", aura: 8,  reward: { lucons: 1500 } },
   mutator:       { title: "Mutant Whisperer",   desc: "Trigger 10 mutations",          icon: "🧬", aura: 9,  reward: { lucons: 2000, items: { MUT_001: 2 } } },
   creator_first: { title: "Architect",         desc: "Submit your first Mora design", icon: "⚗️", aura: 6,  reward: { lucons: 1500 } },
@@ -735,7 +742,7 @@ function checkAchievements(player) {
     hunter_50:     () => (p.totalHunts || 0) >= 50,
     streak_7:      () => (p.loginStreak || 0) >= 7,
     streak_30:     () => (p.loginStreak || 0) >= 30,
-    faction_500:   () => (p.resonance || 0) >= 500,
+    faction_500:   () => require("./systems/progression").getFactionStat(p) >= 500,
     companion_100: () => (p.companionBond || 0) >= 100,
     mutator:       () => (p.totalMutations || 0) >= 10,
     creator_first: () => (p.totalCreations || 0) >= 1,
@@ -1846,7 +1853,9 @@ function isHuntingCommand(cmd = "") {
     "pick",
     "pass",
     "gather",
-    "intel"
+    "intel",
+    "discover-enter",
+    "discover-leave"
   ].includes(String(cmd).toLowerCase());
 }
 
@@ -2002,8 +2011,11 @@ async function startBot() {
       isReady = true;
       isStarting = false;
       global._lumoraSock = sock;
+      botBootComplete = true;
       console.log("🔥 Lumora Bot Connected Successfully!");
+      console.log("[flowMarket] botBootComplete set — interactive market gate open");
       resolveFactionGroups(sock).catch(e => console.log("⚠️ Faction resolve error:", e.message));
+      tutorialSystem.resolveHuntGrounds(sock).catch(e => console.log("⚠️ Hunt-ground resolve error:", e.message));
 
       if (!spawnStarted) {
         spawnStarted = true;
@@ -2054,6 +2066,7 @@ sock.ev.on('group-participants.update', async (update) => {
 
     if (action === 'add' || action === 'join') {
         try { await resolveFactionGroups(sock); } catch {}
+        try { await tutorialSystem.resolveHuntGrounds(sock); } catch {}
         const normId = normJid(id);
         const groupInfo = FACTION_GROUPS[normId];
         const groupIdStr = String(id); // Ensure id is a string
@@ -2080,12 +2093,22 @@ sock.ev.on('group-participants.update', async (update) => {
 
             let welcomeText = `${welcomeMsg}\n\n` +
               `hey ${tag}........welcome to the family bro 🌌\n\n` +
-              `if this is your first time here........type *.tutorial* and i'll walk you through everything step by step........trust me it's easy\n\n` +
               `we're glad you're here 💪\n\n` +
               `🔗 *Main Group:* https://chat.whatsapp.com/HRwht4ktwZ6F9DnldqissZ`;
 
             if (p && groupInfo && groupInfo.faction !== 'none') {
-                welcomeText += `\n\n🐉 *next up:* join your faction group and pick your starter Mora with:\n*.choose 1*, *.choose 2*, or *.choose 3*`;
+                welcomeText += `\n\n🐉 *next up:* join your faction group and start the onboarding in your DMs.`;
+            }
+
+            // Hunting Grounds get a welcome with the persistent tutorial button.
+            const huntGroundName = tutorialSystem.HUNT_GROUNDS[normId];
+            if (huntGroundName) {
+              try {
+                await tutorialSystem.sendHuntGroundWelcome(sock, groupIdStr, jidStr, huntGroundName);
+              } catch (e) {
+                console.log("Hunt-ground welcome send error:", e?.message || e);
+              }
+              continue;
             }
 
             try {
@@ -2402,6 +2425,58 @@ sock.ev.removeAllListeners("messages.upsert");
         return;
       }
 
+      // ── NATIVE FLOW TAP INTERCEPTOR ──
+      // The HTML-widget market flow sends taps via window.WA.onEvent() and
+      // quick_reply reply.id values. These don't start with the prefix, so they
+      // would otherwise be swallowed. Intercept them here before the command
+      // dispatch and route to the flow market handler.
+      {
+        const raw = unwrapMessage(msg);
+        if (raw?.interactiveResponseMessage) {
+          const nfrm = raw.interactiveResponseMessage.nativeFlowResponseMessage;
+          let flowEvent = null;
+          if (nfrm?.paramsJson) {
+            try { flowEvent = JSON.parse(nfrm.paramsJson); } catch {}
+          }
+          if (!flowEvent && raw.interactiveResponseMessage.buttonReplyMessage) {
+            const br = raw.interactiveResponseMessage.buttonReplyMessage;
+            if (br.id && String(br.id).startsWith("market_")) {
+              flowEvent = { name: "market", id: br.id, cat: br.id.split(":")[1] || ""};
+            }
+          }
+          if (flowEvent && flowEvent.name === "market") {
+            // Dedupe against the native flow tap tracker too.
+            if (isTapDuplicate(chatId, senderId, "flow:" + (flowEvent.id || ""))) {
+              console.log(`[flowMarket] deduped flow tap: ${JSON.stringify(flowEvent)}`);
+              return;
+            }
+            if (!flowMarket.works) {
+              console.log("[flowMarket] tap received but flow not wired — ignoring");
+              return;
+            }
+            if (!playerIsInCapital(senderId)) {
+              return sock.sendMessage(chatId, {
+                text: "🏛️ You can only browse the market while in *Capital*.\nUse `.return` to go back.",
+              }, { quoted: msg });
+            }
+            try {
+              return await flowMarket.handleFlowTap(
+                flowEvent.id || "",
+                flowEvent.name || "",
+                flowEvent.cat || "",
+                flowEvent.qty || "",
+                sock, chatId, players[senderId],
+                () => marketSystem.cmdMarket(ctx, chatId, senderId, msg),
+                (m) => console.log("[flowMarket] " + m),
+              );
+            } catch (e) {
+              console.log("[flowMarket] tap handler error: " + (e?.message || e));
+              if (!flowMarket._works) flowMarket.works = false;
+            }
+          }
+        }
+      }
+
       // ── PENDING CREATION FLOW INTERCEPTOR ──
       const moraCreationSystem = require("./systems/moraCreation");
       if (moraCreationSystem.hasPendingCreation(senderId)) {
@@ -2421,6 +2496,36 @@ sock.ev.removeAllListeners("messages.upsert");
       }
 
       const isCommand = text.startsWith(PREFIX);
+
+      // ── SECRET STYLE CODES — raw codes (lum-xxxxxx) typed in any GC, ──
+      // before command dispatch. One-time per player per style.
+      if (!isCommand && /^lum-[0-9a-f]{6}$/i.test(text.trim())) {
+        try {
+          const styleQuests = require("./systems/styleQuests");
+          const hit = styleQuests.takeCode(ctx, senderId, text);
+          if (hit?.styleId) {
+            // Spent codes belong to an ACTIVE trial → resume it (retreat path).
+            return styleQuests.startStyleQuest(ctx, chatId, senderId, msg, hit.styleId);
+          }
+          // No match → unknown code; fall through silently (noise-safe).
+        } catch (e) {
+          console.log("[styleQuests] code intercept error:", e?.message || e);
+        }
+      }
+
+      // ── STYLE QUEST DRAMA COMMANDS (.sq-proceed / .sq-retreat / .sq-fight / .sacrifice) ──
+      if (isCommand && (command.startsWith("sq-") || command === "sacrifice")) {
+        try {
+          const sq = require("./systems/styleQuests");
+          if (command === "sq-proceed") return await sq.cmdProceed(ctx, chatId, senderId, msg);
+          if (command === "sq-retreat") return await sq.cmdRetreat(ctx, chatId, senderId, msg);
+          if (command === "sq-fight")   return await sq.cmdFight(ctx, chatId, senderId, msg);
+          if (command === "sacrifice")  return await sq.cmdSacrifice(ctx, chatId, senderId, msg);
+        } catch (e) {
+          console.log("[styleQuests] drama cmd error:", e?.message || e);
+          return sock.sendMessage(chatId, { text: "❌ Style trial error — try again." }, { quoted: msg });
+        }
+      }
 
       if (!isCommand) return;
 
@@ -2939,7 +3044,7 @@ if (command === "withdraw") {
       `⚠️ *DESERTION WARNING*\n\n` +
       `Withdrawing will cost you:\n` +
       `  • -1,000 Lucons\n` +
-      `  • -50 Resonance\n` +
+      `  • -50 faction stat (Resonance / Bounty / Honour)\n` +
       `  • Opponent auto-wins\n\n` +
       `*.confirm* to leave  |  *.cancel* to stay`,
   }, { quoted: msg });
@@ -2949,7 +3054,7 @@ if (command === "confirm") {
   if (fEngine.war.pendingWithdrawal !== senderId) return;
   const p = players[senderId];
   p.lucons = Math.max(0, (p.lucons || 0) - 1000);
-  p.resonance = Math.max(0, (p.resonance || 0) - 50);
+  require("./systems/progression").subtractFactionStat(p, 50);
   fEngine.withdrawPlayer(senderId);
   fEngine.war.pendingWithdrawal = null;
   savePlayers(players);
@@ -2973,6 +3078,29 @@ if (command === "cancel") {
             `🏓 *Pong.*\n` +
             `⏱️ Response: *${ms}ms*\n\n` +
             `_Star is online._`,
+        }, { quoted: msg });
+      }
+
+      if (command === "wiki-url" || command === "web" || command === "dashboard") {
+        // Public Lumora dashboard — Railway sets the domain; localhost is the dev fallback.
+        const domain =
+          process.env.RAILWAY_PUBLIC_DOMAIN ||
+          process.env.RAILWAY_PUBLIC_APP_URL ||
+          process.env.APP_URL;
+        const url = domain
+          ? /^https?:\/\//.test(domain) ? domain : `https://${domain}`
+          : `http://localhost:${port}`;
+        return sock.sendMessage(chatId, {
+          text:
+            `🌌 *LUMORA WIKI*\n━━━━━━━━━━━━━━━━━━━━\n` +
+            `✨ Star here — everything Lumora lives at the link below.\n\n` +
+            `📖 *Inside you'll find:*\n` +
+            `• 🐾 Mora Catalog — discover every Mora\n` +
+            `• ⚔️ Fighting Styles — the manual\n` +
+            `• 🛒 Items & Trade Values\n` +
+            `• 📅 Events & Bulletins\n\n` +
+            `🔗 *${url}*\n\n` +
+            `_Open it on any device — no login needed._`,
         }, { quoted: msg });
       }
 
@@ -3368,7 +3496,9 @@ if (command === "uptime") {
         return inventorySystem.cmdItem(ctx, chatId, senderId, msg, args);
       }
       if (command === "consume") {
-        return inventorySystem.cmdConsume(ctx, chatId, senderId, msg, args);
+        const consumeResult = await inventorySystem.cmdConsume(ctx, chatId, senderId, msg, args);
+        try { await tutorialSystem.onConsume(ctx, senderId); } catch {}
+        return consumeResult;
       }
 
       // ============================
@@ -3591,6 +3721,22 @@ if (command === "uptime") {
             return sock.sendMessage(chatId, {
               text: "🏛️ The main market is only available in *Capital*.\nUse `.return` to go back.",
             }, { quoted: msg });
+          }
+          // NATIVE FLOW MARKET
+          // flowMarket.works starts null, gets set true on first successful relay.
+          // We also check botBootComplete here — the intercept handler already guards
+          // taps before boot, so only the manual .market command needs this.
+          if (botBootComplete && flowMarket.works) {
+            try {
+              return await flowMarket.sendFlowMarket(
+                sock, chatId, players[senderId],
+                () => marketSystem.cmdMarket(ctx, chatId, senderId, msg),
+                (m) => console.log("[flowMarket] " + m),
+              );
+            } catch (e) {
+              console.log("[flowMarket] sendFlowMarket threw: " + (e?.message || e) + " — using text market");
+              if (!flowMarket._works) flowMarket.works = false;
+            }
           }
           return marketSystem.cmdMarket(ctx, chatId, senderId, msg);
         }
@@ -4556,7 +4702,7 @@ const FACTION_GROUPS = (() => {
   const out = {};
   for (const [code, faction] of Object.entries(FACTION_INVITE_MAP)) {
     if (faction === "none") continue;
-    out[faction] = `https://chat.whatsapp.com/${code}`;
+    out[faction] = `https://chat.whatsapp.com/${code}?mode=gi_t`;
   }
   return out;
 })();
@@ -4567,7 +4713,7 @@ try {
       `⚔ *Faction Joined*\n\n` +
       `${FACTIONS[key].emoji} *${FACTIONS[key].name}*\n\n` +
       `🔗 Join your faction group:\n${FACTION_GROUPS[key]}\n\n` +
-      `📌USE .f-lb to view leader of your faction.`
+      `📌USE .fac-link if the DM didn't arrive.\n📌USE .f-lb to view leader of your faction.`
   });
 } catch (err) {
   return sock.sendMessage(chatId, {
@@ -4580,22 +4726,24 @@ try {
 // ✅ GROUP CONFIRMATION
 // ============================
 
-// If in onboarding, advance to mora step
+// If in onboarding, advance to the tutorial offer (GAME BEGINS card + Begin/Skip)
 if (p.onboardingStep === 'faction') {
   p.onboardingStep = 'done';
-  savePlayers(players);
+  // Successful registration (faction GC joined) → style codes + starter scroll
+  try {
+    const styleQuests = require("./systems/styleQuests");
+    styleQuests.generateStyleCodes(p);
+    styleQuests.grantStarterScroll(p);
+    savePlayers(players);
+  } catch (e) { console.log("[styleQuests] registration init error:", e?.message || e); }
 
-  return sock.sendMessage(chatId, {
-    text: onboardingSystem.stepMessage('complete', { username: p.username }),
-    mentions: [senderId],
-  }, { quoted: msg });
+  return tutorialSystem.offerTutorial(sock, chatId, msg, onboardingSystem.stepMessage('complete', { username: p.username }));
 }
 
-return sock.sendMessage(chatId, {
-  text:
-    `✅ Joined *${FACTIONS[key].name}* — 📩 DM sent with your faction group link\n` +
-    `⚠ Join the group, then *.choose* your starter`
-});
+return tutorialSystem.offerTutorial(
+  sock, chatId, msg,
+  `✅ Joined *${FACTIONS[key].name}* — 📩 DM sent with your faction group link\n⚠ Join the group to continue.`
+);
       }
       // ================= CHOOSE STARTER =================
 if (command === "choose") {
@@ -5455,9 +5603,6 @@ if (command === "buy-bm") {
             ]);
           });
 
-          // Send interactive list menu for Mora collection
-          // sendListMenu removed — plain text sent below
-
           return sock.sendMessage(chatId, {
             text:
               ui.header('TAMED MORA', '🐉') + `\n\n` +
@@ -6030,104 +6175,46 @@ if (command === "buy-bm") {
         return raidsSystem.cmdForceEnd(ctx, chatId, senderId, msg);
       }
 
-      // ================= CLAIM RESTORATION GIFT (Patch 0.1.1) =================
+      // ================= CLAIM LUMORA V2 LOYALTY GIFT =================
       if (command === "claim-gift" || command === "claimgift") {
         const p = players[senderId];
         if (!p) return sock.sendMessage(chatId, { text: "❌ Register first with *.register*." }, { quoted: msg });
         if (p.giftClaimedAt) {
           const when = new Date(p.giftClaimedAt).toISOString().slice(0, 10);
-          return sock.sendMessage(chatId, { text: `✨ You already received the Rift Restoration on *${when}*. The gift was a one-time gesture.` }, { quoted: msg });
+          return sock.sendMessage(chatId, { text: `✨ You already claimed your Lumora V2 loyalty gift on *${when}*. Thanks for staying with us.` }, { quoted: msg });
         }
 
-        const moraList = loadMora();
-        const byRarity = (r) => moraList.filter(m => String(m.rarity).toLowerCase() === r.toLowerCase());
-        const legends = byRarity("Legendary");
-        const rares = byRarity("Rare");
-        const uncommons = byRarity("Uncommon");
-
-        if (!legends.length || rares.length < 1 || uncommons.length < 1) {
-          return sock.sendMessage(chatId, { text: "⚠️ Mora pools missing. Contact the owner." }, { quoted: msg });
+        // Grant Wind Step access by unlocking its real quest.
+        p.questsUnlocked ||= [];
+        if (!p.questsUnlocked.includes("first_breath")) {
+          p.questsUnlocked.push("first_breath");
         }
 
-        const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
-        const grantedNames = [];
-        p.moraOwned ||= [];
-
-        // 1× Legendary, level 10–15
-        {
-          const species = pickRandom(legends);
-          const lvl = 10 + Math.floor(Math.random() * 6);
-          const owned = createOwnedMoraFromSpecies(species);
-          owned.level = lvl;
-          xpSystem.applyLevelScaling(owned, species);
-          owned.hp = owned.maxHp;
-          p.moraOwned.push(owned);
-          grantedNames.push(`🌟 *${owned.name}* — Legendary • Lv ${lvl}`);
-        }
-
-        // 3× Rare
-        for (let i = 0; i < 3; i++) {
-          const species = pickRandom(rares);
-          const owned = createOwnedMoraFromSpecies(species);
-          owned.hp = owned.maxHp;
-          p.moraOwned.push(owned);
-          grantedNames.push(`💎 *${owned.name}* — Rare • Lv 1`);
-        }
-
-        // 3× Uncommon
-        for (let i = 0; i < 3; i++) {
-          const species = pickRandom(uncommons);
-          const owned = createOwnedMoraFromSpecies(species);
-          owned.hp = owned.maxHp;
-          p.moraOwned.push(owned);
-          grantedNames.push(`✨ *${owned.name}* — Uncommon • Lv 1`);
-        }
-
-        // 7000 Lucons
-        p.lucons = Number(p.lucons || 0) + 7000;
-
-        // 1× REOB
-        p.inventory ||= {};
-        p.inventory.REOB = Number(p.inventory.REOB || 0) + 1;
-
-        // 18 hours of infinite hunt energy
-        const eighteenHours = 18 * 60 * 60 * 1000;
-        p.riftEnergyUntil = Date.now() + eighteenHours;
-
-        // Survivor achievement
-        p.achievements ||= [];
-        if (!p.achievements.includes("rift_survivor")) p.achievements.push("rift_survivor");
+        // Modest Lucons to start V2, not the old Rift Restoration haul.
+        p.lucons = Number(p.lucons || 0) + 1200;
 
         p.giftClaimedAt = Date.now();
         savePlayers(players);
 
         return sock.sendMessage(chatId, {
           text:
-            ui.header('RIFT RESTORATION', '🌀') + '\n' +
-            `_Patch 0.1.1 — A gift from the Rift._\n\n` +
-            `_When the Rift convulsed, the data-storm tore through every Stronghold._\n` +
-            `_Vaults blinked. Records faltered. For one terrible moment, even the names of bonded Mora flickered out of the world._\n\n` +
-            `_But you stayed. You held the line while we patched the tear._\n\n` +
-            `🎭 *Kael:* "You weathered the storm, little Lumorian. The Rift owes you a debt. Take what is yours."\n\n` +
-            ui.subheader('RESTORATION REWARDS', '🎁') + '\n\n' +
-            ui.card('NEW MORA', '🐉', grantedNames.map((n, i) => {
-              const parts = n.split(' — ');
-              return { emoji: i === 0 ? '🌟' : i < 4 ? '💎' : '✨', label: parts[0].replace(/[🌟💎✨*]/g, '').trim(), value: parts[1] || '' };
-            })) + '\n\n' +
-            ui.card('BONUS', '💰', [
-              { emoji: '💰', label: 'Lucons', value: '+7,000 — Rift Treasury' },
-              { emoji: '🌀', label: 'REOB', value: '+1 — Forge-spark' },
-              { emoji: '🏆', label: 'Title', value: 'Survivor of the Rift Tear' },
+            ui.header('WELCOME TO LUMORA V2', '🌬️') + '\n' +
+            `_You stayed through the rework. This one's for you._\n\n` +
+            `🎭 *Star:* "I know the last version left a few scars. I'm not pretending this is perfect yet — but it's ours, and it's only the beginning."\n\n` +
+            ui.subheader('WHAT YOU JUST UNLOCKED', '🎁') + '\n\n' +
+            ui.card('PATH', '🌬️', [
+              { emoji: '🌬️', label: 'Wind Step', value: 'unlocked — start the first breath quest and earn the style' },
+              { emoji: '💰', label: 'Lucons', value: '+1,200 — pocket change for your first V2 steps' },
             ]) + '\n\n' +
-            ui.subheader('RIFT ENERGY SURGE', '⚡') + '\n\n' +
-            `_Raw Primordial Energy floods your veins._\n` +
-            `_For the next *18 hours*, hunting costs *no energy*._\n\n` +
-            ui.card('SURGE ACTIVE', '⏳', [
-              { emoji: '⏰', label: 'Ends', value: new Date(p.riftEnergyUntil).toLocaleString() },
-            ]) + '\n\n' +
+            ui.subheader('A PERSONAL NOTE', '✨') + '\n\n' +
+            `_We're building Lumora V2 piece by piece, in the open, with constant updates and live events along the way._\n` +
+            `_There'll be new scrolls that give temporary buffs, new encounters, new rewards, and more ways to stay in the loop._\n\n` +
+            `_This isn't a polished finale. It's a promise: keep showing up, and the world keeps growing with you._\n\n` +
+            `so don't go anywhere........we're just getting started 💫\n\n` +
+            `to start earning Wind Step, begin the first breath path with:
+*.styles* → *.quest* → complete the wind-step path when it opens.\n\n` +
             ui.divider() + '\n' +
-            `_Thank you for surviving with us._\n` +
-            `_— The Lumora Team_`,
+            `*— Star, your guide through Lumora V2*`,
         }, { quoted: msg });
       }
 
@@ -6434,7 +6521,7 @@ const xpNeeded = xpSystem.playerXpToNextLevel(p.level || 1);
           }
         }
 
-        // Profile buttons below (sendListMenu removed — broken on PC)
+        // Profile buttons below
         buttonsSystem.mapButtons({
           "🎒 Inventory": `${PREFIX}inv`,
           "🥋 Styles": `${PREFIX}styles`,
@@ -6577,7 +6664,9 @@ if (command === "reset-stats") {
         if (battleSystem.getBattle?.(chatId)) {
           return battleSystem.cmdUse?.(ctx, chatId, senderId, msg, args);
         }
-        return inventorySystem.cmdConsume(ctx, chatId, senderId, msg, args);
+        const useResult = await inventorySystem.cmdConsume(ctx, chatId, senderId, msg, args);
+        try { await tutorialSystem.onConsume(ctx, senderId); } catch {}
+        return useResult;
       }
 
       // ============================
@@ -6593,7 +6682,9 @@ if (command === "reset-stats") {
   command === "hunt" ||
   command === "pick" ||
   command === "pass" ||
-  command === "track"
+  command === "track" ||
+  command === "discover-enter" ||
+  command === "discover-leave"
 ) {
   if (!isHuntAllowedInChat(chatId, settings)) {
     return denyHuntGroup(sock, chatId, msg);
@@ -6620,6 +6711,8 @@ if (command === "reset-stats") {
   if (command === "pick")    return huntingSystem.cmdPick(ctx, chatId, senderId, msg);
   if (command === "pass")    return huntingSystem.cmdPass(ctx, chatId, senderId, msg);
   if (command === "track")   return huntingSystem.cmdTrack(ctx, chatId, senderId, msg);
+  if (command === "discover-enter") return huntingSystem.cmdDiscoverEnter(ctx, chatId, senderId, msg);
+  if (command === "discover-leave") return huntingSystem.cmdDiscoverLeave(ctx, chatId, senderId, msg);
   if (command === "gather" || command === "intel") return huntingSystem.cmdGatherIntel(ctx, chatId, senderId, msg);
 }
 
@@ -6643,15 +6736,27 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
   return sock.sendMessage(chatId, {
     text:
       "✅ Group join confirmed!\n\n" +
-      "🐉 Now choose your starter using:\n" +
-      `${PREFIX}choose 1`
+      "🐉 Your faction path is set. Start the onboarding in your DMs to pick your starter and continue."
   });
 }
 
       // ============================
+      // GUIDED TUTORIAL — the first-journey flow (real guided hunt)
+      // ============================
+      if (command === "tutorial") {
+        return tutorialSystem.cmdStart(ctx, chatId, senderId, msg);
+      }
+      if (command === "skip-tutorial" || command === "skiptutorial") {
+        return tutorialSystem.cmdSkip(ctx, chatId, senderId, msg);
+      }
+      if (command === "t-attack" || command === "tattack") {
+        return tutorialSystem.cmdAttack(ctx, chatId, senderId, msg);
+      }
+
+      // ============================
       // GUIDE — full walkthrough for new players
       // ============================
-      if (command === "guide" || command === "tutorial") {
+      if (command === "guide") {
         return sock.sendMessage(chatId, {
           text:
             `hey hey welcome........glad you're here bro 🌌\n\n` +
@@ -6849,19 +6954,34 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
       if (command === "gender") {
         if (!players[senderId]) return sock.sendMessage(chatId, { text: "❌ Register first using .register" }, { quoted: msg });
         const genderInput = args.join(" ").trim();
+        const allowed = ["male", "female", "rather not say"];
+
         if (!genderInput) {
           const current = players[senderId].gender || "Not set";
-          return sock.sendMessage(chatId, {
-            text: `🧑 Your gender: *${current}*\n\nUse: ${PREFIX}gender <male/female/other>`,
-          }, { quoted: msg });
+          const label = current === "Not set" ? "not set yet" : current;
+          return sendButtons(sock, chatId,
+            `🧑 Your gender: *${label}*\n\n` +
+            `Choose how you'd like to be identified. You can change this anytime.`,
+            ["♂ Male", "♀ Female", "🙁 Rather not say"],
+            { footer: `Tap one, or type: ${PREFIX}gender male / female / rather not say`, quoted: msg }
+          );
         }
-        const allowed = ["male", "female", "other"];
+
         const g = genderInput.toLowerCase();
         if (!allowed.includes(g)) {
-          return sock.sendMessage(chatId, { text: `❌ Choose: *male*, *female*, or *other*` }, { quoted: msg });
+          return sock.sendMessage(chatId, {
+            text:
+              `❌ That's not one of the options.\n\n` +
+              `Choose one:\n` +
+              `♂ *male*\n` +
+              `♀ *female*\n` +
+              `🙁 *rather not say*`,
+          }, { quoted: msg });
         }
-        players[senderId].gender = g.charAt(0).toUpperCase() + g.slice(1);
-        // If in onboarding, advance to age step
+
+        const selected = g === "rather not say" ? "Rather not say" : g.charAt(0).toUpperCase() + g.slice(1);
+        players[senderId].gender = selected;
+
         if (players[senderId].onboardingStep === 'gender') {
           players[senderId].onboardingStep = 'age';
           savePlayers(players);
@@ -6870,8 +6990,13 @@ if (command === "lastterrain")  return huntingSystem.cmdLastTerrain(ctx, chatId,
             mentions: [senderId]
           }, { quoted: msg });
         }
+
         savePlayers(players);
-        return sock.sendMessage(chatId, { text: `✅ Gender set to: *${players[senderId].gender}*` }, { quoted: msg });
+        return sendButtons(sock, chatId,
+          `✅ Gender set to: *${players[senderId].gender}*`,
+          ["♂ Male", "♀ Female", "🙁 Rather not say"],
+          { footer: `You can change this anytime with ${PREFIX}gender`, quoted: msg }
+        );
       }
 
       // ── .age — set age during onboarding ────────────────
@@ -7528,7 +7653,7 @@ Use: ${PREFIX}bio <text> to set one (max 100 chars)` }, { quoted: msg });
         for (const num of sudos) {
           const cleanNum = String(num).replace(/\D/g, "");
           const jid = `${cleanNum}@s.whatsapp.net`;
-          const displayName = players[jid]?.username || players[jid]?.name || null;
+          const displayName = players[jid]?.adminName || players[jid]?.username || players[jid]?.name || null;
           const waName = pushNameCache[jid] || pushNameCache[`${cleanNum}@s.whatsapp.net`] || null;
           const tag = displayName ? `@${displayName}` : `@${cleanNum}`;
           const waLabel = waName ? ` _(${waName})_` : '';
@@ -7544,6 +7669,75 @@ Use: ${PREFIX}bio <text> to set one (max 100 chars)` }, { quoted: msg });
           text: `👑 *HIERARCHY*\n\n${throneSection}${sudoSection}`,
           mentions,
         }, { quoted: msg });
+      }
+
+      // ============================
+      // ADMIN TOKENS — Prime's council reward system
+      // Admin-name-aware display: adminName → username → WA name → number
+      // ============================
+      const adminName = (jid) =>
+        players[jid]?.adminName || players[jid]?.username || pushNameCache[jid] || jid.split("@")[0];
+      const adminOpts = {
+        isOwner,
+        isRightHand,
+        loadSudos,
+        saveSudos,
+        getName: adminName,
+      };
+
+      if (command === "admin") {
+        return adminTokens.issueTask(ctx, chatId, senderId, msg, args, adminOpts);
+      }
+      if (command === "claim") {
+        return adminTokens.cmdClaim(ctx, chatId, senderId, msg, args, adminOpts);
+      }
+      if (command === "admin-name") {
+        return adminTokens.cmdAdminName(ctx, chatId, senderId, msg, args, adminOpts);
+      }
+      if (command === "token-give") {
+        const mentioned = getMentionedJids(msg);
+        const replied = getRepliedJid(msg);
+        const target = mentioned[0] || replied || toUserJidFromArg(args[0]);
+        return adminTokens.cmdTokenGive(ctx, chatId, senderId, msg, args, {
+          ...adminOpts,
+          target,
+        });
+      }
+      // .task--<id>-cleared — RHM/Prime verifies a task and notifies all takers.
+      const taskClearMatch = String(command || "").match(/^task--(.+)-cleared$/);
+      if (taskClearMatch) {
+        const mentioned = getMentionedJids(msg);
+        const replied = getRepliedJid(msg);
+        const grantTarget = mentioned[0] || replied || null;
+        return adminTokens.cmdClear(ctx, chatId, senderId, msg, { id: taskClearMatch[1] }, {
+          ...adminOpts,
+          grantTarget,
+        });
+      }
+      if (command === "tokens") {
+        return adminTokens.cmdTokens(ctx, chatId, senderId, msg);
+      }
+      if (command === "admin-lb" || command === "token-lb") {
+        return adminTokens.cmdAdminLb(ctx, chatId, senderId, msg, adminOpts);
+      }
+      if (command === "token-shop") {
+        return adminTokens.cmdTokenShop(ctx, chatId, senderId, msg);
+      }
+      if (command === "token-buy") {
+        return adminTokens.cmdTokenBuy(ctx, chatId, senderId, msg, args);
+      }
+      if (command === "cycle-admin") {
+        return adminTokens.cmdCycle(ctx, chatId, senderId, msg, adminOpts);
+      }
+      // Convenience alias: .task-clear <id> → same as .task--<id>-cleared
+      if (command === "task-clear") {
+        const mentioned = getMentionedJids(msg);
+        const replied = getRepliedJid(msg);
+        const grantTarget = mentioned[0] || replied || null;
+        return adminTokens.cmdClear(ctx, chatId, senderId, msg, args, {
+          ...adminOpts,
+          grantTarget,
+        });
       }
 
       // ============================
@@ -7997,6 +8191,11 @@ if (command === "f-lb") {
         const p = players[senderId];
         const sub = String(args[0] || "").toLowerCase().trim();
 
+        // ── .help admin — Admin tokens brief (Prime) ──
+        if (command === "help" && sub === "admin") {
+          return adminTokens.showHelp(ctx, chatId, senderId, msg);
+        }
+
         // ── .help — Main menu ──
         if (command === "help") {
           const text = helpUI.buildMainMenuText(p);
@@ -8078,21 +8277,6 @@ Select an item below to inspect it.`,
           buttons: ["⚔️ Weapons", "📜 Scrolls", "🧪 Consumables", "💎 Rare", "🛒 My Purchases"],
           buttonCmds: [".market weapons", ".market scrolls", ".market consumables", ".market rare", ".market purchases"],
           replyOpts: { quoted: msg },
-          fallbackText: `🏪 LUMORA MARKET
-💰 Your Lucons: ${players[senderId]?.lucons || 0} LC
-
-Featured
-⚔️ Ember Blade — 8,000 LC
-🧪 XP Elixir — 2,500 LC
-📜 Wind Step Scroll — SOLD OUT
-
-Select an item below to inspect it.
-
-1. ⚔️ Weapons
-2. 📜 Scrolls
-3. 🧪 Consumables
-4. 💎 Rare
-5. 🛒 My Purchases`,
         });
       }
       if (command === "factioninfo" || command === "faction" && !args[0]) {
@@ -8136,6 +8320,32 @@ Select an item below to inspect it.
             ui.divider() + `\n` +
             `Use *.fbuy <item>* to access this faction's market.`,
         }, { quoted: msg });
+      }
+
+      if (command === "fac-link" || command === "faclink" || command === "faction-link") {
+        const p = players[senderId];
+        if (!p) return sock.sendMessage(chatId, { text: "❌ Register first using .register" });
+        const faction = p.faction ? p.faction : (args[0] ? String(args[0]).toLowerCase().trim() : null);
+        const link = faction ? FACTION_GROUPS[faction] : null;
+        if (!faction) {
+          return sock.sendMessage(chatId, { text: `Choose a faction first: *.faction harmony / purity / rift*`, quoted: msg });
+        }
+        if (!link) {
+          return sock.sendMessage(chatId, { text: `That faction link isn't set right now. Ask an admin.` }, { quoted: msg });
+        }
+        try {
+          await sock.sendMessage(senderId, {
+            text:
+              `🔗 *Your ${FACTIONS[faction]?.name || faction} group link*\n\n` +
+              `${link}\n\n` +
+              `📌 This is the same link sent after *.faction* — use it to join.\n📌 Use *.f-lb* to view the leader of your faction.`,
+            quoted: msg,
+          });
+        } catch (err) {
+          return sock.sendMessage(chatId, {
+            text: "❌ I couldn't DM you.\n\n👉 Message me privately first, then try *.fac-link* again.",
+          });
+        }
       }
 
       if (command === "lumora") {

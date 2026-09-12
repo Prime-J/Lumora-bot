@@ -11,7 +11,6 @@
 
 const factionMarketSystem = require("./factionMarket");
 const missionSystem       = require("./factionMissionSystem");
-const { generateBattleVsImage } = require("../factionCanvas");
 const { getBattleCommentary } = require("./botPersonality");
 const progression         = require("./progression");
 
@@ -383,10 +382,13 @@ async function cmdBattle(ctx, chatId, senderId, msg, args) {
 
   return sock.sendMessage(chatId, {
     text:
-      `⚔️ *BATTLE CHALLENGE*\n\n` +
-      `@${String(targetJid).split("@")[0]}, *${fromName}* challenged you!\n\n` +
-      `✅ *.accept* to start\n` +
-      `❌ *.reject* to decline\n\n` +
+      `╔═══ ⚔️ BATTLE CHALLENGE ═══╗\n` +
+      `║  @${String(targetJid).split("@")[0]},       ║\n` +
+      `║  *${fromName}* wants to fight!  ║\n` +
+      `╠══════════════════════╣\n` +
+      `║  ✅ *.accept* to start   ║\n` +
+      `║  ❌ *.reject* to decline ║\n` +
+      `╚══════════════════════╝\n\n` +
       `⏳ Challenge expires in 60 seconds.`,
     mentions: [targetJid, senderId],
   }, { quoted: msg });
@@ -454,25 +456,16 @@ async function cmdAccept(ctx, chatId, senderId, msg) {
   const header = battleHeader(players, aJid, bJid, aParty[aIdx], bParty[bIdx], hpBar);
   savePlayers(players);
 
-  // Send VS image
-  try {
-    const vsImage = await generateBattleVsImage(a, b);
-    await sock.sendMessage(chatId, {
-      image: vsImage,
-      caption: getBattleCommentary("startBattle"),
-      mentions: [aJid, bJid],
-    });
-  } catch {}
-
+  // Send battle start prompt (image cards removed)
   const startPrompt =
-    `┌─────── ✦ YOUR MOVE ✦ ───────┐\n` +
-    `│  *.attack 1-4*  ┃  *.switch 1-5*  │\n` +
-    `│  *.charge*      ┃  *.forfeit*     │\n` +
-    `└────────────────────────────┘\n` +
+    `╔═══ ⚡ YOUR MOVE ⚡ ═══╗\n` +
+    `║  *.attack 1-4*  ┃  *.switch 1-5*  ║\n` +
+    `║  *.charge*      ┃  *.forfeit*     ║\n` +
+    `╚══════════════════════════════════╝\n` +
     `⏳ _Both choose an action. Speed decides who strikes first._`;
 
   return sock.sendMessage(chatId, {
-    text: header + `\n\n` + startPrompt,
+    text: `${header}\n\n${startPrompt}`,
     mentions: [aJid, bJid],
   }, { quoted: msg });
 }
@@ -502,7 +495,10 @@ async function cmdReject(ctx, chatId, senderId, msg) {
   const toName = getDisplayName(players, to);
 
   return sock.sendMessage(chatId, {
-    text: `❌ *CHALLENGE DECLINED*\n\n*${toName}* declined *${fromName}*'s battle request.`,
+    text: `╔═══ ❌ CHALLENGE DECLINED ❌ ═══╗\n` +
+      `║  *${toName}* declined the fight.   ║\n` +
+      `║  *${fromName}*'s request withdrawn. ║\n` +
+      `╚══════════════════════╝`,
     mentions: [from, to],
   }, { quoted: msg });
 }
@@ -531,8 +527,9 @@ async function cmdAttack(ctx, chatId, senderId, args, msg) {
 
     return sock.sendMessage(chatId, {
       text:
-        `🎴 *Choose your move*\n` +
-        `Use: *.attack 1-4* or *.attack MoveName*\n\n` +
+        `╔═══ 🎴 CHOOSE YOUR MOVE ═══╗\n` +
+        `║  Use: *.attack 1-4* or *.attack MoveName* ║\n` +
+        `╚══════════════════════╝\n\n` +
         detailed,
     }, { quoted: msg });
   }
@@ -690,7 +687,10 @@ async function cmdUse(ctx, chatId, senderId, msg, args = []) {
   const isConsumable = item.category === "consumable" || item.category === "scroll";
   if (!isConsumable) {
     return sock.sendMessage(chatId, {
-      text: `❌ *${item.name}* can't be used in battle.\nOnly consumables and scrolls can be used mid-fight.`,
+      text: `╔═══ ❌ ITEM CAN'T BE USED ═══╗\n` +
+        `║  *${item.name}* can't be used in battle.       ║\n` +
+        `║  Only consumables & scrolls mid-fight.  ║\n` +
+        `╚══════════════════════╝`,
     }, { quoted: msg });
   }
 
@@ -795,12 +795,20 @@ async function cmdCharge(ctx, chatId, senderId, msg) {
 
   if (!bothReady) {
     return sock.sendMessage(chatId, {
-      text: `${quote}\n\n⏳ Waiting for the other player...`,
+      text: `╔═══ ⚡ CHARGE ═══╗\n` +
+        `║  ${quote}  ║\n` +
+        `╚══════════════╝\n\n` +
+        `⏳ Waiting for the other player...`,
       mentions: [senderId],
     }, { quoted: msg });
   }
 
-  await sock.sendMessage(chatId, { text: quote, mentions: [senderId] });
+  await sock.sendMessage(chatId, {
+    text: `╔═══ ⚡ CHARGE ═══╗\n` +
+      `║  ${quote}  ║\n` +
+      `╚══════════════╝`,
+    mentions: [senderId],
+  });
   return resolveTurn(ctx, chatId, msg);
 }
 
@@ -845,13 +853,15 @@ async function cmdForfeit(ctx, chatId, senderId, msg) {
 
   return sock.sendMessage(chatId, {
     text:
-      `🏳️ *FORFEIT!*\n` +
-      `@${String(loserJid).split("@")[0]} forfeited.\n\n` +
-      `🏆 Winner: *${wName}*\n` +
-      `💔 Loser: *${lName}*\n` +
-      `✨ Winner aura +${gain}\n` +
-      `⭐ Winner Player XP +${playerXpGain}` +
-      (winnerPlayerXp.leveledUp ? `\n🆙 *${wName}* leveled up +${winnerPlayerXp.levels}!` : ""),
+      `╔═══ 🏳️ FORFEIT 🏳️ ═══╗\n` +
+      `║  @${String(loserJid).split("@")[0]} surrendered.      ║\n` +
+      `╠══════════════════════╣\n` +
+      `║  🏆 Winner: *${wName}*      ║\n` +
+      `║  💔 Loser:  *${lName}*      ║\n` +
+      `║  ✨ Winner Aura +${gain}      ║\n` +
+      `║  ⭐ Winner XP +${playerXpGain}` +
+      (winnerPlayerXp.leveledUp ? `  🆙+${winnerPlayerXp.levels} levels` : ``) + ` ║\n` +
+      `╚══════════════════════╝`,
     mentions: [winnerJid, loserJid],
   }, { quoted: msg });
 }
@@ -1184,10 +1194,11 @@ async function resolveTurn(ctx, chatId, msg) {
 
   // Sectioned output with action log, status, and prompt
   const actionSection = logs.join("\n");
-  const promptSection = `┌─────── ✦ YOUR MOVE ✦ ───────┐\n` +
-    `│  *.attack 1-4*  ┃  *.switch 1-5*  │\n` +
-    `│  *.charge*      ┃  *.forfeit*     │\n` +
-    `└────────────────────────────┘`;
+  const promptSection = `╔═══ ⚡ YOUR MOVE ⚡ ═══╗\n` +
+    `║  *.attack 1-4*  ┃  *.switch 1-5*  ║\n` +
+    `║  *.charge*      ┃  *.forfeit*     ║\r
+` +
+    `╚══════════════════════════════════╝`;
 
   return sock.sendMessage(chatId, {
     text: `${actionSection}\n\n${header}\n\n${promptSection}`,
@@ -1372,9 +1383,7 @@ async function endIfBattleOver(ctx, chatId, msg) {
   if (streak >= 10)     streakText = `\n\n🔥🔥🔥 *${wName}* is on a ${streak}-WIN STREAK! UNSTOPPABLE! 🔥🔥🔥`;
   else if (streak >= 7) streakText = `\n\n🔥🔥 *${wName}* is on a ${streak}-win streak! DOMINATING!`;
   else if (streak >= 5) streakText = `\n\n🔥 *${wName}* is on a ${streak}-win streak! On fire!`;
-  else if (streak >= 3) streakText = `\n\n⚡ *${wName}* is on a ${streak}-win streak!`;
-
-  const top = `╔══════════════════════╗`;
+  else if (streak >= 3) streakText = `\n\n⚡ *${wName}* is on a ${streak}-win streak!`;  const top = `╔══════════════════════╗`;
   const mid = `╟──────────────────────╢`;
   const bot = `╚══════════════════════╝`;
 
@@ -1395,11 +1404,11 @@ async function endIfBattleOver(ctx, chatId, msg) {
     `${winnerMoraLevelText}${loserMoraLevelText}${winnerPlayerLevelText}${loserPlayerLevelText}\n`;
 
   const gearBlock = durabilityLogs.length
-    ? `\n${mid}\n   ⚙️  *GEAR WEAR*\n${mid}\n${durabilityLogs.join("\n")}\n`
+    ? `\n${mid}\n   ⚙️  *GEAR WEAR*\n${mid}\n${durabilityLogs.join("\n")}\n` 
     : "";
 
   return sock.sendMessage(chatId, {
-    text: resultBlock + rewardsBlock + gearBlock + `${bot}` + streakText + `\n\n${pickBattleSpeech()}`,
+    text: `${resultBlock}${rewardsBlock}${gearBlock}${bot}${streakText}\n\n${pickBattleSpeech()}`,
     mentions: [winnerJid, loserJid],
   }, { quoted: msg });
 }

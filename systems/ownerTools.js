@@ -660,7 +660,7 @@ async function cmdInspect(ctx, chatId, senderId, msg, args, helpers) {
     faction: p.faction || null,
     lucons: p.lucons || 0,
     reob: p.reob || 0,
-    resonance: p.resonance || 0,
+    resonance: require("./progression").getFactionStat(p),
     intelligence: p.intelligence || 0,
     riftPE: p.riftPE || 0,
     statPoints: p.statPoints || 0,

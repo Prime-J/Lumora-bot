@@ -52,5 +52,6 @@
     "raidDurationMin": 30,
     "cooldownHours": 24,
     "lastResolvedAt": 0
-  }
+  },
+  "testGroups": []
 }

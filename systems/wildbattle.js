@@ -701,6 +701,7 @@ async function startWildBattle(ctx, chatId, senderId, msg, options = {}) {
     })(),
     wildSpecies,
     wildMora,
+    styleQuestChallenge: options.styleQuestChallenge || null,
     flavorIntro: pickWildIntro(isCorrupted)
   };
 
@@ -722,7 +723,7 @@ async function startWildBattle(ctx, chatId, senderId, msg, options = {}) {
   return buttonsSystem.sendButtons(sock, chatId,
     `${state.flavorIntro}\n\n${header}`,
     act,
-    { footer: `Your turn — tap an action below 👇`, quoted: msg }
+    { footer: `⚔️ Battle — tap an action below 👇`, quoted: msg }
   );
 }
 
@@ -780,7 +781,7 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
     }).join('\n');
 
     const header = hasStyle
-      ? `🥋 *FIGHTING STYLE ACTIVE*\n_${styleMoves[0]?.styleName || 'Style'} — ${moveset.length} moves ready_`
+      ? `🥋 *FIGHTING STYLE ACTIVE*\n_${styleMoves[0]?.styleName || 'Style'} — ${moveset.length} moves loaded_`
       : `⚔️ *BATTLE MODE*`;
 
     return buttonsSystem.sendButtons(sock, chatId,
@@ -1003,11 +1004,32 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
       console.log("scroll drop error:", e?.message || e);
     }
 
+    // ── Style-quest challenger victory hook (M2) ─────────────
+    try {
+      const challenge = state.styleQuestChallenge;
+      if (challenge) {
+        await require("./styleQuests").onChallengeWon(ctx, chatId, senderId, msg, challenge);
+      }
+    } catch (e) {
+      console.log("style quest challenge hook error:", e?.message || e);
+    }
+
     // ── Quest progression hook (v0.5.0 rework) ───────────────
     try {
       const questSystem = require("./quests");
       const finished = questSystem.onBattleWon(player) || [];
       for (const qId of finished) {
+        const teachBlock = questSystem.getTeachBlockMsg(player, qId);
+        if (teachBlock) { logs.push(`\n${teachBlock}`); continue; }
+        const levelNeed = questSystem.getLevelBlock(player, qId);
+        if (levelNeed) {
+          const def0 = questSystem.loadQuests()[qId];
+          const sn = questSystem.loadStyles()[def0?.reward?.style]?.name || def0?.reward?.style;
+          logs.push(
+            `\n🔒 *${def0?.name || qId}* — the teacher refuses: return at *level ${levelNeed}* to learn *${sn}*.`
+          );
+          continue;
+        }
         const def = questSystem.applyCompletion(player, qId);
         if (!def) continue;
         const styleName = questSystem.loadStyles()[def.reward?.style]?.name || def.reward?.style;

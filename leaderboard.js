@@ -37,6 +37,7 @@ function getGlobalLeaderboard(players) {
     const lines = [];
     lines.push(ui.header('LEADERBOARD', '🏆'));
     lines.push('  _Top 10 strongest souls in the Dominion_');
+    lines.push('  _Score = Faction Stat · Level · XP · Lucons · Tamed_');
     lines.push('');
 
     // Top 3 highlighted
@@ -44,11 +45,13 @@ function getGlobalLeaderboard(players) {
     for (let i = 0; i < Math.min(3, sorted.length); i++) {
         const p = sorted[i];
         const score = p.stats.total.toLocaleString();
+        const factionLabel = p.faction ? progression.getFactionStatKey(p.faction) : 'none';
+        const factionCap = factionLabel.charAt(0).toUpperCase() + factionLabel.slice(1);
         lines.push(ui.card(`${medals[i]} #${i + 1}`, '', [
             { emoji: '👤', label: 'Player', value: p.username || 'Unknown' },
-            { emoji: '💠', label: 'Score', value: score },
-            { emoji: '🔮', label: 'Aura', value: String(p.stats.aura) },
-            { emoji: '🐾', label: 'Tamed', value: String(p.stats.tamed) },
+            { emoji: '⭐', label: 'Level', value: String(p.stats.level) },
+            { emoji: '⚡', label: 'XP', value: p.stats.dep.toLocaleString() },
+            { emoji: '🏆', label: factionCap, value: p.stats.factionStat.toLocaleString() },
             { emoji: '💰', label: 'Lucons', value: p.stats.lucons.toLocaleString() },
         ]));
         lines.push('');
@@ -69,7 +72,7 @@ function getGlobalLeaderboard(players) {
         for (let i = 3; i < sorted.length; i++) {
             const p = sorted[i];
             const rank = (i + 1).toString().padStart(2, ' ');
-            lines.push(`  🔹 *#${rank}*  ${p.username || 'Unknown'}  —  💠 ${p.stats.total.toLocaleString()}`);
+            lines.push(`  🔹 *#${rank}*  ${p.username || 'Unknown'}  —  💠 ${p.stats.total.toLocaleString()}  |  ⭐ Lv.${p.stats.level}`);
         }
         lines.push('');
     }

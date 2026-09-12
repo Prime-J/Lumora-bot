@@ -243,10 +243,12 @@ function calculateXPReward(player, enemy, options = {}) {
  * @returns {string} "resonance" | "honor" | "bounty"
  */
 function getFactionStatKey(faction) {
+  // Prime's decree (2026-09): Purity Order = Resonance,
+  // Rift Seekers = Bounty, Harmony Lumorians = Honour.
   const map = {
-    harmony: "resonance",
-    purity: "honor",
+    purity: "resonance",
     rift: "bounty",
+    harmony: "honor",
   };
   return map[faction] || "resonance";
 }

@@ -1,0 +1,183 @@
+{
+  "first_breath": {
+    "styleId": "wind_step",
+    "challengerNpc": "Kaelen",
+    "challengerIntro": "A young man drops from the temple arch, landing light as a leaf. *Kaelen*. Reva's first student — and her strictest gate.",
+    "challengerTaunt": "\"Reva teaches no one the wind hasn't tested. Show me you can be blown down and rise.\"",
+    "challengerSpeciesId": "10",
+    "challengerLevelScale": 0.8,
+    "beats": [
+      { "place": "The Cliff-Temple Approach", "text": "The path narrows to a ledge of wind-carved stone. Far below, cloud-sea turns slowly against the cliffs. Prayer flags snap in a rhythm that feels almost like speech." },
+      { "place": "The Breathing Gate", "text": "Two weathered pillars frame the temple gate. The air between them moves against the wind — in, and out, in, and out. Old discipline, older than the stones." },
+      { "place": "The Court of Tests", "text": "An open courtyard worn smooth by generations of footwork. Someone is already waiting for you." }
+    ]
+  },
+  "first_dawn": {
+    "styleId": "sun_walk",
+    "challengerNpc": "Orrin",
+    "challengerIntro": "He has been standing in the same sunbeam since before you arrived. *Orrin*, Iyra's dawn-warden, shadowless at this hour.",
+    "challengerTaunt": "\"The sun burns away everything that hesitates. Do you hesitate?\"",
+    "challengerSpeciesId": "35",
+    "challengerLevelScale": 0.7,
+    "beats": [
+      { "place": "The Whitewashed Stair", "text": "White steps climb out of the morning mist, each one warm to the touch. somewhere above, a bell marks the first hour." },
+      { "place": "The Dawn Courtyard", "text": "An open circle of pale stone where no shadow falls wrong. The dawn light pools here like water. A figure waits at its center." }
+    ]
+  },
+  "tides_of_sanctuary": {
+    "styleId": "tide_veil",
+    "challengerNpc": "Maru",
+    "challengerIntro": "She rises out of the reflecting pool without disturbing a single ripple. *Maru*, Solen's tide-daughter.",
+    "challengerTaunt": "\"Water yields to everything, and is defeated by nothing. Push me, and learn what pushes back.\"",
+    "challengerSpeciesId": "23",
+    "challengerLevelScale": 0.8,
+    "beats": [
+      { "place": "The Drowned Cloister", "text": "Columns stand knee-deep in water so clear it looks like air. Koi drift between the stones, unbothered by your weight on the path." },
+      { "place": "The Reflecting Pool", "text": "The pool holds the sky perfectly still. Your reflection arrives a half-second late — as if deciding whether to follow." }
+    ]
+  },
+  "oath_of_iron": {
+    "styleId": "bone_crush",
+    "challengerNpc": "Brakk",
+    "challengerIntro": "The iron yard goes quiet. *Brakk* — Vance's breaker, a wall of scar and gristle — sets down his hammer and cracks his knuckles one by one.",
+    "challengerTaunt": "\"The Order doesn't spar. It stamps. Show me the metal in you or get stamped out.\"",
+    "challengerSpeciesId": "42",
+    "challengerLevelScale": 0.8,
+    "beats": [
+      { "place": "The Iron Yard", "text": "Anvils in rows, hammers in racks, and the ringing of metal so constant it becomes silence. Every surface bears dents in patterns too regular to be accidents." },
+      { "place": "The Testing Ring", "text": "A circle of packed earth ringed by broken weapons planted like grave-markers. The Order's acceptance rate is written on the ground." }
+    ]
+  },
+  "void_initiation": {
+    "styleId": "void_sever",
+    "challengerNpc": "Nhal",
+    "challengerIntro": "The rift-gate light bends around a silhouette that doesn't quite match its shadow. *Nhal*, Kael's first cutting.",
+    "challengerTaunt": "\"I have been unmade once already. What will you take from me that I haven't lost?\"",
+    "challengerSpeciesId": "96",
+    "challengerLevelScale": 0.9,
+    "beats": [
+      { "place": "The Rift Gate", "text": "The gate isn't a door. It's a place where the world forgot to finish. Colors bleed at the edges and sound arrives before its cause." },
+      { "place": "The Unmaking Grounds", "text": "Beyond the gate, terrain gives up pretending. Floating shards of landscape orbit a silence that has weight." }
+    ]
+  },
+  "rite_of_embers": {
+    "styleId": "pyrolexis",
+    "challengerNpc": "Ash-Voice Dara",
+    "challengerIntro": "She speaks and the brazier answers in the same rhythm. *Dara*, Phlox's ash-voice, first of the ember-tongued.",
+    "challengerTaunt": "\"Fire doesn't test what you can take. It tests what you can carry while burning. Hold out your hands.\"",
+    "challengerSpeciesId": "26",
+    "challengerLevelScale": 0.8,
+    "beats": [
+      { "place": "The Stone Garden", "text": "Statues crowd the path — older ones weathered smooth, newer ones still holding expressions. None of them are stone." },
+      { "place": "The Ember Brazier", "text": "The low brazier burns without fuel. Phlox kneels beside it and does not look up. The fire looks at you instead." }
+    ]
+  },
+  "vow_of_the_shield": {
+    "styleId": "kataphraxis",
+    "challengerNpc": "Tessera",
+    "challengerIntro": "The shield wall doesn't part — a hatch in it opens and a woman steps through, armored in layered plates that lock as she moves. *Tessera*, Aspis's wall-maker.",
+    "challengerTaunt": "\"Anyone can hit. Show me you can HOLD. Break my line, or be broken on it.\"",
+    "challengerSpeciesId": "34",
+    "challengerLevelScale": 0.8,
+    "beats": [
+      { "place": "The Lower Colonnade", "text": "Where the Sanctuary meets the road, shield-bearing pilgrims drill in silence. Their steps fall in unison — one sound, many feet." },
+      { "place": "The Shield Wall", "text": "Aspis stands at the center of a formation that has not moved in hours. He nods once. The wall opens like a gate deciding to be a door." }
+    ]
+  },
+  "covenant_of_caligo": {
+    "styleId": "tenebris",
+    "challengerNpc": "The Unlit",
+    "challengerIntro": "It has your silhouette. *The Unlit*, Caligo's shadow-given-form — the covenant's toll, walking ahead of you.",
+    "challengerTaunt": "\"Every light casts me. Every step feeds me. Turn around — I am always one step behind.\"",
+    "challengerSpeciesId": "75",
+    "challengerLevelScale": 0.9,
+    "beats": [
+      { "place": "The Darkening Path", "text": "Light dims here without any source to dim. Your own shadow stops matching your movements — stretching, tasting the ground." },
+      { "place": "The Vellum Dark", "text": "Darkness like a held page: flat, patient, full of writing you can almost read. Caligo waits where the ink is deepest." }
+    ]
+  },
+  "starlit_passage": {
+    "styleId": "astrobolos",
+    "challengerNpc": "The Cartographer",
+    "challengerIntro": "She sits at a desk in the open field, charting skies that aren't overhead anymore. *The Cartographer*, Selene's map of everything that moves.",
+    "challengerTaunt": "\"I have charted every road the stars take. You are a dot considering a line. Show me your trajectory.\"",
+    "challengerSpeciesId": "40",
+    "challengerLevelScale": 0.9,
+    "beats": [
+      { "place": "The Star Field", "text": "Grass silvered by light with no moon attached. The constellations overhead are rearranging — politely, like furniture being moved for a guest." },
+      { "place": "The Meridian Stone", "text": "A single upright stone at the field's center, shadow pointing not down but along a line only Selene's students can see." }
+    ]
+  },
+  "the_mercy_rising": {
+    "styleId": "anastasis",
+    "challengerNpc": "The Convalescent",
+    "challengerIntro": "He is bandaged from crown to boot and stands as if pain were a language he stopped speaking. *The Convalescent*, Eleos's first risen.",
+    "challengerTaunt": "\"I have died politely, once. What you do to me now, I will outlive. Come — the mercy needs practice.\"",
+    "challengerSpeciesId": "50",
+    "challengerLevelScale": 0.9,
+    "beats": [
+      { "place": "The Pale Ward", "text": "Cots in rows, each perfectly made and empty. The air smells of clean linen and the particular silence of places that have seen too much and chosen gentleness anyway." },
+      { "place": "The Risen Steps", "text": "Twelve steps of white stone. Each has a name carved on its riser. Eleos waits at the top, and does not offer a hand — you must rise on your own." }
+    ]
+  },
+  "the_thunder_road": {
+    "styleId": "fulgur_strike",
+    "challengerNpc": "Bolt-Runner Syx",
+    "challengerIntro": "He's shaking before you finish nodding — not fear, voltage. *Syx*, Kestrel's bolt-runner, first down the thunder road and still humming from it.",
+    "challengerTaunt": "\"Storms don't warn, they RSVP. Try to keep up — the road eats the slow.\"",
+    "challengerSpeciesId": "32",
+    "challengerLevelScale": 0.8,
+    "beats": [
+      { "place": "The Storm Fence", "text": "A picket line of grounded rods hums at the edge of the expanse. Past it, clouds move like they have somewhere to be and no intention of waiting." },
+      { "place": "The First Mile", "text": "The thunder road is not a road until you run it. Beneath your feet the ground holds a charge like a held breath." }
+    ]
+  },
+  "the_winter_oath": {
+    "styleId": "frost_mantle",
+    "challengerNpc": "Rimekeeper Sorrel",
+    "challengerIntro": "Frost blooms outward from her footprints — she has been standing here long enough to become a season. *Sorrel*, Yrsa's rimekeeper.",
+    "challengerTaunt": "\"Winter does not hate what it freezes. It keeps. Show me you are worth keeping.\"",
+    "challengerSpeciesId": "31",
+    "challengerLevelScale": 0.8,
+    "beats": [
+      { "place": "The Rime Gate", "text": "Two ice formations like open hands frame the pass. The cold here is precise — it takes exactly what it reaches for." },
+      { "place": "The Kept Field", "text": "Everything past the gate is preserved mid-motion: a bird, a falling leaf, a running deer. Winter keeps what it loves, and it loves everything." }
+    ]
+  },
+  "the_poisoned_garden": {
+    "styleId": "venomsong",
+    "challengerNpc": "Nightbloom",
+    "challengerIntro": "The garden sings first — then something in the trellis unfolds into a figure wearing petals like armor. *Nightbloom*, Solenne's first flowering.",
+    "challengerTaunt": "\"Everything in this garden is beautiful and lethal. I am the most beautiful. Sing with me and find out why.\"",
+    "challengerSpeciesId": "24",
+    "challengerLevelScale": 0.9,
+    "beats": [
+      { "place": "The Sweet Gate", "text": "The perfume arrives before the gate does — honey and rot in perfect balance. Your feet want to walk faster; the garden wants you slow." },
+      { "place": "The Poisoned Garden", "text": "Every bloom here is a diplomacy of toxin: beauty as a warning label. Solenne waters the beds and does not look up. Nightbloom rises from the trellis instead." }
+    ]
+  },
+  "the_moonless_road": {
+    "styleId": "lunar_shroud",
+    "challengerNpc": "The Hollow Chorister",
+    "challengerIntro": "You hear the song before you see the singer — and the singer is a shape the moonlight refuses. *The Hollow Chorister*, Morwen's first veil.",
+    "challengerTaunt": "\"The moonless road eats names. Mine is long gone — sing yours, and I will hold it for you. Forever, probably.\"",
+    "challengerSpeciesId": "48",
+    "challengerLevelScale": 0.9,
+    "beats": [
+      { "place": "The Moonless Mile", "text": "No moon was scheduled tonight, and yet the road is silvered — lit by something that left. Your footsteps sound an instant after you take them." },
+      { "place": "The Veiled Crossroads", "text": "Signposts point in directions that don't exist yet. Morwen stands where all the arrows agree, and beside her, something sings without a mouth." }
+    ]
+  },
+  "the_keepers_hour": {
+    "styleId": "chrono_vow",
+    "challengerNpc": "Second-Hand Mae",
+    "challengerIntro": "She is already turning away when you arrive — she's been done with this conversation for an hour and is waiting for you to catch up. *Mae*, Chronis's second hand.",
+    "challengerTaunt": "\"I have already fought you. You lost, then you trained, then you came back. Let's not waste the interval — fight me now.\"",
+    "challengerSpeciesId": "47",
+    "challengerLevelScale": 0.9,
+    "beats": [
+      { "place": "The Clockless Hall", "text": "Every wall has a bracket for a clock and every bracket is empty. Time here is kept by something older than mechanisms — you can feel it counting." },
+      { "place": "The Keeper's Hour", "text": "A single hourglass the size of a doorway. The sand falls upward. Chronis sits beside it, patient as a museum, and gestures you through." }
+    ]
+  }
+}

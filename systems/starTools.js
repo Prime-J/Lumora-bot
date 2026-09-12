@@ -232,7 +232,7 @@ async function execGetPlayer(ctx, input) {
     battles_won: p.battlesWon || 0,
     total_hunts: p.totalHunts || 0,
     login_streak: p.loginStreak || 0,
-    resonance: p.resonance || 0,
+    resonance: require("./progression").getFactionStat(p),
     companion_bond: p.companionBond || 0,
     hunt_energy: p.huntEnergy || 0,
     is_pro: !!(p.pro && (p.pro.tier || p.pro.until)),

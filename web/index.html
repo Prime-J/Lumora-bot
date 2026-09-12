@@ -269,7 +269,7 @@
         <div class="f-stat"><strong>Strength:</strong> Higher stability + safer bonding path</div>
         <div class="f-stat"><strong>Weakness:</strong> Less access to risky Rift power paths</div>
         <div class="f-stat"><strong>Styles:</strong> 🌿 Nature · 💧 Aqua · 💨 Wind · 🪨 Terra</div>
-        <div class="f-stat"><strong>Group:</strong> <a href="https://chat.whatsapp.com/IRAvs9txWwDHI3l4OVYAak" style="color:var(--harmony);">Join Harmony</a></div>
+        <div class="f-stat"><strong>Group:</strong> <a href="https://chat.whatsapp.com/IRAvs9txWwDHI3i4OVYAak?mode=gi_t" style="color:var(--harmony);">Join Harmony</a></div>
       </div>
       <div class="faction-card-wiki f-purity">
         <div class="f-emoji">⚔️</div>
@@ -278,7 +278,7 @@
         <div class="f-stat"><strong>Strength:</strong> More consistent combat/control path</div>
         <div class="f-stat"><strong>Weakness:</strong> Harder to adapt to chaos and unstable power</div>
         <div class="f-stat"><strong>Styles:</strong> 🪨 Terra · ❄️ Frost · ⚡ Volt</div>
-        <div class="f-stat"><strong>Group:</strong> <a href="https://chat.whatsapp.com/KzWF6mHUZCN85CkllwB8me" style="color:var(--purity);">Join Purity</a></div>
+        <div class="f-stat"><strong>Group:</strong> <a href="https://chat.whatsapp.com/KzWF6mHUZCN85CkllwB8me?mode=gi_t" style="color:var(--purity);">Join Purity</a></div>
       </div>
       <div class="faction-card-wiki f-rift">
         <div class="f-emoji">🕶️</div>
@@ -287,7 +287,7 @@
         <div class="f-stat"><strong>Strength:</strong> High-risk, high-reward power path</div>
         <div class="f-stat"><strong>Weakness:</strong> Unstable — harder to control consequences</div>
         <div class="f-stat"><strong>Styles:</strong> 🌑 Shadow · ⚡ Volt · 🔥 Flame · ❄️ Frost</div>
-        <div class="f-stat"><strong>Group:</strong> <a href="https://chat.whatsapp.com/CRUuwdU0rBx6j6dRh2Ydh9" style="color:var(--rift);">Join Rift</a></div>
+        <div class="f-stat"><strong>Group:</strong> <a href="https://chat.whatsapp.com/CRUuwDUoRbX6j6dRh2Ydh9?mode=gi_t" style="color:var(--rift);">Join Rift</a></div>
       </div>
     </div>
 
@@ -390,24 +390,53 @@
   <!-- FIGHTING STYLES -->
   <div class="wiki-section" id="wiki-styles">
     <h2>🥋 Fighting Styles</h2>
-    <p>Fighting styles are combat disciplines unlocked through Scrolls → Quests. Each style has 3 moves with different power, accuracy, and energy costs.</p>
+    <p>Fighting styles are combat disciplines gained through <strong>Scrolls → Secret Codes → Trials</strong>. Each style has 3 moves with different power, accuracy, and energy costs.</p>
 
-    <h3>How to Unlock</h3>
+    <h3>How to Obtain a Style</h3>
     <ol style="padding-left:20px;">
-      <li style="margin:8px 0; color:var(--text-dim);"><strong>Hunt</strong> → Scroll drops randomly (2.5% Common, 1% Rare, 0.3% Epic, 0.1% Legendary)</li>
-      <li style="margin:8px 0; color:var(--text-dim);"><strong>Open</strong> the scroll with <code>.use &lt;scroll name&gt;</code></li>
-      <li style="margin:8px 0; color:var(--text-dim);"><strong>Complete</strong> the linked quest</li>
-      <li style="margin:8px 0; color:var(--text-dim);"><strong>Equip</strong> your new style with <code>.equip-style &lt;name&gt;</code></li>
+      <li style="margin:8px 0; color:var(--text-dim);"><strong>Find a Scroll</strong> — scrolls drop while hunting (not certain): 2.5% Common, 1% Rare, 0.3% Epic, 0.1% Legendary per hunt. New hunters receive a starter scroll at registration.</li>
+      <li style="margin:8px 0; color:var(--text-dim);"><strong>Open it in your DM</strong> — the scroll reveals the quest briefing and your <strong>personal secret code</strong>.</li>
+      <li style="margin:8px 0; color:var(--text-dim);"><strong>Speak the code in any group chat</strong> — one-time, personal to you, never share it. Your trial begins: you are teleported to a foreign land.</li>
+      <li style="margin:8px 0; color:var(--text-dim);"><strong>PROCEED through the story</strong> (or RETREAT — the trial stays open and your code resumes it) and defeat the challenger NPC.</li>
+      <li style="margin:8px 0; color:var(--text-dim);"><strong>Pay the teacher</strong> — bring the required materials (<code>.sacrifice</code> to hand them in) and the Lucon fee. Then the style is yours. Equip with <code>.equip-style &lt;name&gt;</code>.</li>
     </ol>
 
-    <h3>Style Rarities & Drop Rates</h3>
+    <div class="tip-card">
+      <div class="tip-title">🔑 Secret Codes</div>
+      <p>Every player gets a <strong>unique one-time code per style</strong> at registration. Codes are revealed only when you open the scroll in your DM. A spent code dissolves — the path it opened is yours alone. If you retreat mid-trial, speak the code again to resume where you stood.</p>
+    </div>
+
+    <h3>Style Rarities &amp; Scroll Drop Rates</h3>
     <table style="margin-top:10px;">
-      <thead><tr><th>Rarity</th><th>Drop Rate</th><th>Scrolls</th><th>Difficulty</th></tr></thead>
+      <thead><tr><th>Rarity</th><th>Scroll Drop</th><th>Level Gate</th><th>Difficulty</th></tr></thead>
       <tbody>
-        <tr><td><span class="badge rarity-common">Common</span></td><td>2.5% per hunt</td><td>Windworn, Dawn-Etched</td><td>★☆☆☆☆ Starter</td></tr>
-        <tr><td><span class="badge rarity-rare">Rare</span></td><td>1.0% per hunt</td><td>Tide-Sealed, Iron-Seal, Void-Etched, Ember Tongue, Shieldbearer's, Storm-Torn, Frost-Etched</td><td>★★☆☆☆ Intermediate</td></tr>
-        <tr><td><span class="badge rarity-epic">Epic</span></td><td>0.3% per hunt</td><td>Caligo Vellum, Starlit Codex, Broken Communion, Nightshade Petal, Moonless Codex</td><td>★★★☆☆ Advanced</td></tr>
-        <tr><td><span class="badge rarity-legendary">Legendary</span></td><td>0.1% per hunt</td><td>Lumen Folio, First Keeper's, Hourglass Vellum</td><td>★★★★★ Endgame</td></tr>
+        <tr><td><span class="badge rarity-common">Common</span></td><td>2.5% per hunt</td><td>Any level</td><td>★☆☆☆☆ Starter</td></tr>
+        <tr><td><span class="badge rarity-rare">Rare</span></td><td>1.0% per hunt</td><td>Lv. 8–10</td><td>★★☆☆☆ Intermediate</td></tr>
+        <tr><td><span class="badge rarity-epic">Epic</span></td><td>0.3% per hunt</td><td>Lv. 15</td><td>★★★☆☆ Advanced</td></tr>
+        <tr><td><span class="badge rarity-legendary">Legendary</span></td><td>0.1% per hunt</td><td>Lv. 25</td><td>★★★★★ Endgame</td></tr>
+      </tbody>
+    </table>
+
+    <h3>The Fifteen Styles — Teachers &amp; Prices</h3>
+    <p style="font-size:12px;color:var(--text-dim);">Materials are <strong>not certain drops</strong> — hunt the suggested areas and they will come. While a trial still needs materials, hidden discoveries (mysterious caves and stranger places) appear more often on hunts.</p>
+    <table style="margin-top:10px;">
+      <thead><tr><th>Style</th><th>Rarity</th><th>Gate</th><th>Teacher</th><th>Materials Required</th><th>Fee</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Wind Step</strong><br><span style="font-size:11px;color:var(--text-dim);">Wind</span></td><td><span class="badge rarity-common">common</span></td><td style="text-align:center;">Any</td><td>Wind Master Reva</td><td>3× Sky-Shard Feather <em>(Sky-Shard Feathers molt from Wind-type Mora — hunt where Zephyra and Gustling roam (wind terrains).)</em><br>1× Galestone Chip <em>(Galestone Chips come from windswept cliffs — rare hunt finds; keep hunting, they are not certain.)</em></td><td style="text-align:right;">1,500 LC</td></tr>
+        <tr><td><strong>Sun Walk</strong><br><span style="font-size:11px;color:var(--text-dim);">Solar</span></td><td><span class="badge rarity-common">common</span></td><td style="text-align:center;">Any</td><td>Sun Priestess Iyra</td><td>2× Aura Crystal <em>(Aura Crystals gather around Light-type Mora — hunt the bright open terrains (Wilderness outskirts).)</em><br>2× Mora Fang <em>(Mora Fangs drop from defeated Mora on any hunt — fight often, drops are not certain.)</em></td><td style="text-align:right;">1,800 LC</td></tr>
+        <tr><td><strong>Tide Veil</strong><br><span style="font-size:11px;color:var(--text-dim);">Aqua</span></td><td><span class="badge rarity-rare">rare</span></td><td style="text-align:center;">Lv. 8+</td><td>Tide-Keeper Solen</td><td>3× Aura Crystal <em>(Aura Crystals pool where Aqua Mora gather — hunt the water-flavored wilds (Verdant Wilds watersides).)</em><br>1× Core Crystal <em>(Core Crystals surface rarely on any hunt — persistence, not luck-safety.)</em></td><td style="text-align:right;">2,200 LC</td></tr>
+        <tr><td><strong>Bone Crush</strong><br><span style="font-size:11px;color:var(--text-dim);">Stone</span></td><td><span class="badge rarity-rare">rare</span></td><td style="text-align:center;">Lv. 8+</td><td>Hierarch Vance</td><td>3× Mora Fang <em>(Mora Fangs drop from defeated Mora — the Order counts only fangs you took yourself (Terra Shatterfields hunts).)</em><br>1× Shadow Resin <em>(Shadow Resin is a rare hunt find — darker drops come from Shadow Hollow edges.)</em></td><td style="text-align:right;">2,200 LC</td></tr>
+        <tr><td><strong>Void Sever</strong><br><span style="font-size:11px;color:var(--text-dim);">Void</span></td><td><span class="badge rarity-rare">rare</span></td><td style="text-align:center;">Lv. 8+</td><td>Rift-Tongue Kael</td><td>4× Rift Dust <em>(Rift Dust gathers near unstable zones — hunt Rift Scar for the richest dust.)</em><br>2× Shadow Resin <em>(Shadow Resin seeps from Shadow Hollow hunts — rare; keep at it.)</em><br>1× Galestone Chip <em>(Galestone Chips from windswept cliffs — rare hunt finds anywhere the wind howls.)</em></td><td style="text-align:right;">2,500 LC</td></tr>
+        <tr><td><strong>Pyrolexis</strong><br><span style="font-size:11px;color:var(--text-dim);">Fire</span></td><td><span class="badge rarity-rare">rare</span></td><td style="text-align:center;">Lv. 8+</td><td>Speaker Phlox</td><td>2× Mora Fang <em>(Mora Fangs from Flame Mora hunts — Ashfall Basin is the kiln of fangs.)</em><br>1× Core Crystal <em>(Core Crystals are uncommon hunt finds — the fire keeps its own vault.)</em></td><td style="text-align:right;">2,200 LC</td></tr>
+        <tr><td><strong>Kataphraxis</strong><br><span style="font-size:11px;color:var(--text-dim);">Stone</span></td><td><span class="badge rarity-rare">rare</span></td><td style="text-align:center;">Lv. 8+</td><td>Aspis the Quiet</td><td>2× Purity Ash <em>(Purity Ash is refined by the Order — rare find on Terra Shatterfields hunts.)</em><br>3× Shard Crystal <em>(Shard Crystals reinforce walls — common finds on most hunts.)</em></td><td style="text-align:right;">2,200 LC</td></tr>
+        <tr><td><strong>Tenebris</strong><br><span style="font-size:11px;color:var(--text-dim);">Void</span></td><td><span class="badge rarity-epic">epic</span></td><td style="text-align:center;">Lv. 15+</td><td>Caligo</td><td>3× Shadow Resin <em>(Shadow Resin seeps from Shadow Hollow — the dark keeps its resin close.)</em><br>3× Rift Dust <em>(Rift Dust from Rift Scar hunts — unstable ground sheds it.)</em><br>2× Galestone Chip <em>(Galestone Chips from wind-carved cliffs — rare; not every hunt gives one.)</em></td><td style="text-align:right;">3,000 LC</td></tr>
+        <tr><td><strong>Astrobolos</strong><br><span style="font-size:11px;color:var(--text-dim);">Solar</span></td><td><span class="badge rarity-epic">epic</span></td><td style="text-align:center;">Lv. 15+</td><td>Selene the Wanderer</td><td>4× Aura Crystal <em>(Aura Crystals gather under starry skies — hunt Wilderness and Verdant Wilds at night rotations.)</em><br>1× Prismatic Crystal <em>(Prismatic Crystals are rare hunt finds in any weather — keep watching the ground.)</em></td><td style="text-align:right;">3,000 LC</td></tr>
+        <tr><td><strong>Anastasis</strong><br><span style="font-size:11px;color:var(--text-dim);">Solar</span></td><td><span class="badge rarity-legendary">legendary</span></td><td style="text-align:center;">Lv. 25+</td><td>Eleos</td><td>2× Prismatic Crystal <em>(Prismatic Crystals — rare finds on any hunt; mercy is expensive.)</em><br>2× Purity Ash <em>(Purity Ash from Terra Shatterfields — rare, and only for the worthy.)</em></td><td style="text-align:right;">3,500 LC</td></tr>
+        <tr><td><strong>Fulgur Strike</strong><br><span style="font-size:11px;color:var(--text-dim);">Storm</span></td><td><span class="badge rarity-rare">rare</span></td><td style="text-align:center;">Lv. 10+</td><td>Storm-Rider Kestrel</td><td>2× Core Crystal <em>(Core Crystals hold a charge — uncommon finds, better odds on Volt Expanse hunts.)</em><br>2× Aura Crystal <em>(Aura Crystals hum near Volt Mora — Volt Expanse hunts.)</em></td><td style="text-align:right;">2,500 LC</td></tr>
+        <tr><td><strong>Frost Mantle</strong><br><span style="font-size:11px;color:var(--text-dim);">Frost</span></td><td><span class="badge rarity-rare">rare</span></td><td style="text-align:center;">Lv. 10+</td><td>Sentinel Yrsa</td><td>4× Shard Crystal <em>(Shard Crystals frost over on cold hunts — common finds in Frostreach.)</em><br>2× Mora Fang <em>(Mora Fangs from Frost Mora — Frostreach hunts.)</em></td><td style="text-align:right;">2,500 LC</td></tr>
+        <tr><td><strong>Venomsong</strong><br><span style="font-size:11px;color:var(--text-dim);">Toxic</span></td><td><span class="badge rarity-epic">epic</span></td><td style="text-align:center;">Lv. 15+</td><td>Garden-Mother Solenne</td><td>3× Mora Fang <em>(Mora Fangs from Nature Mora — Verdant Wilds hunts, where the garden grows.)</em><br>2× Shadow Resin <em>(Shadow Resin from Shadow Hollow — the garden trades with the dark.)</em></td><td style="text-align:right;">3,000 LC</td></tr>
+        <tr><td><strong>Lunar Shroud</strong><br><span style="font-size:11px;color:var(--text-dim);">Lunar</span></td><td><span class="badge rarity-epic">epic</span></td><td style="text-align:center;">Lv. 15+</td><td>Veiled One Morwen</td><td>3× Shadow Resin <em>(Shadow Resin from Shadow Hollow hunts — rare; the road keeps its receipts.)</em><br>2× Core Crystal <em>(Core Crystals from deep hunts — uncommon everywhere, certain nowhere.)</em></td><td style="text-align:right;">3,000 LC</td></tr>
+        <tr><td><strong>Chrono Vow</strong><br><span style="font-size:11px;color:var(--text-dim);">Time</span></td><td><span class="badge rarity-legendary">legendary</span></td><td style="text-align:center;">Lv. 25+</td><td>Keeper Chronis</td><td>2× Chrono Shard <em>(Chrono Shards surface rarely near rift-scarred ground (Rift Scar) — time runs thin there.)</em><br>1× Prismatic Crystal <em>(Prismatic Crystals — rare finds in any weather; the hour tests patience above all.)</em></td><td style="text-align:right;">4,000 LC</td></tr>
       </tbody>
     </table>
 
@@ -416,10 +445,9 @@
       <p><strong>Move 1 (Basic)</strong> — Low energy, high accuracy, moderate power<br>
       <strong>Move 2 (Utility)</strong> — Often 100% accuracy, may heal/buff/drain<br>
       <strong>Move 3 (Finisher)</strong> — High power, lower accuracy, high energy cost<br><br>
-      Energy regenerates 12% of max per turn. Running out of energy forces you to skip.</p>
+      Rarer styles hit harder (rarity bonus in combat) and carry harder gates: rarer scrolls, higher levels, pricier teachers.</p>
     </div>
   </div>
-
   <!-- COMBAT -->
   <div class="wiki-section" id="wiki-combat">
     <h2>⚡ Combat System</h2>
@@ -556,20 +584,24 @@
         <tr><td><code>.begin</code></td><td>Meet Star — the bot introduces herself</td></tr>
         <tr><td><code>.register</code></td><td>Start the registration process</td></tr>
         <tr><td><code>.username &lt;name&gt;</code></td><td>Set your display name</td></tr>
-        <tr><td><code>.gender &lt;male/female&gt;</code></td><td>Set your gender</td></tr>
+        <tr><td><code>.gender &lt;male / female / rather not say&gt;</code></td><td>Set your gender — tap the buttons in chat, change it anytime</td></tr>
         <tr><td><code>.age &lt;number&gt;</code></td><td>Set your age</td></tr>
         <tr><td><code>.set-icon</code></td><td>Set your profile icon (send with image)</td></tr>
         <tr><td><code>.faction &lt;harmony/purity/rift&gt;</code></td><td>Choose your faction</td></tr>
+        <tr><td><code>.tutorial</code></td><td><strong>Guided tutorial</strong> — your first hunt, with a special reward at the end</td></tr>
+        <tr><td><code>.skip-tutorial</code></td><td>Skip it and get the world group links to visit later</td></tr>
+        <tr><td><code>.fac-link</code></td><td>Re-send your faction group invite link</td></tr>
       </tbody>
     </table>
 
-    <h3>📊 Profile & Stats</h3>
+    <h3>📊 Profile &amp; Stats</h3>
     <table>
       <tbody>
         <tr><td><code>.profile</code></td><td>View your full profile card</td></tr>
         <tr><td><code>.stats</code></td><td>View and invest stat points</td></tr>
         <tr><td><code>.invest &lt;stat&gt; &lt;amount&gt;</code></td><td>Invest points into a stat</td></tr>
-        <tr><td><code>.level</code></td><td>Check your level and DΞP progress</td></tr>
+        <tr><td><code>.rank</code></td><td>Your rank card (image)</td></tr>
+        <tr><td><code>.ranks</code></td><td>The full rank ladder</td></tr>
       </tbody>
     </table>
 
@@ -577,9 +609,9 @@
     <table>
       <tbody>
         <tr><td><code>.map</code></td><td>View available hunting terrains</td></tr>
-        <tr><td><code>.travel &lt;terrain&gt;</code></td><td>Travel to a hunting ground</td></tr>
+        <tr><td><code>.travel &lt;terrain&gt; &lt;difficulty&gt;</code></td><td>Travel to a hunting ground (easy/medium/hard…)</td></tr>
         <tr><td><code>.hunt</code></td><td>Search for wild Mora encounters</td></tr>
-        <tr><td><code>.explore</code></td><td>Explore the area for items/events</td></tr>
+        <tr><td><code>.bounty</code></td><td>Today's hunting target</td></tr>
       </tbody>
     </table>
 
@@ -598,10 +630,10 @@
     <table>
       <tbody>
         <tr><td><code>.attack</code></td><td>Attack in active battle</td></tr>
-        <tr><td><code>.capture</code></td><td>Attempt to capture wild Mora</td></tr>
+        <tr><td><code>.catch</code></td><td>Attempt to catch a spawned wild Mora</td></tr>
+        <tr><td><code>.run</code></td><td>Flee the active wild battle</td></tr>
         <tr><td><code>.battle @player</code></td><td>Challenge a player to PvP</td></tr>
         <tr><td><code>.arena &lt;difficulty&gt;</code></td><td>Fight NPC in the arena</td></tr>
-        <tr><td><code>.flee</code></td><td>Escape from battle</td></tr>
         <tr><td><code>.use &lt;move&gt;</code></td><td>Use a specific move in battle</td></tr>
         <tr><td><code>.equip-style &lt;name&gt;</code></td><td>Equip a fighting style</td></tr>
       </tbody>
@@ -612,7 +644,6 @@
       <tbody>
         <tr><td><code>.market</code></td><td>Browse the item market</td></tr>
         <tr><td><code>.buy &lt;item&gt;</code></td><td>Buy an item from the market</td></tr>
-        <tr><td><code>.sell &lt;item&gt;</code></td><td>Sell an item</td></tr>
         <tr><td><code>.daily</code></td><td>Claim daily reward</td></tr>
         <tr><td><code>.weekly</code></td><td>Claim weekly reward</td></tr>
         <tr><td><code>.give @player &lt;amount&gt;</code></td><td>Send Lucons to another player</td></tr>
@@ -623,22 +654,48 @@
     <h3>🎒 Inventory</h3>
     <table>
       <tbody>
-        <tr><td><code>.bag</code></td><td>View your inventory</td></tr>
+        <tr><td><code>.inv</code> / <code>.inventory</code></td><td>View your inventory</td></tr>
         <tr><td><code>.item &lt;name&gt;</code></td><td>View item details</td></tr>
         <tr><td><code>.consume &lt;item&gt;</code></td><td>Use a consumable item</td></tr>
         <tr><td><code>.equip &lt;item&gt;</code></td><td>Equip gear</td></tr>
         <tr><td><code>.unequip &lt;item&gt;</code></td><td>Unequip gear</td></tr>
-        <tr><td><code>.use &lt;scroll&gt;</code></td><td>Open a scroll</td></tr>
+        <tr><td><code>.open &lt;scroll&gt;</code></td><td>Open a scroll in DM — reveals your secret code</td></tr>
+        <tr><td><code>.sacrifice</code></td><td>Hand trial materials to your style teacher</td></tr>
       </tbody>
     </table>
 
     <h3>🏆 Social</h3>
     <table>
       <tbody>
-        <tr><td><code>.lb</code></td><td>View leaderboards</td></tr>
+        <tr><td><code>.lb</code></td><td>Global leaderboard (Level + XP + faction stat)</td></tr>
         <tr><td><code>.faction</code></td><td>View your faction info</td></tr>
-        <tr><td><code>.f-lb</code></td><td>Faction leaderboard</td></tr>
+        <tr><td><code>.f-lb</code></td><td>Faction leaderboard — ranked by your faction's stat</td></tr>
         <tr><td><code>.gift @player</code></td><td>Send a gift</td></tr>
+      </tbody>
+    </table>
+
+    <h3>🛠️ Useful</h3>
+    <table>
+      <tbody>
+        <tr><td><code>.help</code></td><td>Full help menu (Game Menu + Bot Menu)</td></tr>
+        <tr><td><code>.help admin</code></td><td>Admin tokens &amp; the Council — Prime's guide</td></tr>
+        <tr><td><code>.updates</code></td><td>Current shipped version + what's coming next</td></tr>
+        <tr><td><code>.wiki-url</code></td><td>Send this wiki's link to the group</td></tr>
+      </tbody>
+    </table>
+
+    <h3>👑 Admin Council <span class="badge">Prime / Right-Hand / Sudos</span></h3>
+    <table>
+      <tbody>
+        <tr><td><code>.admin &lt;task&gt;</code></td><td>Prime/Right-Hand: post a task — every sudo gets a DM + tag (add <code>2</code> first for a 2-token task)</td></tr>
+        <tr><td><code>.claim &lt;task-id&gt;</code></td><td>Take a task up — no lock, the issuer is DM'd who's working it</td></tr>
+        <tr><td><code>.task--&lt;id&gt;-cleared @admin</code></td><td>Prime/Right-Hand: verify &amp; clear a task; grants its tokens and notifies every taker</td></tr>
+        <tr><td><code>.token-give @user &lt;n&gt;</code></td><td>Prime/Right-Hand: grant tokens to any admin or sudo</td></tr>
+        <tr><td><code>.admin-name &lt;name&gt;</code></td><td>Sudos: set the name shown on admin work</td></tr>
+        <tr><td><code>.tokens</code></td><td>Your token balance &amp; recent history</td></tr>
+        <tr><td><code>.admin-lb</code></td><td>Who's earning the most — keep your seat</td></tr>
+        <tr><td><code>.token-shop</code> / <code>.token-buy</code></td><td>Spend tokens: Lucons, stat points, full refills</td></tr>
+        <tr><td><code>.cycle-admin</code></td><td>Prime: demote the lowest earner, reset the cycle</td></tr>
       </tbody>
     </table>
   </div>
@@ -646,7 +703,7 @@
 
 <!-- ═══════════════ EVENTS ═══════════════ -->
 <div class="panel" id="panel-events">
-  <h1>📅 Events & Tournaments</h1>
+  <h1>📅 Events &amp; Tournaments</h1>
   <p class="subtitle">Compete, earn rewards, and shape the fate of Lumora</p>
 
   <div class="grid grid-2">

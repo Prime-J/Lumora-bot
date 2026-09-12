@@ -1,0 +1,49 @@
+{
+  "chance": 0.06,
+  "trialBonusChance": 0.10,
+  "themes": {
+    "nature": {
+      "name": "an overgrown hollow",
+      "text": "Roots part around a doorway of woven branches. Air drifts out, green and ancient.",
+      "battleType": "Nature"
+    },
+    "volt": {
+      "name": "a humming grotto",
+      "text": "The rock itself crackles. Static lifts the hairs on your arms as you approach.",
+      "battleType": "Volt"
+    },
+    "flame": {
+      "name": "a smoldering caldera vent",
+      "text": "Heat breathes from a crack in the basalt. Something glitters deep in the ember-light.",
+      "battleType": "Flame"
+    },
+    "terra": {
+      "name": "a collapsed quarry cave",
+      "text": "Shattered stone has opened a throat into the earth. Dust settles in perfect stillness.",
+      "battleType": "Terra"
+    },
+    "frost": {
+      "name": "a blue ice cavern",
+      "text": "Light passes through the walls like stained glass. Your breath freezes mid-sentence.",
+      "battleType": "Frost"
+    },
+    "shadow": {
+      "name": "a lightless burrow",
+      "text": "The dark here is older than the night above it. Something watches without eyes.",
+      "battleType": "Shadow"
+    },
+    "rift": {
+      "name": "a rift-scarred fissure",
+      "text": "Reality is thin here. Colors run wrong along the edges of the crack.",
+      "battleType": "Void"
+    },
+    "_default": {
+      "name": "a mysterious cave",
+      "text": "A mouth of stone opens in the hillside, breathing cool air. Old claw-marks frame the entrance.",
+      "battleType": null
+    }
+  },
+  "outcomeWeights": { "material": 40, "lucons": 35, "battle": 25 },
+  "lucons": { "min": 150, "max": 600, "perDifficulty": 50 },
+  "battle": { "levelBase": 3, "levelPerDifficulty": 2 }
+}

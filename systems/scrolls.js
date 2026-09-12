@@ -164,12 +164,25 @@ async function cmdOpen(ctx, chatId, senderId, msg, args = []) {
   let questBlockForDm = "";
   let alreadyMsg = "";
 
+  // v1.1.0 rework: style quests are no longer auto-accepted by opening the
+  // scroll. The scroll reveals the briefing + the player's SECRET CODE; the
+  // quest only begins when the code is spoken in any group chat.
+  const isStyleQuest = !!questDef?.reward?.style;
+  const styleQuests = isStyleQuest ? require("./styleQuests") : null;
+  if (styleQuests) styleQuests.ensureCodeFields(player);
+
   if (!questDef) {
     questBlockForDm = `_(scroll's linked quest "${questId}" is missing from data/quests.json)_`;
   } else if (player.quests.completed.includes(questId)) {
     alreadyMsg = `✓ You've already completed *${questDef.name}*. The scroll burns itself out.`;
   } else if (player.quests.active[questId]) {
     alreadyMsg = `📜 *${questDef.name}* is already in your quest log. Progress unchanged.`;
+  } else if (isStyleQuest) {
+    const entry = player.styleCodes?.[questDef.reward.style];
+    const codeLine = entry?.code
+      ? `\n🔑 *SECRET CODE:* \`${entry.code}\`\n_Speak it in any group chat to begin. One use only — never share it._`
+      : `\n_(no code found — the path is sealed)_`;
+    questBlockForDm = questSystem.renderQuestDetail(questDef) + codeLine;
   } else {
     player.quests.active[questId] = { progress: 0, startedAt: Date.now(), stepProgress: {} };
     questBlockForDm = questSystem.renderQuestDetail(questDef);
@@ -201,7 +214,9 @@ async function cmdOpen(ctx, chatId, senderId, msg, args = []) {
     : dmSent
       ? `📜 *${scroll.name} — opened*\n` +
         `🧠 *+1 Intelligence*  _(now ${player.intelligence})_\n` +
-        `_Quest details DM'd to you — check your private chat to begin._`
+        (isStyleQuest
+          ? `_The scroll's secret is in your DM — speak its code in a group chat to begin._`
+          : `_Quest details DM'd to you — check your private chat to begin._`)
       : // DM failed — print everything inline as the fallback
         `📜 *SCROLL OPENED — ${scroll.name}*\n${DIVIDER}\n` +
         `_${scroll.lore}_\n` +

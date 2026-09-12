@@ -42,8 +42,13 @@ function stepMessage(step, data) {
         "",
         "What are you?",
         "",
-        ui.divider(),
-        "_Tap a button below 👇_",
+        ui.card("CHOOSE ONE", "🎯", [
+          { emoji: "♂", label: "Male", value: ".gender male" },
+          { emoji: "♀", label: "Female", value: ".gender female" },
+          { emoji: "🙁", label: "Rather not say", value: ".gender rather not say" },
+        ]),
+        "",
+        `_Or type ${".gender"} male / female / rather not say_ 👇_`,
       ].join("\n");
 
     case "age":
@@ -159,15 +164,15 @@ function validate(step, input) {
       const map = {
         male: "Male", m: "Male",
         female: "Female", f: "Female",
-        other: "Other", o: "Other",
+        other: "Rather not say", o: "Rather not say",
         "1": "Male",
         "2": "Female",
-        "3": "Other",
+        "3": "Rather not say",
       };
       if (!map[g])
         return {
           ok: false,
-          err: "❌ Choose: *male*, *female*, or *other*\n\n_Or tap a button below 👇_",
+          err: "❌ Choose: *male*, *female*, or *rather not say*\n\n_Or tap a button above 👆_",
         };
       return { ok: true, value: map[g] };
     }

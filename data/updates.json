@@ -1,9 +1,21 @@
 {
   "current": {
-    "version": "1.0.2",
-    "name": "Style Showcase",
-    "releasedAt": 1757000000000,
-    "notes": "🌅 *PATCH 1.0.2 — STYLE SHOWCASE*\n\n🥋 *Fighting style art is HERE.* Every style now has a unique icon. See yours with *.style <name>*.\n\n📊 *Web dashboard* — view Mora, items, styles, events, and trade values at your Railway URL.\n\n🎯 *Map rework* — *.map* now shows terrain selection first, then difficulty buttons with level locks.\n\n💊 *Consumables fixed* — healing capsules, energy capsules, and all consumable items now work properly.\n\n👤 *Admin names on moderation* — bans, warns, kicks now show who did it.\n\n🔗 *Faction group links updated* — new working invite links for all 3 factions.\n\n💬 *Star personality* — battle commentary, idle messages, and tips from your guide.\n\n📈 *Progression engine* — scalable XP curves, honor/bounty/resonance system, anti-farming.\n\n🎫 *.styles--wind-step* — Star's guide to the first fighting style. Type it to see!"
+    "version": "1.2.5",
+    "name": "The Scroll Trials",
+    "releasedAt": 1788719900000,
+    "notes": "🌟 *LUMORA 1.2.5 — THE SCROLL TRIALS*\n\n📜 *Quest rework is LIVE.* No more dead ends. Fighting styles are now earned through real quest lines:\n\n🕯️ *Secret codes* — every registered player holds personal, one-time codes for every scroll-gainable style. Get a style scroll, open it in your DM, and it reveals your code. Speak the code in any group chat to begin the trial.",
+    "stages": [
+      "📜 *Scroll Trials (all 15 styles)* — receive the scroll → open it in DM → speak your secret code → you're teleported to a foreign land with PROCEED / RETREAT choices → story beats with CONTINUE → a named NPC challenger who uses that style → beat them to reach the teacher.",
+      "🎖️ *Level barriers* — rare styles gate at level 8–10, epic at 15, legendary at 25. The teacher refuses anyone too green — the trial stays open, no dead ends.",
+      "💰 *The teacher's price* — each style demands real materials (dropped non-certainly while hunting, with hints where to find them) plus a Lucon fee scaled to the style's power. Retreat anytime; speak your code again to resume exactly where you stood.",
+      "🕳️ *Discoveries* — while hunting you may stumble on a mysterious cave, humming grotto, or lightless burrow. ENTER for materials, Lucons, or a guardian battle — or LEAVE freely.",
+      "🎁 *Loyalty gift reworked* — .claim-gift now unlocks Wind Step directly and thanks you for staying for V2, with constant updates and live events promised.",
+      "🎓 *Guided tutorial* — join a faction, pick Begin or Skip, get the world links for Hunting Grounds 1 & 2, Battleground, and Market Place, and take your first hunt with a Start Tutorial button.",
+      "👑 *Admin Tokens Council* — Prime or the Right-Hand posts tasks (*.admin <task>*), sudos take them up, verified work is cleared and tokens are granted. The lowest earner is demoted each cycle.",
+      "🏆 *Leaderboard overhaul* — faction stats aligned: Purity = Resonance · Rift = Bounty · Harmony = Honour.",
+      "🌐 *Wiki updated* — every fighting style, its gate, teacher, materials, and fee documented at *.wiki-url*.",
+      "🎭 *Gender flow fixed* — real buttons, 'Rather not say', and you can change your answer anytime."
+    ]
   },
   "pending": null,
   "history": [

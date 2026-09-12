@@ -315,12 +315,38 @@ function renderQuestDetail(def) {
   return lines.join("\n");
 }
 
+// Level barrier: if the style needs a level the player hasn't reached,
+// return the required level, else null. The teach moment is gated on this.
+function getLevelBlock(player, questId) {
+  const def = loadQuests()[questId];
+  const styleId = def?.reward?.style;
+  if (!styleId) return null;
+  const st = loadStyles()[styleId];
+  const need = Number(st?.levelReq || 0);
+  if (need && Number(player?.level || 1) < need) return need;
+  return null;
+}
+
+// M3: teach-requirement gate (materials + Lucon fee) — delegates to
+// styleQuests so quests.js stays generic; quests without teachReq pass free.
+function getTeachBlockMsg(player, questId) {
+  try { return require("./styleQuests").getTeachBlock(player, questId); }
+  catch { return null; }
+}
+
 // Internal: apply rewards for a finished quest.
+// Level-gated styles refuse below levelReq; teachReq styles must have
+// materials + fee settled (payTeachReq deducts here) or completion refuses.
 function applyCompletion(player, questId) {
   ensureQuestFields(player);
   const quests = loadQuests();
   const def = quests[questId];
   if (!def) return null;
+  if (getLevelBlock(player, questId)) return null;
+  if (def.teachReq) {
+    const pay = require("./styleQuests").payTeachReq({ players: null, savePlayers: () => {} }, player, questId);
+    if (!pay.ok) return null;
+  }
 
   // Remove from active, push to completed
   delete player.quests.active[questId];
@@ -765,6 +791,20 @@ async function cmdWhisper(ctx, chatId, senderId, msg, args = []) {
 
   // Auto-apply completions
   for (const qId of completed) {
+    const teachBlock = getTeachBlockMsg(player, qId);
+    if (teachBlock) {
+      lines.push(``, teachBlock);
+      continue;
+    }
+    const levelNeed = getLevelBlock(player, qId);
+    if (levelNeed) {
+      const def0 = loadQuests()[qId];
+      const sn = loadStyles()[def0?.reward?.style]?.name || def0?.reward?.style;
+      lines.push(``);
+      lines.push(`🔒 *${def0?.name || qId}* — all steps done, but the teacher shakes their head.`);
+      lines.push(`_You must reach *level ${levelNeed}* before they will teach *${sn}*. Come back stronger._`);
+      continue;
+    }
     const def = applyCompletion(player, qId);
     if (def) {
       const styleName = loadStyles()[def.reward?.style]?.name || def.reward?.style;
@@ -798,6 +838,9 @@ module.exports = {
   onBattleWon,
   onNpcMeet,
   applyCompletion,
+  getLevelBlock,
+  getTeachBlockMsg,
+  nextStepGuide,
   renderQuestDetail,
 
   // helpers
