@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// LUMORA HELP SYSTEM — Rewrite using buttonsSystem (working pattern)
+// LUMORA HELP SYSTEM — Game-themed UI
 // Uses buttonsSystem.sendButtons + mapButtons for reliable WhatsApp buttons
 // ══════════════════════════════════════════════════════════════
 "use strict";
@@ -8,21 +8,53 @@ const ui = require("./ui");
 const registry = require("./commandRegistry");
 const DIV = ui.DIV;
 
+// ── Box art helpers ──────────────────────────────────────────
+function boxTop(w)  { return "\u2554" + "\u2550".repeat(w) + "\u2557"; }
+function boxMid(w)  { return "\u2560" + "\u2550".repeat(w) + "\u2563"; }
+function boxBot(w)  { return "\u255a" + "\u2550".repeat(w) + "\u255d"; }
+function padR(s, w) {
+  const stripped = s.replace(/\*/g, "").replace(/_/g, "");
+  const diff = Math.max(0, w - stripped.length);
+  return s + " ".repeat(diff);
+}
+const W = 24;
+
+// ── Stat bar helper ──────────────────────────────────────────
+function statBar(pct, len = 8) {
+  const filled = Math.round((pct / 100) * len);
+  return "\u2588".repeat(filled) + "\u2591".repeat(len - filled);
+}
+
 /**
  * Build the main help menu text (Game Menu + Bot Menu).
  */
 function buildMainMenuText(player) {
   const hasPro = player && player.pro && player.pro.tier;
-  const factionEmoji = { harmony: "\ud83c\udf3f", purity: "\u2694\ufe0f", rift: "\ud83d\udd76\ufe0f" }[player?.faction] || "\u26a1";
+  const faction = player?.faction || "none";
+  const factionEmoji = { harmony: "\ud83c\udf3f", purity: "\u2694\ufe0f", rift: "\ud83d\udd76\ufe0f" }[faction] || "\u26a1";
+  const factionName = faction.charAt(0).toUpperCase() + faction.slice(1);
+  const level = player?.level || 1;
+  const xp = player?.xp || 0;
+  const xpNext = Math.floor(100 + level * 20);
+  const xpPct = Math.min(100, Math.round((xp / xpNext) * 100));
+
   const greeting = hasPro
-    ? `\ud83d\udc51 *Welcome back, Bearer of the Mark.* The Rifts recognize your rank.`
-    : `\ud83c\udf0c *Greetings, traveler.* The Lumorian crystals hum at your presence.`;
+    ? "\ud83d\udc51 *Welcome back, Bearer of the Mark.* The Rifts recognize your rank."
+    : "\ud83c\udf0c *Greetings, traveler.* The Lumorian crystals hum at your presence.";
 
   return (
-    ui.header("LUMORA", "\ud83c\udf0c") + `\n\n` +
+    `${boxTop(W)}\n` +
+    `\u2551  \ud83c\udf0c *L U M O R A*          \u2551\n` +
+    `\u2551     \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550           \u2551\n` +
+    `\u2551  \u2694\ufe0f COMBAT  \u00b7  \ud83c\udf0d WORLD   \u2551\n` +
+    `\u2551  \ud83d\udee1\ufe0f BOT     \u00b7  \ud83d\udcd6 WIKI    \u2551\n` +
+    boxMid(W) + `\n` +
+    `\u2551                          \u2551\n` +
+    `\u2551  ${factionEmoji} *${factionName}*  \u00b7  Lv.${level}          \u2551\n` +
+    `\u2551  XP ${statBar(xpPct)} ${xpPct}%    \u2551\n` +
+    `\u2551                          \u2551\n` +
+    boxBot(W) + `\n\n` +
     greeting + `\n\n` +
-    `${factionEmoji} Faction: *${player?.faction ? player.faction.charAt(0).toUpperCase() + player.faction.slice(1) : "None"}*` +
-    `\n\n` +
     `What would you like to explore?`
   );
 }
@@ -32,13 +64,20 @@ function buildMainMenuText(player) {
  */
 function buildGameMenuText() {
   const cats = registry.getGameCategories();
-  let text = ui.header("GAME MENU", "\ud83c\udfae") + `\n\n`;
+  let text =
+    `${boxTop(W)}\n` +
+    `\u2551    \ud83c\udfae *G A M E   M E N U*  \u2551\n` +
+    boxMid(W) + `\n`;
+
   for (const c of cats) {
     const count = registry.getCommandsByCategory("game", c.id).length;
-    text += `${c.emoji} *${c.name}* — ${c.desc} _(${count} commands)_\n`;
+    text += `\u2551  ${c.emoji} *${c.name}*          \u2551\n`;
+    text += `\u2551    _${c.desc}_      \u2551\n`;
+    text += `\u2551    _(${count} commands)_            \u2551\n`;
   }
-  text += `\n${DIV}\n`;
-  text += `_Tap a category or type *${"."}help-game <name>*_`;
+
+  text += boxBot(W) + `\n`;
+  text += `\n_Tap a category or type *.help-game <name>_`;
   return text;
 }
 
@@ -47,13 +86,20 @@ function buildGameMenuText() {
  */
 function buildBotMenuText() {
   const cats = registry.getBotCategories();
-  let text = ui.header("BOT MENU", "\ud83d\udde1\ufe0f") + `\n\n`;
+  let text =
+    `${boxTop(W)}\n` +
+    `\u2551    \ud83d\udee1\ufe0f *B O T   M E N U*    \u2551\n` +
+    boxMid(W) + `\n`;
+
   for (const c of cats) {
     const count = registry.getCommandsByCategory("bot", c.id).length;
-    text += `${c.emoji} *${c.name}* — ${c.desc} _(${count} commands)_\n`;
+    text += `\u2551  ${c.emoji} *${c.name}*          \u2551\n`;
+    text += `\u2551    _${c.desc}_      \u2551\n`;
+    text += `\u2551    _(${count} commands)_            \u2551\n`;
   }
-  text += `\n${DIV}\n`;
-  text += `_Tap a category or type *${"."}help-bot <name>*_`;
+
+  text += boxBot(W) + `\n`;
+  text += `\n_Tap a category or type *.help-bot <name>_`;
   return text;
 }
 
@@ -66,13 +112,19 @@ function buildGameCategoryText(catId) {
   if (!cat) return null;
 
   const commands = registry.getCommandsByCategory("game", catId);
-  let text = ui.header(cat.name, cat.emoji) + `\n\n`;
+  let text =
+    `${boxTop(W)}\n` +
+    `\u2551  ${cat.emoji} *${cat.name.toUpperCase()}*            \u2551\n` +
+    boxMid(W) + `\n`;
+
   for (const c of commands) {
     const alias = c.aliases.length ? ` _(${c.aliases[0]})_` : "";
-    text += `\u2503 ${"."}${c.name}${alias} \u2014 ${c.desc}\n`;
+    text += `\u2551  .${c.name}${alias}\n`;
+    text += `\u2551    ${c.desc}\n`;
   }
-  text += `\n${DIV}\n`;
-  text += `\ud83d\udd19 _Back to Game Menu: *${"."}help-game*_`;
+
+  text += boxBot(W) + `\n`;
+  text += `\n\ud83d\udd19 _Back to Game Menu: *.help-game*_`;
   return text;
 }
 
@@ -85,13 +137,19 @@ function buildBotCategoryText(catId) {
   if (!cat) return null;
 
   const commands = registry.getCommandsByCategory("bot", catId);
-  let text = ui.header(cat.name, cat.emoji) + `\n\n`;
+  let text =
+    `${boxTop(W)}\n` +
+    `\u2551  ${cat.emoji} *${cat.name.toUpperCase()}*            \u2551\n` +
+    boxMid(W) + `\n`;
+
   for (const c of commands) {
     const alias = c.aliases.length ? ` _(${c.aliases[0]})_` : "";
-    text += `\u2503 ${"."}${c.name}${alias} \u2014 ${c.desc}\n`;
+    text += `\u2551  .${c.name}${alias}\n`;
+    text += `\u2551    ${c.desc}\n`;
   }
-  text += `\n${DIV}\n`;
-  text += `\ud83d\udd19 _Back to Bot Menu: *${"."}help-bot*_`;
+
+  text += boxBot(W) + `\n`;
+  text += `\n\ud83d\udd19 _Back to Bot Menu: *.help-bot*_`;
   return text;
 }
 

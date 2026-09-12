@@ -202,21 +202,41 @@ function buildWildHeader(players, senderId, playerCombatant, wildMora, hpBar, st
   const label = pickWildBattleLabel(!!state.isCorrupted);
 
   const tierBadge =
-    playerCombatant.mergeTier === "full"    ? "  🔥FULL"
-    : playerCombatant.mergeTier === "partial" ? "  ✨PARTIAL"
-    : "  🩶BASE";
-  const corrBadge = playerCombatant.corrupted ? "  ☠CORRUPTED" : "";
+    playerCombatant.mergeTier === "full"    ? "🔥FULL"
+    : playerCombatant.mergeTier === "partial" ? "✨PARTIAL"
+    : "🩶BASE";
+  const corrBadge = playerCombatant.corrupted ? " ☠" : "";
+
+  const W = 24;
+  const top = `╔${"═".repeat(W)}╗`;
+  const mid = `╠${"═".repeat(W)}╣`;
+  const bot = `╚${"═".repeat(W)}╝`;
+
+  const aPct = Math.round((playerCombatant.hp / playerCombatant.maxHp) * 100);
+  const bPct = Math.round((wildMora.hp / wildMora.maxHp) * 100);
+  const aBar = "█".repeat(Math.round(aPct / 10)) + "░".repeat(10 - Math.round(aPct / 10));
+  const bBar = "█".repeat(Math.round(bPct / 10)) + "░".repeat(10 - Math.round(bPct / 10));
 
   return (
-    `${label}\n` +
-    `👤 Hunter: @${String(senderId).split("@")[0]}\n` +
-    `🧾 *${hunterName}* vs *${wildMora.name}*\n` +
-    `🎭 Wild Nature: *${state.personality}*\n` +
-    (state.isCorrupted ? `☠ Corruption Class: *${state.corruptionClass || "Variant"}*\n` : "") +
-    `\n🟥 *${String(playerCombatant.name).toUpperCase()}*${tierBadge}${corrBadge}  (Lv ${playerCombatant.level})\n` +
-    `${hpLine(hpBar, playerCombatant)}\n${energyLine(playerCombatant)}\n\n` +
-    `🟪 *${String(wildMora.name).toUpperCase()}* (Lv ${wildMora.level})\n` +
-    `${hpLine(hpBar, wildMora)}\n${energyLine(wildMora)}`
+    `${top}\n` +
+    `║  ${label}           ║\n` +
+    `${mid}\n` +
+    `║  👤 @${String(senderId).split("@")[0]}      ║\n` +
+    `║  🧾 *${hunterName}*         ║\n` +
+    `║                          ║\n` +
+    `║  🟥 *${String(playerCombatant.name).toUpperCase()}*${corrBadge}  ║\n` +
+    `║  Lv.${playerCombatant.level} · ${tierBadge}      ║\n` +
+    `║  HP [${aBar}] ${playerCombatant.hp}/${playerCombatant.maxHp}   ║\n` +
+    `║  ${energyLine(playerCombatant)}   ║\n` +
+    `║                          ║\n` +
+    `║     ⚔️ *${hunterName}*  vs  *${wildMora.name}* ║\n` +
+    `║                          ║\n` +
+    `║  🟪 *${String(wildMora.name).toUpperCase()}*      ║\n` +
+    `║  Lv.${wildMora.level} · ${state.personality}   ║\n` +
+    `║  HP [${bBar}] ${wildMora.hp}/${wildMora.maxHp}   ║\n` +
+    `║  ${energyLine(wildMora)}   ║\n` +
+    `║                          ║\n` +
+    `${bot}`
   );
 }
 
@@ -1184,12 +1204,20 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
     
     const statEmoji = progression.getFactionStatEmoji(player.faction);
     const statKey = progression.getFactionStatKey(player.faction);
+    const W = 24;
+    const top = `╔${"═".repeat(W)}╗`;
+    const mid = `╠${"═".repeat(W)}╣`;
+    const bot = `╚${"═".repeat(W)}╝`;
     return sock.sendMessage(chatId, {
       text:
         `${logs.join("\n")}\n\n` +
-        `☠ *YOU FAINTED*\n` +
-        `Wild *${state.wildMora.name}* overwhelmed you.\n\n` +
-        (penaltyResult.actualLoss > 0 ? `${statEmoji} *-${penaltyResult.actualLoss} ${statKey.charAt(0).toUpperCase() + statKey.slice(1)}* — death penalty` : ``),
+        `${top}\n` +
+        `║  ☠ *Y O U   F A I N T E D*  ║\n` +
+        `${mid}\n` +
+        `║  Wild *${state.wildMora.name}*       ║\n` +
+        `║  overwhelmed you.           ║\n` +
+        (penaltyResult.actualLoss > 0 ? `║  ${statEmoji} *-${penaltyResult.actualLoss} ${statKey.charAt(0).toUpperCase() + statKey.slice(1)}*  ║\n` : ``) +
+        `${bot}`,
       mentions: [senderId]
     }, { quoted: msg });
   }
@@ -1671,13 +1699,20 @@ async function cmdWildCharge(ctx, chatId, senderId, msg) {
     
     const statEmoji = progression.getFactionStatEmoji(player.faction);
     const statKey = progression.getFactionStatKey(player.faction);
+    const W = 24;
+    const top = `╔${"═".repeat(W)}╗`;
+    const mid = `╠${"═".repeat(W)}╣`;
+    const bot = `╚${"═".repeat(W)}╝`;
     return sock.sendMessage(chatId, {
       text:
         `${logs.join("\n")}\n\n` +
-        `☠ *YOU FAINTED*\n` +
-        `Wild *${state.wildMora.name}* overwhelmed you.\n\n` +
-        (penaltyResult.actualLoss > 0 ? `${statEmoji} *-${penaltyResult.actualLoss} ${statKey.charAt(0).toUpperCase() + statKey.slice(1)}* — death penalty\n\n` : ``) +
-        `✨ *Star:* ${botPersonality.getBattleCommentary("faint")}`,
+        `${top}\n` +
+        `║  ☠ *Y O U   F A I N T E D*  ║\n` +
+        `${mid}\n` +
+        `║  Wild *${state.wildMora.name}*       ║\n` +
+        `║  overwhelmed you.           ║\n` +
+        (penaltyResult.actualLoss > 0 ? `║  ${statEmoji} *-${penaltyResult.actualLoss} ${statKey.charAt(0).toUpperCase() + statKey.slice(1)}*  ║\n` : ``) +
+        `${bot}\n\n✨ *Star:* ${botPersonality.getBattleCommentary("faint")}`,
       mentions: [senderId]
     }, { quoted: msg });
   }

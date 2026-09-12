@@ -187,15 +187,16 @@ function battleHeader(players, aJid, bJid, aM, bM, hpBar) {
   const tA = typeEmoji(aM.type);
   const tB = typeEmoji(bM.type);
 
-  const div = `╔══════════════════════╗`;
-  const div2 = `╚══════════════════════╝`;
-  const mid = `╟──────────────────────╢`;
+  const W = 24;
+  const top = `╔${"═".repeat(W)}╗`;
+  const mid = `╠${"═".repeat(W)}╣`;
+  const bot = `╚${"═".repeat(W)}╝`;
 
   const aWarn = hpWarning(aM);
   const bWarn = hpWarning(bM);
 
   return (
-    `${div}\n` +
+    `${top}\n` +
     `   ⚔️  *${aName}*  vs  *${bName}*\n` +
     `${mid}\n\n` +
     `${tA} *${String(aM.name).toUpperCase()}*  ┃  Lv.${aM.level}  ┃  ${String(aM.type || "???").toUpperCase()}\n` +
@@ -206,7 +207,7 @@ function battleHeader(players, aJid, bJid, aM, bM, hpBar) {
     `  ❤️ ${hpLine(hpBar, bM)}\n` +
     `  ${energyLine(bM)}` +
     `${bWarn ? "\n" + bWarn : ""}\n` +
-    `${div2}`
+    `${bot}`
   );
 }
 
