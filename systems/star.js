@@ -500,7 +500,7 @@ Respond naturally. Tokens are optional — only use when meaningful. Do NOT ackn
 }
 
 // ============================
-// CALL AI — supports both Anthropic and OpenRouter
+// CALL AI — supports both Anthropic and OpenRouter with auto-fallback
 // ============================
 async function callClaude(systemPrompt, turns, { ctx, isPrime, chatId } = {}) {
   if (!client) throw new Error("not initialized");
@@ -509,7 +509,21 @@ async function callClaude(systemPrompt, turns, { ctx, isPrime, chatId } = {}) {
     return callOpenRouter(systemPrompt, turns);
   }
   
-  // Original Anthropic path with tool-use loop
+  // Try Anthropic first, fall back to OpenRouter on failure
+  try {
+    return await callAnthropic(systemPrompt, turns, { ctx, isPrime, chatId });
+  } catch (e) {
+    // If Anthropic fails AND OpenRouter key is available, retry with OpenRouter
+    if (openrouterKey && !useOpenRouter) {
+      console.warn("[star] Anthropic failed (" + e.message.substring(0, 80) + "), falling back to OpenRouter");
+      useOpenRouter = true; // persist for this session
+      return callOpenRouter(systemPrompt, turns);
+    }
+    throw e; // no fallback available, re-throw
+  }
+}
+
+async function callAnthropic(systemPrompt, turns, { ctx, isPrime, chatId } = {}) {
   let messages = turns.map(t => ({ role: t.role, content: t.content }));
   let totalIn = 0, totalOut = 0;
   const useTools = isPrime && ctx;
