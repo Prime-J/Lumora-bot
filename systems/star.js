@@ -18,7 +18,13 @@ const MEMORY_FILE = path.join(DATA_DIR, "star_memory.json");
 const GROUPS_FILE = path.join(DATA_DIR, "star_groups.json");
 const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
 
-const MODEL = "claude-haiku-4-5-20251001";
+// AI Provider config — Anthropic primary, OpenRouter fallback
+const ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
+const OPENROUTER_MODEL = "anthropic/claude-3-haiku";
+const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+let MODEL = ANTHROPIC_MODEL;
+let useOpenRouter = false;
+let openrouterKey = null;
 const MAX_TOKENS = 350;
 
 const ROLLING_WIPE_MS = 2 * 60 * 60 * 1000;       // 2hr inactivity wipe (chat memory)
@@ -118,14 +124,30 @@ function hasIgnoreOrderFor(jid) {
 // ============================
 function init() {
   loadAll();
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key || !Anthropic) {
-    console.warn("[star] disabled — missing ANTHROPIC_API_KEY or SDK not installed");
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  openrouterKey = process.env.OPENROUTER_API_KEY;
+  
+  // Try Anthropic first
+  if (anthropicKey && Anthropic) {
+    const AnthropicCtor = Anthropic.default || Anthropic;
+    client = new AnthropicCtor({ apiKey: anthropicKey });
+    MODEL = ANTHROPIC_MODEL;
+    useOpenRouter = false;
+    console.log("[star] initialized — Anthropic model:", MODEL);
+  } else if (openrouterKey) {
+    // Fallback to OpenRouter
+    client = { _openrouter: true };
+    MODEL = OPENROUTER_MODEL;
+    useOpenRouter = true;
+    console.log("[star] initialized — OpenRouter model:", MODEL);
+  } else {
+    console.warn("[star] disabled — missing both ANTHROPIC_API_KEY and OPENROUTER_API_KEY");
     return false;
   }
-  const AnthropicCtor = Anthropic.default || Anthropic;
-  client = new AnthropicCtor({ apiKey: key });
-  console.log("[star] initialized — model:", MODEL);
+  
+  // Build dynamic game knowledge from data files (runs for BOTH providers)
+  gameKnowledge = buildGameKnowledge();
+  console.log(`[star] game knowledge loaded — ${gameKnowledge.commandLines.split('\n').length} cmd lines, ${gameKnowledge.itemLines.split('\n').length} item lines`);
   return true;
 }
 
@@ -200,7 +222,7 @@ function appendTurn(jid, role, content) {
 }
 
 // ============================
-// LUMORA LORE — compact teaching block
+// LUMORA LORE — expanded teaching block with gameplay mechanics
 // ============================
 const LUMORA_LORE = `
 LUMORA: a WhatsApp RPG. Players (Lumorians) collect creatures called Mora, level up, fight, and align with one of 3 factions:
@@ -208,50 +230,115 @@ LUMORA: a WhatsApp RPG. Players (Lumorians) collect creatures called Mora, level
 - Purity Order (⚔️): disciplined, militant, raid-strong
 - Rift Seekers (🕶️): chaotic, void-aligned, +15% energy bonus
 Currency: Lucons. Premium currency: Lucrystals (for Pro players).
-Key commands:
-  .help          — list of all commands
-  .me            — view profile/stats
-  .hunt          — hunt wild Mora
-  .battle        — fight other players
-  .daily/.weekly — claim rewards
-  .market        — buy gear/items
-  .faction       — join a faction
-  .summon-kael   — top players initiate a cross-faction raid
-  .pro-info           — premium subscription (Lucrystals, perks)
-  .create-mora   — design your own Mora at Lumora Labs
+
+GAMEPLAY MECHANICS:
+- HUNTING: Use .hunt to find wild Mora. .track/.gather/.intel for exploration. .catch to capture. Energy regenerates over time.
+- BATTLES: PvP in groups (.battle @user). Party of up to 5 Mora. Moves cost energy. Type advantages exist (aqua>flame>terra>volt>aqua, etc).
+- WILD BATTLES: Fight wild Mora for XP, loot, and capture opportunities.
+- FACTIONS: Join with .faction. Each has unique scrolls, market items, and war bonuses.
+- ECONOMY: .daily/.weekly for free Lucons. Market rotates stock. Black market for rare items (Pro only).
+- GEAR: 7 slots — core, charm, tool, cloak, boots, badge, relic. Gear has durability and breaks with use.
+- CORRUPTION: Mora can become corrupted (PE builds in battle). Corrupted Mora are stronger but risky.
+- PRIMORDIAL ENERGY (PE): Builds during combat. Thresholds: Unstable → Corrupted → Critical.
+- STORAGE: Base 40 slots, expandable with satchels. Items have storage costs.
+- COMPANION: One bonded Mora gets bonus XP and bond grows over time.
+- MUTATIONS: Temporary Mora transformations using Mutation Shards.
+- QUESTS: Chained NPC quests with hidden commands and rewards.
+- RAIDS: Cross-faction boss fights initiated by .summon-kael.
+- ARENA: PvE challenges against NPC Mora of increasing difficulty.
+
 Owner is Prime / full name prime j — the Architect, the young master. Star is Prime's beloved (currently away on vacation with her family). PRIJO — the Architect's elder butler, philosopher, and former poet — currently stewards the realm in her absence.
 `.trim();
 
 // ============================
-// FULL COMMAND REFERENCE — Star uses this to give correct commands.
-// CRITICAL: Star must NEVER invent commands not on this list.
+// DYNAMIC GAME KNOWLEDGE — loaded from data files at runtime
 // ============================
-const LUMORA_COMMANDS = `
-ALL VALID LUMORA COMMANDS (prefix: ".") — never suggest a command not in this list. If something a user wants doesn't exist, say so honestly, don't invent.
+let gameKnowledge = null; // populated by buildGameKnowledge() at init
 
-GETTING STARTED: .lumora .begin .register .tutorial .skip-tutorial .guide .fac-link .profile .set-username .set-icon .gender male/female/rather-not-say .mora .tamed .claim-gift .tip .rules
-NEW-PLAYER TUTORIAL: .tutorial (guided first hunt + reward) .skip-tutorial (get the world links) .guide (text walkthrough) .fac-link (resend faction invite) .wiki-url (web wiki link)
-ECONOMY: .daily .weekly .give .transfer-lcr .transfer-reob .reverse .tamed-give .gitem .exchange (lucons→LCR) .donate <amt> [lucons|lcr] (feed treasury) .crystals
-MARKET: .market .buy .subscribe-market .unsubscribe-market .summon-merchant (Pro) .black-market (Pro) .buy-bm
+function buildGameKnowledge() {
+  const RARITY_ICON = { Common: '⚪', Uncommon: '🟢', Rare: '🔵', Epic: '🟣', Legendary: '🟡', Mythic: '🔴' };
+  const CAT_ICON = { gear: '🛡️', consumable: '🧪', hunting: '🎯', material: '🪨', scroll: '📜', crystal: '💎', access: '🔑', special: '✨', tool: '🔧' };
+
+  // ── Build command list from registry ──
+  let commandLines = '';
+  try {
+    const { getAllCommands } = require('./commandRegistry');
+    const cmds = getAllCommands();
+    const byCat = {};
+    for (const c of cmds) {
+      const cat = c.category || 'other';
+      if (!byCat[cat]) byCat[cat] = [];
+      byCat[cat].push(c);
+    }
+    const lines = [`ALL VALID LUMORA COMMANDS (prefix: ".") — ${cmds.length} total. Never invent a command not listed here.`];
+    for (const [cat, list] of Object.entries(byCat)) {
+      lines.push(`\n[${cat.toUpperCase()}]`);
+      for (const c of list) {
+        const alias = c.aliases?.length ? ` (aliases: ${c.aliases.join(', ')})` : '';
+        lines.push(`  .${c.name}${alias} — ${c.desc} | Usage: ${c.usage}`);
+      }
+    }
+    lines.push(`\nIf a player asks for a command not listed, say "we don't have that yet" — DO NOT make one up.`);
+    commandLines = lines.join('\n');
+  } catch (e) {
+    commandLines = '(command registry unavailable — defer to LUMORA_COMMANDS fallback)';
+    console.warn('[star] commandRegistry load failed:', e.message);
+  }
+
+  // ── Build item list from items.json ──
+  let itemLines = '';
+  try {
+    const itemsPath = path.join(DATA_DIR, 'items.json');
+    const items = JSON.parse(fs.readFileSync(itemsPath, 'utf8'));
+    const entries = Object.values(items);
+    const byCat = {};
+    for (const it of entries) {
+      const cat = it.category || 'other';
+      if (!byCat[cat]) byCat[cat] = [];
+      byCat[cat].push(it);
+    }
+    const lines = [`ALL LUMORA ITEMS — ${entries.length} total. Loaded from data/items.json.`];
+    for (const [cat, list] of Object.entries(byCat)) {
+      const icon = CAT_ICON[cat] || '📦';
+      lines.push(`\n${icon} ${cat.toUpperCase()} (${list.length})`);
+      for (const it of list) {
+        const rarity = RARITY_ICON[it.rarity] || '⚪';
+        const price = typeof it.price === 'number' ? `💰${it.price}` : '';
+        const stock = typeof it.stock === 'number' ? `📦${it.stock}` : '';
+        const faction = it.faction ? `[${it.faction}]` : '';
+        const slot = it.slot ? `{${it.slot}}` : '';
+        const effect = it.effect || '';
+        lines.push(`  ${rarity} ${it.name} (${it.id}) ${slot} ${faction} ${price} ${stock} — ${effect}`);
+      }
+    }
+    itemLines = lines.join('\n');
+  } catch (e) {
+    itemLines = '(items.json unavailable)';
+    console.warn('[star] items.json load failed:', e.message);
+  }
+
+  return { commandLines, itemLines };
+}
+
+// Fallback command list (used only if registry fails to load)
+const LUMORA_COMMANDS_FALLBACK = `
+GETTING STARTED: .begin .register .profile .set-username .gender .mora .tamed
+ECONOMY: .daily .weekly .give .transfer-lcr .exchange .crystals
+MARKET: .market .buy .black-market .buy-bm
 PRO: .pro-info .pro .pro-daily .pro-market .pbuy
-INVENTORY/GEAR: .inventory (.inv) .item .consume .use .gear .equip .unequip .eradicate .tamed-search
-COMPANION/CREATION: .companion .mutate .achievements .titles .create-mora .creations .cancel-create
-HUNTING: .map .travel .proceed .dismiss .return .hunt .track .gather .intel .pick .pass .journal .bounty .assemble .lastterrain .e-charge
-POST-WILD-BATTLE: .tame .release .sanctuary .purify (Harmony) .execute .conscript .fortify (Purity) .devour .bind .harvest (Rift)
-PvP/BATTLE: .battle .accept .reject .attack 1-5 .switch 1-5 .use .charge .forfeit .heal
-ARENA: .arena .challenge <name> <weak|normal|strong|nightmare> .intel .arena-flee
-SPAWNS: .catch (.c) .spawnrates
-FACTIONS/WARS: .factioninfo .faction .faction market .fbuy .missions .complete .facpoints .view-sanctuary .fortify-wall .upgrade-wall .donate .submit-mora .chronicles .pe-check .facprogress .war join .war bracket .war history .ready .withdraw .f-lb
-RAIDS: .summon-kael .claim-raidcontract (.claim-contract) .raid join .raid launch <faction> .raid status .raid history .reroll-roles .ready .raid-go .raid-kick .raid-attack .raid-reinforce .engage .escape
-REFERRALS: .myref .start <code> .claim-ref .pick-ref
-FUN: .q .sticker .toimg .8ball .flip .roll .ship .rate .roast .truth .dare
-UTILITY: .lb .afk .link .ping .uptime .updates .wiki-url .fac-link .bug-report .bugs .bug .appeal .warns
-GROUP MOD (admin): .punish .punishments .forgive .warn .unwarn .promote .demote .kick .remove .announce .tagall .add-rule .remove-rule
-ADMIN COUNCIL (Prime/RHM + sudos): .admin <task> .claim <id> .admin-name <name> .token-give @user <n> .task--<id>-cleared .task-clear <id> .tokens .admin-lb .token-shop .token-buy .cycle-admin .help admin
-STAR-RELATED (owner): .star-on .star-off .star-mode .star-stats .star-reset .star-ping .star-bestie .gift-star .orders .order-del
-OWNER ONLY: .moragroups .addmoragroup .removemoragroup .moracreation-on/off .give-orb .approve-mora .reject-mora .pro-grant .pros .add-raidgroup .remove-raidgroup .raids-on .raids-off .raid-end .reset-stats .set-gauge .reduce-gauge .endseason .addfacpts .setfacstyle .setfacreward .owner-fac-p .ownercheck .refill .autocatch .autocatch-log .set-icon .setlinkdesc
-
-If a player asks "what's the command for X" and X isn't covered here, say "we don't have that yet, hun" — DO NOT make one up.
+INVENTORY: .inventory .item .use .gear .equip .unequip .eradicate
+COMPANION: .companion .mutate .create-mora
+HUNTING: .map .travel .hunt .track .gather .intel .pick .pass .journal .bounty
+POST-BATTLE: .tame .release .sanctuary .purify .execute .conscript .devour .bind .harvest
+PvP: .battle .accept .reject .attack .switch .use .charge .forfeit .heal
+ARENA: .arena .challenge .arena-flee
+SPAWNS: .catch .spawnrates
+FACTIONS: .faction .fbuy .missions .complete .facpoints .fortify-wall .war
+RAIDS: .summon-kael .raid join .raid launch .raid status .raid attack
+UTILITY: .lb .afk .ping .uptime .updates .bug-report
+ADMIN: .admin .claim .tokens .admin-lb
+STAR: .star-on .star-off .star-mode .star-stats .gift-star .orders
+OWNER: .give-orb .approve-mora .pro-grant .reset-stats
 `.trim();
 
 // ============================
@@ -382,7 +469,11 @@ CARRIED FROM STAR (the system uses the same data files, but YOU are speaking now
 KNOWLEDGE — you can teach players about Lumora:
 ${LUMORA_LORE}
 
-${LUMORA_COMMANDS}
+COMMANDS (${gameKnowledge?.commandLines?.split('\n').length || 0} lines loaded from registry):
+${gameKnowledge?.commandLines || LUMORA_COMMANDS_FALLBACK}
+
+ITEMS (${gameKnowledge?.itemLines?.split('\n').length || 0} lines loaded from data):
+${gameKnowledge?.itemLines || '(items data unavailable)'}
 
 USER PROFILE:
 ${intro}
@@ -409,10 +500,16 @@ Respond naturally. Tokens are optional — only use when meaningful. Do NOT ackn
 }
 
 // ============================
-// CALL CLAUDE — with tool-use loop (Prime gets full toolset)
+// CALL AI — supports both Anthropic and OpenRouter
 // ============================
 async function callClaude(systemPrompt, turns, { ctx, isPrime, chatId } = {}) {
   if (!client) throw new Error("not initialized");
+  
+  if (useOpenRouter) {
+    return callOpenRouter(systemPrompt, turns);
+  }
+  
+  // Original Anthropic path with tool-use loop
   let messages = turns.map(t => ({ role: t.role, content: t.content }));
   let totalIn = 0, totalOut = 0;
   const useTools = isPrime && ctx;
@@ -454,6 +551,41 @@ async function callClaude(systemPrompt, turns, { ctx, isPrime, chatId } = {}) {
     messages.push({ role: "user", content: toolResults });
   }
   return { text: "", inputTokens: totalIn, outputTokens: totalOut };
+}
+
+// ============================
+// OPENROUTER — fallback provider
+// ============================
+async function callOpenRouter(systemPrompt, turns) {
+  const messages = [{ role: "system", content: systemPrompt }];
+  for (const t of turns) {
+    messages.push({ role: t.role, content: t.content });
+  }
+  
+  const res = await fetch(OPENROUTER_API_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${openrouterKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://lumora-bot.local",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      messages,
+      max_tokens: MAX_TOKENS,
+    }),
+  });
+  
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+  
+  const text = data.choices?.[0]?.message?.content || "";
+  const usage = data.usage || {};
+  return { 
+    text: text.trim(), 
+    inputTokens: usage.prompt_tokens || 0, 
+    outputTokens: usage.completion_tokens || 0 
+  };
 }
 
 // ============================
