@@ -1,15 +1,12 @@
 // ============================
 // STAR — AI companion for Lumora
-// Powered by Claude Haiku 4.5 (fast + cheap)
+// Powered by OpenRouter (anthropic/claude-3-haiku)
 // Personality: flirty, playful, loyal to Prime, trickster, big-sis to girls
 // ============================
 
 require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
-
-let Anthropic;
-try { Anthropic = require("@anthropic-ai/sdk"); } catch { Anthropic = null; }
 const starTools = require("./starTools");
 
 const DATA_DIR = path.join(__dirname, "..", "data");
@@ -18,13 +15,10 @@ const MEMORY_FILE = path.join(DATA_DIR, "star_memory.json");
 const GROUPS_FILE = path.join(DATA_DIR, "star_groups.json");
 const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
 
-// AI Provider config — Anthropic primary, OpenRouter fallback
-const ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
-const OPENROUTER_MODEL = "anthropic/claude-3-haiku";
-const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-let MODEL = ANTHROPIC_MODEL;
-let useOpenRouter = false;
-let openrouterKey = null;
+// AI Provider config — OpenRouter only
+const MODEL = "anthropic/claude-3-haiku";
+const API_URL = "https://openrouter.ai/api/v1/chat/completions";
+let apiKey = null;
 const MAX_TOKENS = 350;
 
 const ROLLING_WIPE_MS = 2 * 60 * 60 * 1000;       // 2hr inactivity wipe (chat memory)
@@ -124,28 +118,17 @@ function hasIgnoreOrderFor(jid) {
 // ============================
 function init() {
   loadAll();
-  const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  openrouterKey = process.env.OPENROUTER_API_KEY;
+  apiKey = process.env.OPENROUTER_API_KEY;
   
-  // Try Anthropic first
-  if (anthropicKey && Anthropic) {
-    const AnthropicCtor = Anthropic.default || Anthropic;
-    client = new AnthropicCtor({ apiKey: anthropicKey });
-    MODEL = ANTHROPIC_MODEL;
-    useOpenRouter = false;
-    console.log("[star] initialized — Anthropic model:", MODEL);
-  } else if (openrouterKey) {
-    // Fallback to OpenRouter
-    client = { _openrouter: true };
-    MODEL = OPENROUTER_MODEL;
-    useOpenRouter = true;
-    console.log("[star] initialized — OpenRouter model:", MODEL);
-  } else {
-    console.warn("[star] disabled — missing both ANTHROPIC_API_KEY and OPENROUTER_API_KEY");
+  if (!apiKey) {
+    console.warn("[star] disabled — missing OPENROUTER_API_KEY");
     return false;
   }
   
-  // Build dynamic game knowledge from data files (runs for BOTH providers)
+  client = true; // marker — we use fetch, not an SDK client
+  console.log("[star] initialized — OpenRouter model:", MODEL);
+  
+  // Build dynamic game knowledge from data files
   gameKnowledge = buildGameKnowledge();
   console.log(`[star] game knowledge loaded — ${gameKnowledge.commandLines.split('\n').length} cmd lines, ${gameKnowledge.itemLines.split('\n').length} item lines`);
   return true;
@@ -496,86 +479,20 @@ Respond naturally. Tokens are optional — only use when meaningful. Do NOT ackn
 }
 
 // ============================
-// CALL AI — supports both Anthropic and OpenRouter with auto-fallback
+// CALL AI — OpenRouter only
 // ============================
-async function callClaude(systemPrompt, turns, { ctx, isPrime, chatId } = {}) {
+async function callClaude(systemPrompt, turns) {
   if (!client) throw new Error("not initialized");
   
-  if (useOpenRouter) {
-    return callOpenRouter(systemPrompt, turns);
-  }
-  
-  // Try Anthropic first, fall back to OpenRouter on failure
-  try {
-    return await callAnthropic(systemPrompt, turns, { ctx, isPrime, chatId });
-  } catch (e) {
-    // If Anthropic fails AND OpenRouter key is available, retry with OpenRouter
-    if (openrouterKey && !useOpenRouter) {
-      console.warn("[star] Anthropic failed (" + e.message.substring(0, 80) + "), falling back to OpenRouter");
-      useOpenRouter = true; // persist for this session
-      return callOpenRouter(systemPrompt, turns);
-    }
-    throw e; // no fallback available, re-throw
-  }
-}
-
-async function callAnthropic(systemPrompt, turns, { ctx, isPrime, chatId } = {}) {
-  let messages = turns.map(t => ({ role: t.role, content: t.content }));
-  let totalIn = 0, totalOut = 0;
-  const useTools = isPrime && ctx;
-  const MAX_TOOL_ROUNDS = 4;
-
-  for (let round = 0; round < MAX_TOOL_ROUNDS + 1; round++) {
-    const req = {
-      model: MODEL,
-      max_tokens: MAX_TOKENS,
-      system: [{ type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } }],
-      messages,
-    };
-    if (useTools) req.tools = starTools.TOOL_DEFS;
-
-    const resp = await client.messages.create(req);
-    const usage = resp.usage || {};
-    totalIn += usage.input_tokens || 0;
-    totalOut += usage.output_tokens || 0;
-
-    const blocks = resp.content || [];
-    const toolUses = blocks.filter(b => b.type === "tool_use");
-
-    if (resp.stop_reason !== "tool_use" || !toolUses.length || round === MAX_TOOL_ROUNDS) {
-      const text = blocks.filter(b => b.type === "text").map(b => b.text).join("").trim();
-      return { text, inputTokens: totalIn, outputTokens: totalOut };
-    }
-
-    // Append assistant turn (with tool_use) and run tools
-    messages.push({ role: "assistant", content: blocks });
-    const toolResults = [];
-    for (const tu of toolUses) {
-      const result = await starTools.runTool(tu.name, tu.input, { ctx, isPrime, chatId });
-      toolResults.push({
-        type: "tool_result",
-        tool_use_id: tu.id,
-        content: JSON.stringify(result).slice(0, 6000),
-      });
-    }
-    messages.push({ role: "user", content: toolResults });
-  }
-  return { text: "", inputTokens: totalIn, outputTokens: totalOut };
-}
-
-// ============================
-// OPENROUTER — fallback provider
-// ============================
-async function callOpenRouter(systemPrompt, turns) {
   const messages = [{ role: "system", content: systemPrompt }];
   for (const t of turns) {
     messages.push({ role: t.role, content: t.content });
   }
   
-  const res = await fetch(OPENROUTER_API_URL, {
+  const res = await fetch(API_URL, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${openrouterKey}`,
+      "Authorization": `Bearer ${apiKey}`,
       "Content-Type": "application/json",
       "HTTP-Referer": "https://lumora-bot.local",
     },
@@ -894,7 +811,7 @@ async function handleMessage(ctx, chatId, senderId, msg, text) {
 
   let reply, inputTokens = 0, outputTokens = 0;
   try {
-    const res = await callClaude(systemPrompt, turnsForApi, { ctx, isPrime, chatId });
+    const res = await callClaude(systemPrompt, turnsForApi);
     reply = res.text || "";
     inputTokens = res.inputTokens;
     outputTokens = res.outputTokens;
