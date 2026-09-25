@@ -5,3 +5,9 @@ node_modules
 
 # Runtime player data — MUST NOT be tracked (deploy overwrites cause data loss)
 data/Players.json
+
+# Local recovery snapshots. These are working copies only: the real history
+# lives in git (commit d76afa5, 2026-05-09, 67 players), so nothing is lost by
+# keeping them out of the repo. Committing them would ship megabytes of player
+# data into every deploy image.
+backups/
