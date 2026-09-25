@@ -4,18 +4,13 @@
 // Keeps player-name resolution + mention wiring in ONE place.
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
-
-const PLAYERS_FILE = path.join(__dirname, '..', 'data', 'Players.json');
-
 function loadPlayersSync() {
-  try {
-    const raw = fs.readFileSync(PLAYERS_FILE, 'utf8');
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
+  // The live player store is owned by index.js and published on
+  // global._lumoraPlayers. data/Players.json is deliberately NOT consulted:
+  // on a redeploy that file is whatever shipped in the deploy image, so
+  // reading it made names and levels resolve back to a stale snapshot.
+  const live = global._lumoraPlayers;
+  return live && typeof live === 'object' ? live : {};
 }
 
 // Resolve the registered name for a WhatsApp JID from the local player store.

@@ -216,6 +216,25 @@ app.get('/api/bot/stats', (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// ── Dashboard API: Player Storage Health ───────────────────
+// Answers the only question that matters after a redeploy: is player data
+// actually persisting, or is the bot reading a file that gets wiped?
+app.get('/api/storage/status', (req, res) => {
+  const s = global._lumoraStorage || {};
+  const persisting = !!(s.mongoConfigured && s.mongoConnected && !s.bootLoadFailed);
+  res.json({
+    ok: true,
+    persisting,
+    mongoConfigured: !!s.mongoConfigured,
+    mongoConnected: !!s.mongoConnected,
+    bootLoadFailed: !!s.bootLoadFailed,
+    playersLoaded: s.playersLoaded || 0,
+    advice: persisting
+      ? 'MongoDB is the source of truth. Redeploys are safe.'
+      : 'Set MONGODB_URI on Railway. Without it, data/ is ephemeral and every redeploy wipes player progress.',
+  });
+});
+
 // ── Dashboard API: Broadcast to WhatsApp ───────────────────
 app.post('/api/broadcast', requireAdmin, async (req, res) => {
   try {
@@ -545,58 +564,71 @@ function saveJSON(filePath, data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
-// Async boot: initialize MongoDB and load all players
+// Async boot: initialize MongoDB and load all players.
+//
+// MongoDB is the ONLY source of the player roster. data/Players.json is NOT a
+// fallback: on Railway it is part of the deploy image, so reading it re-seeds
+// the bot with whatever snapshot was committed and makes every player look
+// like they regressed to an old state. If Mongo is unavailable we start with an
+// empty roster and shout about it, rather than silently serving stale data.
 async function bootPlayers() {
   // Try to connect to MongoDB
-  await mongoDb.initMongo();
+  const mongoUp = await mongoDb.initMongo();
 
   // Load from MongoDB. Returns:
   //   - object with data: success
-  //   - {}: connected but truly empty database
-  //   - null: load FAILED (network/timeout) — don't trust JSON fallback
-  let players = await mongoDb.loadAllPlayers();
+  //   - {}: connected but genuinely empty database
+  //   - null: load FAILED (network/timeout) after every retry
+  const loaded = await mongoDb.loadAllPlayers();
 
-  if (players === null) {
-    const fallbackPlayers = loadJSON(PLAYERS_FILE, {});
-    // CRITICAL: Mongo connected but the read failed even after retries.
-    // Writes are blocked by mongo.markDirty's bootLoadFailed guard. Use the
-    // warm cache for reads so players do not appear unregistered.
-    console.error("[boot] ⚠️  Mongo load failed. Bot is in READ-ONLY-FOR-MONGO mode.");
-    console.error(`[boot] ⚠️  Loaded ${Object.keys(fallbackPlayers).length} players from JSON warm cache.`);
-    console.error("[boot] ⚠️  No saves will reach Mongo, so existing data is SAFE.");
-    return fallbackPlayers;
-  }
-
-  // Fall back to JSON file if MongoDB returned nothing (genuinely empty DB)
-  if (Object.keys(players).length === 0) {
-    players = loadJSON(PLAYERS_FILE, {});
-    if (Object.keys(players).length > 0) {
-      console.log(`[boot] Loaded ${Object.keys(players).length} players from JSON fallback`);
-
-      // First run: sync all existing players to MongoDB immediately
-      console.log("[boot] Syncing all players to MongoDB...");
-      for (const jid of Object.keys(players)) {
-        mongoDb.markDirty(players, jid);
-      }
-      console.log("[boot] All players marked for MongoDB sync (will flush in 3s)");
-    }
+  let players = {};
+  if (loaded === null) {
+    console.error("========================================================");
+    console.error("⚠️  MONGODB READ FAILED — STARTING WITH NO PLAYERS");
+    console.error("Connected, but the player read failed on every retry.");
+    console.error("Mongo writes stay blocked so your real data is not touched.");
+    console.error("The bot is running on an EMPTY roster until this is fixed.");
+    console.error("========================================================");
+  } else if (Object.keys(loaded).length === 0) {
+    console.error("========================================================");
+    console.error("⚠️  MONGODB IS EMPTY — STARTING WITH NO PLAYERS");
+    console.error("The players collection has no documents. If this is a fresh");
+    console.error("cluster, restore with: node scripts/recover_players.js");
+    console.error("========================================================");
   } else {
-    // Mirror MongoDB data to the local JSON warm cache so synchronous
-    // loadPlayers() calls throughout the codebase see it.
-    saveJSON(PLAYERS_FILE, players);
+    players = loaded;
+    console.log(`[boot] Source of truth: MongoDB (${Object.keys(players).length} players)`);
   }
 
+  // No Mongo at all = saves cannot reach a durable store.
+  if (!mongoUp) {
+    console.error("========================================================");
+    console.error("⚠️  MONGODB_URI IS NOT SET — PLAYER DATA IS NOT SAFE");
+    console.error("Nothing is being persisted. Set MONGODB_URI on the Railway");
+    console.error("service, then redeploy. Run scripts/check_mongo.js to verify.");
+    console.error("========================================================");
+  }
+
+  global._lumoraPlayers = players;
+  global._lumoraStorage = {
+    mongoConfigured: !!process.env.MONGODB_URI,
+    mongoConnected: !!mongoUp,
+    bootLoadFailed: mongoDb.isBootLoadFailed(),
+    playersLoaded: Object.keys(players).length,
+  };
   console.log(`[boot] Loaded ${Object.keys(players).length} players total`);
   return players;
 }
 
 function loadPlayers() {
-  return loadJSON(PLAYERS_FILE, {});
+  // Returns the in-memory roster loaded from Mongo at boot. Deliberately does
+  // NOT re-read data/Players.json — that file is a local mirror for debugging
+  // only, and reading it is what made player data appear to revert.
+  return global._lumoraPlayers || {};
 }
 
 function savePlayers(players) {
-  // Always save to JSON (warm cache for quick loads)
-  saveJSON(PLAYERS_FILE, players);
+  global._lumoraPlayers = players;
 
   // Mark EVERY jid dirty for MongoDB. The batched flush (3s debounce)
   // will write them efficiently. Previously dirtyJidsThisCycle was never

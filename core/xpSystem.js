@@ -179,6 +179,27 @@ function addPlayerXp(player, amount) {
   // 0.1.3 — ±15% jitter so progress never feels mechanical. Same hunt path
   // doesn't always cough up the same XP number.
   const gain = Math.max(1, Math.floor(baseGain * (0.85 + Math.random() * 0.30)));
+  return applyXpGain(player, gain);
+}
+
+/**
+ * Apply an EXACT XP gain and run the full level-up pipeline: level-ups,
+ * stat points, energy/HP refill and rank detection. No jitter.
+ *
+ * Owner/admin grants (.ow givexp) use this so "give 500 XP" is exactly 500.
+ * Everything else keeps using addPlayerXp(), which jitters first.
+ *
+ * @param {object} player
+ * @param {number} amount - exact XP to add
+ * @returns {object} { leveledUp, levels, actualGain, rankUp, statPointsGranted }
+ */
+function applyXpGain(player, amount) {
+  if (!player) return { leveledUp: false, levels: 0 };
+
+  const gain = Math.floor(Number(amount || 0));
+  if (!Number.isFinite(gain) || gain <= 0) {
+    return { leveledUp: false, levels: 0, actualGain: 0, rankUp: null, statPointsGranted: 0 };
+  }
 
   if (typeof player.xp !== "number") player.xp = 0;
   if (typeof player.level !== "number") player.level = 1;
@@ -219,7 +240,11 @@ function addPlayerXp(player, amount) {
     try {
       const stats = require("../systems/stats");
       statPointsGranted = stats.grantPointsForLevels(player, levels);
-    } catch {}
+    } catch (err) {
+      // Not silent: a failed require here means players level up with zero
+      // spendable points and nobody notices until they open .stats.
+      console.warn(`[xp] stat points NOT granted for ${levels} level(s): ${err.message}`);
+    }
     // v0.8.1 — combat-energy max gradually grows with level. +1 max
     // stamina per level gained.
     if (typeof player.combatMaxEnergy !== "number") player.combatMaxEnergy = 50;
@@ -248,6 +273,7 @@ module.exports = {
   addMoraXp,
 
   addPlayerXp,
+  applyXpGain,
   playerXpToNextLevel,
   MAX_PLAYER_LEVEL,
 

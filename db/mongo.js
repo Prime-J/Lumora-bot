@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 
 // MongoDB connection settings
 const MONGODB_URI = process.env.MONGODB_URI || "";
-console.log("[mongo] MONGODB_URI env var:", MONGODB_URI ? "[set]" : "[missing]");
 
 const FLUSH_INTERVAL = 3000; // 3 seconds, batched writes
 const FLUSH_TIMEOUT = 5000; // 5 second timeout for graceful shutdown
@@ -42,7 +41,12 @@ const Player = mongoose.model("Player", PlayerSchema);
  */
 async function initMongo() {
   if (!MONGODB_URI) {
-    console.log("[mongo] MONGODB_URI not set, using file-based fallback");
+    console.error("");
+    console.error("❌❌❌ MONGODB_URI NOT SET — NOT CONNECTED ❌❌❌");
+    console.error("   Nothing will be persisted. Player progress is lost on every");
+    console.error("   redeploy. Set MONGODB_URI on the Railway service.");
+    console.error("   Verify with: node scripts/check_mongo.js");
+    console.error("");
     connected = false;
     return false;
   }
@@ -56,10 +60,19 @@ async function initMongo() {
       retryReads: true,
     });
     connected = true;
-    console.log("[mongo] Connected to MongoDB Atlas");
+    console.log("");
+    console.log("🔥🔥🔥 MONGODB CONNECTED 🔥🔥🔥");
+    console.log("   Player data is safe — saves now survive redeploys.");
+    console.log("");
     return true;
   } catch (err) {
-    console.warn("[mongo] Connection failed:", err.message);
+    console.error("");
+    console.error("❌❌❌ MONGODB CONNECTION FAILED — NOT CONNECTED ❌❌❌");
+    console.error(`   ${err.message}`);
+    console.error("   Usual causes: Atlas Network Access is IP-restricted (Railway's");
+    console.error("   egress IPs rotate), or the URI has an unencoded password.");
+    console.error("   Verify with: node scripts/check_mongo.js");
+    console.error("");
     connected = false;
     return false;
   }
@@ -92,6 +105,7 @@ async function loadAllPlayers() {
         players[doc.jid] = doc.data || {};
       }
       console.log(`[mongo] Loaded ${Object.keys(players).length} players from MongoDB (attempt ${attempt})`);
+      console.log("🔥 Roster loaded from MongoDB — this is the live data. 🔥");
       return players;
     } catch (err) {
       console.warn(`[mongo] Load attempt ${attempt}/${MAX_TRIES} failed:`, err.message);

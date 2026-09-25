@@ -25,7 +25,8 @@ const FACTION_LABEL = { harmony: "🌿 Harmony", purity: "⚔️ Purity Order", 
 const TOOLBOX_SUBS = new Set([
   "help", "h", "menu", "count", "lookup", "find", "eval", "js",
   "lcr", "lucons", "money", "reob", "orbs", "resonance", "int", "intelligence", "iq",
-  "points", "statpoints", "xp", "riftpe",
+  "points", "statpoints", "xp", "givexp", "addxp", "xp-give", "give-xp", "riftpe",
+  "-ap", "ap", "powers", "power",
   "shard", "giveshard", "shards-give", "shards", "vault", "shards-clear", "clear-shards",
   "storage", "merge", "awaken", "shed", "unmerge",
   "hp", "heal", "energy", "stamina", "level", "lv", "faction", "setfaction",
@@ -99,6 +100,25 @@ function send(sock, chatId, text, mentions = []) {
 // ══════════════════════════════════════════════════════════════
 // MAIN ROUTER
 // ══════════════════════════════════════════════════════════════
+// `.ow--ap` glues the sub to the prefix with a second dash, so it arrives as a
+// single token with no args and the normal `args[0]` lookup comes back empty.
+// Recover the sub from the raw message text instead.
+function gluedOwSub(msg, helpers) {
+  let text = "";
+  if (helpers && typeof helpers.getText === "function") {
+    try { text = String(helpers.getText(msg) || ""); } catch { text = ""; }
+  }
+  if (!text) {
+    text = String(
+      msg?.message?.conversation ||
+      msg?.message?.extendedTextMessage?.text ||
+      ""
+    );
+  }
+  const m = text.trim().match(/^\.?(?:ow|lumora)--([a-z][\w-]*)/i);
+  return m ? m[1].toLowerCase() : null;
+}
+
 async function cmdOwnerTools(ctx, chatId, senderId, msg, args = [], helpers = {}) {
   const { sock, players, savePlayers, loadMora } = ctx;
 
@@ -107,13 +127,24 @@ async function cmdOwnerTools(ctx, chatId, senderId, msg, args = [], helpers = {}
     return send(sock, chatId, "❌ Architect-only toolbox.");
   }
 
-  const sub = String(args[0] || "").toLowerCase();
+  let sub = String(args[0] || "").toLowerCase();
+  // `.ow --ap` and `.ow--ap` should both land on the same screen.
+  if (sub.startsWith("--")) sub = sub.slice(2);
+  if (!sub) {
+    const glued = gluedOwSub(msg, helpers);
+    if (glued) {
+      sub = glued;
+      args = [glued, ...args];
+    }
+  }
   const rest = args.slice(1);
 
   switch (sub) {
     // ── Help / meta ─────────────────────────────────────────
     case "help": case "h": case "": case "menu":
       return cmdHelp(ctx, chatId, senderId, msg, args, helpers);
+    case "-ap": case "ap": case "powers": case "power":
+      return cmdOwnerPowers(ctx, chatId, senderId, msg, args, helpers);
     case "count":
       return send(sock, chatId, `👥 Registered players: *${Object.keys(players).length}*`);
     case "lookup": case "find": {
@@ -150,6 +181,8 @@ async function cmdOwnerTools(ctx, chatId, senderId, msg, args = [], helpers = {}
       return cmdCurrency(ctx, chatId, senderId, msg, rest, helpers, "statPoints");
     case "xp":
       return cmdCurrency(ctx, chatId, senderId, msg, rest, helpers, "xp");
+    case "givexp": case "addxp": case "xp-give": case "give-xp":
+      return cmdGiveXp(ctx, chatId, senderId, msg, rest, helpers);
     case "riftpe":
       return cmdCurrency(ctx, chatId, senderId, msg, rest, helpers, "riftPE");
 
@@ -233,6 +266,7 @@ function cmdHelp(ctx, chatId, senderId, msg, args, helpers) {
     `*💰 Currencies*  _(@user or number)_\n` +
     `  .ow lcr @u 500  •  .ow lcr set @u 500\n` +
     `  .ow reob / resonance / int / points / xp / riftpe  <@u> <amt>\n` +
+    `  .ow givexp @u 500  _(exact XP — levels them up + grants stat points)_\n` +
     `${DIVIDER}\n` +
     `*💎 Shards & merge*\n` +
     `  .ow shard @u <name> [count] [corrupted]\n` +
@@ -240,7 +274,7 @@ function cmdHelp(ctx, chatId, senderId, msg, args, helpers) {
     `  .ow storage @u <name> <cap>  •  .ow merge @u <name>  •  .ow shed @u\n` +
     `${DIVIDER}\n` +
     `*🧍 Player*\n` +
-    `  .ow hp @u <hp|full>  •  .ow energy @u <amt>  •  .ow level @u <lv>\n` +
+    `  .ow hp @u <hp|full>  •  .ow energy @u <amt>  •  .ow level @u <lv> _(grants stat points)_\n` +
     `  .ow faction @u <harmony|purity|rift|none>\n` +
     `  .ow style [@u] <styleId>  •  .ow switch [@u] <styleId>  •  .ow styles-list  •  .ow styles [@u]  •  .ow style-clear [@u]\n` +
     `  .ow quest @u <questId>  •  .ow item @u <name> <qty>\n` +
@@ -300,6 +334,95 @@ async function cmdCurrency(ctx, chatId, senderId, msg, args, helpers, field) {
     `@${targetJid.split("@")[0]}: ${field} *${old} → ${next}* (${mode === "set" ? "set" : "+" + amt})\n` +
     `_Signed: The Architect._`,
     [targetJid]);
+}
+
+// ── Architect powers (`.ow--ap`) ──────────────────────────────
+// Quick-reference for the "hand my mates a boost" commands. Kept separate from
+// the full .ow help so the daily-use grants are one screen, not a wall.
+async function cmdOwnerPowers(ctx, chatId, senderId, msg, args, helpers) {
+  const { sock, players } = ctx;
+  const roster = Object.keys(players).length;
+
+  return send(sock, chatId,
+    `⚡ *ARCHITECT POWERS*  _(grant anything)_\n${DIVIDER}\n` +
+    `*💰 Currency*\n` +
+    `  .ow lcr @u 500  •  .ow lcr set @u 2500\n` +
+    `  .ow reob / int / resonance / riftpe  @u <amt>\n` +
+    `${DIVIDER}\n` +
+    `*⭐ Progression*  _(the good stuff)_\n` +
+    `  .ow givexp @u 500\n` +
+    `     _Exact XP — no jitter. Levels them up and pays out_\n` +
+    `     _3 stat points per level, ready to spend._\n` +
+    `  .ow level @u 25\n` +
+    `     _Jumps straight to a level, same stat points per level gained._\n` +
+    `  .ow points @u 10\n` +
+    `     _Raw stat points, no level-up needed._\n` +
+    `  .ow style @u wind_step  •  .ow quest @u <questId>\n` +
+    `${DIVIDER}\n` +
+    `*💎 Gear & Mora*\n` +
+    `  .ow shard @u Nylon 3 [corrupted]\n` +
+    `  .ow item @u <name> <qty>  •  .ow storage @u <name> <cap>\n` +
+    `  .ow merge @u Nylon  •  .ow shed @u Nylon\n` +
+    `${DIVIDER}\n` +
+    `*🛠 Control*\n` +
+    `  .ow reset @u confirm  •  .ow faction @u rift\n` +
+    `  .ow hp @u full  •  .ow energy @u 100\n` +
+    `${DIVIDER}\n` +
+    `Roster right now: *${roster}* players.\n` +
+    `_Tag or reply to a player, or pass their number._\n` +
+    `_.ow help_ for the full toolbox.`);
+}
+
+// ── xp / levels ────────────────────────────────────────────────
+// Grants an EXACT XP amount (no hunt jitter) and runs the real level-up
+// pipeline, so the player levels up and banks the stat points for it —
+// same +3 per level they'd earn from grinding.
+async function cmdGiveXp(ctx, chatId, senderId, msg, args, helpers) {
+  const { sock, players, savePlayers } = ctx;
+  const targetJid = resolveTargetJid(args, helpers, msg);
+  const amt = getNumberArg(args);
+
+  if (!targetJid || !players[targetJid]) return send(sock, chatId, "❌ Tag a registered player.");
+  if (amt === null || !Number.isFinite(amt) || amt <= 0) {
+    return send(sock, chatId, "❌ Usage: `.ow givexp @user <amount>`");
+  }
+
+  const xpSystem = require("../core/xpSystem");
+  const p = players[targetJid];
+  const before = {
+    level: Number(p.level || 1),
+    xp: Number(p.xp || 0),
+    points: Number(p.statPoints || 0),
+  };
+
+  const result = xpSystem.applyXpGain(p, Math.round(amt));
+  savePlayers(players);
+
+  const tag = `@${targetJid.split("@")[0]}`;
+  const lines = [
+    `⚡ *XP GRANT*${DIVIDER}`,
+    `${tag}: *+${result.actualGain} XP*`,
+    `Level: *${before.level} → ${p.level}*`,
+    `XP bar: *${before.xp} → ${p.xp || 0}*`,
+  ];
+
+  if (result.levels > 0) {
+    lines.push(`*${result.levels} level${result.levels > 1 ? "s" : ""} gained!* 🎉`);
+    if (result.statPointsGranted > 0) {
+      lines.push(`Stat points: *+${result.statPointsGranted}* (${before.points} → *${p.statPoints}* to distribute)`);
+      lines.push(`_They can spend them with .stats_`);
+    } else {
+      lines.push(`⚠️ Stat points failed to grant — check the bot logs for \`[xp]\`.`);
+    }
+    if (result.rankUp?.crossed && result.rankUp.newRank) {
+      lines.push(`Rank up: *${result.rankUp.newRank.name}*`);
+    }
+  } else {
+    lines.push(`_No level gained._`);
+  }
+
+  lines.push(`_Signed: The Architect._`);
+  return send(sock, chatId, lines.join("\n"), [targetJid]);
 }
 
 // ── shards ──────────────────────────────────────────────────────
@@ -479,12 +602,31 @@ async function cmdLevel(ctx, chatId, senderId, msg, args, helpers) {
   if (!targetJid || !players[targetJid]) return send(sock, chatId, "❌ Tag a registered player.");
   if (lv === null || lv < 1) return send(sock, chatId, "❌ Usage: `.ow level @u <lv>`");
   const p = players[targetJid];
-  const old = p.level || 1;
+  const old = Number(p.level || 1);
+  const beforePoints = Number(p.statPoints || 0);
   p.level = Math.min(Math.round(lv), 100);
   p.xp = 0;
+
+  // Levelling UP hands out the same stat points a normal level-up would, so
+  // an owner buff never leaves a player with levels they can't spend. Setting
+  // a level DOWN grants nothing — otherwise set 1 / set 99 would mint points.
+  let granted = 0;
+  const gained = p.level - old;
+  if (gained > 0) {
+    try {
+      granted = require("./stats").grantPointsForLevels(p, gained);
+    } catch (err) {
+      console.warn(`[ow] stat points NOT granted for level bump: ${err.message}`);
+    }
+  }
   savePlayers(players);
+
+  const pointsLine = granted > 0
+    ? `\nStat points: *+${granted}* (${beforePoints} → *${p.statPoints}* to distribute)`
+    : "";
   return send(sock, chatId,
-    `📊 *LEVEL SET*\n@${targetJid.split("@")[0]}: Lv *${old} → ${p.level}* (XP zeroed — stat points untouched)`,
+    `📊 *LEVEL SET*\n@${targetJid.split("@")[0]}: Lv *${old} → ${p.level}* (XP zeroed)${pointsLine}` +
+    (gained > 0 ? `\n_They can spend them with .stats_` : ""),
     [targetJid]);
 }
 
