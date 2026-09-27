@@ -14,8 +14,8 @@
   "announceOnRotate": true,
   "showRareBanner": true,
   "marketSpeechMode": "random",
-  "lastRotationAt": 1778333379208,
-  "nextRotationAt": 1778336979208,
+  "lastRotationAt": 1790531980284,
+  "nextRotationAt": 1790535580284,
   "rotationPoolSizes": {
     "_comment": "Semi-random market size. Total visible items should feel lively but not crowded.",
     "minVisibleItems": 5,
@@ -82,63 +82,63 @@
     "notifyGroupsOnly": true
   },
   "currentRotation": {
-    "rotationId": 136,
-    "speechUsed": "⚫ BLACK MARKET WHISPERS\n\nA quiet signal spreads among smugglers and collectors.\nThe underground stock has shifted once more.\nThe rarest items may disappear without warning.\n\nUse .market to inspect the changes.",
+    "rotationId": 137,
+    "speechUsed": "🏪 MARKET ROTATION\n\nThe market bells ring once more across Lumora.\nFresh stock has arrived from wandering traders and hidden routes.\nA few prized items may not last long.\n\nUse .market to inspect today's wares.",
     "hasRareHighlight": true,
     "items": [
       {
-        "itemId": "GER_030",
-        "price": 190,
-        "stock": 5,
-        "limited": false,
-        "sold": 0
-      },
-      {
         "itemId": "GER_020",
         "price": 90,
-        "stock": 6,
+        "stock": 7,
         "limited": false,
         "sold": 0
       },
       {
-        "itemId": "ITM_007",
-        "price": 143,
-        "stock": 2,
-        "limited": true,
-        "sold": 0
-      },
-      {
-        "itemId": "ITM_002",
-        "price": 90,
-        "stock": 4,
-        "limited": false,
-        "sold": 1
-      },
-      {
-        "itemId": "MAT_003",
-        "price": 65,
-        "stock": 4,
-        "limited": false,
-        "sold": 0
-      },
-      {
-        "itemId": "ITM_010",
-        "price": 264,
+        "itemId": "GER_022",
+        "price": 165,
         "stock": 3,
         "limited": true,
         "sold": 0
       },
       {
-        "itemId": "GER_034",
-        "price": 1009,
-        "stock": 2,
+        "itemId": "ITM_001",
+        "price": 35,
+        "stock": 5,
+        "limited": false,
+        "sold": 0
+      },
+      {
+        "itemId": "ITM_002",
+        "price": 99,
+        "stock": 3,
         "limited": true,
         "sold": 0
       },
       {
-        "itemId": "GER_033",
-        "price": 1527,
+        "itemId": "ITM_005",
+        "price": 120,
+        "stock": 5,
+        "limited": false,
+        "sold": 0
+      },
+      {
+        "itemId": "ACC_002",
+        "price": 3453,
         "stock": 1,
+        "limited": true,
+        "sold": 0
+      },
+      {
+        "itemId": "REL_001",
+        "price": 2125,
+        "stock": 1,
+        "limited": true,
+        "sold": 0
+      },
+      {
+        "itemId": "GER_032",
+        "price": 231,
+        "stock": 2,
         "limited": true,
         "sold": 0
       }
@@ -197,6 +197,15 @@
       "REL_003"
     ]
   },
+  "permanentListings": [
+    {
+      "_comment": "Always on the board, never rotates, never sells out. price omitted = items.json price.",
+      "itemId": "REL_004",
+      "price": 7400,
+      "unlimited": true,
+      "note": "Permanent relic — the Abyssal Chain of Binding. Made permanent in 1.2.6."
+    }
+  ],
   "marketUi": {
     "_comment": "For display formatting.",
     "header": "━━━━━━━━━━━━━━━━━━\n🏪 *LUMORA MARKET*\n━━━━━━━━━━━━━━━━━━",
@@ -212,6 +221,7 @@
   },
   "futureIdeas": {
     "_comment": "Just notes for later so you remember where this file can grow.",
+    "permListingShipped": "permanentListings is live as of 1.2.6 — always-on stock that never rotates.",
     "marketEvents": [
       "flash sale",
       "double rare chance",

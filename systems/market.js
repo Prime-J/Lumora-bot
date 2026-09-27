@@ -211,8 +211,10 @@ function formatMarketText(market) {
 
   const rotation = market.currentRotation || { items: [] };
   const entries = Array.isArray(rotation.items) ? rotation.items : [];
+  // Permanent listings live outside the rotation and never sell out.
+  const permanent = Array.isArray(market.permanentListings) ? market.permanentListings : [];
 
-  if (!entries.length) {
+  if (!entries.length && !permanent.length) {
     return (
       ui.header('MARKET', '🏪') + `\n\n` +
       `The stalls are quiet right now.\n` +
@@ -275,6 +277,33 @@ function formatMarketText(market) {
     }
   }
 
+  // ── PERMANENT LISTINGS — always on the board, never rotate ──
+  if (permanent.length) {
+    lines.push(ui.subheader('PERMANENT RELICS', '⛓️'));
+    lines.push('');
+
+    for (const entry of permanent) {
+      const item = itemsDb[entry.itemId];
+      if (!item) continue;
+
+      const price = Number(entry.price ?? item.price ?? 0);
+      const icon = itemsSystem.getRarityIcon(item.rarity);
+      if (itemsSystem.isRareOrHigher(item.rarity)) {
+        lines.push(rareBanner);
+        lines.push('');
+      }
+
+      lines.push(ui.card(`${icon} ${item.name}`, '', [
+        { emoji: '💠', label: 'Rarity', value: item.rarity },
+        { emoji: '💰', label: 'Price', value: `${price} Lucons` },
+        { emoji: '⚡', label: 'Effect', value: item.effect || 'Passive effect' },
+        ...(item.desc ? [{ emoji: '📜', label: 'Desc', value: item.desc }] : []),
+      ]));
+      lines.push('  ♾️ Permanent — never rotates, never sells out');
+      lines.push('');
+    }
+  }
+
   lines.push(ui.DIV);
   lines.push('');
   lines.push(footer);
@@ -287,6 +316,16 @@ function getRotationEntryByQuery(query, market, itemsDb) {
   const entries = Array.isArray(market?.currentRotation?.items) ? market.currentRotation.items : [];
 
   for (const entry of entries) {
+    const item = itemsDb[entry.itemId];
+    if (!item) continue;
+
+    if (normalizeName(item.id) === q) return { entry, item };
+    if (normalizeName(item.name) === q) return { entry, item };
+  }
+
+  // Permanent listings are always purchasable, whatever the rotation is doing.
+  const permanent = Array.isArray(market?.permanentListings) ? market.permanentListings : [];
+  for (const entry of permanent) {
     const item = itemsDb[entry.itemId];
     if (!item) continue;
 
@@ -413,13 +452,16 @@ async function cmdBuy(ctx, chatId, senderId, msg, args = []) {
 
   const { entry, item } = found;
 
-  const remaining = Math.max(0, Number(entry.stock || 0) - Number(entry.sold || 0));
-  if (remaining <= 0) {
-    return sock.sendMessage(
-      chatId,
-      { text: `❌ *${item.name}* is sold out.` },
-      { quoted: msg }
-    );
+  const unlimited = entry.unlimited === true || entry.permanent === true;
+  if (!unlimited) {
+    const remaining = Math.max(0, Number(entry.stock || 0) - Number(entry.sold || 0));
+    if (remaining <= 0) {
+      return sock.sendMessage(
+        chatId,
+        { text: `❌ *${item.name}* is sold out.` },
+        { quoted: msg }
+      );
+    }
   }
 
   const testFree = false;
@@ -453,12 +495,14 @@ async function cmdBuy(ctx, chatId, senderId, msg, args = []) {
   }
 
   if (!testFree) player.lucons = Math.max(0, money - price);
-  entry.sold = Number(entry.sold || 0) + 1;
+  if (!unlimited) entry.sold = Number(entry.sold || 0) + 1;
 
   savePlayers(players);
-  itemsSystem.saveMarket(market);
+  if (!unlimited) itemsSystem.saveMarket(market);
 
-  const left = Math.max(0, Number(entry.stock || 0) - Number(entry.sold || 0));
+  const left = unlimited
+    ? "∞"
+    : Math.max(0, Number(entry.stock || 0) - Number(entry.sold || 0));
   const rarityIcon = itemsSystem.getRarityIcon(item.rarity);
 
   return sock.sendMessage(
@@ -470,7 +514,7 @@ async function cmdBuy(ctx, chatId, senderId, msg, args = []) {
         `${DIVIDER}\n\n` +
         `${rarityIcon} *${item.name}*\n` +
         `${testFree ? `🧪 Price: *FREE* (TEST MODE)\n` : `💰 Price: *${price} Lucons*\n`}` +
-        `📦 Remaining Stock: *${left}*\n` +
+        (unlimited ? `♾️ Permanent listing — always restocked\n` : `📦 Remaining Stock: *${left}*\n`) +
         `⚡ Effect: ${item.effect || "None"}\n` +
         `📜 ${item.desc || "No description."}\n\n` +
         `💳 Lucons Left: *${player.lucons}*`,

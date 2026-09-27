@@ -814,33 +814,15 @@ async function runAutocatchAttempt(ctx, chatId, catcherJid, spawnInfo, retryCoun
   const catcher = players[catcherJid];
   if (!catcher) return;
 
-  // Build owned mora via ctx helper (same path as .catch).
-  let owned;
-  if (typeof ctx.createOwnedMoraFromSpecies === "function") {
-    owned = ctx.createOwnedMoraFromSpecies(species);
-  } else {
-    owned = {
-      moraId: Number(species.id),
-      name: species.name,
-      type: species.type,
-      rarity: species.rarity,
-      level: 1, xp: 0,
-      hp: Number(species?.baseStats?.hp || 50),
-      maxHp: Number(species?.baseStats?.hp || 50),
-      moves: [],
-      stats: {
-        atk: Number(species?.baseStats?.atk || 10),
-        def: Number(species?.baseStats?.def || 10),
-        spd: Number(species?.baseStats?.spd || 10),
-        energy: Number(species?.baseStats?.energy || 30),
-      },
-      energy: Number(species?.baseStats?.energy || 30),
-      maxEnergy: Number(species?.baseStats?.energy || 30),
-    };
-  }
-
-  if (!Array.isArray(catcher.moraOwned)) catcher.moraOwned = [];
-  catcher.moraOwned.push(owned);
+  // v0.5.0 + moraOwned retirement: autocatch no longer creates a saved Mora.
+  // It crystallizes a shard at the same 15% spawn-claim rate as a manual
+  // .catch, so the pro perk lands as a shard the player can merge.
+  let shardDropLine = "";
+  try {
+    const shardSystem = require("./shards");
+    const dropMsg = shardSystem.dropShardOnCatch(catcher, species);
+    if (dropMsg) shardDropLine = "\n\n" + dropMsg;
+  } catch {}
 
   // Clear the spawn
   state[chatId].active = null;
@@ -870,7 +852,7 @@ async function runAutocatchAttempt(ctx, chatId, catcherJid, spawnInfo, retryCoun
       text:
         `🎯 *EIDOLON CATCHER*\n\n` +
         `The ancient catcher bound *${species.name}* to @${catcherJid.split("@")[0]} while they were away.\n` +
-        `_(Check .autocatch-log to view.)_`,
+        `_(Check .autocatch-log to view.)_` + shardDropLine,
       mentions: [catcherJid],
     });
   } catch {}

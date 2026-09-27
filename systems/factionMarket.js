@@ -496,9 +496,11 @@ function buildFactionMarketText(player) {
 
   const formatItem = ({ entry, item }) => {
     const icon = itemsSystem.getRarityIcon(item.rarity);
-    const stockStr = entry.source === "json" && entry.stock !== undefined
-      ? (entry.stock <= 0 ? "  •  ❌ SOLD OUT" : `  •  📦 ${entry.stock} left`)
-      : "";
+    const stockStr = entry.permanent
+      ? "  •  ♾️ Permanent"
+      : entry.source === "json" && entry.stock !== undefined
+        ? (entry.stock <= 0 ? "  •  ❌ SOLD OUT" : `  •  📦 ${entry.stock} left`)
+        : "";
     return (
       `  ${icon} *${item.name}*  —  💰 ${entry.price} Lucons${stockStr}\n` +
       `      ⚡ ${item.effect || entry.desc || "Effect active"}`

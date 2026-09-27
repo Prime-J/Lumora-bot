@@ -1473,5 +1473,24 @@
     "effect": "Quest material — time-style trials",
     "desc": "A sliver of hourglass glass that remembers both directions. Warm at one end, cold at the other.",
     "dropHint": "Surfaces rarely on hunts near rift-scarred ground, where time runs thin."
+  },
+  "REL_004": {
+    "id": "REL_004",
+    "name": "Abyssal Chain of Binding",
+    "category": "gear",
+    "slot": "relic",
+    "rarity": "Mythic",
+    "marketType": "black",
+    "faction": "rift",
+    "rotates": false,
+    "permanent": true,
+    "price": 7400,
+    "stock": 0,
+    "storageCost": 0,
+    "effect": "Rift Bind almost never fails (30% → 98%)",
+    "desc": "A length of void-iron chain quenched in the throat of a dead Rift god. Rift Seekers who equip it find the binding almost always closes — the chain simply refuses to slip. Bought only where the black market still trades in relics nobody will admit to taking.",
+    "effects": {
+      "riftBindSuccess": 68
+    }
   }
 }

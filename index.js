@@ -364,6 +364,7 @@ const proSystem = require('./systems/pro');
 const moraCreationSystem = require('./systems/moraCreation');
 const starSystem = require('./systems/star');
 const updatesSystem = require('./systems/updates');
+const sundayGiftSystem = require('./systems/sundayGift');
 const bankSystem = require('./systems/bank');
 const robberySystem = require('./systems/robbery');
 const ranksSystem = require('./systems/ranks');
@@ -582,7 +583,27 @@ async function bootPlayers() {
   const loaded = await mongoDb.loadAllPlayers();
 
   let players = {};
-  if (loaded === null) {
+  if (!mongoUp) {
+    // Report the real reason. `loadAllPlayers()` returns {} when it never
+    // connected, so without this branch the log claims the database is
+    // "empty" and that the URI is "not set" even when it is set and simply
+    // unreachable — which sends people hunting the wrong problem.
+    if (process.env.MONGODB_URI) {
+      console.error("========================================================");
+      console.error("⚠️  COULD NOT REACH MONGODB — STARTING WITH NO PLAYERS");
+      console.error("MONGODB_URI is set, but the connection failed. The cluster");
+      console.error("host in the URI does not resolve, so no data can be read or");
+      console.error("written. Nothing is being persisted.");
+      console.error("Check the URI in Railway, then run scripts/check_mongo.js.");
+      console.error("========================================================");
+    } else {
+      console.error("========================================================");
+      console.error("⚠️  MONGODB_URI IS NOT SET — NOT CONNECTED");
+      console.error("Nothing is being persisted. Set MONGODB_URI on the Railway");
+      console.error("service, then redeploy. Run scripts/check_mongo.js to verify.");
+      console.error("========================================================");
+    }
+  } else if (loaded === null) {
     console.error("========================================================");
     console.error("⚠️  MONGODB READ FAILED — STARTING WITH NO PLAYERS");
     console.error("Connected, but the player read failed on every retry.");
@@ -598,15 +619,6 @@ async function bootPlayers() {
   } else {
     players = loaded;
     console.log(`[boot] Source of truth: MongoDB (${Object.keys(players).length} players)`);
-  }
-
-  // No Mongo at all = saves cannot reach a durable store.
-  if (!mongoUp) {
-    console.error("========================================================");
-    console.error("⚠️  MONGODB_URI IS NOT SET — PLAYER DATA IS NOT SAFE");
-    console.error("Nothing is being persisted. Set MONGODB_URI on the Railway");
-    console.error("service, then redeploy. Run scripts/check_mongo.js to verify.");
-    console.error("========================================================");
   }
 
   global._lumoraPlayers = players;
@@ -2054,6 +2066,18 @@ async function startBot() {
         try {
           starSystem.startLonelinessLoop(() => sock, () => ({ settings: loadSettings() }));
         } catch (e) { console.warn("[star] loneliness loop failed:", e.message); }
+
+        // Sunday Gift — generates the weekly scripture pool and opens it at
+        // 00:00 CAT every Sunday, then announces it in the community groups.
+        try {
+          const _gs = loadSettings();
+          const giftGroups = Array.from(new Set([
+            ...(_gs.huntingGroups?.allowed || []),
+            ...(_gs.marketGroups?.allowed || []),
+            ...Object.keys(FACTION_GROUPS),
+          ]));
+          sundayGiftSystem.startGiftLoop(sock, giftGroups);
+        } catch (e) { console.warn("[sundayGift] loop failed:", e.message); }
       }
     }
 
@@ -2437,6 +2461,23 @@ sock.ev.removeAllListeners("messages.upsert");
         '🎮 Quick Menu': `${PREFIX}menu`,
         '✅ Accept': `${PREFIX}accept`,
         '❌ Reject': `${PREFIX}reject`,
+        '📖 Begin the Gift': `${PREFIX}gift-begin`,
+        '🔁 Continue': `${PREFIX}gift-begin`,
+        '🏆 Standings': `${PREFIX}gift-lb`,
+        '❓ How it Works': `${PREFIX}gift-help`,
+        '❌ Leave the Gift': `${PREFIX}gift-quit`,
+        'A': `${PREFIX}gift-answer A`,
+        'B': `${PREFIX}gift-answer B`,
+        'C': `${PREFIX}gift-answer C`,
+        'D': `${PREFIX}gift-answer D`,
+        '4 Questions': `${PREFIX}gift-count 4`,
+        '5 Questions': `${PREFIX}gift-count 5`,
+        '6 Questions': `${PREFIX}gift-count 6`,
+        '7 Questions': `${PREFIX}gift-count 7`,
+        '8 Questions': `${PREFIX}gift-count 8`,
+        '9 Questions': `${PREFIX}gift-count 9`,
+        '10 Questions': `${PREFIX}gift-count 10`,
+        '📜 Events': `${PREFIX}help-game events`,
       };
       if (!text.startsWith(PREFIX) && TAP_FALLBACK[text]) {
         text = TAP_FALLBACK[text];
@@ -3091,6 +3132,29 @@ if (command === "cancel") {
       }
       if (command === "update" || command === "updates") {
         return updatesSystem.cmdUpdate(ctx, chatId, msg);
+      }
+
+      // ── THE SUNDAY GIFT — weekly scripture trial ──
+      if (command === "gift" || command === "sunday-gift" || command === "sundaygift" || command === "sunday") {
+        return sundayGiftSystem.cmdGift(ctx, chatId, senderId, msg);
+      }
+      if (command === "gift-begin" || command === "gift-start" || command === "begin-gift") {
+        return sundayGiftSystem.cmdGiftBegin(ctx, chatId, senderId, msg);
+      }
+      if (command === "gift-count") {
+        return sundayGiftSystem.cmdGiftCount(ctx, chatId, senderId, msg, args);
+      }
+      if (command === "gift-answer" || command === "gift-a") {
+        return sundayGiftSystem.cmdGiftAnswer(ctx, chatId, senderId, msg, args);
+      }
+      if (command === "gift-quit" || command === "gift-leave") {
+        return sundayGiftSystem.cmdGiftQuit(ctx, chatId, senderId, msg);
+      }
+      if (command === "gift-lb" || command === "gift-standings" || command === "gift-board") {
+        return sundayGiftSystem.cmdGiftStandings(ctx, chatId, senderId, msg);
+      }
+      if (command === "gift-help" || command === "gift-rules") {
+        return sundayGiftSystem.cmdGiftHelp(ctx, chatId, senderId, msg);
       }
       if (command === "update-release" || command === "release-update") {
         return updatesSystem.cmdUpdateRelease(ctx, chatId, msg, args, isOwner);
@@ -4414,11 +4478,13 @@ You're already registered. Use ${PREFIX}profile to check your stats!`,
           const moraList = loadMora();
           const species = moraList.find(m => m.id === chosen.id);
           if (!species) return sock.sendMessage(senderId, { text: "❌ Mora data missing, try again." }, { quoted: msg });
-          const newMora = createOwnedMoraFromSpecies(species);
-          newMora.level = 5;
-          xpSystem.applyLevelScaling(newMora, species);
-          if (!Array.isArray(p.moraOwned)) p.moraOwned = [];
-          p.moraOwned.push(newMora);
+          // v0.5.0 + moraOwned retirement: referrals pay a guaranteed shard,
+          // not a saved Mora. The player merges it into a Mora themselves.
+          let refShardLine = "";
+          try {
+            const dropMsg = shardSystem.dropShardOnCatch(p, species, { forceDrop: true });
+            if (dropMsg) refShardLine = "\n\n" + dropMsg;
+          } catch {}
           savePlayers(players);
           r.pendingRewards[pick.rewardIndex].claimed = true;
           r.activePick = null;
@@ -4426,9 +4492,8 @@ You're already registered. Use ${PREFIX}profile to check your stats!`,
           return sock.sendMessage(senderId, {
             text:
               `🐉 *REWARD CLAIMED!*\n\n` +
-              `*${newMora.name}* joined your party!\n` +
-              `Type: *${newMora.type}* | Rarity: *${newMora.rarity}*\n` +
-              `Level: *5* | HP: *${newMora.maxHp}* | ATK: *${newMora.stats?.atk}*`,
+              `A *${species.name}* shard was forged for you!\n` +
+              `Type: *${species.type}* | Rarity: *${species.rarity}*` + refShardLine,
           }, { quoted: msg });
         }
 
@@ -4697,21 +4762,14 @@ if (command === "choose") {
   p.starterChosen = true;
   p.moraOwned = p.moraOwned || [];
 
-  // Create the instance (Level 5)
-  const newMora = {
-    ...selectedMora,
-    moraId: Number(selectedMora.id), // Assign the mora ID
-    level: 5,
-    xp: 0,
-    hp: selectedMora.baseStats.hp + 15,
-    maxHp: selectedMora.baseStats.hp + 15,
-    energy: selectedMora.baseStats.energy || 30,
-    maxEnergy: selectedMora.baseStats.energy || 30,
-    isWild: false
-  };
-
-  p.moraOwned.push(newMora);
-  p.party = [0, null, null, null, null]; // Put starter in slot 1
+  // v0.5.0 + moraOwned retirement: the starter is a guaranteed shard, not a
+  // saved Mora. The player runs *.awaken <name>* to bring it into the roster.
+  let starterShardLine = "";
+  try {
+    const dropMsg = shardSystem.dropShardOnCatch(p, selectedMora, { forceDrop: true });
+    if (dropMsg) starterShardLine = "\n\n" + dropMsg;
+  } catch {}
+  p.party = [null, null, null, null, null]; // no saved Mora to slot yet
 
   savePlayers(players);
 
@@ -4727,7 +4785,8 @@ if (command === "choose") {
 
   buttonsSystem.mapButtons({ "🥋 Pick a Style": `${PREFIX}choose-style` });
   return sendButtons(sock, chatId,
-    `🎉 *CONGRATULATIONS!* — you bonded with *${newMora.name}*!\n\nNext: pick your *fighting style* 👇`,
+    `🎉 *CONGRATULATIONS!* — you forged a *${selectedMora.name}* shard!\n\nUse *.awaken ${String(selectedMora.name).toLowerCase()}* to bring it to life, then pick your *fighting style* 👇` +
+    starterShardLine,
     ["🥋 Pick a Style"],
     { footer: `Or type: ${PREFIX}choose-style`, quoted: msg, mentions: [senderId] }
   );
@@ -6385,7 +6444,8 @@ const xpNeeded = xpSystem.playerXpToNextLevel(p.level || 1);
       }
       if (command === "npc") {
         if (!isArenaAllowedInChat(chatId, settings)) return denyArenaGroup(sock, chatId, msg);
-        return arenaSystem.cmdNpcChallenge(ctx, chatId, senderId, msg, args);
+        // .npc <tier> is the legacy tier form of .challenge — same handler.
+        return arenaSystem.cmdChallenge(ctx, chatId, senderId, msg, args);
       }
       if (command === "challenge") {
         if (!isArenaAllowedInChat(chatId, settings)) return denyArenaGroup(sock, chatId, msg);
@@ -7701,33 +7761,15 @@ Use: ${PREFIX}bio <text> to set one (max 100 chars)` }, { quoted: msg });
       }
       // --- COMMAND: GLOBAL LEADERBOARD ---
 if (command === "lb") {
-    // Single source of truth — text + canvas pull from the SAME sorted list
-    // so #1 in the image == #1 in the text. Was using two different sorts
-    // (text by aura/tamed/lucons, canvas by level only) which produced wildly
-    // different rankings.
-    const sortedTop = lb.getGlobalLeaderboardData(players);
-    const text = lb.getGlobalLeaderboard(players);
-
-    // Send interactive leaderboard menu
-    await lb.sendLeaderboardMenu(sock, chatId, msg);
-
+    // Single source of truth — the podium, the stat cards and the rank list
+    // all pull from the same sorted list, so #1 in every section is the
+    // same player. (The old code also called lb.sendLeaderboardMenu, which
+    // did not exist, and threw before the board was ever sent.)
     try {
-      const topPlayers = sortedTop
-        .filter(p => p.username && p.level)
-        .map((p, i) => ({
-          rank: i + 1,
-          username: p.username,
-          level: p.level || 1,
-          faction: p.faction || "neutral",
-          xp: p.xp || 0,
-          aura: p.aura || 0,
-          totalCreations: p.totalCreations || 0,
-        }));
-
-      await sock.sendMessage(chatId, { text });
+      await sock.sendMessage(chatId, { text: lb.getGlobalLeaderboard(players) });
     } catch (e) {
       console.log("Leaderboard generation failed:", e.message);
-      await sock.sendMessage(chatId, { text });
+      await sock.sendMessage(chatId, { text: "❌ Leaderboard unavailable right now." });
     }
 }
 

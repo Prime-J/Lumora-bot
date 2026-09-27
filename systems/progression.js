@@ -119,7 +119,7 @@ const CONFIG = {
       level: 0.2,         // 20% weight on level
       dep: 0.2,           // 20% weight on DΞP
       lucons: 0.1,        // 10% weight on Lucons
-      tamed: 0.1,         // 10% weight on tamed Mora count
+      vault: 0.1,         // 10% weight on shard vault size
     },
   },
 };
@@ -505,7 +505,7 @@ function applyDeathPenalty(player, penalty) {
 
 /**
  * Calculate normalized global leaderboard score.
- * Combines faction stat, level, DΞP, lucons, and tamed Mora.
+ * Combines faction stat, level, DΞP, lucons, and shard vault size.
  * @param {object} player
  * @returns {object} { total, breakdown }
  */
@@ -514,7 +514,12 @@ function calculateLeaderboardScore(player) {
   const level = Number(player.level || 1);
   const dep = Number(player.xp || 0);
   const lucons = Number(player.lucons || 0);
-  const tamed = Array.isArray(player.moraOwned) ? player.moraOwned.length : 0;
+  // v0.5.0 — Mora are shards, not stored objects. "Vault" = total shards held
+  // (species variety counts extra, so hoarding one species is not optimal).
+  const shardEntries = Object.entries(player.shards || {})
+    .filter(([, count]) => Number(count) > 0);
+  const tamed = shardEntries.reduce((sum, [, count]) => sum + Number(count), 0)
+    + shardEntries.length * 2;
 
   // Normalize each component to 0-10000 range
   const maxFactionStat = CONFIG.factionStats.cap;
@@ -530,7 +535,7 @@ function calculateLeaderboardScore(player) {
     normalizedLevel * w.level +
     normalizedDEP * w.dep +
     normalizedLucons * w.lucons +
-    normalizedTamed * w.tamed
+    normalizedTamed * w.vault
   );
 
   return {
@@ -540,7 +545,7 @@ function calculateLeaderboardScore(player) {
       level: Math.floor(normalizedLevel),
       dep: Math.floor(normalizedDEP),
       lucons: Math.floor(normalizedLucons),
-      tamed: Math.floor(normalizedTamed),
+      vault: Math.floor(normalizedTamed),
     },
   };
 }

@@ -1,13 +1,25 @@
 const fs = require('fs');
 const ui = require('./systems/ui');
 const progression = require('./systems/progression');
-const interactiveUI = require('./systems/interactiveUI');
 
 // 🧮 SCORING SYSTEM: Uses centralized progression engine
+// v0.5.0 — Mora are shards now, so "tamed" is the shard vault: total shards
+// held, plus a bonus per distinct species so hoarding one Mora is not optimal.
+function shardLabel(count) {
+    const c = Number(count || 0);
+    return `${c} shard${c === 1 ? '' : 's'}`;
+}
+
+function countVault(p) {
+    const entries = Object.entries(p.shards || {}).filter(([, c]) => Number(c) > 0);
+    const total = entries.reduce((sum, [, c]) => sum + Number(c), 0);
+    return { total, species: entries.length };
+}
+
 function calculateTotalScore(p) {
     const result = progression.calculateLeaderboardScore(p);
     const factionStat = progression.getFactionStat(p);
-    const tamedCount = Array.isArray(p.moraOwned) ? p.moraOwned.length : 0;
+    const vault = countVault(p);
     const lucons = p.lucons || 0;
 
     return {
@@ -16,7 +28,8 @@ function calculateTotalScore(p) {
         aura: p.aura || 0,
         dep: p.xp || 0,
         level: p.level || 1,
-        tamed: tamedCount,
+        tamed: vault.total,
+        species: vault.species,
         lucons
     };
 }
@@ -37,22 +50,24 @@ function getGlobalLeaderboard(players) {
     const lines = [];
     lines.push(ui.header('LEADERBOARD', '🏆'));
     lines.push('  _Top 10 strongest souls in the Dominion_');
-    lines.push('  _Score = Faction Stat · Level · XP · Lucons · Tamed_');
+    lines.push('  _Score = Faction Stat · Level · XP · Lucons · Shard Vault_');
     lines.push('');
 
     // Top 3 highlighted
     const medals = ['🥇', '🥈', '🥉'];
     for (let i = 0; i < Math.min(3, sorted.length); i++) {
         const p = sorted[i];
-        const score = p.stats.total.toLocaleString();
-        const factionLabel = p.faction ? progression.getFactionStatKey(p.faction) : 'none';
-        const factionCap = factionLabel.charAt(0).toUpperCase() + factionLabel.slice(1);
+        const hasFaction = !!p.faction && p.faction !== 'none';
+        const factionCap = hasFaction
+            ? progression.getFactionStatKey(p.faction).replace(/^\w/, (c) => c.toUpperCase())
+            : 'Unaligned';
         lines.push(ui.card(`${medals[i]} #${i + 1}`, '', [
             { emoji: '👤', label: 'Player', value: p.username || 'Unknown' },
             { emoji: '⭐', label: 'Level', value: String(p.stats.level) },
             { emoji: '⚡', label: 'XP', value: p.stats.dep.toLocaleString() },
             { emoji: '🏆', label: factionCap, value: p.stats.factionStat.toLocaleString() },
             { emoji: '💰', label: 'Lucons', value: p.stats.lucons.toLocaleString() },
+            { emoji: '💠', label: 'Vault', value: String(p.stats.tamed) },
         ]));
         lines.push('');
     }
@@ -72,7 +87,7 @@ function getGlobalLeaderboard(players) {
         for (let i = 3; i < sorted.length; i++) {
             const p = sorted[i];
             const rank = (i + 1).toString().padStart(2, ' ');
-            lines.push(`  🔹 *#${rank}*  ${p.username || 'Unknown'}  —  💠 ${p.stats.total.toLocaleString()}  |  ⭐ Lv.${p.stats.level}`);
+            lines.push(`  🔹 *#${rank}*  ${p.username || 'Unknown'}  —  💠 ${p.stats.total.toLocaleString()}  |  ⭐ Lv.${p.stats.level}  |  🧬 ${shardLabel(p.stats.tamed)}`);
         }
         lines.push('');
     }
@@ -110,7 +125,7 @@ function getFactionLeaderboard(players, factionName) {
             { emoji: '👤', label: 'Player', value: p.username || 'Unknown' },
             { emoji: statEmoji, label: statKey.charAt(0).toUpperCase() + statKey.slice(1), value: p.factionStat.toLocaleString() },
             { emoji: '⭐', label: 'Level', value: String(p.stats.level) },
-            { emoji: '🐾', label: 'Tamed', value: String(p.stats.tamed) },
+            { emoji: '💠', label: 'Vault', value: String(p.stats.tamed) },
             { emoji: '💰', label: 'Lucons', value: p.stats.lucons.toLocaleString() },
         ]));
         lines.push('');
@@ -123,7 +138,7 @@ function getFactionLeaderboard(players, factionName) {
         for (let i = 1; i < sorted.length; i++) {
             const p = sorted[i];
             const rank = (i + 1).toString().padStart(2, ' ');
-            lines.push(`  ▫️ *#${rank}*  ${p.username || 'Unknown'}  —  ${statEmoji} ${p.factionStat.toLocaleString()}  |  ⭐ Lv.${p.stats.level}`);
+            lines.push(`  ▫️ *#${rank}*  ${p.username || 'Unknown'}  —  ${statEmoji} ${p.factionStat.toLocaleString()}  |  ⭐ Lv.${p.stats.level}  |  🧬 ${shardLabel(p.stats.tamed)}`);
         }
         lines.push('');
     }
@@ -154,4 +169,4 @@ async function checkNewLeader(sock, chatId, players, factionsData) {
     return changed; // To tell index.js to save factions.json
 }
 
-module.exports = { getGlobalLeaderboard, getGlobalLeaderboardData, getFactionLeaderboard, checkNewLeader, sendLeaderboardMenu: interactiveUI.sendLeaderboardMenu };
+module.exports = { getGlobalLeaderboard, getGlobalLeaderboardData, getFactionLeaderboard, checkNewLeader };

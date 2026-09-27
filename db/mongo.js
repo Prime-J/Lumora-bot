@@ -10,6 +10,15 @@ const SOCKET_TIMEOUT_MS = 180000;
 const SERVER_SELECTION_TIMEOUT_MS = 30000;
 const LOAD_MAX_TIME_MS = 120000;
 
+// Atlas M0 (free tier) clusters are automatically PAUSED after a period of
+// inactivity, and a paused cluster withdraws its DNS SRV records — so the next
+// connection fails with `querySrv ENOTFOUND` rather than a timeout. A ping is
+// a real database operation, which is what keeps the cluster awake.
+const KEEPALIVE_INTERVAL_MS = 10 * 60 * 1000; // 10 min
+// If the cluster is asleep at boot, keep retrying so the bot heals itself once
+// someone hits Resume, instead of staying dead until the next manual redeploy.
+const RECONNECT_INTERVAL_MS = 90 * 1000;
+
 let connected = false;
 let bootLoadFailed = false; // CRITICAL safety: set true if initial load errored;
                             // when true, ALL writes to Mongo are blocked so we can't
@@ -17,6 +26,53 @@ let bootLoadFailed = false; // CRITICAL safety: set true if initial load errored
 const dirtyJids = new Set(); // Track which JIDs need to write
 let flushTimer = null;
 let latestPlayersRef = null; // Always points to the most recent players object
+let keepAliveTimer = null;
+let reconnectTimer = null;
+
+// Periodic no-op query so an idle M0 cluster does not get auto-paused out from
+// under us. Unref'd so it never holds the process open.
+function startKeepAlive() {
+  if (keepAliveTimer) return;
+  keepAliveTimer = setInterval(() => {
+    if (!connected || !mongoose.connection.readyState) return;
+    mongoose.connection.db
+      .admin()
+      .ping()
+      .catch(() => { /* transient — the driver reconnects on its own */ });
+  }, KEEPALIVE_INTERVAL_MS);
+  if (keepAliveTimer.unref) keepAliveTimer.unref();
+}
+
+// Retry until Mongo is healthy, then restore the live roster. Without this the
+// bot is bricked for the life of the container whenever the cluster is asleep
+// at boot.
+function startReconnectLoop() {
+  if (reconnectTimer) return;
+  reconnectTimer = setInterval(async () => {
+    if (connected && !bootLoadFailed) return;
+
+    console.warn("[mongo] Not healthy — retrying connection...");
+    const up = await initMongo();
+    if (!up) return;
+
+    const loaded = await loadAllPlayers();
+    if (loaded && Object.keys(loaded).length > 0) {
+      // The roster we hold is whatever was in memory while disconnected; swap
+      // it for the real data and re-enable writes.
+      bootLoadFailed = false;
+      global._lumoraPlayers = loaded;
+      global._lumoraStorage = {
+        ...(global._lumoraStorage || {}),
+        mongoConfigured: !!MONGODB_URI,
+        mongoConnected: true,
+        bootLoadFailed: false,
+        playersLoaded: Object.keys(loaded).length,
+      };
+      console.log(`🔥 Reconnected — ${Object.keys(loaded).length} players restored from MongoDB. 🔥`);
+    }
+  }, RECONNECT_INTERVAL_MS);
+  if (reconnectTimer.unref) reconnectTimer.unref();
+}
 
 /**
  * Player schema: stores JID + full data object
@@ -48,6 +104,7 @@ async function initMongo() {
     console.error("   Verify with: node scripts/check_mongo.js");
     console.error("");
     connected = false;
+    startReconnectLoop();
     return false;
   }
 
@@ -64,16 +121,25 @@ async function initMongo() {
     console.log("🔥🔥🔥 MONGODB CONNECTED 🔥🔥🔥");
     console.log("   Player data is safe — saves now survive redeploys.");
     console.log("");
+    startKeepAlive();
+    if (reconnectTimer) {
+      clearInterval(reconnectTimer);
+      reconnectTimer = null;
+    }
     return true;
   } catch (err) {
     console.error("");
     console.error("❌❌❌ MONGODB CONNECTION FAILED — NOT CONNECTED ❌❌❌");
     console.error(`   ${err.message}`);
-    console.error("   Usual causes: Atlas Network Access is IP-restricted (Railway's");
-    console.error("   egress IPs rotate), or the URI has an unencoded password.");
+    console.error("   If the message is `querySrv ENOTFOUND`, the cluster hostname");
+    console.error("   does not resolve. On Atlas M0 the usual cause is an AUTO-PAUSED");
+    console.error("   cluster — paused clusters drop their DNS records. Open the Atlas");
+    console.error("   Clusters page and press Resume, then wait a minute.");
+    console.error("   Other causes: a deleted cluster, a wrong hostname, or a bad URI.");
     console.error("   Verify with: node scripts/check_mongo.js");
     console.error("");
     connected = false;
+    startReconnectLoop();
     return false;
   }
 }

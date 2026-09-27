@@ -23,20 +23,100 @@ const progression = require("./progression");
 const ARENA_STATE_FILE = path.join(__dirname, "../data/arena_state.json");
 const NPC_ASSETS_DIR   = path.join(__dirname, "../assets/npc");
 
-// 0.1.3 — arena now uses the player's PARTY only, not their full tamed list.
-// Resolves party slot indices into actual mora references so HP mutations
-// during battle still write back to the original moraOwned entry.
-function getArenaParty(player) {
+// 0.1.3 — arena uses the player's PARTY, not their full tamed list.
+function getArenaParty(player, loadMora) {
+  const legacy = legacyArenaParty(player);
+  if (legacy.length) return legacy;
+
+  // v0.5.0 — Mora are no longer saved objects. The Mora a player fights
+  // with is the one they have MERGED (player.currentMerge, set by .awaken).
+  // That snapshot holds identity + moves but no HP/stats, so we build a
+  // fresh combat instance at battle start.
+  const merge = player?.currentMerge;
+  if (!merge) return [];
+  const built = buildMergedCombatMora(merge, typeof loadMora === "function" ? loadMora() : [], player);
+  return built ? [built] : [];
+}
+
+// Pre-migration players still own legacy Mora objects. Keep the old party
+// resolution so the arena keeps working for them until the shard
+// migration runs — the returned entries are the live objects, so HP
+// mutations still write back into moraOwned.
+function legacyArenaPartyIdx(player) {
   const owned = Array.isArray(player?.moraOwned) ? player.moraOwned : [];
   const slots = Array.isArray(player?.party) ? player.party : [];
   const out = [];
   for (const idx of slots) {
-    if (idx === null || idx === undefined) continue;
     if (Number.isInteger(idx) && idx >= 0 && idx < owned.length && owned[idx]) {
-      out.push(owned[idx]);
+      out.push(idx);
     }
   }
   return out;
+}
+
+function legacyArenaParty(player) {
+  const owned = Array.isArray(player?.moraOwned) ? player.moraOwned : [];
+  return legacyArenaPartyIdx(player).map(i => owned[i]);
+}
+
+// Battle state round-trips through JSON on every turn, so a party stored on
+// the battle is a COPY. For legacy players that would silently drop every HP
+// change back to the player. Store the moraOwned slot indices instead and
+// re-resolve the live objects on every turn; merged Mora (no persisted
+// object) still use the stored copy.
+function battleParty(player, battle, loadMora) {
+  const idx = battle && Array.isArray(battle.playerPartyIdx) ? battle.playerPartyIdx : null;
+  if (idx && idx.length) {
+    const owned = Array.isArray(player?.moraOwned) ? player.moraOwned : [];
+    const live = idx.map(i => (Number.isInteger(i) && i >= 0 && i < owned.length ? owned[i] : null));
+    if (live.every(Boolean)) return live;
+  }
+  return (battle && battle.playerParty) || getArenaParty(player, loadMora);
+}
+
+// Build a battle-ready Mora from a merge snapshot. Uses the flat
+// "base + level" curve rather than the NPC buffed curve, so a merged Mora
+// is a fair fight rather than an automatic loss.
+function buildMergedCombatMora(merge, moraList, player) {
+  if (!merge) return null;
+  const species = (moraList || []).find(
+    (m) => Number(m.id) === Number(merge.moraId) || String(m.name) === String(merge.name)
+  );
+  if (!species) return null;
+
+  const level = Math.max(1, Number(player?.level || 1));
+  const base  = species.baseStats || {};
+  const stats = {
+    atk:    clamp(Math.floor(Number(base.atk    || 12) + level * 2), 1, 9999),
+    def:    clamp(Math.floor(Number(base.def    || 12) + level * 2), 1, 9999),
+    spd:    clamp(Math.floor(Number(base.spd    || 10) + level * 1), 1, 9999),
+    energy: clamp(Math.floor(Number(base.energy || 30) + level * 1), 10, 999),
+  };
+  const maxHp = clamp(Math.floor(Number(base.hp || 55) + level * 4), 20, 99999);
+
+  const pool = Array.isArray(merge.moves) && merge.moves.length
+    ? merge.moves
+    : Object.keys(species.moves || {});
+
+  return {
+    moraId: Number(species.id),
+    name: String(species.name),
+    type: String(species.type || ""),
+    rarity: String(species.rarity || "common"),
+    level,
+    xp: 0,
+    hp: maxHp,
+    maxHp,
+    energy: stats.energy,
+    maxEnergy: stats.energy,
+    pe: 0,
+    corrupted: !!merge.corrupted,
+    moves: pool.slice(0, 5),
+    stats,
+    isNpc: false,
+    isMerged: true,
+    mergeTier: merge.tier || null,
+  };
 }
 
 // 0.1.3 — global reward dampener so XP/Aura grind isn't trivial.
@@ -946,37 +1026,57 @@ async function cmdChallenge(ctx, chatId, senderId, msg, args) {
         `• *.challenge mira normal*\n` +
         `• *.challenge "Veil Crest" strong*\n` +
         `• *.challenge kael nightmare*\n\n` +
+        `Or pick a tier at random: *.npc novice | warrior | elite | mythic*\n\n` +
         `Use *.arena* to see all NPCs.`,
     }, { quoted: msg });
   }
 
-  // Last token might be the difficulty; everything before is the name
+  // Two forms are accepted:
+  //    .challenge <name...> [difficulty]  — pick a specific NPC
+  //    .npc <tier>                        — random NPC from your faction pool
+  // The tier form is the old .npc command, folded in here so there is ONE
+  // challenge implementation instead of two near-identical copies.
   let diffKey = "normal";
-  let nameTokens = args.slice();
-  const lastToken = String(args[args.length - 1] || "").toLowerCase();
-  if (DIFFICULTY_ALIASES[lastToken]) {
-    diffKey = DIFFICULTY_ALIASES[lastToken];
-    nameTokens = args.slice(0, -1);
-  }
-  const nameQuery = nameTokens.join(" ").trim();
+  let npcName = null;
+  let tierKey = null;
 
-  if (!nameQuery) {
-    return sock.sendMessage(chatId, {
-      text: `❌ Provide an NPC name.\nExample: *.challenge mira strong*`,
-    }, { quoted: msg });
-  }
+  const tierToken = args.length === 1 ? String(args[0] || "").toLowerCase().trim() : "";
+  if (tierToken && TIERS[tierToken]) {
+    const pool = NPC_ROSTER[player.faction || "none"]?.[tierToken] || NPC_ROSTER["none"]?.[tierToken];
+    if (!pool?.length) {
+      return sock.sendMessage(chatId, {
+        text: "❌ No NPCs available for your faction at this tier. Contact the Architect.",
+      }, { quoted: msg });
+    }
+    npcName = pick(pool);
+    tierKey = tierToken;
+  } else {
+    let nameTokens = args.slice();
+    const lastToken = String(args[args.length - 1] || "").toLowerCase();
+    if (DIFFICULTY_ALIASES[lastToken]) {
+      diffKey = DIFFICULTY_ALIASES[lastToken];
+      nameTokens = args.slice(0, -1);
+    }
+    const nameQuery = nameTokens.join(" ").trim();
 
-  const npcName = findNpcByName(nameQuery);
-  if (!npcName) {
-    return sock.sendMessage(chatId, {
-      text:
-        `❌ NPC not found: *${nameQuery}*\n\n` +
-        `Use *.arena* to see all available NPCs.`,
-    }, { quoted: msg });
+    if (!nameQuery) {
+      return sock.sendMessage(chatId, {
+        text: `❌ Provide an NPC name.\nExample: *.challenge mira strong*`,
+      }, { quoted: msg });
+    }
+
+    npcName = findNpcByName(nameQuery);
+    if (!npcName) {
+      return sock.sendMessage(chatId, {
+        text:
+          `❌ NPC not found: *${nameQuery}*\n\n` +
+          `Use *.arena* to see all available NPCs.`,
+      }, { quoted: msg });
+    }
+    tierKey = NPC_CHARACTERS[npcName]?.tier;
   }
 
   const npcChar = NPC_CHARACTERS[npcName];
-  const tierKey = npcChar?.tier;
   const tier    = TIERS[tierKey];
   if (!tier) {
     return sock.sendMessage(chatId, { text: `❌ NPC tier data missing for *${npcName}*.` }, { quoted: msg });
@@ -1022,7 +1122,15 @@ async function cmdChallenge(ctx, chatId, senderId, msg, args) {
     }, { quoted: msg });
   }
 
-  const party     = getArenaParty(player);
+  const party = getArenaParty(player, loadMora);
+  if (!party.length) {
+    return sock.sendMessage(chatId, {
+      text:
+        `❌ *You have no Mora to fight with.*\n\n` +
+        `_Mora are no longer stored objects — you fight with the one you have MERGED._\n` +
+        `Use *.shards* to see your vault, then *.awaken <name>* to bring a Mora to life.`,
+    }, { quoted: msg });
+  }
   const aliveMora = party.filter(m => m && Number(m.hp || 0) > 0);
   if (!aliveMora.length) {
     return sock.sendMessage(chatId, {
@@ -1059,11 +1167,19 @@ async function cmdChallenge(ctx, chatId, senderId, msg, args) {
   scalingNote += `\n🎚 Difficulty: *${difficulty.label}* (×${difficulty.rewardMult.toFixed(2)} reward)`;
 
   const playerActiveIdx = party.findIndex(m => m && Number(m.hp || 0) > 0);
+  // If this party came from moraOwned, remember the slot indices so each turn
+  // re-resolves the live objects instead of a JSON-serialised copy.
+  const legacyIdx    = legacyArenaPartyIdx(player);
+  const playerPartyIdx = (legacyIdx.length && legacyIdx.length === party.length) ? legacyIdx : null;
   const battle = {
     chatId, playerId: senderId,
     npcName, npcChar, tierKey, tier,
     difficultyKey: diffKey,
     npcParty, npcActiveIdx: 0,
+    // The player's battle Mora lives on the battle, not on the player:
+    // a merged Mora has no persisted object to hold HP/energy.
+    playerParty: party,
+    playerPartyIdx,
     playerActiveIdx,
     startedAt: Date.now(), turnCount: 0, dialogueCooldown: 0,
     rewardMult,
@@ -1103,161 +1219,6 @@ async function cmdChallenge(ctx, chatId, senderId, msg, args) {
 // ════════════════════════════════════════════════════════════
 // SECTION 16 – .npc <difficulty> COMMAND  (LEGACY)
 // ════════════════════════════════════════════════════════════
-async function cmdNpcChallenge(ctx, chatId, senderId, msg, args) {
-  const { sock, players, loadMora } = ctx;
-  const state  = loadState();
-  const config = state.config || DEFAULT_CONFIG;
-
-  if (!config.arenaEnabled) {
-    return sock.sendMessage(chatId, {
-      text: "🚫 The Arena is sealed. The Architect has closed the gates.",
-    }, { quoted: msg });
-  }
-
-  const player = players[senderId];
-  if (!player) return sock.sendMessage(chatId, { text: "❌ Register first using *.register*" }, { quoted: msg });
-
-  if (getBattle(state, chatId, senderId)) {
-    return sock.sendMessage(chatId, {
-      text:
-        `⚔️ *You have an active Arena battle!*\n` +
-        `Use *.attack <move>* to continue or *.arena-flee* to abandon.`,
-    }, { quoted: msg });
-  }
-
-  if (combatLock.isInCombat(chatId, senderId)) {
-    return sock.sendMessage(chatId, {
-      text: "❌ You cannot enter the Arena while locked in combat. Finish your battle first.",
-    }, { quoted: msg });
-  }
-
-  const tierKey = String(args[0] || "").toLowerCase().trim();
-  const tier    = TIERS[tierKey];
-  if (!tier) {
-    return sock.sendMessage(chatId, {
-      text:
-        `❌ Invalid tier. Choose:\n` +
-        `*novice* | *warrior* | *elite* | *mythic*\n\n` +
-        `Example: *.npc warrior*`,
-    }, { quoted: msg });
-  }
-
-  const aura = Number(player.aura || 0);
-  if (aura < (config.baseAuraRequired || 50)) {
-    return sock.sendMessage(chatId, {
-      text:
-        `🔒 *Arena Locked*\n\n` +
-        `You need *${config.baseAuraRequired || 50} Aura* to enter.\n` +
-        `Current Aura: *${aura}*\n\n` +
-        `_Win PvP battles and complete hunts to build your Aura._`,
-    }, { quoted: msg });
-  }
-
-  if (aura < tier.auraRequired) {
-    return sock.sendMessage(chatId, {
-      text:
-        `🔒 *Tier Locked – ${tier.label}*\n\n` +
-        `This tier requires *${tier.auraRequired} Aura*.\n` +
-        `Current Aura: *${aura}*\n\n` +
-        `_${tier.lore}_`,
-    }, { quoted: msg });
-  }
-
-  const used  = getDailyCount(state, senderId);
-  const limit = config.dailyLimit || 4;
-  if (used >= limit) {
-    return sock.sendMessage(chatId, {
-      text:
-        `⏳ *Daily Limit Reached*\n\n` +
-        `You've fought *${used}/${limit}* NPCs today.\n` +
-        `_"The arena gates close at midnight. The Primordial Rift rests too. Return tomorrow."_`,
-    }, { quoted: msg });
-  }
-
-  const party     = getArenaParty(player);
-  const aliveMora = party.filter(m => m && Number(m.hp || 0) > 0);
-  if (!aliveMora.length) {
-    return sock.sendMessage(chatId, {
-      text:
-        `❌ *All your Mora have fainted!*\n` +
-        `Use *.heal* before challenging the Arena.`,
-    }, { quoted: msg });
-  }
-
-  const pFaction = player.faction || "none";
-  const pool     = NPC_ROSTER[pFaction]?.[tierKey] || NPC_ROSTER["none"][tierKey];
-  if (!pool?.length) {
-    return sock.sendMessage(chatId, {
-      text: "❌ No NPCs available for your faction at this tier. Contact the Architect.",
-    }, { quoted: msg });
-  }
-  const npcName = pick(pool);
-  const npcChar = NPC_CHARACTERS[npcName];
-
-  const moraList = loadMora();
-  const npcParty = [];
-  for (let i = 0; i < tier.partySize; i++) {
-    const m = buildNpcMora(moraList, tier.levelRange, DIFFICULTY_LEVELS.normal);
-    if (m) npcParty.push(m);
-  }
-  if (!npcParty.length) {
-    return sock.sendMessage(chatId, {
-      text: "❌ Arena error: could not generate NPC Mora. Try again.",
-    }, { quoted: msg });
-  }
-
-  const winCount    = getWinCount(state, senderId, npcName);
-  const isCross     = pFaction !== "none" && npcChar?.faction && pFaction !== npcChar.faction;
-  const rewardMult  = calcRewardMultiplier(tier, aura, winCount, pFaction, npcChar?.faction, config);
-  const previewAura = Math.max(1, Math.floor(tier.auraReward * rewardMult));
-
-  let scalingNote = "";
-  if (winCount > 0) scalingNote += `\n⚠️ You've beaten this NPC *${winCount}x* before – rewards are reduced.`;
-  if (aura > tier.auraRequired + tier.auraGap) scalingNote += `\n⚠️ Your Aura exceeds this tier – rewards are scaled down.`;
-  if (isCross) scalingNote += `\n⦿ Cross-faction bonus: *+25% Aura* on win!`;
-
-  const playerActiveIdx = party.findIndex(m => m && Number(m.hp || 0) > 0);
-  const battle = {
-    chatId, playerId: senderId,
-    npcName, npcChar, tierKey, tier,
-    npcParty, npcActiveIdx: 0,
-    playerActiveIdx,
-    startedAt: Date.now(), turnCount: 0, dialogueCooldown: 0,
-    rewardMult,
-  };
-
-  setBattle(state, chatId, senderId, battle);
-  incDaily(state, senderId);
-  saveState(state);
-
-  const playerMora = party[playerActiveIdx];
-  const npcMora    = npcParty[0];
-  const opening    = npcChar?.openingLine || pick(DIALOGUE.opening);
-
-  return sock.sendMessage(chatId, {
-    text:
-      `${DIVIDER}\n` +
-      `🏟️  *A R E N A   C H A L L E N G E*\n` +
-      `${tier.label}  •  ${npcChar?.emoji || "⚔️"} ${npcChar?.faction?.toUpperCase() || ""}\n` +
-      `${DIVIDER}\n\n` +
-      `${npcChar?.emoji || "⚔️"} *${npcName}*\n` +
-      `_${npcChar?.title || "Arena Challenger"}_\n\n` +
-      `📖 _"${npcChar?.bio || "A formidable challenger."}"_\n\n` +
-      `💬 *${npcName}:* _"${opening}"_\n\n` +
-      `${THIN_DIV}\n` +
-      `🏅  *Potential Aura Reward:* ~${previewAura}${scalingNote}\n` +
-      `${THIN_DIV}\n\n` +
-      buildCard(playerMora, npcMora, npcName, npcChar, tier.label, 1) +
-      `\n\n` +
-      `🎯 *Commands:*\n` +
-      `• *.attack <1-4 or move name>* – use a move\n` +
-      `• *.switch <slot>* – swap your active Mora\n` +
-      `• *.arena-flee* – abandon the battle (no penalty)\n\n` +
-      `⚡ The NPC responds immediately after your move!`,
-  }, { quoted: msg });
-}
-
-// ════════════════════════════════════════════════════════════
 // SECTION 17 – .attack (NPC battle intercept)
 // Returns false if no active NPC battle
 // ════════════════════════════════════════════════════════════
@@ -1267,8 +1228,9 @@ async function cmdNpcAttack(ctx, chatId, senderId, msg, args) {
   const battle = getBattle(state, chatId, senderId);
   if (!battle) return false;
 
-  const player     = players[senderId];
-  const party      = getArenaParty(player);
+  const player = players[senderId];
+  // Battles started before this change have no playerParty, so fall back.
+  const party      = battleParty(player, battle, loadMora);
   const playerMora = party[battle.playerActiveIdx];
 
   if (!player || !playerMora) {
@@ -1477,13 +1439,13 @@ async function cmdNpcAttack(ctx, chatId, senderId, msg, args) {
 // SECTION 18 – .switch (NPC battle intercept)
 // ════════════════════════════════════════════════════════════
 async function cmdNpcSwitch(ctx, chatId, senderId, msg, args) {
-  const { sock, players, savePlayers } = ctx;
+  const { sock, players, savePlayers, loadMora } = ctx;
   const state  = loadState();
   const battle = getBattle(state, chatId, senderId);
   if (!battle) return false;
 
   const player = players[senderId];
-  const party  = getArenaParty(player);
+  const party  = battleParty(player, battle, loadMora);
   const slotRaw = String(args[0] || "").trim();
 
   if (!slotRaw) {
@@ -1549,11 +1511,13 @@ async function resolveEnd(ctx, chatId, senderId, msg, state, battle, players, pl
   const { sock, savePlayers, loadMora, xpSystem, auraSystem } = ctx;
 
   const player  = players[senderId];
-  const party   = getArenaParty(player);
+  const party   = battleParty(player, battle, loadMora);
   const moraList = loadMora();
   const tier    = battle.tier;
   const config  = state.config || DEFAULT_CONFIG;
   const mult    = battle.rewardMult || 1.0;
+  // Used by BOTH the win and the loss branch — must not be scoped to the win block.
+  const npcLevel = tier.levelRange ? Math.floor((tier.levelRange[0] + tier.levelRange[1]) / 2) : 10;
 
   clearBattle(state, chatId, senderId);
 
@@ -1562,11 +1526,10 @@ async function resolveEnd(ctx, chatId, senderId, msg, state, battle, players, pl
     saveState(state);
 
     // Use progression engine for XP calculation
-    const npcLevel = tier.levelRange ? Math.floor((tier.levelRange[0] + tier.levelRange[1]) / 2) : 10;
-    const enemy = { level: npcLevel, difficulty: battle.npcDifficulty || 'medium', isBoss: tier.isBoss || false };
+    const enemy = { level: npcLevel, difficulty: battle.difficultyKey || 'medium', isBoss: tier.isBoss || false };
     const xpResult = progression.calculateXPReward(player, enemy, {
       baseReward: 65,
-      difficulty: battle.npcDifficulty || 'medium',
+      difficulty: battle.difficultyKey || 'medium',
     });
     const baseXp       = xpResult.amount;
     const playerXpGain = Math.max(5, Math.floor(baseXp * tier.xpMult * mult));
@@ -1637,7 +1600,7 @@ async function resolveEnd(ctx, chatId, senderId, msg, state, battle, players, pl
   // ── PLAYER LOSES ──────────────────────────────────────────
   saveState(state);
   // Use progression engine for consolation XP (reduced amount)
-  const consolEnemy = { level: npcLevel || 10, difficulty: battle.npcDifficulty || 'medium' };
+  const consolEnemy = { level: npcLevel || 10, difficulty: battle.difficultyKey || 'medium' };
   const consolResult = progression.calculateXPReward(player, consolEnemy, { baseReward: 25 });
   const consolXp  = Math.max(5, Math.floor(consolResult.amount * tier.xpMult));
   const auraFine  = tier.fineOnLoss;
@@ -1908,7 +1871,6 @@ module.exports = {
   // Player commands
   cmdArena,
   cmdChallenge,
-  cmdNpcChallenge,
   cmdNpcAttack,
   cmdNpcSwitch,
   cmdArenaFlee,

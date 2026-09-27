@@ -156,9 +156,6 @@ function dropCorruptedShard(player, species) {
 // Returns a short log line if a shard dropped (or was capped), else null.
 // ══════════════════════════════════════════════════════════════
 function dropShardOnDefeat(player, species, opts = {}) {
-  if (!isMergeable(species)) return null;
-  ensureShardFields(player);
-
   const source = opts.source || "defeat";
   const rate =
     opts.forceDrop === true
@@ -166,6 +163,29 @@ function dropShardOnDefeat(player, species, opts = {}) {
       : source === "spawn"
       ? DROP_RATE_SPAWN_CLAIM
       : DROP_RATE_DEFEAT;
+
+  return creditShard(player, species, rate);
+}
+
+// ══════════════════════════════════════════════════════════════
+// DROP — capture / claim path (v0.5.0 + moraOwned retirement)
+// This is the REPLACEMENT for pushing a Mora onto `moraOwned` when a
+// spawn is caught, a premium bond is forged, autocatch claims a Mora,
+// or a wild battle ends in capture. Mora no longer exist as saved
+// objects; they exist as shards that are merged on demand.
+//   opts.forceDrop → guaranteed (premium)
+//   opts.rate      → custom chance, e.g. 1 for a hard-won capture
+// Default is the spawn-claim rate. Returns a log line, or null.
+// ══════════════════════════════════════════════════════════════
+function dropShardOnCatch(player, species, opts = {}) {
+  const rate = opts.forceDrop === true ? 1 : Number.isFinite(opts.rate) ? opts.rate : DROP_RATE_SPAWN_CLAIM;
+  return creditShard(player, species, rate);
+}
+
+// Shared cap-aware shard credit. Caller has already decided the odds.
+function creditShard(player, species, rate) {
+  if (!isMergeable(species)) return null;
+  ensureShardFields(player);
 
   if (Math.random() > rate) return null;
 
@@ -1052,6 +1072,7 @@ module.exports = {
   // helpers used by other systems
   ensureShardFields,
   dropShardOnDefeat,
+  dropShardOnCatch,
   dropCorruptedShard,
   getCurrentMerge,
   isMerged,

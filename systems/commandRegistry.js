@@ -200,6 +200,13 @@ const COMMANDS = [
   { name: "bank-remove", aliases: ["bankremove","bank-dismiss"], category: "game", subcat: "bank", desc: "Remove bank role (architect)",          usage: ".bank-remove @user" },
   { name: "vault",       aliases: [],                category: "game", subcat: "bank",       desc: "View your vault contents",                    usage: ".vault" },
 
+  // ── 📜 Events ──
+  { name: "gift",        aliases: ["sunday-gift","sundaygift","sunday"], category: "game", subcat: "events", desc: "The Sunday Gift — weekly scripture trial", usage: ".gift" },
+  { name: "gift-begin",  aliases: ["gift-start"],   category: "game", subcat: "events",     desc: "Begin (or resume) your trial",                usage: ".gift-begin" },
+  { name: "gift-quit",   aliases: [],                category: "game", subcat: "events",     desc: "Leave the Gift unclaimed",                    usage: ".gift-quit" },
+  { name: "gift-lb",     aliases: ["gift-standings"],category: "game", subcat: "events",    desc: "This week's Gift champions",                   usage: ".gift-lb" },
+  { name: "gift-help",   aliases: [],                category: "game", subcat: "events",     desc: "How the Sunday Gift works",                    usage: ".gift-help" },
+
   // ═══════════════════════════════════════════════════════════════
   // 🛠️ BOT MENU
   // ═══════════════════════════════════════════════════════════════
@@ -372,6 +379,7 @@ const GAME_CATEGORIES = [
   { id: "world",      emoji: "🗺️", name: "World",         desc: "Map, hunting, exploration" },
   { id: "factions",   emoji: "🛡️", name: "Factions",      desc: "Missions, wars, sanctuary" },
   { id: "raids",      emoji: "🌀", name: "Raids",         desc: "Kael, cross-faction raids" },
+  { id: "events",     emoji: "📜", name: "Events",        desc: "Live trials — the Sunday Gift" },
   { id: "economy",    emoji: "💰", name: "Economy",       desc: "Market, bank, trading" },
   { id: "inventory",  emoji: "🎒", name: "Inventory",     desc: "Items, scrolls, consumables" },
   { id: "rankings",   emoji: "🏆", name: "Rankings",      desc: "Leaderboards & wealth" },

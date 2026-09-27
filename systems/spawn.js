@@ -541,36 +541,15 @@ async function cmdCatch(ctx, chatId, senderId, args) {
       return safeSend(sock, chatId, { text: "⚠️ Premium mora data missing — spawn cleared." });
     }
 
-    let owned;
-    if (typeof ctx.createOwnedMoraFromSpecies === "function") {
-      owned = ctx.createOwnedMoraFromSpecies(species);
-    } else {
-      owned = {
-        moraId: Number(species.id),
-        name: species.name,
-        type: species.type,
-        rarity: species.rarity,
-        level: 1, xp: 0,
-        hp: Number(species?.baseStats?.hp || 100),
-        maxHp: Number(species?.baseStats?.hp || 100),
-        moves: [],
-        stats: {
-          atk: Number(species?.baseStats?.atk || 30),
-          def: Number(species?.baseStats?.def || 30),
-          spd: Number(species?.baseStats?.spd || 30),
-          energy: Number(species?.baseStats?.energy || 60),
-        },
-        energy: Number(species?.baseStats?.energy || 60),
-        maxEnergy: Number(species?.baseStats?.energy || 60),
-      };
-    }
-
-    const pool = buildMovePool(species);
-    owned.moves = pickRandomMoves(pool);
-    owned.isPremium = true;
-
-    if (!Array.isArray(catcher.moraOwned)) catcher.moraOwned = [];
-    catcher.moraOwned.push(owned);
+    // v0.5.0 + moraOwned retirement: a premium bond no longer creates a
+    // saved Mora. It crystallizes a GUARANTEED mythic shard instead, so
+    // the .pro perk still lands but Mora now only exist as merged shards.
+    let premShardLine = "";
+    try {
+      const shardSystem = require("./shards");
+      const dropMsg = shardSystem.dropShardOnCatch(catcher, species, { forceDrop: true });
+      if (dropMsg) premShardLine = "\n\n" + dropMsg;
+    } catch {}
 
     gs.premium = null;
     saveState(state);
@@ -581,7 +560,7 @@ async function cmdCatch(ctx, chatId, senderId, args) {
       text:
         `⚡ *PREMIUM BOND FORGED* ⚡\n\n` +
         `@${senderId.split("@")[0]} has bound the mythic *${species.name}*!${premDescription}\n\n` +
-        `🔮 *${species.name}* is now in your tamed Mora.`,
+        `🔮 *${species.name}* now lives in your shard vault.${premShardLine}`,
       mentions: [senderId],
     });
   }
@@ -615,36 +594,6 @@ async function cmdCatch(ctx, chatId, senderId, args) {
     return safeSend(sock, chatId, { text: "⚠️ Mora data missing, spawn cleared." });
   }
 
-  let owned;
-
-  if (typeof ctx.createOwnedMoraFromSpecies === "function") {
-    owned = ctx.createOwnedMoraFromSpecies(species);
-  } else {
-    owned = {
-      moraId: Number(species.id),
-      name: species.name,
-      type: species.type,
-      rarity: species.rarity,
-      level: 1,
-      xp: 0,
-      hp: Number(species?.baseStats?.hp || 50),
-      maxHp: Number(species?.baseStats?.hp || 50),
-      moves: [],
-      stats: {
-        atk: Number(species?.baseStats?.atk || 10),
-        def: Number(species?.baseStats?.def || 10),
-        spd: Number(species?.baseStats?.spd || 10),
-        energy: Number(species?.baseStats?.energy || 30),
-      },
-      energy: Number(species?.baseStats?.energy || 30),
-      maxEnergy: Number(species?.baseStats?.energy || 30),
-    };
-  }
-
-  // random moves
-  const pool = buildMovePool(species);
-  owned.moves = pickRandomMoves(pool);
-
   const catcher     = players[senderId];
   const catchFaction = catcher?.faction || "";
 
@@ -666,12 +615,10 @@ async function cmdCatch(ctx, chatId, senderId, args) {
     catcher.lucons = (Number(catcher.lucons) || 0) + 10;
   }
 
-  if (!Array.isArray(catcher.moraOwned)) catcher.moraOwned = [];
-  catcher.moraOwned.push(owned);
-
   // ── Spawn-claim shard drop (M2: wire the dormant 15% spawn rate) ──
-  // Catch has its own small chance to crystallize a shard of the caught
-  // species. Runs before savePlayers so the shard persists with the catch.
+  // v0.5.0 + moraOwned retirement: the catch IS the shard drop now. Nothing
+  // is pushed to moraOwned; Mora only exist as shards the player merges.
+  // Runs before savePlayers so the shard persists with the catch.
   let shardDropLine = "";
   try {
     const shardSystem = require("./shards");
@@ -695,7 +642,7 @@ async function cmdCatch(ctx, chatId, senderId, args) {
   return safeSend(sock, chatId, {
     text:
       `✅ @${senderId.split("@")[0]} tamed *${species.name}*${rarityLabel}! 🎉${description}\n\n` +
-      `🔮 *${species.name}* is now in your tamed Mora.` +
+      `🔮 *${species.name}* now lives in your shard vault.` +
       harmonyBonus +
       shardDropLine,
     mentions: [senderId],

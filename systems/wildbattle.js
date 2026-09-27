@@ -7,6 +7,7 @@ const itemsSystem         = require("./items");
 const buttonsSystem       = require("./buttons");
 const botPersonality      = require("./botPersonality");
 const progression         = require("./progression");
+const questSystem          = require("./quests");
 
 // ── RARITY-BASED REWARD TABLE ────────────────────────────────
 const RARITY_REWARDS = {
@@ -427,6 +428,149 @@ function renderPlayerMoveset(moveset, player) {
   return sections.join("\n\n");
 }
 
+// ── MOVE LIST RENDERER ────────────────────────────────────────────────
+// The bare ".attack" list used to be a flat "name — pwr/acc/cost" run with
+// no grouping, no power scale and no context. This renders a themed
+// loadout card instead: moves bucketed by where they came from, each with a
+// power bar, an accuracy read and any special rider called out.
+const MOVE_SOURCE_META = {
+  base:  { icon: "🩹", label: "BASIC",       tone: "🗨" },
+  style: { icon: "🥋", label: "FIGHTING STYLE", tone: "🎯" },
+  merge: { icon: "✨", label: "MERGED MORA", tone: "🔥" },
+};
+
+// Display width of a string in terminal cells. Emoji and CJK are two cells
+// wide in WhatsApp monospace; combining marks and ZWJ are zero.
+const WIDE_RANGES = [
+  [0x1100, 0x115f], [0x2e80, 0x303e], [0x3041, 0x33ff],
+  [0x3400, 0x4dbf], [0x4e00, 0x9fff], [0xa000, 0xa4cf],
+  [0xac00, 0xd7a3], [0xf900, 0xfaff], [0xfe30, 0xfe6f],
+  [0xff00, 0xff60], [0xffe0, 0xffe6],
+  [0x1f300, 0x1f64f], [0x1f680, 0x1f6ff], [0x1f7e0, 0x1f7eb],
+  [0x1f900, 0x1f9ff], [0x1fa70, 0x1faff],
+  [0x231a, 0x231b], [0x23e9, 0x23fa], [0x25fd, 0x25fe],
+  [0x2b1b, 0x2b1c], [0x2b50, 0x2b50], [0x2b55, 0x2b55],
+];
+// Dingbats that WhatsApp renders narrow despite living in a wide-ish block.
+const NARROW_DINGBATS = new Set([0x2713, 0x2714, 0x2716, 0x2717, 0x2718]);
+
+function displayWidth(str) {
+  let w = 0;
+  for (const ch of String(str)) {
+    const cp = ch.codePointAt(0);
+    if (cp === 0xfe0f || cp === 0x200d) continue;      // VS16 / ZWJ glue
+    if (NARROW_DINGBATS.has(cp)) { w += 1; continue; }
+    if (cp >= 0x0300 && cp <= 0x036f) continue;          // combining accents
+    if (WIDE_RANGES.some(([lo, hi]) => cp >= lo && cp <= hi)) { w += 2; continue; }
+    if (cp >= 0x1f000) { w += 2; continue; }
+    if (cp >= 0x2600 && cp <= 0x27bf) { w += 2; continue; }
+    w += 1;
+  }
+  return w;
+}
+
+function movePowerBar(power, maxPower = 140) {
+  const raw = Number(power || 0);
+  // Any move that deals damage gets at least one block, so a weak hit still
+  // reads as a hit rather than as a blank bar.
+  const min = raw > 0 ? 1 : 0;
+  const filled = clamp(Math.round((raw / maxPower) * 5), min, 5);
+  return "█".repeat(filled) + "░".repeat(5 - filled);
+}
+
+function moveRiders(m) {
+  const tags = [];
+  if (m.selfHeal)    tags.push({ icon: "🩺", text: `heal ${m.selfHeal}` });
+  if (m.neverMisses) tags.push({ icon: "🎯", text: "never misses" });
+  if (m.brace)       tags.push({ icon: "🛡", text: "brace" });
+  if (m.counter)     tags.push({ icon: "↩️", text: `counter ${m.counter}` });
+  if (m.energyRestore) tags.push({ icon: "🔋", text: `+ ${m.energyRestore} EN` });
+  return tags;
+}
+
+function renderMoveRow(m, i, player) {
+  const maxE = Math.max(1, Number(player?.combatMaxEnergy || 50));
+  const en   = Number(player?.combatEnergy || 0);
+  const cost = Number(m.energyCost || 0);
+  const affordable = en >= cost;
+  const mark = affordable ? "▶" : "✖";
+
+  const riders = moveRiders(m);
+  const riderLine = riders.length
+    ? "\n      " + riders.map((t) => `${t.icon} ${t.text}`).join("  · ")
+    : "";
+
+  return (
+    `  ${mark} ${String(i + 1).padStart(2)}. *${m.name}*` +
+    `\n      ${movePowerBar(m.power)} 💥${m.power}` +
+    `   🎯${m.accuracy}%   🔋${cost}` +
+    (!affordable ? "  _low energy_" : "") +
+    riderLine
+  );
+}
+
+function buildMovesetCard(moveset, player, opts = {}) {
+  const W = 30;
+  const rule  = "═".repeat(W);
+  const energy = Number(player?.combatEnergy || 0);
+  const maxE   = Math.max(1, Number(player?.combatMaxEnergy || 50));
+  const ePct   = clamp(Math.round((energy / maxE) * 100), 0, 100);
+
+  // Pad a content line out to the card's right border. Emoji occupy two
+  // display cells but one JS char, so pad on display width, not length.
+  const row = (content) =>
+    `║  ${content}${" ".repeat(Math.max(0, W - 2 - displayWidth(content)))}║`;
+
+  const lines = [];
+  lines.push(`╔${rule}╗`);
+  const title = opts.title || "YOUR MOVESET";
+  lines.push(row(title));
+  lines.push(`╠${rule}╣`);
+
+  // Group by source, preserving moveset order inside each bucket.
+  const order = ["style", "merge", "base"];
+  const buckets = {};
+  moveset.forEach((m, i) => {
+    const key = MOVE_SOURCE_META[m.source] ? m.source : "base";
+    (buckets[key] = buckets[key] || []).push({ m, i });
+  });
+
+  for (const key of order) {
+    const rows = buckets[key];
+    if (!rows || !rows.length) continue;
+    const meta = MOVE_SOURCE_META[key];
+
+    // Sub-heading. For a style, show the style's name and rarity buff.
+    let head = `${meta.icon} ${meta.label}`;
+    if (key === "style" && rows[0].m.styleName) {
+      head += ` · ${rows[0].m.styleName}`;
+      if (opts.styleBuff > 0) head += `  _+${opts.styleBuff}% dmg_`;
+    }
+    if (key === "merge" && rows[0].m.tier) {
+      head += ` ${rows[0].m.tier === "full" ? "🔥FULL" : "✨PARTIAL"}`;
+    }
+    lines.push(row(head));
+    lines.push(row("─".repeat(W - 2)));
+    for (const { m, i } of rows) {
+      for (const l of renderMoveRow(m, i, player).split("\n")) {
+        lines.push(row(l));
+      }
+    }
+    lines.push(`║`);
+  }
+
+  // Trim the trailing blank rule line, then close with the energy readout.
+  while (lines.length && lines[lines.length - 1] === "║") lines.pop();
+
+  const eFilled = Math.round(ePct / 10);
+  const eBar = "█".repeat(Math.max(0, eFilled)) +
+                "░".repeat(Math.max(0, 10 - eFilled));
+  lines.push(row(`🔋 ENERGY  ${String(energy).padStart(3)}/${maxE}  ${eBar}`));
+  lines.push(`╚${rule}╝`);
+
+  return lines.join("\n");
+}
+
 function resolvePlayerMove(input, moveset) {
   const q = String(input || "").trim().toLowerCase();
   if (!q) return null;
@@ -449,6 +593,37 @@ function regenPlayerCombatEnergy(player) {
 }
 
 // ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// RIFT BIND ODDS
+// v0.5.1 — base 30%, raised by equipped gear. The Abyssal Chain of
+// Binding (REL_004, black market, Rift-only relic) contributes +68,
+// taking the roll to 98%: it can still fail, but a Rift Seeker who
+// saved up for one will effectively never see it fail. Capped at 98%
+// on purpose — a bind should always cost something.
+// ══════════════════════════════════════════════════════════════
+const BIND_CHANCE_BASE = 0.30;
+const BIND_CHANCE_CAP = 0.98;
+
+function getBindOdds(player) {
+  let bonus = 0;
+  let source = "";
+  try {
+    const itemsDb = require("./items").loadItems();
+    for (const slot of ["core", "charm", "tool", "relic", "cloak", "boots", "badge"]) {
+      const item = itemsDb[player?.equipment?.[slot]];
+      const v = Number(item?.effects?.riftBindSuccess);
+      if (!Number.isFinite(v) || v <= 0) continue;
+      bonus += v;
+      if (!source) source = item.name;
+    }
+  } catch {}
+  return {
+    bonus: Math.round(bonus),
+    source,
+    chance: Math.min(BIND_CHANCE_CAP, BIND_CHANCE_BASE + bonus / 100),
+  };
+}
+
 // END player-as-combatant helpers
 // ══════════════════════════════════════════════════════════════
 
@@ -791,23 +966,19 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
     labelMap["🏃 Run"] = ".run";
     buttonsSystem.mapButtons(labelMap);
 
-    // Compact move display — no full text dump
-    const movePreview = moveset.slice(0, 6).map((m, i) => {
-      const tags = [];
-      if (m.selfHeal) tags.push(`heal ${m.selfHeal}`);
-      if (m.neverMisses) tags.push('never misses');
-      if (m.brace) tags.push('brace');
-      return `${i + 1}) *${m.name}* — 💥${m.power} 🎯${m.accuracy}% 🔋${m.energyCost}${tags.length ? ` [${tags.join(', ')}]` : ''}`;
-    }).join('\n');
-
-    const header = hasStyle
-      ? `🥋 *FIGHTING STYLE ACTIVE*\n_${styleMoves[0]?.styleName || 'Style'} — ${moveset.length} moves loaded_`
-      : `⚔️ *BATTLE MODE*`;
+    // Themed loadout card instead of the old flat one-line-per-move dump.
+    const cardTitle = hasStyle
+      ? `⚔️ ${String(styleMoves[0]?.styleName || 'Style').toUpperCase()}`
+      : "⚔️ YOUR MOVESET";
+    const styleBuff = hasStyle
+      ? Math.round(questSystem.getRarityBuff(styleMoves[0]?.styleRarity) * 100)
+      : 0;
 
     return buttonsSystem.sendButtons(sock, chatId,
-      `${header}\n\n${movePreview}\n\n⚡ Charge · 🏃 Run`,
+      buildMovesetCard(moveset, player, { title: cardTitle, styleBuff }) +
+        "\n\n⚡ *Charge* to restore energy  ·  🏃 *Run* to flee",
       allLabels,
-      { footer: `Tap a move 👇`, quoted: msg }
+      { title: "CHOOSE YOUR MOVE", footer: `Tap a move to use it 👇`, quoted: msg }
     );
   }
 
@@ -1122,6 +1293,7 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
         "⛓ Bind": ".bind",
         "🔮 Harvest": ".harvest",
       });
+      const bindOdds = getBindOdds(player);
       return buttonsSystem.sendButtons(sock, chatId,
         `${logs.join("\n")}\n\n` +
         `🏁 *WILD MORA DEFEATED*\n` +
@@ -1129,7 +1301,9 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
         `${xpLines}\n\n` +
         `🔥 *RIFT SEEKERS — THE VOID HUNGERS*\n` +
         `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-        `The fallen Mora's energy lingers. Claim it 👇`,
+        `The fallen Mora's energy lingers. Claim it 👇\n\n` +
+        `⛓ Bind odds: *${(bindOdds.chance * 100).toFixed(0)}%*` +
+        (bindOdds.bonus > 0 ? ` _(+${bindOdds.bonus} from your ${bindOdds.source})_` : ""),
         ["🩸 Devour", "⛓ Bind", "🔮 Harvest"],
         { footer: `Absorb it · Force-bind · Strip materials`, quoted: msg }
       );
@@ -1499,8 +1673,20 @@ async function cmdWildCapture(ctx, chatId, senderId, msg) {
     }, { quoted: msg });
   }
 
-  if (!Array.isArray(player.moraOwned)) player.moraOwned = [];
-  player.moraOwned.push({ ...target, isWild: false });
+  // v0.5.0 + moraOwned retirement: a capture no longer creates a saved Mora.
+  // It crystallizes a shard at the spawn-claim rate instead (the defeat path
+  // already rolled its own 80% drop for the same Mora).
+  let captureShardLog = "";
+  try {
+    const shardSystem = require("./shards");
+    const wildSpecies =
+      state.wildSpecies ||
+      ctx.loadMora?.().find((x) => Number(x.id) === Number(target.moraId));
+    const dropMsg = shardSystem.dropShardOnCatch(player, wildSpecies);
+    if (dropMsg) captureShardLog = "\n\n" + dropMsg;
+  } catch (e) {
+    console.log("wild capture shard drop error:", e?.message || e);
+  }
 
   // ── Mission hook ─────────────────────────────────────────
   try { missionSystem.onMoraCaught(senderId, player.faction, target.type); } catch {}
@@ -1513,8 +1699,8 @@ async function cmdWildCapture(ctx, chatId, senderId, msg) {
   return sock.sendMessage(chatId, {
     text:
       `🎉 @${String(senderId).split("@")[0]} captured *${target.name}*!\n` +
-      `🆔 Added to tamed Mora list.` +
-      harmonyBonus,
+      `🔮 Its essence crystallized toward your shard vault.` +
+      harmonyBonus + captureShardLog,
     mentions: [senderId]
   }, { quoted: msg });
 }
@@ -2009,7 +2195,9 @@ async function cmdWildBind(ctx, chatId, senderId, msg) {
   const player = players[senderId];
   ensurePlayerCombatFields(player);
 
-  const bindChance = 0.30;
+  const bindOdds = getBindOdds(player);
+  const bindChance = bindOdds.chance;
+  const bindBonus = bindOdds.bonus;
   const success = Math.random() < bindChance;
 
   if (!success) {
@@ -2021,10 +2209,13 @@ async function cmdWildBind(ctx, chatId, senderId, msg) {
 
     return sock.sendMessage(chatId, {
       text:
-        `⛓ *BIND FAILED!*\n\n` +
+        `⛓ *BIND FAILED!* _(the chains held at ${(bindChance * 100).toFixed(0)}%)_\n\n` +
         `The Rift chains shatter! *${state.wildMora.name}*'s dying rage lashes back!\n\n` +
         `💥 *You* take *${backlashDmg} backlash damage!*\n` +
         (player.playerHp <= 0 ? `☠ *You FAINTED from the backlash!*\n` : "") +
+        (bindBonus > 0
+          ? `🔗 Your relic strained — it missed by *${(100 - bindChance * 100).toFixed(0)} points.*\n`
+          : `💡 Rift relics in the black market can steady these chains.\n`) +
         `\n_"Chaos obeys no one. Not even you."_`,
       mentions: [senderId]
     }, { quoted: msg });
@@ -2053,7 +2244,7 @@ async function cmdWildBind(ctx, chatId, senderId, msg) {
 
   return sock.sendMessage(chatId, {
     text:
-      `⛓ *RIFT BOUND!*\n\n` +
+      `⛓ *RIFT BOUND!* ${bindBonus > 0 ? "_the chains snapped shut clean_" : ""}\n\n` +
       `@${String(senderId).split("@")[0]} forced *${state.wildMora.name}* into servitude using raw Rift chains!\n\n` +
       `🩸 *+${peGain} Rift PE*  🧠 *+2 Intelligence*` +
       shardLog + `\n\n` +

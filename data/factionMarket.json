@@ -192,7 +192,13 @@
           "price": 210,
           "stock": 0,
           "limited": true
-        }
+        },  {
+   "itemId": "REL_004",
+   "price": 6400,
+   "permanent": true,
+   "limited": false,
+   "note": "Rift-member discount on the Abyssal Chain of Binding (1.2.6)."
+  }
       ]
     }
   },

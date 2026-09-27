@@ -274,6 +274,14 @@ function applyItemEffects(player, effects = {}, ctx = {}) {
         break;
       }
 
+      // ─── RIFT BIND SUCCESS ───────────────────────────────
+      // Gear passive only: the Rift bind roll reads it via
+      // wildbattle's getBindOdds(), so it is never stacked here.
+      case "riftBindSuccess": {
+        log.push(`⛓ Rift Bind success: *+${n}%* (active while equipped)`);
+        break;
+      }
+
       // ─── BATTLE CONTROL (Dominion effects) ───────────────
       case "battleControl": {
         if (!player.passives) player.passives = {};

@@ -108,5 +108,21 @@
   "🥋 Dawn Pillar": ".attack 3",
   "✨ Lava Strike": ".attack 4",
   "✨ Inferno Burst": ".attack 5",
-  "✨ Flame Slam": ".attack 6"
+  "✨ Flame Slam": ".attack 6",
+  "📖 Begin the Gift": ".gift-begin",
+  "🔁 Continue": ".gift-begin",
+  "🏆 Standings": ".gift-lb",
+  "❓ How it Works": ".gift-help",
+  "❌ Leave the Gift": ".gift-quit",
+  "A": ".gift-answer A",
+  "B": ".gift-answer B",
+  "C": ".gift-answer C",
+  "D": ".gift-answer D",
+  "4 Questions": ".gift-count 4",
+  "5 Questions": ".gift-count 5",
+  "6 Questions": ".gift-count 6",
+  "7 Questions": ".gift-count 7",
+  "8 Questions": ".gift-count 8",
+  "9 Questions": ".gift-count 9",
+  "10 Questions": ".gift-count 10"
 }
