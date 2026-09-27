@@ -190,5 +190,22 @@ Shows your own balance and recent history.
 
 ---
 
+## SUNDAY EVENT (ADMIN)
+
+The Sunday Gift is now a **permanent weekly event** (see
+[`docs/ADMIN_SUNDAY_EVENT.md`](ADMIN_SUNDAY_EVENT.md)).
+
+Owner-level Sunday commands are documented there, not here. The short version:
+
+- Inspect window/pool: `.su-status`, `.su-next`
+- Regenerate / review pool: `.su-regenerate`, `.su-pool`, `.su-pool-test`
+- Alter current-cycle rules: `.su-set-range`, `.su-set-strikes`, `.su-set-base-lucons`, `.su-set-bonus-pool`, `.su-set-ai`, `.su-set-fallback`
+- Audit / standings: `.su-lb`, `.su-audit`
+- Operational: `.su-open`, `.su-close`, `.su-disable`, `.su-enable`
+
+Public-facing explainer for `.help sunday` / `.gift` also lives in that file.
+
+---
+
 *Document for Lumora v1.2.5 — "The Scroll Trials"*
 *Last updated: September 2026*

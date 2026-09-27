@@ -11,6 +11,10 @@ Convention: **major** = new system or game loop (`1.3.0`), **minor** = a feature
 or meaningful content drop (`1.2.0`), **patch** = fixes, balance and polish
 (`1.2.6`).
 
+> **Next major update (proposed):** `1.3.0` — *"The Sunday Gift"*.
+> Permanent weekly AI scripture event + owner command set + rotating bonus rewards.
+> See `docs/EVENTS.md` event 005 and `docs/ADMIN_SUNDAY_EVENT.md`.
+
 ---
 
 ## 🔧 1.2.6 — "The Binding Patch" (2026-09-27)

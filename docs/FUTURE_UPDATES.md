@@ -5,7 +5,44 @@ from the bottom.
 
 - **What already shipped:** [`docs/PATCHES.md`](PATCHES.md).
 - **Live-event design notes:** [`docs/EVENTS.md`](EVENTS.md).
-- **Star / AI roadmap:** [`FUTURE_UPDATES.md`](../FUTURE_UPDATES.md) (root).
+- **Star / AI roadmap:** [`FUTURE_UPDATES.md`](../FUTURE_UPDATES.md) (root).---
+
+## 🕊️ Event 005 (SHIPPED AS PERMANENT) — The Sunday Gift
+
+**Status:** permanent weekly event (not limited-time).
+**Window:** every Sunday, 00:00 CAT → 24h.
+**Owner manual:** [`docs/ADMIN_SUNDAY_EVENT.md`](ADMIN_SUNDAY_EVENT.md).
+**Player entry:** `.gift` (start a run), `.gift-lb` (standings).
+
+A weekly AI-written Bible scripture quiz. Every Sunday at 00:00 CAT the event
+opens for 24 hours. Each player picks how many questions to answer (allowed
+range **4–10**), answers one at a time via **native A / B / C / D buttons**, and
+gets **6 wrong answers max** before the run closes.
+
+On completion:
+- **Lucons** are always awarded and scale with performance (more answered + more
+  correct → more Lucons).
+- **XP** on completion.
+- **One completely random Epic Mora** on every completed run.
+- **A Blessing** on a perfect run.
+- **A rotating bonus reward** that changes from run to run / week to week.
+
+Questions are generated fresh by AI every Sunday from 00:00 CAT for that 24h
+window. If AI is unavailable or returns junk, the event falls back to a curated
+bank. Example themes: *which mountain did Moses die on*, *which verse says X*,
+*who spoke this line*, *what happened at this place*.
+
+> **Major-update note:** this is treated as the headline of the next major
+> update (1.3.0). It is permanent, recurring, and AI-driven — not a one-off
+> drop.
+
+### Owner commands (summary)
+See `docs/ADMIN_SUNDAY_EVENT.md` for the full set. At a glance:
+- Status / timing: `.su-status`, `.su-next`
+- Pool control: `.su-regenerate`, `.su-pool`, `.su-pool-test`
+- Rule alterations: `.su-set-range`, `.su-set-strikes`, `.su-set-base-lucons`, `.su-set-bonus-pool`, `.su-set-ai`, `.su-set-fallback`
+- Audit / standings: `.su-lb`, `.su-audit`
+- Operational: `.su-open`, `.su-close`, `.su-disable`, `.su-enable`
 
 ---
 
@@ -29,6 +66,7 @@ player.blessings = [{
 What's missing is the **engine that reads them**. Plan:
 
 ### 1. A blessings registry
+
 - New `systems/blessings.js` exporting `BLESSINGS` (id → name, icon, duration,
   effectKey, effectValue, flavour).
 - `grantBlessing(player, id, opts)` / `getActiveBlessings(player)` /
@@ -36,6 +74,7 @@ What's missing is the **engine that reads them**. Plan:
 - Prune expired entries on `bootPlayers()` and on `.daily`.
 
 ### 2. Special abilities (passive boons)
+
 Each ability is a named modifier the game already has hooks for:
 
 | Ability | Effect | Effect key |
@@ -55,11 +94,13 @@ Most of these keys already exist in `systems/inventory.js`
 accumulate into `player.passives` repeatedly — that helper is not idempotent.
 
 ### 3. UI
+
 - A `🕊️ *Blessings*` section on `.profile` / a `.blessings` command showing
   active boons and their remaining time.
 - Expiry announcements in chat ("the Blessing of the Faithful has faded").
 
 ### 4. Sources
+
 - Sunday Gift (perfect run) — *live already*.
 - Faction missions, raid wins, and a rare market consumable (`.consume` a
   *Censer of Grace* → grants a random 24h blessing).
