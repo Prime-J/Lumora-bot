@@ -226,6 +226,51 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   ok("player ids are shortened in the console log, full ids stay in the log json",
     logRes.body.entries.every((e) => Object.prototype.hasOwnProperty.call(e, "player")));
 
+  console.log("\n═══ 9b. RAILWAY — THE BRIDGE RIDES THE PUBLIC PORT ═══");
+  // Hosts like Railway expose ONE port (process.env.PORT). The bridge's own
+  // listener is 127.0.0.1:8791 inside the container — unreachable from the
+  // phone — so the same handler is also mounted on the main server.
+  ok("the bridge offers a mount()", typeof bridge.mount === "function");
+  const express = require("express");
+  const app2 = express();
+  // Same order index.js uses: mount FIRST, then the body parser, then the app.
+  app2.use(bridge.mount());
+  app2.use(express.json());
+  app2.use((req, res) => res.status(418).send("fallthrough"));
+  const srv2 = await new Promise((resolve) => {
+    const s = app2.listen(0, "127.0.0.1", () => resolve(s));
+  });
+  const base2 = "http://127.0.0.1:" + srv2.address().port;
+
+  const mountedHealth = await (await fetch(base2 + "/lumora/health")).json();
+  ok("/lumora/health answers through the main server",
+    mountedHealth.ok === true, JSON.stringify(mountedHealth));
+  const fall = await fetch(base2 + "/dashboard");
+  eq("everything else falls through to the app", fall.status, 418);
+  const mountedAct = await fetch(base2 + "/lumora/act", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: "bogus", action: "ping", channel: "A-post" }),
+  });
+  eq("a POST reaches the bridge through express (401, not a hang)",
+    mountedAct.status, 401);
+  const mountedBody = await mountedAct.json();
+  eq("…and it is the bridge answering", mountedBody.ok, false);
+  await new Promise((r) => srv2.close(r));
+
+  process.env.LUMORA_BRIDGE = "off";
+  let passedThrough = false;
+  bridge.mount()({ url: "/lumora/health" }, {}, () => { passedThrough = true; });
+  delete process.env.LUMORA_BRIDGE;
+  eq("LUMORA_BRIDGE=off → the mount lets the app handle it", passedThrough, true);
+
+  const idxSrc = fs.readFileSync(path.join(ROOT, "index.js"), "utf8");
+  ok("index.js mounts the bridge on its public server",
+    /app\.use\(require\("\.\/systems\/lumoraBridge"\)\.mount\(\)\)/.test(idxSrc));
+  ok("…before express.json() drains the body",
+    idxSrc.indexOf(".mount()") > -1 &&
+    idxSrc.indexOf(".mount()") < idxSrc.indexOf("app.use(express.json())"));
+
   console.log("\n═══ 10. SHUTDOWN ═══");
   await bridge.stop();
   eq("status reports stopped", bridge.status().running, false);

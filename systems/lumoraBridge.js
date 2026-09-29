@@ -428,6 +428,33 @@ function createHandler() {
 // LIFECYCLE
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * Serve /lumora/* from ANOTHER HTTP server — the fix for hosted bots.
+ *
+ * Railway (and most hosts) expose exactly ONE public port: process.env.PORT.
+ * This bridge's own listener binds 127.0.0.1:8791 inside the container, so
+ * nothing outside could ever reach it and every card tap died there. Mounted
+ * on the main server, taps land on the same public domain the site uses —
+ * no tunnel, no second process, same URL across restarts.
+ *
+ * Mount it BEFORE any body parser: the handler reads the raw request stream
+ * itself (express.json() would drain it first and the POST would hang).
+ *
+ * @returns {(req, res, next) => void} express-style middleware
+ */
+function mount() {
+  const handler = createHandler();
+  const ROUTES = ["/lumora/health", "/lumora/log", "/lumora/act"];
+  return function bridgeOnServer(req, res, next) {
+    const pass = () => (typeof next === "function" ? next() : sendJson(res, 404, { ok: false, error: "not_found" }));
+    if (!isEnabled()) return pass();
+    const raw = String((req && req.url) || "");
+    const route = (raw.split("?")[0] || "/").replace(/\/+$/, "") || "/";
+    if (ROUTES.indexOf(route) === -1) return pass();
+    return handler(req, res);
+  };
+}
+
 function isEnabled(env) {
   const e = env || process.env;
   const flag = String(e.LUMORA_BRIDGE || "").toLowerCase();
@@ -522,6 +549,7 @@ module.exports = {
   start,
   stop,
   status,
+  mount,
   mintToken,
   verifyToken,
   publicUrl,

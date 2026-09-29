@@ -48,6 +48,18 @@ const express = require('express');
 const app = express();
 const port = process.env.PORT || 10000;
 
+// ── CARD BRIDGE ON THE PUBLIC PORT (Railway exposes exactly one) ─────
+// The bridge's own listener binds 127.0.0.1:8791 inside the container,
+// which nothing outside can reach — so card taps could never come back
+// when the bot runs hosted. Serve /lumora/* on this server too: same
+// handler, same tokens, one stable public URL, no tunnel to babysit.
+// MUST be before express.json(): the bridge reads the raw body itself.
+try {
+  app.use(require("./systems/lumoraBridge").mount());
+} catch (e) {
+  console.log("[bridge] mount failed:", (e && e.message) || e);
+}
+
 app.use(express.json());
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
