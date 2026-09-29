@@ -259,6 +259,7 @@ module.exports = {
 
   // helpers
   ensureStatFields,
+  getRankForLevel,
   grantPointsForLevels,
   applyVitInvest,
   applyMeleeInvest,

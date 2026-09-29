@@ -2836,7 +2836,7 @@ sock.ev.removeAllListeners("messages.upsert");
               await sock.sendMessage(chatId, { react: { text: emoji, key: msg.key } });
             } catch (e) { /* a failed reaction is never fatal */ }
           };
-          await lumoraPlugins.dispatch(command, {
+          const handled = await lumoraPlugins.dispatch(command, {
             feb: sock,
             sock,
             m: uiMsg,
@@ -2850,8 +2850,12 @@ sock.ev.removeAllListeners("messages.upsert");
             isOwner,
             settings,
             ctx,
+            msg,
           });
-          return;
+          // A plugin can decline by returning false: plain-text UI mode, or a
+          // sub-command it does not own (.switch ui vs the companion .switch).
+          // Then the ordinary text command below gets its turn.
+          if (handled) return;
         }
       } catch (e) {
         console.log("[lumora-ui] plugin error:", e?.message || e);

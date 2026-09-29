@@ -59,13 +59,15 @@ async function match(command) {
 
 /**
  * Run the matching plugin, if any.
- * @returns {Promise<boolean>} true when a plugin handled the command
+ * @returns {Promise<boolean>} false when nothing matched OR the plugin
+ * declined by returning false (text-UI mode, or a sub-command it does not
+ * own) — index.js then lets the ordinary text command handle it.
  */
 async function dispatch(command, ctx) {
   const plugin = await match(command);
   if (!plugin) return false;
-  await plugin.run(ctx);
-  return true;
+  const res = await plugin.run(ctx);
+  return res !== false;
 }
 
 /** For the help/menu system later on. */

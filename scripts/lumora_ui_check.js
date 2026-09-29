@@ -243,6 +243,194 @@ function checkProblems(html, opts) {
   ok(".uiprobe resolves", (await lumoraPlugins.match("uiprobe")) !== null);
   ok(".uisize resolves", (await lumoraPlugins.match("uisize")) !== null);
 
+  console.log("\n═══ 13. THE VIEW SCREENS (.inv / .profile / .market) ═══");
+  const fsx = require("fs");
+  const invMod = await import(pathToFileURL(path.join(lumoraPlugins.PLUGIN_DIR, "inv.mjs")).href);
+  const profMod = await import(pathToFileURL(path.join(lumoraPlugins.PLUGIN_DIR, "profile.mjs")).href);
+  const mktMod = await import(pathToFileURL(path.join(lumoraPlugins.PLUGIN_DIR, "market.mjs")).href);
+  const swMod = await import(pathToFileURL(path.join(lumoraPlugins.PLUGIN_DIR, "switch.mjs")).href);
+  const registered2 = (await lumoraPlugins.list()).map((p) => p.name);
+  ok("inv, profile, market and switch are all registered",
+    ["inv", "profile", "market", "switch"].every((n) => registered2.includes(n)), registered2.join(","));
+
+  const fixtureDb = {
+    GER_1: { id: "GER_1", name: "Iron Blade", rarity: "Epic", category: "gear", slot: "weapon" },
+    CONS_1: { id: "CONS_1", name: "Health Tonic", rarity: "Common", category: "consumable" },
+    SCRL_1: { id: "SCRL_1", name: "War Scroll", rarity: "Rare", category: "scroll" },
+    MAT_1: { id: "MAT_1", name: "Slime Goo", rarity: "Common", category: "material" },
+  };
+
+  // ── .inv ──
+  const invPlayer = { username: "Prime", level: 12, lucons: 7163,
+    inventory: { GER_1: 1, CONS_1: 5, SCRL_1: 2, MAT_1: 9 } };
+  const invView = invMod.collectInvView(invPlayer, { itemsDb: fixtureDb });
+  eq("gear lands in the Gear section",
+    (invView.sections.find((s) => s.title === "Gear") || { items: [] }).items.length, 1);
+  ok("storage is counted", invView.storage && invView.storage.used > 0 && invView.storage.cap > 0,
+    JSON.stringify(invView.storage));
+  const invHtml = invMod.buildInvPage(invView);
+  ok("inv page passes the guardrails", checkProblems(invHtml).length === 0, checkProblems(invHtml).join("; "));
+  ok("inv page stays inside the bubble budget", ui.byteSize(invHtml) < ui.HTML_MAX_BYTES,
+    ui.byteSize(invHtml) + " bytes");
+  ok("gear shell is on the card", invHtml.includes(".equip GER_1"));
+  ok("consumable shell is on the card", invHtml.includes(".consume Health Tonic"));
+  ok("lookup shell for materials", invHtml.includes(".item Slime Goo"));
+  const hostileInv = invMod.collectInvView(
+    { username: "x", level: 1, inventory: { EVIL: 1 } },
+    { itemsDb: { EVIL: { id: "EVIL", name: "</div><script>bad()</script>", rarity: "Common", category: "misc" } } });
+  const hostileInvHtml = invMod.buildInvPage(hostileInv);
+  ok("a hostile item name is escaped",
+    hostileInvHtml.indexOf("<script>bad()") === -1 && hostileInvHtml.indexOf("&lt;/script&gt;") > 0);
+  const bigInv = { username: "Packrat", level: 1, inventory: {} };
+  const bigDb = {};
+  for (let i = 0; i < 40; i++) {
+    const id = "M" + i;
+    bigDb[id] = { id, name: "Goo " + i, rarity: "Common", category: "material" };
+    bigInv.inventory[id] = 3;
+  }
+  const bigView = invMod.collectInvView(bigInv, { itemsDb: bigDb });
+  eq("a huge inventory is capped at 12 shown", bigView.hidden, 28);
+  ok("…and the capped card still fits the bubble",
+    ui.byteSize(invMod.buildInvPage(bigView)) < ui.HTML_MAX_BYTES,
+    ui.byteSize(invMod.buildInvPage(bigView)) + " bytes");
+
+  // ── .profile ──
+  const profPlayer = { username: "Prime", level: 12, xp: 340, lucons: 7163, aura: 55,
+    playerHp: 80, playerMaxHp: 120, huntEnergy: 40, maxHuntEnergy: 100,
+    faction: "harmony", gender: "Male", loginStreak: 5, achievements: ["a", "b"],
+    moraOwned: [{ moraId: 7, name: "Ember" }], companionId: 7, companionBond: 12 };
+  const profView = profMod.collectProfileView(profPlayer);
+  eq("level 12 is a Sentinel", profView.rank, "Sentinel");
+  ok("faction resolves for display",
+    profView.faction && profView.faction.name === "Harmony Lumorians", JSON.stringify(profView.faction));
+  ok("companion resolves", profView.companion && profView.companion.name === "Ember");
+  const profHtml = profMod.buildProfilePage(profView);
+  ok("profile page passes the guardrails", checkProblems(profHtml).length === 0, checkProblems(profHtml).join("; "));
+  ok("profile page stays inside the budget", ui.byteSize(profHtml) < ui.HTML_MAX_BYTES,
+    ui.byteSize(profHtml) + " bytes");
+  ok("stats/gear/ranks/switch shells present",
+    [".stats", ".gear", ".ranks", ".switch ui"].every((s) => profHtml.includes(s)));
+  ok("vitals bars render real values", profHtml.includes("Aura") && profHtml.includes("80 / 120"));
+  const hostileProfHtml = profMod.buildProfilePage(
+    profMod.collectProfileView({ username: "</div><script>bad()</script>", level: 1 }));
+  ok("a hostile username is escaped on the profile",
+    hostileProfHtml.indexOf("<script>bad()") === -1 && hostileProfHtml.indexOf("&lt;/script&gt;") > 0);
+  ok("a plain self view is not targeted", profMod.isTargetedProfile([], null) === false);
+  ok("args make it targeted", profMod.isTargetedProfile(["@someone"], null) === true);
+  ok("a mention makes it targeted",
+    profMod.isTargetedProfile([], { message: { extendedTextMessage: { contextInfo: { mentionedJid: ["x@s.whatsapp.net"] } } } }) === true);
+  ok("a reply makes it targeted",
+    profMod.isTargetedProfile([], { message: { extendedTextMessage: { contextInfo: { quotedMessage: { conversation: "hi" }, participant: "y@s.whatsapp.net" } } } }) === true);
+
+  // ── .market ──
+  const fixtureMarket = { enabled: true, nextRotationAt: Date.now() + 30 * 60000,
+    currentRotation: { items: [
+      { itemId: "GER_1", price: 250, stock: 3, sold: 1 },
+      { itemId: "CONS_1", price: 40, stock: 10 },
+    ] } };
+  const mView = mktMod.collectMarketView({ lucons: 7163 }, { market: fixtureMarket, itemsDb: fixtureDb });
+  eq("rotation rows are built", mView.entries.length, 2);
+  eq("price comes from the rotation", mView.entries[0].price, 250);
+  ok("minutes left is computed", mView.minutesLeft > 25 && mView.minutesLeft <= 30, String(mView.minutesLeft));
+  const mPlain = mktMod.buildMarketPage(Object.assign({}, mView, { bridge: { enabled: false } }));
+  ok("market page passes the guardrails", checkProblems(mPlain).length === 0, checkProblems(mPlain).join("; "));
+  ok("market page stays inside the budget", ui.byteSize(mPlain) < ui.HTML_MAX_BYTES,
+    ui.byteSize(mPlain) + " bytes");
+  ok("buy shell on every entry", mPlain.includes(".buy Iron Blade") && mPlain.includes(".buy Health Tonic"));
+  ok("no tap buttons without the bridge", mPlain.indexOf('data-lumora-act="buy"') === -1);
+  ok("…but the shells are still there", mPlain.includes(".buy Iron Blade"));
+  const mBridged = mktMod.buildMarketPage(Object.assign({}, mView, { bridge: ctxOn }));
+  ok("with the bridge the page carries its link",
+    mBridged.includes('data-lumora-url="https://bridge.example.test"') && mBridged.includes("data-lumora-token="));
+  ok("…and tap-to-buy buttons", mBridged.includes('data-lumora-act="buy"'));
+  ok("…whose params name the item", mBridged.includes("GER_1"));
+  ok("the bridged market page still passes the guardrails",
+    checkProblems(mBridged).length === 0, checkProblems(mBridged).join("; "));
+
+  console.log("\n═══ 14. .switch ui — THE OLD-WHATSAPP ESCAPE HATCH ═══");
+  eq("default is cards, so a bare toggle flips to text", swMod.nextUiMode(null), "text");
+  eq("…and the next toggle returns to cards", swMod.nextUiMode("text"), "card");
+  eq("explicit plain-text request", swMod.nextUiMode("card", "plain"), "text");
+  eq("explicit card request", swMod.nextUiMode("text", "cool"), "card");
+  eq("explicit ui request", swMod.nextUiMode("text", "ui"), "card");
+  ok("isTextMode reads player.uiMode",
+    swMod.isTextMode({ uiMode: "text" }) === true && swMod.isTextMode({}) === false && swMod.isTextMode(null) === false);
+
+  const switchPlugin = await lumoraPlugins.match("switch");
+  ok(".switch resolves to the switch plugin", !!switchPlugin && switchPlugin.name === "switch");
+  const swReplies = [];
+  const swPlayer = { username: "Prime" };
+  const swPlayers = { me: swPlayer };
+  const bareDeclined = await switchPlugin.run({
+    m: { chat: TEST_JID, reply: async (t) => swReplies.push(t) },
+    args: [], player: swPlayer, players: swPlayers, savePlayers: () => {},
+  });
+  eq("bare .switch is declined to the companion command", bareDeclined, false);
+  let swSaved = false;
+  const took = await switchPlugin.run({
+    m: { chat: TEST_JID, reply: async (t) => swReplies.push(t) },
+    args: ["ui"], player: swPlayer, players: swPlayers, savePlayers: () => { swSaved = true; },
+  });
+  eq(".switch ui is taken by the plugin", took, true);
+  eq("…and flips the default (cards) to text", swPlayer.uiMode, "text");
+  ok("…and persists the preference", swSaved === true);
+  ok("…and tells the player", swReplies.join(" ").includes("TEXT MODE ON"));
+  await switchPlugin.run({
+    m: { chat: TEST_JID, reply: async (t) => swReplies.push(t) },
+    args: ["ui"], player: swPlayer, players: swPlayers, savePlayers: () => {},
+  });
+  eq("running it again returns to cards", swPlayer.uiMode, "card");
+  ok("…and says cards are back", swReplies.join(" ").includes("CARD MODE ON"));
+
+  const invPlugin = await lumoraPlugins.match("inv");
+  const bareM = { chat: TEST_JID, sender: TEST_JID, reply: async () => {} };
+  eq("unregistered .inv declines to the text command",
+    await invPlugin.run({ player: null, args: [], m: bareM }), false);
+  eq("text-mode .inv declines",
+    await invPlugin.run({ player: { uiMode: "text" }, args: [], m: bareM }), false);
+  eq(".inv 2 keeps the text pager",
+    await invPlugin.run({ player: { uiMode: "card", inventory: {} }, args: ["2"], m: bareM }), false);
+  const profPlugin = await lumoraPlugins.match("profile");
+  eq("text-mode .profile declines",
+    await profPlugin.run({ player: { uiMode: "text" }, args: [], m: bareM }), false);
+  eq(".profile @mention declines to the text path",
+    await profPlugin.run({ player: {}, args: [], m: bareM,
+      msg: { message: { extendedTextMessage: { contextInfo: { mentionedJid: ["x@s.whatsapp.net"] } } } } }), false);
+  const mktPlugin = await lumoraPlugins.match("market");
+  eq("text-mode .market declines",
+    await mktPlugin.run({ player: { uiMode: "text" }, args: [], m: bareM }), false);
+  eq(".market with args declines",
+    await mktPlugin.run({ player: {}, args: ["extra"], m: bareM }), false);
+
+  // …and the positive path: card mode really ships through relayMessage.
+  let relayedCount = 0;
+  const cardDone = await invPlugin.run({
+    feb: { relayMessage: async () => { relayedCount++; } },
+    m: { chat: TEST_JID, sender: TEST_JID, reply: async () => {} },
+    args: [],
+    player: { username: "Prime", level: 3, lucons: 10, inventory: {}, uiMode: "card" },
+    react: async () => {},
+  });
+  eq("card mode runs the card path end to end", cardDone, true);
+  eq("…and the card leaves through relayMessage", relayedCount, 1);
+
+  console.log("\n═══ 15. WIRING (the fall-through is real) ═══");
+  const idxSrc = fsx.readFileSync(path.join(__dirname, "..", "index.js"), "utf8");
+  ok("index.js asks the plugin for a verdict",
+    /const handled = await lumoraPlugins\.dispatch/.test(idxSrc));
+  ok("a declined plugin falls through to the text command",
+    /if \(handled\) return;/.test(idxSrc));
+  ok("plugins receive the raw msg (mentions/replies)",
+    /ctx,\s*\n\s*msg,/.test(idxSrc));
+  const loaderSrc = fsx.readFileSync(path.join(__dirname, "..", "systems", "lumoraPlugins.js"), "utf8");
+  ok("the loader honours a false decline", /return res !== false;/.test(loaderSrc));
+  const regSrc = fsx.readFileSync(path.join(__dirname, "..", "systems", "commandRegistry.js"), "utf8");
+  ok("the registry documents .switch ui", /\.switch ui/.test(regSrc));
+  ok("the text commands are all still registered",
+    ["inv", "profile", "market", "switch"].every((n) => regSrc.includes('name: "' + n + '"')));
+  ok("stats exports the rank helper the card uses",
+    /getRankForLevel,/.test(fsx.readFileSync(path.join(__dirname, "..", "systems", "stats.js"), "utf8")));
+
   console.log("\n────────────────────────────────");
   console.log(fail === 0 ? "ALL GREEN" : "FAILURES PRESENT");
   console.log("passed " + pass + " / " + (pass + fail));

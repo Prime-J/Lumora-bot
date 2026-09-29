@@ -44,7 +44,7 @@ const COMMANDS = [
   { name: "release",     aliases: [],                category: "game", subcat: "mora",       desc: "Free a Mora (+Intelligence)",                 usage: ".release" },
   { name: "sanctuary",   aliases: ["sanctuary-view","viewsanctuary","view-sanctuary"], category: "game", subcat: "mora", desc: "Shelter a Mora or view sanctuary",  usage: ".sanctuary" },
   { name: "companion",   aliases: [],                category: "game", subcat: "mora",       desc: "Set or view your companion Mora",             usage: ".companion Thornel" },
-  { name: "switch",      aliases: [],                category: "game", subcat: "mora",       desc: "Switch active companion",                     usage: ".switch" },
+  { name: "switch",      aliases: [],                category: "game", subcat: "mora",       desc: "Switch companion · .switch ui = card/text UI",  usage: ".switch [companion] | .switch ui" },
   { name: "mutate",      aliases: [],                category: "game", subcat: "mora",       desc: "Trigger Mora mutation",                       usage: ".mutate Thornel" },
   { name: "tamed-give",  aliases: ["t2party"],       category: "game", subcat: "mora",       desc: "Trade a Mora to another player",              usage: ".tamed-give @user" },
   { name: "tsearch",     aliases: ["tamed-search"],  category: "game", subcat: "mora",       desc: "Find owned Mora by name",                     usage: ".tsearch Thornel" },
