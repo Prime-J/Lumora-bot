@@ -286,6 +286,7 @@ app.listen(port, () => {
 
 const pino = require("pino");
 const qrcode = require("qrcode-terminal");
+const pairing = require("./systems/pairing");
 
 // ✅ Baileys ESM loader
 let makeWASocket;
@@ -1906,6 +1907,9 @@ function isHuntingGroupAllowed(chatId, settings) {
 // ============================
 let isStarting = false;
 let isReady = false;
+// Once per process: a 401 while nothing is registered means the pairing was
+// refused, not that a working session was lost. Heal it (see below).
+let authHealedOnce = false;
 const BOT_START_TIME = Math.floor(Date.now() / 1000);
 
 // Convert any shape of Baileys messageTimestamp (number, string, Date, protobuf
@@ -1975,8 +1979,44 @@ async function startBot() {
 
   acquireInstanceLock();
 
+  // ── LUMORA BRIDGE — the channel a card tap could come back through ──
+  // Off by default? No: on by default, switch it off with LUMORA_BRIDGE=off.
+  // It binds 127.0.0.1 and only acts on requests carrying a signed, single-use
+  // token, so the worst a stranger can do is get a 401. See systems/lumoraBridge.js.
+  try {
+    const lumoraBridge = require("./systems/lumoraBridge");
+    lumoraBridge.boot({
+      loadPlayers,
+      savePlayers,
+      getSocket: () => global._lumoraSock,
+    });
+  } catch (e) {
+    console.log("[bridge] start failed:", e?.message || e);
+  }
+
   await loadBaileys();
   try { starSystem.init(); } catch (e) { console.warn("[star] init failed:", e.message); }
+
+  // ── HALF-PAIRED AUTH FOLDER — the 401 dead end ──
+  // requestPairingCode() writes creds.me + creds.pairingCode immediately. If the
+  // pairing is never completed (code expired, window closed), Baileys sees
+  // `me` and stops offering the pairing flow entirely, so every reconnect is
+  // answered with 401 Connection Failure and nothing can recover it.
+  // Throw that folder away (renamed, never deleted) and pair cleanly again.
+  try {
+    const staleCreds = pairing.readCreds();
+    if (pairing.isHalfPaired(staleCreds, { dir: pairing.AUTH_DIR })) {
+      const moved = pairing.archiveAuthDir({ label: "halfpaired" });
+      console.log(
+        "\n♻️  [login] The saved session was left half-paired (a pairing code was requested but never used)." +
+        "\n    WhatsApp would answer 401 forever with it, so it has been moved aside:" +
+        "\n      " + (moved.ok ? moved.to : "(could not move it: " + moved.error + ")") +
+        "\n    Starting a clean pairing now."
+      );
+    }
+  } catch (e) {
+    console.log("[login] half-paired check failed:", e?.message || e);
+  }
 
   const { state, saveCreds } = await useMultiFileAuthState("./auth");
   const logger = pino({ level: "silent" });
@@ -1989,6 +2029,76 @@ async function startBot() {
     }
   } catch {}
 
+  // ── LOGIN METHOD — QR code, or "link with phone number" pairing code ──
+  // The bot number can come from the environment (PAIRING_NUMBER, or any of the
+  // aliases in systems/pairing.js) or from data/pairing.json. With no number on
+  // file and a real terminal, we ask once and remember it. Scanning the QR code
+  // always stays available — set LUMORA_LOGIN=qr to force it.
+  let loginConfig = pairing.resolveLoginConfig();
+  // A saved/env number that starts with 0 is a LOCAL number. WhatsApp wants the
+  // country code (2348083028530, not 08083028530) and answers "Couldn't link
+  // device" for anything else — so never send that blindly; ask instead.
+  //
+  // A number already on file (data/pairing.json) used to skip this question
+  // silently — "the pairing-with-code stage never lets me type a number".
+  // The memory stays the default; re-ask with LUMORA_PROMPT_NUMBER=1 or --pair.
+  const reAskNumber = pairing.shouldPromptForNumber();
+  const needsNumberPrompt = pairing.shouldAskForNumber({
+    registered: !!state.creds?.registered,
+    forceQr: loginConfig.forceQr,
+    number: loginConfig.number,
+    forcePrompt: reAskNumber,
+  });
+  if (needsNumberPrompt) {
+    if (reAskNumber && loginConfig.number) {
+      console.log(
+        "\n🔁 [login] Re-asking for the bot number (LUMORA_PROMPT_NUMBER / --pair)." +
+        "\n    On file: +" + loginConfig.number + " (" + loginConfig.source + ")"
+      );
+    }
+    if (loginConfig.needsCountryCode) {
+      console.log(
+        "\n⚠️  [login] " + loginConfig.source + " looks like a local number: " + loginConfig.needsCountryCode +
+        "\n    WhatsApp needs the international form (country code first, no leading 0)." +
+        "\n    Nigeria for example: 08083028530 → 2348083028530" +
+        (loginConfig.countryCode
+          ? "\n    Country code on file: " + loginConfig.countryCode + " — I will use it."
+          : "\n    Or export LUMORA_COUNTRY_CODE=234 and restart.")
+      );
+    }
+    const answered = await pairing.promptForPairingNumber({
+      countryCode: loginConfig.countryCode,
+      needsCountryCode: loginConfig.needsCountryCode,
+      // Non-empty only when we are re-asking: the prompt then offers to keep
+      // the saved number instead of promising a QR code we will not use.
+      savedNumber: loginConfig.number || "",
+    });
+    if (answered) {
+      loginConfig = {
+        number: answered,
+        source: "startup prompt",
+        forceQr: false,
+        countryCode: loginConfig.countryCode,
+        needsCountryCode: null,
+      };
+      pairing.saveNumber(answered, undefined, loginConfig.countryCode);
+    } else if (reAskNumber && loginConfig.number) {
+      console.log("[pairing] No new number typed — keeping +" + loginConfig.number +
+        " (" + loginConfig.source + ").");
+    }
+  }
+  if (state.creds?.registered) {
+    console.log("[login] Session already registered — no code or QR needed.");
+  } else if (loginConfig.forceQr) {
+    console.log("[login] LUMORA_LOGIN=qr → scanning the QR code.");
+  } else if (loginConfig.number) {
+    console.log("[login] Link with code → bot number +" + loginConfig.number +
+      " (" + loginConfig.source + ")" +
+      (loginConfig.countryCode ? " [country code " + loginConfig.countryCode + "]" : ""));
+  } else {
+    console.log("[login] No usable bot number → falling back to the QR code.");
+  }
+
   const sock = makeWASocket({
     logger,
     auth: {
@@ -1999,6 +2109,10 @@ async function startBot() {
     syncFullHistory: false,
     markOnlineOnConnect: false,
     emitOwnEvents: false,
+    // Keep the pair-device window open long enough to actually type a code.
+    // Baileys drops the socket (code 408) once the QR refs run out; the default
+    // gives ~2 minutes total, this gives ~15. See systems/pairing.js.
+    qrTimeout: pairing.qrTimeoutMs(),
     // Without this stub Baileys can't retry decryption on stale sender keys,
     // which causes "bot stops responding in some old groups" after restarts.
     // Returning an empty conversation lets the retry loop succeed harmlessly.
@@ -2031,6 +2145,67 @@ async function startBot() {
     console.log("[socket] Connection error:", err?.message || err);
   });
 
+  // ── LOGIN FLOW: pairing code first, QR code as the fallback ──
+  // The pairing code is requested on the FIRST qr event: that is the moment the
+  // socket is far enough along for WhatsApp to issue a code. If it fails we fall
+  // straight back to the QR code so a login is never blocked by the code path.
+  const pairingFlow = {
+    number: loginConfig.number,
+    countryCode: loginConfig.countryCode,
+    refresher: null,
+    forceQr: loginConfig.forceQr,
+    code: null,
+    busy: false,
+    failed: null,
+    remind: pairing.makeWaitingReminder(),
+
+    handleQr(qr) {
+      if (this.code) return this.remind(this.code);
+      if (!this.number || this.forceQr) return pairing.printQr(qr);
+      if (this.failed) return pairing.printQr(qr, "Pairing code failed (" + this.failed + ") — scan the QR code instead.");
+      if (this.busy) return;
+
+      this.busy = true;
+      console.log("[pairing] Requesting a link code for +" + this.number + " …");
+      pairing.requestPairingCode(sock, this.number)
+        .then((res) => {
+          this.busy = false;
+          if (res.ok) {
+            this.code = res.code;
+            pairing.printPairingBanner(this.number, res.code, {
+              countryCode: this.countryCode,
+              windowMs: pairing.qrTimeoutMs() * 5,
+            });
+            // Minting a SECOND code invalidates the one on screen, so refreshing
+            // is opt-in only (LUMORA_CODE_REFRESH=1).
+            if (String(process.env.LUMORA_CODE_REFRESH || "") === "1") this.refresher = pairing.startCodeRefresh({
+              number: this.number,
+              request: (n) => pairing.requestPairingCode(sock, n),
+              onCode: (code, n) => {
+                this.code = code;
+                pairing.printPairingBanner(this.number, code, {
+                  countryCode: this.countryCode,
+                  refreshNumber: n,
+                  replaces: true,
+                });
+              },
+              onFail: (err, n) => console.log("[pairing] refresh " + n + " failed:", err),
+            });
+          } else {
+            this.failed = res.error;
+            console.log("⚠️ Pairing code unavailable:", res.error, "— scan the QR code instead.");
+            pairing.printQr(qr);
+          }
+        })
+        .catch((e) => {
+          this.busy = false;
+          this.failed = e?.message || String(e);
+          console.log("⚠️ Pairing code error:", this.failed, "— scan the QR code instead.");
+          pairing.printQr(qr);
+        });
+    },
+  };
+
   let spawnStarted = false;
 
   sock.ev.on("connection.update", (update) => {
@@ -2038,8 +2213,7 @@ async function startBot() {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
-      console.log("\n✅ SCAN THIS QR CODE IN WHATSAPP → LINKED DEVICES:\n");
-      qrcode.generate(qr, { small: true });
+      pairingFlow.handleQr(qr);
     }
 
     if (connection === "open") {
@@ -2048,6 +2222,8 @@ async function startBot() {
       global._lumoraSock = sock;
       botBootComplete = true;
       console.log("🔥 Lumora Bot Connected Successfully!");
+      if (pairingFlow.refresher) pairingFlow.refresher.stop();
+      if (pairingFlow.code) console.log("🔗 Linked with the pairing code " + pairingFlow.code + " — the code can be forgotten now.");
       console.log("[flowMarket] botBootComplete set — interactive market gate open");
       resolveFactionGroups(sock).catch(e => console.log("⚠️ Faction resolve error:", e.message));
       tutorialSystem.resolveHuntGrounds(sock).catch(e => console.log("⚠️ Hunt-ground resolve error:", e.message));
@@ -2097,6 +2273,38 @@ async function startBot() {
         const delay = code === 440 ? 5000 : 0;
         if (delay) setTimeout(() => startBot(), delay);
         else startBot();
+      } else if (!authHealedOnce && pairing.isHalfPaired(pairing.readCreds(), { dir: pairing.AUTH_DIR })) {
+        // 401 with nothing registered = the pairing was refused, not a session
+        // lost. A code was requested but never used, which leaves creds.me set
+        // and makes Baileys skip the pairing flow forever. Heal it in-process:
+        // move the folder aside and pair again from scratch.
+        authHealedOnce = true;
+        console.log(
+          "\n♻️  [login] WhatsApp refused this connection (401) and nothing was registered yet." +
+          "\n    That is the half-paired folder: moving ./auth aside and pairing again in a moment…"
+        );
+        setTimeout(() => {
+          const moved = pairing.archiveAuthDir({ label: "halfpaired" });
+          console.log("    " + (moved.ok ? "moved to " + moved.to : "could not move it: " + moved.error));
+          console.log("    Pairing again — watch for a new code below.\n");
+          startBot();
+        }, 2500);
+      } else {
+        // Logged out: WhatsApp unlinked this device, so the stored auth is dead.
+        // Baileys cannot reuse it — the bot must link again, and this time it can
+        // do it with a code instead of a QR scan.
+        console.log(
+          "\n╔═══════════════════════════════════════════════════════════╗\n" +
+          "║  🔌 THIS DEVICE WAS UNLINKED FROM WHATSAPP                ║\n" +
+          "╚═══════════════════════════════════════════════════════════╝\n" +
+          "   The saved session is no longer valid, so the bot stopped.\n" +
+          "   To link again:\n" +
+          "     1. Move the ./auth folder aside (rename it to auth.old)\n" +
+          "     2. Start the bot:  node index.js\n" +
+          "     3. Type the bot number when asked → you get an 8-character\n" +
+          "        code → WhatsApp → Linked Devices → Link with phone number\n" +
+          "        instead (or just press Enter to scan the QR code)\n"
+        );
       }
     }
   });
@@ -2595,6 +2803,47 @@ sock.ev.removeAllListeners("messages.upsert");
           console.log("[styleQuests] drama cmd error:", e?.message || e);
           return sock.sendMessage(chatId, { text: "❌ Style trial error — try again." }, { quoted: msg });
         }
+      }
+
+      // ── LUMORA UI PLUGINS (in-chat interactive cards — plugins/lumora/*.mjs) ──
+      // Each UI screen is its own dino.js-format plugin; the delivery transport
+      // lives in systems/lumoraUI.js and the loader in systems/lumoraPlugins.js.
+      // A plugin that throws reports once and never breaks the rest of the bot.
+      try {
+        const lumoraPlugins = require("./systems/lumoraPlugins");
+        const lumoraPlugin = await lumoraPlugins.match(command);
+        if (lumoraPlugin) {
+          const uiMsg = {
+            chat: chatId,
+            key: msg.key,
+            sender: senderId,
+            reply: (t) => sock.sendMessage(chatId, typeof t === "string" ? { text: t } : t, { quoted: msg }),
+          };
+          const uiReact = async (emoji) => {
+            try {
+              await sock.sendMessage(chatId, { react: { text: emoji, key: msg.key } });
+            } catch (e) { /* a failed reaction is never fatal */ }
+          };
+          await lumoraPlugins.dispatch(command, {
+            feb: sock,
+            sock,
+            m: uiMsg,
+            args,
+            react: uiReact,
+            chatId,
+            senderId,
+            player: players[senderId] || null,
+            players,
+            savePlayers,
+            isOwner,
+            settings,
+            ctx,
+          });
+          return;
+        }
+      } catch (e) {
+        console.log("[lumora-ui] plugin error:", e?.message || e);
+        return sock.sendMessage(chatId, { text: "❌ UI card failed: " + (e?.message || e) }, { quoted: msg });
       }
 
       // ── OWNER TOOLBOX (.ow) — registered EARLY so it works even mid-battle ──

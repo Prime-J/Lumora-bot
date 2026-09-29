@@ -108,121 +108,38 @@ async function cmdGear(ctx, chatId, senderId, msg, args = [], helpers = {}) {
   );
 }
 
+// 🛡 .equip — a thin wrapper over the shared action layer.
+// Equipping rules live in systems/lumoraActions.js → equip(), so the typed
+// command and a card tap run the same validation.
 async function cmdEquip(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers } = ctx;
-  const player = players[senderId];
+  const lumoraActions = require("./lumoraActions");
 
-  if (!player) {
-    return sock.sendMessage(
-      chatId,
-      { text: "❌ Register first using `.register`." },
-      { quoted: msg }
-    );
-  }
-
-  const query = args.join(" ").trim();
-  if (!query) {
-    return sock.sendMessage(
-      chatId,
-      { text: "Usage: `.equip <item name or id>`" },
-      { quoted: msg }
-    );
-  }
-
-  itemsSystem.ensurePlayerItemData(player);
-
-  const item = itemsSystem.findItem(query);
-  if (!item) {
-    return sock.sendMessage(
-      chatId,
-      { text: `❌ Item not found: *${query}*` },
-      { quoted: msg }
-    );
-  }
-
-  const result = itemsSystem.equipItem(player, item.id);
-  if (!result.ok) {
-    return sock.sendMessage(
-      chatId,
-      { text: `❌ ${result.reason}` },
-      { quoted: msg }
-    );
-  }
-
-  savePlayers(players);
-
-  let extra = "";
-  if (result.replaced) {
-    const replaced = itemsSystem.getItemById(result.replaced);
-    extra = replaced ? `\n📤 Returned to inventory: *${replaced.name}*` : "";
-  }
+  const result = await lumoraActions.equip(
+    { playerId: senderId, chatId, source: "command", runtime: { players, savePlayers } },
+    { item: args.join(" ").trim() },
+  );
 
   return sock.sendMessage(
     chatId,
-    {
-      text:
-        `${DIVIDER}\n` +
-        `✅ *ITEM EQUIPPED*\n` +
-        `${DIVIDER}\n\n` +
-        `🛡 Equipped: *${item.name}*\n` +
-        `📌 Slot: *${titleCase(result.slot)}*\n` +
-        `⚡ Effect: ${item.effect || "None"}\n` +
-        `📜 ${item.desc || "No description."}` +
-        extra,
-    },
+    { text: result.message || (result.ok ? "✅ Item equipped." : "❌ Equip failed.") },
     { quoted: msg }
   );
 }
 
+// 📤 .unequip — a thin wrapper over the shared action layer.
 async function cmdUnequip(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers } = ctx;
-  const player = players[senderId];
+  const lumoraActions = require("./lumoraActions");
 
-  if (!player) {
-    return sock.sendMessage(
-      chatId,
-      { text: "❌ Register first using `.register`." },
-      { quoted: msg }
-    );
-  }
-
-  const slot = String(args[0] || "").trim().toLowerCase();
-  const validSlots = ["core", "charm", "tool", "relic", "cloak", "boots", "badge"];
-
-  if (!slot || !validSlots.includes(slot)) {
-    return sock.sendMessage(
-      chatId,
-      { text: "Usage: `.unequip <core|charm|tool|relic|cloak|boots|badge>`" },
-      { quoted: msg }
-    );
-  }
-
-  itemsSystem.ensurePlayerItemData(player);
-
-  const currentId = player.equipment?.[slot] || null;
-  const result = itemsSystem.unequipItem(player, slot);
-  if (!result.ok) {
-    return sock.sendMessage(
-      chatId,
-      { text: `❌ ${result.reason}` },
-      { quoted: msg }
-    );
-  }
-
-  savePlayers(players);
-
-  const item = itemsSystem.getItemById(currentId);
+  const result = await lumoraActions.unequip(
+    { playerId: senderId, chatId, source: "command", runtime: { players, savePlayers } },
+    { slot: String(args[0] || "").trim().toLowerCase() },
+  );
 
   return sock.sendMessage(
     chatId,
-    {
-      text:
-        `${DIVIDER}\n` +
-        `📤 *ITEM UNEQUIPPED*\n` +
-        `${DIVIDER}\n\n` +
-        `🛡 Slot: *${titleCase(slot)}*\n` +
-        `📦 Returned: *${item?.name || result.itemId || "Unknown Item"}*`,
-    },
+    { text: result.message || (result.ok ? "✅ Item unequipped." : "❌ Unequip failed.") },
     { quoted: msg }
   );
 }

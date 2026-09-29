@@ -417,108 +417,22 @@ async function cmdMarket(ctx, chatId, senderId, msg) {
   return sock.sendMessage(chatId, { text }, { quoted: msg });
 }
 
+// 🛒 .buy — a thin wrapper over the shared action layer.
+// The validation, the price lookup and the mutation all live in
+// systems/lumoraActions.js → buy(), so the typed command and a card tap run
+// exactly the same code. Nothing here decides prices or stock.
 async function cmdBuy(ctx, chatId, senderId, msg, args = []) {
   const { sock, players, savePlayers } = ctx;
+  const lumoraActions = require("./lumoraActions");
 
-  const player = players[senderId];
-  if (!player) {
-    return sock.sendMessage(
-      chatId,
-      { text: "❌ Register first using `.register`." },
-      { quoted: msg }
-    );
-  }
-
-  const query = args.join(" ").trim();
-  if (!query) {
-    return sock.sendMessage(
-      chatId,
-      { text: "Usage: `.buy <item name or id>`" },
-      { quoted: msg }
-    );
-  }
-
-  const { market } = maybeRotateMarket();
-  const itemsDb = itemsSystem.loadItems();
-  const found = getRotationEntryByQuery(query, market, itemsDb);
-
-  if (!found) {
-    return sock.sendMessage(
-      chatId,
-      { text: `❌ That item is not currently in the market.` },
-      { quoted: msg }
-    );
-  }
-
-  const { entry, item } = found;
-
-  const unlimited = entry.unlimited === true || entry.permanent === true;
-  if (!unlimited) {
-    const remaining = Math.max(0, Number(entry.stock || 0) - Number(entry.sold || 0));
-    if (remaining <= 0) {
-      return sock.sendMessage(
-        chatId,
-        { text: `❌ *${item.name}* is sold out.` },
-        { quoted: msg }
-      );
-    }
-  }
-
-  const testFree = false;
-  const price = testFree ? 0 : Number(entry.price ?? item.price ?? 0);
-  const money = Number(player.lucons || 0);
-
-  if (!testFree && money < price) {
-    return sock.sendMessage(
-      chatId,
-      { text: `❌ You need *${price} Lucons* but only have *${money}*.` },
-      { quoted: msg }
-    );
-  }
-
-  const canAdd = itemsSystem.canAddItemToInventory(player, item.id, 1);
-  if (!canAdd.ok) {
-    return sock.sendMessage(
-      chatId,
-      { text: `❌ ${canAdd.reason}` },
-      { quoted: msg }
-    );
-  }
-
-  const added = itemsSystem.addItem(player, item.id, 1);
-  if (!added.ok) {
-    return sock.sendMessage(
-      chatId,
-      { text: `❌ ${added.reason}` },
-      { quoted: msg }
-    );
-  }
-
-  if (!testFree) player.lucons = Math.max(0, money - price);
-  if (!unlimited) entry.sold = Number(entry.sold || 0) + 1;
-
-  savePlayers(players);
-  if (!unlimited) itemsSystem.saveMarket(market);
-
-  const left = unlimited
-    ? "∞"
-    : Math.max(0, Number(entry.stock || 0) - Number(entry.sold || 0));
-  const rarityIcon = itemsSystem.getRarityIcon(item.rarity);
+  const result = await lumoraActions.buy(
+    { playerId: senderId, chatId, source: "command", runtime: { players, savePlayers } },
+    { item: args.join(" ").trim() },
+  );
 
   return sock.sendMessage(
     chatId,
-    {
-      text:
-        `${DIVIDER}\n` +
-        `🛒 *PURCHASE COMPLETE*\n` +
-        `${DIVIDER}\n\n` +
-        `${rarityIcon} *${item.name}*\n` +
-        `${testFree ? `🧪 Price: *FREE* (TEST MODE)\n` : `💰 Price: *${price} Lucons*\n`}` +
-        (unlimited ? `♾️ Permanent listing — always restocked\n` : `📦 Remaining Stock: *${left}*\n`) +
-        `⚡ Effect: ${item.effect || "None"}\n` +
-        `📜 ${item.desc || "No description."}\n\n` +
-        `💳 Lucons Left: *${player.lucons}*`,
-    },
+    { text: result.message || (result.ok ? "✅ Purchase complete." : "❌ Purchase failed.") },
     { quoted: msg }
   );
 }
@@ -765,6 +679,7 @@ async function cmdMarketSet(ctx, chatId, senderId, msg, args = []) {
 
 module.exports = {
   maybeRotateMarket,
+  getRotationEntryByQuery, // used by systems/lumoraActions.js so buy() stays the only implementation
   formatMarketText,
   cmdMarket,
   cmdBuy,

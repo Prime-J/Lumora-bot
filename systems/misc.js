@@ -444,13 +444,19 @@ async function cmdFlip(ctx, chatId, senderId, msg) {
 }
 
 // ── DICE ROLL ───────────────────────────────────────────────
+// 🎲 .roll — a thin wrapper over the shared action layer.
+// The bot decides the number (systems/lumoraActions.js → rollDice()); the
+// caller only delivers it, which is exactly what a card reveal needs.
 async function cmdRoll(ctx, chatId, senderId, msg, args) {
   const { sock } = ctx;
-  const max = Math.min(Math.max(parseInt(args[0]) || 6, 2), 1000);
-  const result = Math.floor(Math.random() * max) + 1;
-  return sock.sendMessage(chatId, {
-    text: `🎲 *DICE ROLL* (1-${max})\n\nYou rolled: *${result}*!`,
-  }, { quoted: msg });
+  const lumoraActions = require("./lumoraActions");
+
+  const result = await lumoraActions.rollDice(
+    { playerId: senderId, chatId, source: "command" },
+    { max: args && args[0] },
+  );
+
+  return sock.sendMessage(chatId, { text: result.message }, { quoted: msg });
 }
 
 // ── SHIP (compatibility %) ──────────────────────────────────
