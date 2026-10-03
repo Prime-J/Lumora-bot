@@ -11,3 +11,6 @@ data/Players.json
 # keeping them out of the repo. Committing them would ship megabytes of player
 # data into every deploy image.
 backups/
+
+# runtime session lock (PID) — never commit
+auth/.lock
