@@ -285,6 +285,50 @@ await checkAsync("survives a groupMetadata failure", async () => {
   assert.strictEqual(sent.length, 1);
   assert.deepStrictEqual(sent[0].mentions, []);
 });
+
+// ═══════════════════════════════════════════════════════════════
+section("index.js wiring");
+
+const fs = require("fs");
+const indexSrc = fs.readFileSync(path.join(__dirname, "..", "index.js"), "utf8");
+
+check(".ping routes through pingStatus.cmdPing", () => {
+  assert.match(indexSrc, /if \(command === "ping"\)/, "ping branch exists");
+  assert.match(
+    indexSrc,
+    /require\("\.\/systems\/pingStatus"\)\.cmdPing\(/,
+    "ping branch delegates to pingStatus.cmdPing"
+  );
+});
+
+check("the ping call site passes startTime, sock, chatId and msg", () => {
+  // The call site must hand cmdPing every ctx field it destructures,
+  // otherwise uptime silently reads 0 in production.
+  const call = indexSrc.match(/pingStatus"\)\.cmdPing\(([\s\S]*?)\n\s*\);/);
+  assert.ok(call, "could not locate the cmdPing call");
+  const body = call[1];
+  assert.match(body, /sock/, "passes sock");
+  assert.match(body, /startTime/, "passes startTime");
+  assert.match(body, /chatId/, "passes chatId");
+  assert.match(body, /msg/, "passes msg");
+  assert.match(body, /botJid/, "passes botJid so it can exclude itself");
+});
+
+check("index.js declares startTime at module scope", () => {
+  const decl = indexSrc.match(/^const startTime = Date\.now\(\);$/m);
+  assert.ok(decl, "module-level startTime declaration missing");
+});
+
+check("no stale inline Pong handler remains", () => {
+  assert.ok(!/🏓 \*Pong\.\*/.test(indexSrc), "old one-line ping reply still present");
+});
+
+check("ping stays out of the consequence system", () => {
+  // A ping must never carry game-state side effects.
+  const set = indexSrc.match(/_skipConsequences = new Set\(\[([^\]]*)\]/);
+  assert.ok(set, "consequence skip-set not found");
+  assert.match(set[1], /"ping"/, "ping must be in the skip set");
+});
 } // end runAsyncSection
 
 runAsyncSection()
