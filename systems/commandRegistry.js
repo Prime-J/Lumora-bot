@@ -280,7 +280,7 @@ const COMMANDS = [
   { name: "order-del",   aliases: [],                category: "bot", subcat: "ai",         desc: "Remove an order",                            usage: ".order-del ID" },
 
   // ── ℹ️ Info ──
-  { name: "ping",        aliases: [],                category: "bot", subcat: "info",       desc: "Test bot response",                          usage: ".ping" },
+  { name: "ping",        aliases: [],                category: "bot", subcat: "info",       desc: "Is Star online? @-tags everyone + Sunday Gift reminder", usage: ".ping" },
   { name: "uptime",      aliases: [],                category: "bot", subcat: "info",       desc: "Bot uptime",                                 usage: ".uptime" },
   { name: "players",     aliases: [],                category: "bot", subcat: "info",       desc: "Total registered players",                   usage: ".players" },
   { name: "menu",        aliases: [],                category: "bot", subcat: "info",       desc: "Quick action menu (→ help)",                  usage: ".menu" },

@@ -3357,14 +3357,12 @@ if (command === "cancel") {
       // CORE COMMANDS
       // ============================
       if (command === "ping") {
-        const t0 = Number(msg?.messageTimestamp || 0) * 1000;
-        const ms = t0 ? Math.max(0, Date.now() - t0) : 0;
-        return sock.sendMessage(chatId, {
-          text:
-            `🏓 *Pong.*\n` +
-            `⏱️ Response: *${ms}ms*\n\n` +
-            `_Star is online._`,
-        }, { quoted: msg });
+        // Online ping: tags every member and reminds about the Sunday Gift.
+        return require("./systems/pingStatus").cmdPing(
+          { sock, startTime, botJid: sock?.user?.id },
+          chatId,
+          msg
+        );
       }
 
       if (command === "wiki-url" || command === "web" || command === "dashboard") {
