@@ -3,7 +3,7 @@
     "version": "1.2.6",
     "name": "The Binding Patch",
     "releasedAt": 1790531909050,
-    "notes": "🔧 *LUMORA 1.2.6 — THE BINDING PATCH*\\n\\nA maintenance pass. Nothing flashy — just the things that were quietly broken, fixed, and the things that were ugly, made clean.\\n\\n🏆 *The leaderboard works again.* `.lb` had been throwing on every single call — the global board now renders rank, name, faction, DΞP, Lucons and Vault, with a shard tally per hunter.\\n\\n⛓️ *The Abyssal Chain of Binding* is now a *permanent* market relic. Rift Seekers no longer have to pray `.bind` lands — the chain takes it from a coin flip to near-certainty.\\n\\n🎨 *Combat card retouch.* The hunting move list was rewritten into a proper HUD: styles, merged Mora moves and basics grouped, power bars, accuracy, riders and affordability — no more squinting at a flat wall of text.",
+    "notes": "🔧 *LUMORA 1.2.6 — THE BINDING PATCH*\n\nA maintenance pass. Nothing flashy — just the things that were quietly broken, fixed, and the things that were ugly, made clean.\n\n🏆 *The leaderboard works again.* `.lb` had been throwing on every single call — the global board now renders rank, name, faction, DΞP, Lucons and Vault, with a shard tally per hunter.\n\n⛓️ *The Abyssal Chain of Binding* is now a *permanent* market relic. Rift Seekers no longer have to pray `.bind` lands — the chain takes it from a coin flip to near-certainty.\n\n🎨 *Combat card retouch.* The hunting move list was rewritten into a proper HUD: styles, merged Mora moves and basics grouped, power bars, accuracy, riders and affordability — no more squinting at a flat wall of text.",
     "stages": [
       "🏆 *Leaderboard repaired* — `.lb` no longer crashes. Global board shows rank / faction / DΞP / Lucons / Vault, with shard counts appended to every hunter.",
       "💠 *Vault weighting* — leaderboard score now counts total shards + 2× distinct species, so the new shard economy actually scores.",
@@ -17,7 +17,7 @@
   "pending": {
     "version": "1.3.0",
     "name": "The Sunday Gift",
-    "notes": "📜 *LUMORA 1.3.0 — THE SUNDAY GIFT*\\n\\nEvery Sunday, from 00:00 CAT, a new trial of the scriptures opens for 24 hours. Answer scripture, receive blessing.\\n\\n🧠 *Fresh questions every week.* The bot writes a brand-new set of Bible-knowledge questions each Sunday — mountains, prophets, verses, journeys — so no one can memorise the answers.",
+    "notes": "📜 *LUMORA 1.3.0 — THE SUNDAY GIFT*\n\nEvery Sunday, from 00:00 CAT, a new trial of the scriptures opens for 24 hours. Answer scripture, receive blessing.\n\n🧠 *Fresh questions every week.* The bot writes a brand-new set of Bible-knowledge questions each Sunday — mountains, prophets, verses, journeys — so no one can memorise the answers.",
     "stages": [
       "📖 *The Sunday Gift* — opens Sunday 00:00 CAT, closes Monday 00:00 CAT. 24 hours only.",
       "🧠 *AI-written questions* — a fresh pool of scripture questions generated every week; a curated fallback bank keeps the event alive if the AI is offline.",
@@ -34,7 +34,7 @@
       "version": "1.2.5",
       "name": "The Scroll Trials",
       "releasedAt": 1788719900000,
-      "notes": "🌟 *LUMORA 1.2.5 — THE SCROLL TRIALS*\\n\\n📜 *Quest rework is LIVE.* No more dead ends. Fighting styles are now earned through real quest lines:\\n\\n🕯️ *Secret codes* — every registered player holds personal, one-time codes for every scroll-gainable style. Get a style scroll, open it in your DM, and it reveals your code. Speak the code in any group chat to begin the trial.",
+      "notes": "🌟 *LUMORA 1.2.5 — THE SCROLL TRIALS*\n\n📜 *Quest rework is LIVE.* No more dead ends. Fighting styles are now earned through real quest lines:\n\n🕯️ *Secret codes* — every registered player holds personal, one-time codes for every scroll-gainable style. Get a style scroll, open it in your DM, and it reveals your code. Speak the code in any group chat to begin the trial.",
       "stages": [
         "📜 *Scroll Trials (all 15 styles)* — receive the scroll → open it in DM → speak your secret code → you're teleported to a foreign land with PROCEED / RETREAT choices → story beats with CONTINUE → a named NPC challenger who uses that style → beat them to reach the teacher.",
         "🎖️ *Level barriers* — rare styles gate at level 8–10, epic at 15, legendary at 25. The teacher refuses anyone too green — the trial stays open, no dead ends.",
@@ -53,6 +53,28 @@
       "name": "Battlegrounds",
       "releasedAt": 1778976000000,
       "notes": "Hunting Grounds, Banks, Robbery, Ranks, Wealth, Achievements, Battlegrounds, Profile mask."
+    }
+  ],
+  "events": [
+    {
+      "id": "the-hollowing",
+      "name": "The Hollowing",
+      "subtitle": "Lumora's first seasonal world event",
+      "emoji": "🎃",
+      "status": "live",
+      "startsAt": "2026-10-04T00:00:00Z",
+      "endsAt": "2026-11-01T03:00:00Z",
+      "notes": "🎃 *THE HOLLOWING IS LIVE*\n\nSomething is wrong on the moor. The Mora are restless, black crystals are surfacing in caves that were empty last week, and a hunter came back without his Mora's shadow.\n\n_Something ancient is waking up — and the Rift is not opening. Something is trying to come through it._",
+      "stages": [
+        "🚨 *It has begun.* The opening transmission has already gone out across Aetherfall.",
+        "📖 *Four chapters, one Halloween.* Chapter I — *The Strange Signs* is live. Chapter II opens Oct 11, III on Oct 18, and the Veil breaks on Oct 25.",
+        "🧭 *Go and look.* `.investigate` walks branching paths — lucky finds, costly mistakes, or fragments of a story most hunters will never assemble.",
+        "🌑 *Hollow Mora.* From Chapter II, familiar species return twisted — violet-eyed, faster, harder to catch, leaving Rift Fragments, Hollow Essence and Ancient Seals.",
+        "🤝 *The Hollow Muster.* When a wave comes, the whole group holds the line — or takes the damage. No solo hunter can carry it.",
+        "⚡ *Hunt Energy surges.* Regeneration is doubled and travel drains half while the event runs.",
+        "👁️ *Not everything will be explained on Halloween.*",
+        "📜 `.hollowing` for the story so far · `.hollowing story` for the full chronicle."
+      ]
     }
   ]
 }

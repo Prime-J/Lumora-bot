@@ -31,6 +31,43 @@ function renderCurrent(c) {
   );
 }
 
+// ── LIVE / UPCOMING SEASONAL EVENTS ─────────────────────────────
+// Events are not numbered versions, so they get their own panel above the
+// version ladder instead of being forced into `current`/`pending`.
+const EVENT_ICON = { live: "🔴", upcoming: "🟡", ended: "⚪" };
+
+function eventStatus(e, now = Date.now()) {
+  if (e && e.status) return String(e.status).toLowerCase();
+  const starts = e && e.startsAt ? Date.parse(e.startsAt) : null;
+  const ends   = e && e.endsAt   ? Date.parse(e.endsAt)   : null;
+  if (starts && Number.isFinite(starts) && now < starts) return "upcoming";
+  if (ends   && Number.isFinite(ends)   && now >= ends)  return "ended";
+  return "live";
+}
+
+function renderEvent(e, now = Date.now()) {
+  if (!e) return "";
+  const status = eventStatus(e, now);
+  const head =
+    `${EVENT_ICON[status] || "🔴"} *${String(e.name || "").toUpperCase()}*` +
+    (e.subtitle ? ` — _${e.subtitle}_` : "") +
+    (status === "upcoming" && e.startsAt ? `\n_Starts ${fmtDate(Date.parse(e.startsAt))}_` : "") +
+    (status === "live" && e.endsAt ? `\n_Ends ${fmtDate(Date.parse(e.endsAt))}_` : "");
+  const notes = e.notes ? `\n\n${e.notes}` : "";
+  const stages = Array.isArray(e.stages) && e.stages.length
+    ? `\n\n${e.stages.map(s => `• ${s}`).join("\n")}`
+    : "";
+  return head + notes + stages;
+}
+
+// Finished events drop off the card so it always reads as current.
+function renderEvents(data, now = Date.now()) {
+  const list = Array.isArray(data && data.events) ? data.events : [];
+  const shown = list.filter(e => eventStatus(e, now) !== "ended");
+  if (!shown.length) return "";
+  return shown.map(e => renderEvent(e, now)).join("\n\n");
+}
+
 function renderPending(p) {
   if (!p) return "📭 *No pending update.*";
   const stages = Array.isArray(p.stages) && p.stages.length
@@ -45,10 +82,13 @@ function renderPending(p) {
 
 async function cmdUpdate(ctx, chatId, msg) {
   const data = load();
+  const now  = Date.now();
+  const events = renderEvents(data, now);
   const text =
     `═══════════════════════\n` +
     `  📜 *LUMORA UPDATES*\n` +
     `═══════════════════════\n\n` +
+    (events ? `${events}\n\n───────────────────────\n\n` : "") +
     renderCurrent(data.current) +
     `\n\n───────────────────────\n\n` +
     renderPending(data.pending) +
@@ -99,4 +139,12 @@ module.exports = {
   save,
   cmdUpdate,
   cmdUpdateRelease,
+
+  // exposed for tests
+  eventStatus,
+  renderEvent,
+  renderEvents,
+  renderCurrent,
+  renderPending,
+  EVENT_ICON,
 };
