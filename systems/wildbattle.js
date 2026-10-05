@@ -805,6 +805,8 @@ async function startWildBattle(ctx, chatId, senderId, msg, options = {}) {
 
   let wildSpecies = null;
   let isCorrupted = false;
+  let isHollow = false;        // THE HOLLOWING — Chapter II variant
+  let hollowIntroLine = null;
   let corruptionClass = null;
 
   if (options.naturalCorruptedId) {
@@ -831,11 +833,20 @@ async function startWildBattle(ctx, chatId, senderId, msg, options = {}) {
     isCorrupted = true;
     corruptionClass = "Natural";
   } else {
+    // THE HOLLOWING — species that have gone missing from Aetherfall are never
+    // spawned. filterAvailableMora is a no-op until the event marks any.
+    const hollowing = require("./hollowing");
+    const available = hollowing.filterAvailableMora(moraList);
     const baseSpecies =
       options.baseSpecies ||
       getSpecies(moraList, options.baseId) ||
-      moraList[randInt(0, Math.max(0, moraList.length - 1))];
+      available[randInt(0, Math.max(0, available.length - 1))];
 
+    // If the roster is non-empty but nothing is left to find here, the grounds
+    // have gone quiet — atmosphere, not an error.
+    if (!baseSpecies && moraList.length) {
+      return sock.sendMessage(chatId, { text: hollowing.noTraceLine() }, { quoted: msg });
+    }
     if (!baseSpecies) {
       return sock.sendMessage(chatId, { text: "❌ Could not build a wild encounter." }, { quoted: msg });
     }
@@ -844,6 +855,14 @@ async function startWildBattle(ctx, chatId, senderId, msg, options = {}) {
       wildSpecies = corruptionSystem.buildCorruptedFromBaseSpecies(baseSpecies, corruptionData);
       isCorrupted = true;
       corruptionClass = wildSpecies?.corruptedTitle || "Variant";
+    } else if (hollowing.shouldHollowSpawn()) {
+      // THE HOLLOWING — a familiar species, twisted. Reuses the corrupted
+      // battle paths (harder AI, lower catch odds) and carries residue drops.
+      wildSpecies = hollowing.buildHollowSpecies(baseSpecies);
+      isCorrupted = true;
+      isHollow = true;
+      hollowIntroLine = hollowing.hollowIntro();
+      corruptionClass = "Hollow";
     } else {
       wildSpecies = baseSpecies;
     }
@@ -875,6 +894,7 @@ async function startWildBattle(ctx, chatId, senderId, msg, options = {}) {
     playerMoraRefName: playerMora?.name || null,
     playerTurn: true,
     isCorrupted,
+    isHollow,
     corruptionClass,
     personality,
     allowCapture: options.allowCapture !== false,
@@ -897,7 +917,7 @@ async function startWildBattle(ctx, chatId, senderId, msg, options = {}) {
     wildSpecies,
     wildMora,
     styleQuestChallenge: options.styleQuestChallenge || null,
-    flavorIntro: pickWildIntro(isCorrupted)
+    flavorIntro: isHollow && hollowIntroLine ? hollowIntroLine : pickWildIntro(isCorrupted)
   };
 
   setWildBattle(chatId, senderId, state);
@@ -1181,6 +1201,22 @@ async function cmdWildAttack(ctx, chatId, senderId, msg, args = []) {
     } catch (e) {
       // never break the defeat path because of a shard hiccup
       console.log("shard drop error:", e?.message || e);
+    }
+
+    // ── THE HOLLOWING — Hollow residue ───────────────────────
+    // Rift Fragments / Hollow Essence / Ancient Seals. The reward path for the
+    // whole event funnels through here.
+    if (state.isHollow) {
+      try {
+        const hollowing = require("./hollowing");
+        logs.push(hollowing.hollowDefeatLog(player, hollowing.rollHollowDrops()));
+        // Every Hollow kill feeds the island-wide progress bar.
+        const hState = hollowing.loadState();
+        hollowing.recordProgress(hState, "hollowMoraDefeated", 1);
+        hollowing.saveState(hState);
+      } catch (e) {
+        console.log("hollow drop error:", e?.message || e);
+      }
     }
 
     // ── Scroll drop (v0.6.0) ─────────────────────────────────

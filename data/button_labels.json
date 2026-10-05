@@ -124,5 +124,11 @@
   "7 Questions": ".gift-count 7",
   "8 Questions": ".gift-count 8",
   "9 Questions": ".gift-count 9",
-  "10 Questions": ".gift-count 10"
+  "10 Questions": ".gift-count 10",
+  "🔍 Step into the hollow": ".hollow-investigate",
+  "🎒 Pry one loose": ".hollow-take",
+  "🏃 Back away slowly": ".hollow-retreat",
+  "🕯️ Light a lantern": ".hollow-light",
+  "👁️ Follow the breathing": ".hollow-follow",
+  "👁️ Watch and wait": ".hollow-watch"
 }

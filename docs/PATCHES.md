@@ -14,6 +14,9 @@ or meaningful content drop (`1.2.0`), **patch** = fixes, balance and polish
 > **Next major update (proposed):** `1.3.0` — *"The Sunday Gift"*.
 > Permanent weekly AI scripture event + owner command set + rotating bonus rewards.
 > See `docs/EVENTS.md` event 005 and `docs/ADMIN_SUNDAY_EVENT.md`.
+>
+> **Seasonal (October):** 🎃 *"The Hollowing"* — Lumora's first multi-chapter
+> world event. Engine built and dormant; see [`events/the-hollowing.md`](../events/the-hollowing.md).
 
 ---
 

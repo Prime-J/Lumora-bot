@@ -206,6 +206,9 @@ const COMMANDS = [
   { name: "gift-quit",   aliases: [],                category: "game", subcat: "events",     desc: "Leave the Gift unclaimed",                    usage: ".gift-quit" },
   { name: "gift-lb",     aliases: ["gift-standings"],category: "game", subcat: "events",    desc: "This week's Gift champions",                   usage: ".gift-lb" },
   { name: "gift-help",   aliases: [],                category: "game", subcat: "events",     desc: "How the Sunday Gift works",                    usage: ".gift-help" },
+  { name: "hollowing",   aliases: ["hollow","event"],category: "game", subcat: "events",    desc: "The Hollowing — seasonal world event status",   usage: ".hollowing" },
+  { name: "investigate", aliases: ["tale","hollow-tale"], category: "game", subcat: "events", desc: "Walk a Hollowing story path (branching choices)", usage: ".investigate" },
+  { name: "muster",      aliases: ["hollow-muster"],  category: "game", subcat: "events",     desc: "The Hollow Muster — group co-op wave",           usage: ".muster" },
 
   // ═══════════════════════════════════════════════════════════════
   // 🛠️ BOT MENU
@@ -382,7 +385,7 @@ const GAME_CATEGORIES = [
   { id: "world",      emoji: "🗺️", name: "World",         desc: "Map, hunting, exploration" },
   { id: "factions",   emoji: "🛡️", name: "Factions",      desc: "Missions, wars, sanctuary" },
   { id: "raids",      emoji: "🌀", name: "Raids",         desc: "Kael, cross-faction raids" },
-  { id: "events",     emoji: "📜", name: "Events",        desc: "Live trials — the Sunday Gift" },
+  { id: "events",     emoji: "📜", name: "Events",        desc: "Live trials — the Sunday Gift & The Hollowing" },
   { id: "economy",    emoji: "💰", name: "Economy",       desc: "Market, bank, trading" },
   { id: "inventory",  emoji: "🎒", name: "Inventory",     desc: "Items, scrolls, consumables" },
   { id: "rankings",   emoji: "🏆", name: "Rankings",      desc: "Leaderboards & wealth" },

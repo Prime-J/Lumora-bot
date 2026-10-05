@@ -378,6 +378,7 @@ const moraCreationSystem = require('./systems/moraCreation');
 const starSystem = require('./systems/star');
 const updatesSystem = require('./systems/updates');
 const sundayGiftSystem = require('./systems/sundayGift');
+const hollowingSystem  = require('./systems/hollowing');
 const bankSystem = require('./systems/bank');
 const robberySystem = require('./systems/robbery');
 const ranksSystem = require('./systems/ranks');
@@ -2266,6 +2267,21 @@ async function startBot() {
           ]));
           sundayGiftSystem.startGiftLoop(sock, giftGroups);
         } catch (e) { console.warn("[sundayGift] loop failed:", e.message); }
+
+        // The Hollowing — seasonal world event. Dormant until enabled via
+        // data/hollowing_config.json; when off it costs nothing and fires
+        // nothing. Announced into the same community groups as the Gift.
+        try {
+          if (hollowingSystem.isEnabled()) {
+            const _hs = loadSettings();
+            const eventGroups = Array.from(new Set([
+              ...(_hs.huntingGroups?.allowed || []),
+              ...(_hs.marketGroups?.allowed || []),
+              ...Object.keys(FACTION_GROUPS),
+            ]));
+            hollowingSystem.startHollowingLoop(sock, eventGroups);
+          }
+        } catch (e) { console.warn("[hollowing] loop failed:", e.message); }
       }
     }
 
@@ -2995,7 +3011,7 @@ sock.ev.removeAllListeners("messages.upsert");
 
       // ── FACTION CONSEQUENCE CHECK ─────────────────────────
       // Handles: Harmony backlash, Purity quarantine, Rift PE overflow
-      const _skipConsequences = new Set(["help","ping","profile","appeal","start","faction"]);
+      const _skipConsequences = new Set(["help","ping","profile","appeal","start","faction","hollowing","hollow","investigate","tale","muster"]);
       if (!_skipConsequences.has(command) && players[senderId]) {
         try {
           const _consequences = factionMarketSystem.checkFactionConsequences(
@@ -3418,6 +3434,22 @@ if (command === "cancel") {
       }
       if (command === "gift-help" || command === "gift-rules") {
         return sundayGiftSystem.cmdGiftHelp(ctx, chatId, senderId, msg);
+      }
+
+      // ── THE HOLLOWING — seasonal world event ──
+      if (command === "hollowing" || command === "hollow" || command === "event") {
+        return hollowingSystem.cmdHollowing(ctx, chatId, msg, args);
+      }
+      // Branching story paths — entry point + one handler per choice verb.
+      if (command === "investigate" || command === "tale" || command === "hollow-tale") {
+        return hollowingSystem.cmdTale(ctx, chatId, senderId, msg, args);
+      }
+      if (command.startsWith("hollow-")) {
+        return hollowingSystem.cmdTaleChoice(ctx, chatId, senderId, msg, command.slice("hollow-".length));
+      }
+      // The Hollow Muster — group co-op wave
+      if (command === "muster" || command === "hollow-muster") {
+        return hollowingSystem.cmdMuster(ctx, chatId, senderId, msg);
       }
       if (command === "update-release" || command === "release-update") {
         return updatesSystem.cmdUpdateRelease(ctx, chatId, msg, args, isOwner);

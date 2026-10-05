@@ -1,0 +1,1244 @@
+{
+  "generatedAt": "2026-10-05T06:09:45.810Z",
+  "rosterSource": "data/Players.json.pre-wipe (18 players) — MIRROR, may be stale",
+  "total": 101,
+  "activeNow": 101,
+  "targetActive": 55,
+  "needToHide": 46,
+  "safeCount": 56,
+  "recommended": [
+    {
+      "id": 18,
+      "name": "Briarhorn",
+      "rarity": "Uncommon"
+    },
+    {
+      "id": 19,
+      "name": "Cindrake",
+      "rarity": "Uncommon"
+    },
+    {
+      "id": 63,
+      "name": "Scorchmane",
+      "rarity": "Uncommon"
+    },
+    {
+      "id": 64,
+      "name": "Frostfang",
+      "rarity": "Uncommon"
+    },
+    {
+      "id": 22,
+      "name": "Terravex",
+      "rarity": "Rare"
+    },
+    {
+      "id": 23,
+      "name": "Aquarion",
+      "rarity": "Rare"
+    },
+    {
+      "id": 25,
+      "name": "Umbrix",
+      "rarity": "Rare"
+    },
+    {
+      "id": 26,
+      "name": "Ignix",
+      "rarity": "Rare"
+    },
+    {
+      "id": 27,
+      "name": "Frostel",
+      "rarity": "Rare"
+    },
+    {
+      "id": 28,
+      "name": "Stormix",
+      "rarity": "Rare"
+    },
+    {
+      "id": 68,
+      "name": "Florageist",
+      "rarity": "Rare"
+    },
+    {
+      "id": 71,
+      "name": "Glacier-Rex",
+      "rarity": "Rare"
+    },
+    {
+      "id": 72,
+      "name": "Tidal-Serpent",
+      "rarity": "Rare"
+    },
+    {
+      "id": 74,
+      "name": "Iron-Sentinel",
+      "rarity": "Rare"
+    },
+    {
+      "id": 75,
+      "name": "Nebula-Wisp",
+      "rarity": "Rare"
+    },
+    {
+      "id": 76,
+      "name": "Magma-Tortoise",
+      "rarity": "Rare"
+    },
+    {
+      "id": 78,
+      "name": "Spectral-Raven",
+      "rarity": "Rare"
+    },
+    {
+      "id": 79,
+      "name": "Venom-Spire",
+      "rarity": "Rare"
+    },
+    {
+      "id": 81,
+      "name": "Crag-Titan",
+      "rarity": "Rare"
+    },
+    {
+      "id": 82,
+      "name": "Storm-Herald",
+      "rarity": "Rare"
+    },
+    {
+      "id": 83,
+      "name": "Blight-Bloom",
+      "rarity": "Rare"
+    },
+    {
+      "id": 84,
+      "name": "Cinder-Drake",
+      "rarity": "Rare"
+    },
+    {
+      "id": 85,
+      "name": "Phantom-Stalker",
+      "rarity": "Rare"
+    },
+    {
+      "id": 86,
+      "name": "Frost-Warden",
+      "rarity": "Rare"
+    },
+    {
+      "id": 87,
+      "name": "Vortex-Manta",
+      "rarity": "Rare"
+    },
+    {
+      "id": 89,
+      "name": "Cyber-Byte",
+      "rarity": "Rare"
+    },
+    {
+      "id": 90,
+      "name": "Gem-Tortoise",
+      "rarity": "Rare"
+    },
+    {
+      "id": 29,
+      "name": "Drakonis",
+      "rarity": "Epic"
+    },
+    {
+      "id": 30,
+      "name": "Pyrix",
+      "rarity": "Epic"
+    },
+    {
+      "id": 31,
+      "name": "Cryovex",
+      "rarity": "Epic"
+    },
+    {
+      "id": 32,
+      "name": "Voltaris",
+      "rarity": "Epic"
+    },
+    {
+      "id": 33,
+      "name": "Floravex",
+      "rarity": "Epic"
+    },
+    {
+      "id": 34,
+      "name": "Terragon",
+      "rarity": "Epic"
+    },
+    {
+      "id": 35,
+      "name": "Luxar",
+      "rarity": "Epic"
+    },
+    {
+      "id": 36,
+      "name": "Nocturn",
+      "rarity": "Epic"
+    },
+    {
+      "id": 37,
+      "name": "Aquavex",
+      "rarity": "Epic"
+    },
+    {
+      "id": 38,
+      "name": "Infernos",
+      "rarity": "Epic"
+    },
+    {
+      "id": 91,
+      "name": "Infernal-Centaur",
+      "rarity": "Epic"
+    },
+    {
+      "id": 92,
+      "name": "Abyssal-Hydra",
+      "rarity": "Epic"
+    },
+    {
+      "id": 93,
+      "name": "Sky-Leviathan",
+      "rarity": "Epic"
+    },
+    {
+      "id": 94,
+      "name": "Primal-Golem",
+      "rarity": "Epic"
+    },
+    {
+      "id": 95,
+      "name": "Tesla-Dragon",
+      "rarity": "Epic"
+    },
+    {
+      "id": 39,
+      "name": "Abyssor",
+      "rarity": "Legendary"
+    },
+    {
+      "id": 40,
+      "name": "Celestion",
+      "rarity": "Legendary"
+    },
+    {
+      "id": 42,
+      "name": "Terralord",
+      "rarity": "Legendary"
+    },
+    {
+      "id": 43,
+      "name": "Voltaris Prime",
+      "rarity": "Legendary"
+    }
+  ],
+  "rows": [
+    {
+      "id": 1,
+      "name": "Nylon",
+      "type": "Aqua",
+      "rarity": "common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Thornel",
+      "type": "Nature",
+      "rarity": "common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Terron",
+      "type": "Terra",
+      "rarity": "common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Sparko",
+      "type": "Volt",
+      "rarity": "common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Emberu",
+      "type": "Flame",
+      "rarity": "common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Glacyn",
+      "type": "Frost",
+      "rarity": "Uncommon",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Umbrake",
+      "type": "Shadow",
+      "rarity": "Uncommon",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Torrivine",
+      "type": "Nature",
+      "rarity": "Uncommon",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Pyrraptor",
+      "type": "Flame",
+      "rarity": "Uncommon",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Zephyra",
+      "type": "Wind",
+      "rarity": "Uncommon",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2",
+        "referenced"
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Brinlock",
+      "type": "Aqua",
+      "rarity": "Common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Kindrel",
+      "type": "Flame",
+      "rarity": "Common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Pebbrum",
+      "type": "Terra",
+      "rarity": "Common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Gustling",
+      "type": "Wind",
+      "rarity": "Common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool",
+        "referenced"
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Noctik",
+      "type": "Shadow",
+      "rarity": "Common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Voltrix",
+      "type": "Volt",
+      "rarity": "Uncommon",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Frosten",
+      "type": "Frost",
+      "rarity": "Uncommon",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Briarhorn",
+      "type": "Nature",
+      "rarity": "Uncommon",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 19,
+      "name": "Cindrake",
+      "type": "Flame",
+      "rarity": "Uncommon",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 20,
+      "name": "Dunebral",
+      "type": "Terra",
+      "rarity": "Uncommon",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 21,
+      "name": "Flarion",
+      "type": "Flame",
+      "rarity": "Rare",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 22,
+      "name": "Terravex",
+      "type": "Terra",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 23,
+      "name": "Aquarion",
+      "type": "Aqua",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 24,
+      "name": "Thornex",
+      "type": "Nature",
+      "rarity": "Rare",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 25,
+      "name": "Umbrix",
+      "type": "Shadow",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 26,
+      "name": "Ignix",
+      "type": "Flame",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 27,
+      "name": "Frostel",
+      "type": "Frost",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 28,
+      "name": "Stormix",
+      "type": "Wind",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 29,
+      "name": "Drakonis",
+      "type": "Dragon",
+      "rarity": "Epic",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 30,
+      "name": "Pyrix",
+      "type": "Flame",
+      "rarity": "Epic",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 31,
+      "name": "Cryovex",
+      "type": "Frost",
+      "rarity": "Epic",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 32,
+      "name": "Voltaris",
+      "type": "Volt",
+      "rarity": "Epic",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 33,
+      "name": "Floravex",
+      "type": "Nature",
+      "rarity": "Epic",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 34,
+      "name": "Terragon",
+      "type": "Terra",
+      "rarity": "Epic",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 35,
+      "name": "Luxar",
+      "type": "Light",
+      "rarity": "Epic",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 36,
+      "name": "Nocturn",
+      "type": "Shadow",
+      "rarity": "Epic",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 37,
+      "name": "Aquavex",
+      "type": "Aqua",
+      "rarity": "Epic",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 38,
+      "name": "Infernos",
+      "type": "Flame",
+      "rarity": "Epic",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 39,
+      "name": "Abyssor",
+      "type": "Shadow",
+      "rarity": "Legendary",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 40,
+      "name": "Celestion",
+      "type": "Cosmic",
+      "rarity": "Legendary",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 41,
+      "name": "Ignivar",
+      "type": "Flame",
+      "rarity": "Legendary",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 42,
+      "name": "Terralord",
+      "type": "Terra",
+      "rarity": "Legendary",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 43,
+      "name": "Voltaris Prime",
+      "type": "Volt",
+      "rarity": "Legendary",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 44,
+      "name": "Luminary",
+      "type": "Light",
+      "rarity": "Legendary",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 45,
+      "name": "Noctyra",
+      "type": "Shadow",
+      "rarity": "Legendary",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 46,
+      "name": "Aquatyr",
+      "type": "Aqua",
+      "rarity": "Legendary",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 47,
+      "name": "Drakoryx",
+      "type": "Dragon",
+      "rarity": "Legendary",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 48,
+      "name": "Eternyx",
+      "type": "Cosmic",
+      "rarity": "Legendary",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 49,
+      "name": "Omnaris",
+      "type": "Omni",
+      "rarity": "Legendary",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 50,
+      "name": "Aetherion",
+      "type": "Light",
+      "rarity": "Legendary",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 51,
+      "name": "Bup",
+      "type": "Aqua",
+      "rarity": "Common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 52,
+      "name": "Sproutlet",
+      "type": "Nature",
+      "rarity": "Common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 53,
+      "name": "Dustmite",
+      "type": "Terra",
+      "rarity": "Common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 54,
+      "name": "Staticbug",
+      "type": "Volt",
+      "rarity": "Common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 55,
+      "name": "Ashling",
+      "type": "Flame",
+      "rarity": "Common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 56,
+      "name": "Flurrybat",
+      "type": "Frost",
+      "rarity": "Common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 57,
+      "name": "Gloomtail",
+      "type": "Shadow",
+      "rarity": "Common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 58,
+      "name": "Breezefluff",
+      "type": "Wind",
+      "rarity": "Common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 59,
+      "name": "Puddlekin",
+      "type": "Aqua",
+      "rarity": "Common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 60,
+      "name": "Twiggy",
+      "type": "Nature",
+      "rarity": "Common",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "starter-pool"
+      ]
+    },
+    {
+      "id": 61,
+      "name": "Gravelback",
+      "type": "Terra",
+      "rarity": "Uncommon",
+      "owned": 4,
+      "safe": false,
+      "reasons": [
+        "owned×4"
+      ]
+    },
+    {
+      "id": 62,
+      "name": "Joltwing",
+      "type": "Volt",
+      "rarity": "Uncommon",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 63,
+      "name": "Scorchmane",
+      "type": "Flame",
+      "rarity": "Uncommon",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 64,
+      "name": "Frostfang",
+      "type": "Frost",
+      "rarity": "Uncommon",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 65,
+      "name": "Duskprowl",
+      "type": "Shadow",
+      "rarity": "Uncommon",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 66,
+      "name": "Obsidihorn",
+      "type": "Terra",
+      "rarity": "Rare",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 67,
+      "name": "Valtopher",
+      "type": "Volt",
+      "rarity": "Rare",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 68,
+      "name": "Florageist",
+      "type": "Nature",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 69,
+      "name": "Pyre-Griffin",
+      "type": "Flame",
+      "rarity": "Rare",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 70,
+      "name": "Abyss-Lurk",
+      "type": "Shadow",
+      "rarity": "Rare",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 71,
+      "name": "Glacier-Rex",
+      "type": "Frost",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 72,
+      "name": "Tidal-Serpent",
+      "type": "Aqua",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 73,
+      "name": "Aero-Drakon",
+      "type": "Wind",
+      "rarity": "Rare",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 74,
+      "name": "Iron-Sentinel",
+      "type": "Terra",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 75,
+      "name": "Nebula-Wisp",
+      "type": "Void",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 76,
+      "name": "Magma-Tortoise",
+      "type": "Flame",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 77,
+      "name": "Crag-Goat",
+      "type": "Terra",
+      "rarity": "Rare",
+      "owned": 4,
+      "safe": false,
+      "reasons": [
+        "owned×4"
+      ]
+    },
+    {
+      "id": 78,
+      "name": "Spectral-Raven",
+      "type": "Shadow",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 79,
+      "name": "Venom-Spire",
+      "type": "Nature",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 80,
+      "name": "Spark-Core",
+      "type": "Volt",
+      "rarity": "Rare",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 81,
+      "name": "Crag-Titan",
+      "type": "Terra",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 82,
+      "name": "Storm-Herald",
+      "type": "Volt",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 83,
+      "name": "Blight-Bloom",
+      "type": "Nature",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 84,
+      "name": "Cinder-Drake",
+      "type": "Flame",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 85,
+      "name": "Phantom-Stalker",
+      "type": "Shadow",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 86,
+      "name": "Frost-Warden",
+      "type": "Frost",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 87,
+      "name": "Vortex-Manta",
+      "type": "Aqua",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 88,
+      "name": "Cloud-Whale",
+      "type": "Wind",
+      "rarity": "Rare",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    },
+    {
+      "id": 89,
+      "name": "Cyber-Byte",
+      "type": "Volt",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 90,
+      "name": "Gem-Tortoise",
+      "type": "Terra",
+      "rarity": "Rare",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 91,
+      "name": "Infernal-Centaur",
+      "type": "Flame",
+      "rarity": "Epic",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 92,
+      "name": "Abyssal-Hydra",
+      "type": "Shadow",
+      "rarity": "Epic",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 93,
+      "name": "Sky-Leviathan",
+      "type": "Wind",
+      "rarity": "Epic",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 94,
+      "name": "Primal-Golem",
+      "type": "Terra",
+      "rarity": "Epic",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 95,
+      "name": "Tesla-Dragon",
+      "type": "Volt",
+      "rarity": "Epic",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 96,
+      "name": "Zovax",
+      "type": "Void",
+      "rarity": "Legendary",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 97,
+      "name": "Ruvon",
+      "type": "Flame",
+      "rarity": "Legendary",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 98,
+      "name": "Belo",
+      "type": "Nature",
+      "rarity": "Legendary",
+      "owned": 0,
+      "safe": false,
+      "reasons": [
+        "referenced"
+      ]
+    },
+    {
+      "id": 99,
+      "name": "Kaza",
+      "type": "Wind",
+      "rarity": "Legendary",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 100,
+      "name": "Nira",
+      "type": "Aqua",
+      "rarity": "Legendary",
+      "owned": 0,
+      "safe": true,
+      "reasons": []
+    },
+    {
+      "id": 101,
+      "name": "Pyronyx",
+      "type": "Nature",
+      "rarity": "legendary",
+      "owned": 2,
+      "safe": false,
+      "reasons": [
+        "owned×2"
+      ]
+    }
+  ]
+}

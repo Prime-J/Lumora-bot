@@ -289,7 +289,14 @@ function regenHuntEnergy(player) {
   if (elapsed < HUNT_REGEN_INTERVAL_MS) return;
 
   const ticks       = Math.floor(elapsed / HUNT_REGEN_INTERVAL_MS);
-  const regenAmount = ticks * Math.floor(maxE * 0.5); // 50% of max per tick
+  let   perTick     = Math.floor(maxE * 0.5); // 50% of max per tick
+  // THE HOLLOWING — seasonal event may surge regen (see systems/hollowing.js).
+  // Pure read; returns x1 when the event is off, so normal play is untouched.
+  try {
+    const hollowing = require("./hollowing");
+    perTick = hollowing.applyRegenModifier(perTick, hollowing.huntEnergyMultipliers());
+  } catch {}
+  const regenAmount = ticks * perTick;
   player.huntEnergy    = Math.min(maxE, Number(player.huntEnergy || 0) + regenAmount);
   // Advance the refill timestamp by the consumed ticks (not all of `now`)
   // so partial progress toward the next tick is preserved.
@@ -916,7 +923,13 @@ async function cmdProceed(ctx, chatId, senderId, msg) {
 
   const proceedRiftBuff = Number(player?.riftEnergyUntil || 0) > Date.now();
   if (!proceedRiftBuff) {
-    hunter.huntEnergy = Math.max(0, Number(hunter.huntEnergy || 0) - Number(pending.energyCost || 0));
+    // THE HOLLOWING — the event may drain energy more slowly. x1 when off.
+    let drainCost = Number(pending.energyCost || 0);
+    try {
+      const hollowing = require("./hollowing");
+      drainCost = hollowing.applyDrainModifier(drainCost, hollowing.huntEnergyMultipliers());
+    } catch {}
+    hunter.huntEnergy = Math.max(0, Number(hunter.huntEnergy || 0) - drainCost);
     player.huntEnergy = hunter.huntEnergy;
   }
   hunter.location    = pending.terrainId;

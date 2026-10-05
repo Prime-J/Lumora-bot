@@ -62,6 +62,25 @@ gets built.
 
 ---
 
+## Event 006 — 🎃 THE HOLLOWING (seasonal, October)
+
+**Status:** engine built and dormant (`systems/hollowing.js`), activated by
+`data/hollowing_config.json → enabled: true`.
+**Full design + story archive:** [`events/the-hollowing.md`](../events/the-hollowing.md)
+
+Lumora's first multi-chapter seasonal world event. Four chapters unlock on dates
+and build through October to a Halloween finale. Something is coming through the
+Primordial Rift; Mora go *missing* rather than being deleted; players vote with
+their choices; and a server-wide progress bar decides how well Aetherfall
+survives. Story beats broadcast every few hours, and a handful of limited tasks
+write the first hunters to complete them into the story by name.
+
+Follows this file's rule exactly: the event is behind **one config flag**, reuses
+existing hunting / Hunt Energy / corruption / notification systems, and can be
+untangled by deleting one file.
+
+---
+
 ## Event 002 (future) — Kael's Midnight Bazaar 🕶️
 
 Economy week: Kael runs a rotating bazaar for 48h — rare/epic shards, scrolls,

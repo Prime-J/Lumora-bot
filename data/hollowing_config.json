@@ -1,0 +1,11 @@
+{
+  "enabled": true,
+  "startDate": "2026-10-25T18:00:00Z",
+  "endDate": "2026-11-01T03:00:00Z",
+  "maxBeatsPerTick": 1,
+  "minBeatSpacingHours": 4,
+  "eventModifiers": {
+    "huntEnergyRegenMultiplier": 2.0,
+    "huntEnergyDrainMultiplier": 0.5
+  }
+}

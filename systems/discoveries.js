@@ -136,8 +136,18 @@ async function cmdEnter(ctx, chatId, senderId, msg) {
   // 3) BATTLE — area-appropriate guardian via the real battle engine
   const battleType = disc.battleType;
   const moraDb = typeof ctx.loadMora === "function" ? ctx.loadMora() : [];
-  const pool = battleType ? moraDb.filter((m) => String(m.type) === battleType) : moraDb;
-  const species = pool.length ? pool[Math.floor(Math.random() * pool.length)] : moraDb[Math.floor(Math.random() * moraDb.length)];
+  // THE HOLLOWING — missing species are never met in the wilds.
+  const hollowing = require("./hollowing");
+  const available = hollowing.filterAvailableMora(moraDb);
+  const pool = battleType ? available.filter((m) => String(m.type) === battleType) : available;
+  const species = pool.length
+    ? pool[Math.floor(Math.random() * pool.length)]
+    : available[Math.floor(Math.random() * available.length)];
+  // Non-empty roster, but this ground has gone quiet: something is missing.
+  if (!species && moraDb.length) {
+    hunting.hunting.saveHuntState(state);
+    return sock.sendMessage(chatId, { text: hollowing.noTraceLine() }, { quoted: msg });
+  }
   if (!species) {
     // engine can't run — pay lucons instead so the enter never dead-ends
     player.lucons = Number(player.lucons || 0) + 200;
