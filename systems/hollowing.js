@@ -110,7 +110,30 @@ const DEFAULT_CONFIG = {
   eventModifiers: {
     huntEnergyRegenMultiplier: 2.0,
     huntEnergyDrainMultiplier: 0.5,
+    huntEnergyActiveRefillIntervalMs: 180000, // 3 min while the event is live
+    huntEnergyActiveRefillAmount: 50,
   },
+
+  // TEMPORARY cooldown on the investigation command — short per-player throttle
+  // so the rewarding paths cannot be spammed. Default 1 minute.
+  investigationCooldownMs: 60000,
+  // Backlash layer — punished too-fast or too-frequent investigation.
+  // While the event is live, spamming investigations is punished hard:
+  // every resolve inside the soft window costs aura/HP, and a few fast
+  // resolves in a row trigger a hard lockout + a big backlash strike.
+  investigationBacklashCoolMs: 0,       // ramp starts immediately after a resolve
+  investigationBacklashMaxScares: 2,    // lockout after this many fast resolves
+  investigationBacklashLockMs: 600000,  // 10-minute hard lock once ramp threshold hit
+  investigationBacklashAura: 30,        // aura taken on a backlash strike
+  investigationBacklashHp: 15,          // HP taken on a backlash strike
+  investigationBacklashStrikeShards: 1, // random shard lost on a backlash strike
+  investigationBacklashScareShards: 0,  // shards lost on a near-miss scare (0 = off)
+
+  // TEMPORARY "burst" — while true, every hunter's gauge is topped to max
+  // (on each command and on each world tick). A gift to the island while the
+  // Hollowing runs; flip to false in data/hollowing_config.json to restore
+  // normal regen/drain. Not tied to isActive(), so it can stand alone.
+  huntEnergyBurst: true,
 
   chapters: [
     {
@@ -277,6 +300,17 @@ const DEFAULT_CONFIG = {
       lore: "{name} touched the Broken Crown — and heard what is waiting behind it." },
   ],
 
+  // ── RISK ──
+  // Investigating is a GAMBLE. Losses are rolled from a range, and a
+  // devastating path can go catastrophically wrong on top of that — which is
+  // where the real damage lands. Rewards stay predictable; the COST does not.
+  risk: {
+    enabled: true,
+    catastropheChance: 0.30,   // per devastating choice
+    multiplier: 2.25,          // applied to lucons / aura / hp / shards when it bites
+    line: "💀 *It goes badly wrong.*",
+  },
+
   // ── STORY TREE ──
   // Branching, button-driven tales. Not every story — a handful of forking
   // paths whose choices can be LUCKY, DEVASTATING, or REVEALING, and which can
@@ -296,8 +330,8 @@ const DEFAULT_CONFIG = {
             gain: { lucons: 350, aura: 8, fragments: 1 }, next: "signs-hollow" },
           { verb: "take", label: "🎒 Pry one loose", outcome: "devastating",
             line: "It comes free with a sound like a bone unsetting. Something notices you take it.",
-            loss: { lucons: 250, aura: 14, hp: 15 }, progress: "crystalsTaken",
-            end: true },
+            loss: { lucons: [400, 1200], aura: [10, 35], hp: [10, 40], shards: 1 },
+            progress: "crystalsTaken", end: true },
           { verb: "retreat", label: "🏃 Back away slowly", outcome: "reveal",
             line: "You leave it humming. On the cave wall, scratched low, three words: _THEY ARE LEAVING._",
             reveal: "frag-1", end: true },
@@ -313,7 +347,7 @@ const DEFAULT_CONFIG = {
             reveal: "frag-2", gain: { fragments: 1 }, end: true },
           { verb: "follow", label: "👁️ Follow the breathing", outcome: "devastating",
             line: "You follow it for an hour. It follows you back for two.",
-            loss: { lucons: 400, aura: 20, hp: 25 }, end: true },
+            loss: { lucons: [600, 1800], aura: [15, 40], hp: [20, 50], shards: 1 }, end: true },
           { verb: "watch", label: "👁️ Watch and wait", outcome: "lucky",
             line: "Patience pays. Whatever it is, it decides you are not worth the trouble — and leaves a cache behind.",
             gain: { lucons: 500, essence: 2 }, end: true },
@@ -331,7 +365,7 @@ const DEFAULT_CONFIG = {
             task: "first-witness", next: "hollow-whisper-deal" },
           { verb: "confront", label: "⚔️ Challenge it", outcome: "devastating",
             line: "The trees repeat your challenge back in a voice that is almost yours.",
-            loss: { aura: 25, hp: 20 }, end: true },
+            loss: { lucons: [450, 1400], aura: [20, 50], hp: [15, 40], shards: 1 }, end: true },
           { verb: "retreat", label: "🏃 Walk away", outcome: "reveal",
             line: "You walk. It lets you. That is somehow worse.",
             reveal: "frag-3", end: true },
@@ -365,7 +399,7 @@ const DEFAULT_CONFIG = {
             gain: { lucons: 700, essence: 3, seals: 1 }, end: true },
           { verb: "follow", label: "🌑 Follow the trail", outcome: "devastating",
             line: "The trail leads into the dark and then stops being a trail at all.",
-            loss: { aura: 30, hp: 30 }, end: true },
+            loss: { aura: [25, 60], hp: [25, 60], lucons: [500, 1500], shards: 1 }, end: true },
         ],
       },
       "veil-echo": {
@@ -375,7 +409,7 @@ const DEFAULT_CONFIG = {
         choices: [
           { verb: "confront", label: "⚔️ Strike it", outcome: "devastating",
             line: "It comes apart like smoke and reassembles behind you. You learn something on the way down.",
-            loss: { hp: 40, lucons: 300 }, reveal: "frag-6", end: true },
+            loss: { hp: [30, 70], lucons: [400, 1600], shards: 1 }, reveal: "frag-6", end: true },
           { verb: "watch", label: "👁️ Study it", outcome: "task",
             line: "You watch longer than is wise and learn exactly what it is not.",
             task: "seal-keeper", gain: { seals: 1 }, end: true },
@@ -408,7 +442,7 @@ const DEFAULT_CONFIG = {
         choices: [
           { verb: "watch", label: "👁️ Listen to it", outcome: "devastating",
             line: "It tells you what it has been guarding, and why it cannot leave. You will not sleep well again — but you know now.",
-            loss: { aura: 20 }, reveal: "frag-8", end: true },
+            loss: { aura: [20, 45], lucons: [300, 900], shards: 1 }, reveal: "frag-8", end: true },
           { verb: "confront", label: "⚔️ Take the Fragment", outcome: "lucky",
             line: "The Fragment comes away in your hand, cold and patient. Somewhere behind the door, something exhales.",
             gain: { lucons: 1200, seals: 2, aura: 15 }, end: true },
@@ -594,6 +628,41 @@ function huntEnergyMultipliers(config = loadConfig(), now = Date.now()) {
 // Round DOWN the cost so the discount never costs more than intended.
 function applyRegenModifier(amount, mults) { return Math.round(Number(amount || 0) * (mults?.regen ?? 1)); }
 function applyDrainModifier(cost, mults)   { return Math.max(0, Math.floor(Number(cost || 0) * (mults?.drain ?? 1))); }
+
+// Active cadence only: a fast refill while the event is live, independent of
+// the blunt burst toggle (which tops everyone to max). Off event → no effect.
+function huntEnergyActiveRecharge(config = loadConfig(), now = Date.now()) {
+  if (!isActive(config, now)) return null;
+  const m = config.eventModifiers || {};
+  const interval = Number(m.huntEnergyActiveRefillIntervalMs);
+  const amount   = Number(m.huntEnergyActiveRefillAmount);
+  if (!Number.isFinite(interval) || interval <= 0) return null;
+  return {
+    active: true,
+    intervalMs: interval,
+    amount: Number.isFinite(amount) && amount > 0 ? amount : 0,
+  };
+}
+
+// Re-export a direct call for hunt.js to use without calling loadConfig again.
+function huntEnergyActiveRechargeNow(now = Date.now()) {
+  return huntEnergyActiveRecharge(loadConfig(), now);
+}
+
+
+// TEMPORARY burst mode: pure toggle, no time gating. Consumed by
+// systems/hunting.js so every hunter's gauge sits at max while it is on.
+function huntEnergyBurstEnabled(config = loadConfig()) { return config?.huntEnergyBurst === true; }
+// Top a single player up. Returns true when the burst actually moved them.
+function burstHuntEnergy(player) {
+  if (!player || typeof player !== "object") return false;
+  const maxE = Number(player.maxHuntEnergy || 200);
+  const before = Number(player.huntEnergy || 0);
+  player.maxHuntEnergy = maxE;
+  player.huntEnergy = maxE;
+  player.lastHuntRefill = Date.now();
+  return before < maxE;
+}
 
 // ══════════════════════════════════════════════════════════════
 // MORA ACTIVITY (pure)
@@ -963,8 +1032,18 @@ async function tick(sock, groups, opts = {}) {
     catch (e) { console.log("[hollowing] muster fail announce:", e?.message || e); }
   }
 
+  // 5) TEMPORARY hunt-energy burst — top the whole roster up to max. Cheap and
+  //    idempotent; only reports a change when someone was below max.
+  let burst = 0;
+  if (huntEnergyBurstEnabled(config)) {
+    for (const p of Object.values(players || {})) if (burstHuntEnergy(p)) burst++;
+    if (burst && typeof opts.savePlayers === "function") {
+      try { opts.savePlayers(players); } catch (e) { console.log("[hollowing] burst save:", e?.message || e); }
+    }
+  }
+
   if (fired) saveState(state);
-  return { fired, dms };
+  return { fired, dms, burst };
 }
 
 function startHollowingLoop(sock, groups = [], opts = {}) {
@@ -1017,28 +1096,134 @@ function allVerbs(config = loadConfig()) {
   return [...set].sort();
 }
 function verbCommand(verb) { return `.hollow-${String(verb).toLowerCase()}`; }
-function taleButtons(node) {
-  return (node?.choices || []).slice(0, 8).map(c => ({ id: verbCommand(c.verb), text: c.label || c.verb }));
-}
+function  taleButtons(node) {
+    return (node?.choices || []).slice(0, 8).map(c => ({ id: verbCommand(c.verb), text: c.label || c.verb }));
+  }
+
+  // Backlash line shown on the node when the player is close to a backlash lockout.
+  function backlashWarnText(config, player) {
+    if (!config) return null;
+    const lastAt = Number(player?.eventChoices?.hollowing?.lastInvestigateAt || 0);
+    const coolsAt = Number(player?.eventChoices?.hollowing?.backlashCoolsAt || 0);
+    const scares = Number(player?.eventChoices?.hollowing?.backlashScares || 0);
+    const now = Date.now();
+    const cooldownMs = Number(config.investigationCooldownMs || 0);
+    const hotMs = Number(config.investigationBacklashCoolMs || 0);
+    const maxScares = Number(config.investigationBacklashMaxScares || 0);
+
+    // Already locked out — strongest warning.
+    if (coolsAt && now < coolsAt) {        return `\n\n⚠️ *THE DARK WON'T LET YOU IN RIGHT NOW.*\n\nYou pushed too fast too recently. Wait before you try again.`;
+    }
+
+    // If outside the normal cooldown window, the ramp is reset — no warning.
+    if (!cooldownMs || now - lastAt >= cooldownMs) return null;
+
+    // Inside the soft cool window, escalating.
+    if (hotMs && now - lastAt < hotMs) {
+      const nextScares = (scares || 0) + 1;
+      const danger = maxScares && nextScares >= maxScares;
+      if (danger) {
+        return `\n\n⚠️ *THE DARK PUSHES BACK — ONE MORE STEP AND IT LOCKS YOU OUT.*\n\nYou are on thin ice. The next move locks you out. Stand still.`;
+      }
+      return `\n\n⚠️ *THE DARK NOTICES YOU MOVING TOO FAST.*\n\nSlow down. You are dangerously close to being locked out.`;
+    }
+
+    return null;
+  }
 function renderNode(config, node, tale) {
   const lines = [`🌑 *THE HOLLOWING — ${node.title}*`, ``, node.text];
   const carried = (tale?.revealed || []).map(id => fragmentById(config, id)).filter(Boolean);
   if (carried.length) lines.push(``, `📜 *Fragments you carry:* ${carried.map(f => f.title).join(" · ")}`);
+  // Levels the risk honestly: players should know the cost is real before they tap.
+  if ((node.choices || []).some(c => c.outcome === "devastating")) {
+    lines.push(``, `⚠️ _Some of these paths cost you — lucons, aura, health, even shards. None of them are safe._`);
+  }
+  const warn = backlashWarnText(config, tale);
+  if (warn) lines.push(warn);
   return lines.join("\n");
 }
 
-function applyGainLoss(player, res, gain = {}, loss = {}) {
+// ── GAMBLE MECHANICS ───────────────────────────────────────────
+// A value may be a fixed number or a [min, max] range. Losses are rolled from
+// ranges so the cost of investigating is never predictable.
+function rollAmount(v, rng = Math.random) {
+  if (Array.isArray(v) && v.length) {
+    const min = Number(v[0]);
+    const max = Number(v.length > 1 ? v[1] : v[0]);
+    if (!Number.isFinite(min)) return 0;
+    if (!Number.isFinite(max) || max <= min) return min;
+    return min + Math.floor(rng() * (max - min + 1));
+  }
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function resolveBag(bag, rng = Math.random) {
+  const out = {};
+  for (const k of Object.keys(bag || {})) out[k] = rollAmount(bag[k], rng);
+  return out;
+}
+
+// Shards live in a species-keyed vault, so losing one means losing a random
+// shard you actually own. Vault size drives how much there is to take.
+function vaultSize(player) {
+  const v = player && player.shards;
+  if (!v || typeof v !== "object") return 0;
+  return Object.values(v).reduce((a, n) => a + (Number(n) || 0), 0);
+}
+function shardLabel(key) {
+  return String(key || "")
+    .replace(/^corrupted:/i, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, m => m.toUpperCase());
+}
+// Remove up to `count` shards at random. Returns the keys actually lost.
+function loseShards(player, count, rng = Math.random) {
+  const lost = [];
+  let want = Math.max(0, Math.floor(Number(count) || 0));
+  if (!player || typeof player !== "object") return lost;
+  if (!player.shards || typeof player.shards !== "object") player.shards = {};
+  while (want > 0) {
+    const entries = Object.entries(player.shards).filter(([, n]) => Number(n) > 0);
+    if (!entries.length) break;
+    const idx = Math.min(entries.length - 1, Math.floor(rng() * entries.length));
+    const [key, have] = entries[idx];
+    player.shards[key] = Number(have) - 1;
+    if (player.shards[key] <= 0) delete player.shards[key];
+    lost.push(key);
+    want--;
+  }
+  return lost;
+}
+
+function applyGainLoss(player, res, gain = {}, loss = {}, rng = Math.random) {
   const gained = [], lost = [];
   if (gain.lucons)    { player.lucons = Number(player.lucons || 0) + gain.lucons; gained.push(`💰 +${gain.lucons} Lucons`); }
   if (gain.aura)      { player.aura   = Number(player.aura   || 0) + gain.aura;   gained.push(`✨ +${gain.aura} Aura`); }
   if (gain.fragments && res) { res.fragments += gain.fragments; gained.push(`🔷 +${gain.fragments} Rift Fragment`); }
   if (gain.essence   && res) { res.essence   += gain.essence;   gained.push(`🌫 +${gain.essence} Hollow Essence`); }
   if (gain.seals     && res) { res.seals     += gain.seals;     gained.push(`🔒 +${gain.seals} Ancient Seal`); }
-  if (loss.lucons)    { player.lucons = Math.max(0, Number(player.lucons || 0) - loss.lucons); lost.push(`💰 −${loss.lucons} Lucons`); }
-  if (loss.aura)      { player.aura   = Math.max(0, Number(player.aura   || 0) - loss.aura);   lost.push(`✨ −${loss.aura} Aura`); }
+  // Losses report what was ACTUALLY taken (clamped at zero), not the rolled
+  // number — otherwise the card promises a loss the player never felt.
+  if (loss.lucons) {
+    const before = Number(player.lucons || 0);
+    player.lucons = Math.max(0, before - Math.abs(loss.lucons));
+    lost.push(`💰 −${before - player.lucons} Lucons`);
+  }
+  if (loss.aura) {
+    const before = Number(player.aura || 0);
+    player.aura = Math.max(0, before - Math.abs(loss.aura));
+    lost.push(`✨ −${before - player.aura} Aura`);
+  }
   if (loss.hp && player.playerHp != null) {
-    player.playerHp = Math.max(1, Number(player.playerHp) - loss.hp);
-    lost.push(`❤️ −${loss.hp} HP`);
+    const before = Number(player.playerHp);
+    player.playerHp = Math.max(1, before - Math.abs(loss.hp));
+    lost.push(`❤️ −${before - player.playerHp} HP`);
+  }
+  if (loss.shards) {
+    const taken = loseShards(player, loss.shards, rng);
+    if (taken.length) lost.push(...taken.map(k => `💎 −1 *${shardLabel(k)}* shard`));
+    else lost.push(`💎 _Your vault was empty — nothing left to take._`);
   }
   return { gained, lost };
 }
@@ -1050,19 +1235,241 @@ function resolveChoice(config, state, player, nodeId, verbKey, meta = {}) {
   const choice = (node.choices || []).find(c => c.verb === verbKey);
   if (!choice) return { ok: false, reason: "no-choice" };
 
+  const now = Number(meta.now || Date.now());
+  const rng  = typeof meta.rng === "function" ? meta.rng : Math.random;
   const tale = taleOf(player);
   const res  = resourcesOf(player);
+    // Investigation cooldown + backlash are a single punish ladder now:
+  // the cooldown window is the window over which scares accumulate, and a
+  // few fast resolves in a row trigger a hard lockout + a backlash strike.
+  // When the backlash layer is OFF, the cooldown is a bare throttle.
+  const cooldown = Number(config?.investigationCooldownMs || 0);
+  const backlash = config?.investigationBacklashCoolMs != null;
+  const lastAt = Number(player.eventChoices?.hollowing?.lastInvestigateAt || 0);
+
+  if (cooldown > 0 && lastAt && now - lastAt < cooldown) {
+    if (backlash) {
+      // Inside the cooldown window with backlash on -> treat as a near-miss
+      // scare rather than a bare throttle, so spammers feel the pressure.
+      const coolsAt = Number(player.eventChoices?.hollowing?.backlashCoolsAt || 0);
+      const scares  = Number(player.eventChoices?.hollowing?.backlashScares || 0);
+      const hotMs   = Number(config.investigationBacklashCoolMs || 0);
+      const maxScares = Number(config.investigationBacklashMaxScares || 0);
+      const lockMs = Number(config.investigationBacklashLockMs || 0);
+
+      // If already hard-locked by a prior strike, honor the lockout.
+      if (coolsAt && now < coolsAt) {
+        const remain = coolsAt - now;
+        return { ok: false, reason: "backlash-locked", remainingMs: remain, lockMs };
+      }
+
+      const scareAura = (Number(config.investigationBacklashAura || 0) / 3) || 0;
+      const scareHp   = (Number(config.investigationBacklashHp || 0) / 3)   || 0;
+      const nextScares = (scares || 0) + 1;
+      player.aura = Math.max(0, Number(player.aura || 0) - scareAura);
+      if (player.playerHp != null) {
+        player.playerHp = Math.max(1, Number(player.playerHp) - scareHp);
+      }
+      if (config.investigationBacklashScareShards) {
+        loseShards(player, config.investigationBacklashScareShards, rng);
+      }
+
+      if (maxScares && nextScares >= maxScares) {
+        // Strike the player, lock them out, reset the ramp.
+        player.aura = Math.max(0, Number(player.aura || 0) - Number(config.investigationBacklashAura || 0));
+        if (player.playerHp != null) {
+          player.playerHp = Math.max(1, Number(player.playerHp) - Number(config.investigationBacklashHp || 0));
+        }
+        if (config.investigationBacklashStrikeShards) {
+          loseShards(player, config.investigationBacklashStrikeShards, rng);
+        }
+        player.eventChoices.hollowing.backlashCoolsAt = now + lockMs;
+        player.eventChoices.hollowing.backlashScares = 0;
+        const backlashLine = "🌑 *THE HOLLOWING PUSHES BACK.*\n\nYou are moving too fast. The dark remembers your rhythm — and it answers.\n\n_Stand still for a moment._ ";
+        const out0 = {
+          ok: false,
+          reason: "backlash",
+          backlashLockedMs: lockMs,
+          backlashAuraLoss: Number(config.investigationBacklashAura || 0),
+          backlashHpLoss: Number(config.investigationBacklashHp || 0),
+          backlashShardLoss: config.investigationBacklashStrikeShards ? 1 : 0,
+          backlashRemainingMs: lockMs,
+          line: backlashLine,
+        };
+        const gl0 = applyGainLoss(player, res, {}, {}, rng);
+        out0.gained = gl0.gained; out0.lost = gl0.lost;
+        return out0;
+      }
+
+      // Near-miss scare: charge a little and refuse the resolve.
+      player.eventChoices.hollowing.backlashScares = nextScares;
+      const warnLine = `\n\n⚠️ *THE DARK NOTICES YOU MOVING TOO FAST.*\n\nYou lost a little ground. Slow down, or it will lock you out. (${nextScares}/${maxScares})`;
+      return {
+        ok: false,
+        reason: "backlash-scare",
+        backlashScares: nextScares,
+        backlashMaxScares: maxScares,
+        backlashCooldownMs: cooldown,
+        backlashLockMs: lockMs,
+        backlashAuraLoss: scareAura,
+        backlashHpLoss: scareHp,
+        backlashShardLoss: config.investigationBacklashScareShards ? config.investigationBacklashScareShards : 0,
+        line: warnLine,
+      };
+    }
+    // Backlash off: bare throttle.
+    return { ok: false, reason: "throttled", throttleMs: cooldown };
+  }
+
+  // Backlash gate (only reaches here when the cooldown isn't actively
+  // blocking, OR when backlash is off and cooldown is 0). Handles the
+  // lockout from a prior strike and the soft-window ramp for non-throttled
+  // resolves.
+  if (backlash) {
+    const coolsAt = Number(player.eventChoices?.hollowing?.backlashCoolsAt || 0);
+    const scares = Number(player.eventChoices?.hollowing?.backlashScares || 0);
+    const cooldownMs = Number(config.investigationCooldownMs || 0);
+    const hotMs = Number(config.investigationBacklashCoolMs || 0);
+    const maxScares = Number(config.investigationBacklashMaxScares || 0);
+    const lockMs = Number(config.investigationBacklashLockMs || 0);
+
+    // Lockout from a prior backlash strike.
+    if (coolsAt && now < coolsAt) {
+      const remain = coolsAt - now;
+      return { ok: false, reason: "backlash-locked", remainingMs: remain, lockMs };
+    }
+
+    // The soft ramp window is whichever is larger: the explicit hot window,
+    // or the normal investigation cooldown. A player who waits long enough
+    // for that window to fully elapse resets the ramp. Floor at 1 ms so the
+    // layer stays reachable even when both config values are 0.
+    const windowMs = Math.max(cooldownMs, hotMs, 1);
+    const pastWindow = now - lastAt >= windowMs;
+    if (pastWindow) {
+      player.eventChoices.hollowing.backlashScares = 0;
+      player.eventChoices.hollowing.backlashCoolsAt = 0;
+    }
+
+    // Inside the soft window: count a near-miss, charge a little, and possibly
+    // strike. This path is reached when the resolve is NOT inside the bare
+    // cooldown throttle (e.g. cooldown is 0, or the resolve happens in the
+    // gap between throttle expiry and full window expiry on configs that tune
+    // them separately).
+    if (!pastWindow) {
+      const nextScares = (scares || 0) + 1;
+
+      // Every caught fast-resolve costs a little, so spamming hurts before
+      // the lockout even lands.
+      const scareAura = (Number(config.investigationBacklashAura || 0) / 3) || 0;
+      const scareHp   = (Number(config.investigationBacklashHp || 0) / 3)   || 0;
+      player.aura = Math.max(0, Number(player.aura || 0) - scareAura);
+      if (player.playerHp != null) {
+        player.playerHp = Math.max(1, Number(player.playerHp) - scareHp);
+      }
+      if (config.investigationBacklashScareShards) {
+        loseShards(player, config.investigationBacklashScareShards, rng);
+      }
+
+      if (maxScares && nextScares >= maxScares) {
+        // Strike the player, lock them out, reset the ramp.
+        player.aura = Math.max(0, Number(player.aura || 0) - Number(config.investigationBacklashAura || 0));
+        if (player.playerHp != null) {
+          player.playerHp = Math.max(1, Number(player.playerHp) - Number(config.investigationBacklashHp || 0));
+        }
+        if (config.investigationBacklashStrikeShards) {
+          loseShards(player, config.investigationBacklashStrikeShards, rng);
+        }
+        player.eventChoices.hollowing.backlashCoolsAt = now + lockMs;
+        player.eventChoices.hollowing.backlashScares = 0;
+        const backlashLine = "🌑 *THE HOLLOWING PUSHES BACK.*\n\nYou are moving too fast. The dark remembers your rhythm — and it answers.\n\n_Stand still for a moment._ ";
+        const out0 = {
+          ok: false,
+          reason: "backlash",
+          backlashLockedMs: lockMs,
+          backlashAuraLoss: Number(config.investigationBacklashAura || 0),
+          backlashHpLoss: Number(config.investigationBacklashHp || 0),
+          backlashShardLoss: config.investigationBacklashStrikeShards ? 1 : 0,
+          backlashRemainingMs: lockMs,
+          line: backlashLine,
+        };
+        const gl0 = applyGainLoss(player, res, {}, {}, rng);
+        out0.gained = gl0.gained; out0.lost = gl0.lost;
+        return out0;
+      }
+
+      // Near-miss — store the ramp and return a refused resolve so the player
+      // feels the pressure before the lockout.
+      player.eventChoices.hollowing.backlashScares = nextScares;
+      const warnLine = `\n\n⚠️ *THE DARK NOTICES YOU MOVING TOO FAST.*\n\nYou lost a little ground. Slow down, or it will lock you out. (${nextScares}/${maxScares})`;
+      return {
+        ok: false,
+        reason: "backlash-scare",
+        backlashScares: nextScares,
+        backlashMaxScares: maxScares,
+        backlashCooldownMs: cooldownMs,
+        backlashLockMs: lockMs,
+        backlashAuraLoss: scareAura,
+        backlashHpLoss: scareHp,
+        backlashShardLoss: config.investigationBacklashScareShards ? config.investigationBacklashScareShards : 0,
+        line: warnLine,
+      };
+    }
+  }
+
+  // Roll the ranges first, then let a devastating path go catastrophically
+  // wrong on top. Rewards stay fixed; only the cost is gambled.
+  const gain = resolveBag(choice.gain, rng);
+  const loss = resolveBag(choice.loss, rng);
+  const risk = config?.risk || {};
   const out = {
     ok: true, outcome: choice.outcome || "neutral", line: choice.line || "",
     reveal: null, fragment: null, task: null, next: choice.next || null,
-    gained: [], lost: [],
+    gained: [], lost: [], catastrophe: false, riskLine: null,
   };
 
-  const gl = applyGainLoss(player, res, choice.gain, choice.loss);
-  out.gained = gl.gained; out.lost = gl.lost;
+  // Catastrophe — only on devastating choices, only when risk is enabled.
+  // A low risk roll escalates the already-rolled loss (lucons/aura/hp are
+  // multiplied; shard theft rounds up to at least one). The risk roll is taken
+  // after the loss is resolved so deterministic tests can force it separately.
+  if (risk.enabled && out.outcome === "devastating") {
+    const riskRoll = rng();
+    if (riskRoll < Number(risk.catastropheChance || 0)) {
+      const mult = Number(risk.multiplier || 1);
+      out.catastrophe = true;
+      out.riskLine = risk.line || "💀 *It goes badly wrong.*";
+      if (loss.lucons) loss.lucons = Math.floor(loss.lucons * mult);
+      if (loss.aura)   loss.aura   = Math.floor(loss.aura   * mult);
+      if (loss.hp)     loss.hp     = Math.floor(loss.hp     * mult);
+      if (loss.shards) loss.shards = Math.max(1, Math.round(loss.shards * mult));
+    }
+  }
+
+  // Apply the rolled (and possibly escalated) gain and loss to the player.
+  // Everything else (reveals, progress, temptation, task) is layered on top.
+  const gl = applyGainLoss(player, res, gain, loss, rng);
+  out.gained = gl.gained;
+  out.lost   = gl.lost;
 
   if (out.outcome === "devastating") tale.scars += 1;
   if (out.outcome === "lucky")       tale.luck  += 1;
+
+  // Stamp the last-investigate time on every successful resolve. The backlash
+  // layer reads this, so it has to be written even when the throttle is off.
+  if (out.ok) {
+    if (!player.eventChoices || typeof player.eventChoices !== "object") player.eventChoices = {};
+    if (!player.eventChoices.hollowing || typeof player.eventChoices.hollowing !== "object") {
+      player.eventChoices.hollowing = { temptationAccepted: false, temptationCount: 0 };
+    }
+    player.eventChoices.hollowing.lastInvestigateAt = meta.now;
+  }
+  // Throttle the next resolve when the investigation cooldown is on.
+  if (out.ok && Number(config?.investigationCooldownMs || 0) > 0) {
+    // Keep the backlash ramp clean on a successful, on-time resolve.
+    if (backlash) {
+      player.eventChoices.hollowing.backlashScares = 0;
+      player.eventChoices.hollowing.backlashCoolsAt = 0;
+    }
+  }
 
   if (choice.reveal && !tale.revealed.includes(choice.reveal)) {
     tale.revealed.push(choice.reveal);
@@ -1089,6 +1496,7 @@ function resolveChoice(config, state, player, nodeId, verbKey, meta = {}) {
 
 function taleOutcomeLines(result, playerName) {
   const lines = [result.line || "_You choose._", ""];
+  if (result.catastrophe && result.riskLine) lines.push(result.riskLine, "");
   if (result.outcome === "lucky")       lines.push("🍀 *A lucky turn.*", ...result.gained.map(g => `• ${g}`));
   if (result.outcome === "devastating") lines.push("🩸 *It costs you.*", ...result.lost.map(l => `• ${l}`));
   if (result.fragment) {
@@ -1364,6 +1772,7 @@ module.exports = {
 
   // hunt energy
   huntEnergyMultipliers, applyRegenModifier, applyDrainModifier,
+  huntEnergyActiveRecharge, huntEnergyActiveRechargeNow, huntEnergyBurstEnabled, burstHuntEnergy,
 
   // mora
   isMoraAvailable, filterAvailableMora, missingMoraNames, noTraceLine,
@@ -1384,7 +1793,8 @@ module.exports = {
   // story tree
   ensureTale, taleOf, resourcesOf, treeOf, nodeById, fragmentById, taleEntry,
   nodeAvailable, allVerbs, verbCommand, taleButtons, renderNode, resolveChoice, applyGainLoss,
-  cmdTale, cmdTaleChoice,
+  rollAmount, resolveBag, vaultSize, shardLabel, loseShards,  cmdTale, cmdTaleChoice,
+  backlashWarnText,
 
   // group muster
   musterWindowKey, ensureMuster, musterLine, sweepMustersInto, cmdMuster,

@@ -131,6 +131,21 @@ When the event is off, both resolve to `×1` and hunting behaves exactly as
 before — [systems/hunting.js](../systems/hunting.js) reads these through
 `huntEnergyMultipliers()` and never hard-codes anything.
 
+### Temporary hunt-energy burst
+A standalone gift, **on for now**: while `huntEnergyBurst` is true every hunter's
+gauge is held at **max** — topped on each command and swept for the whole roster
+on every world tick.
+
+```js
+huntEnergyBurst: true,   // TEMPORARY — set false to restore normal regen/drain
+```
+
+It is a pure toggle (`huntEnergyBurstEnabled()`), not gated on `isActive()`, so
+it can run on its own. [systems/hunting.js](../systems/hunting.js) checks it inside
+`regenHuntEnergy()`, and the [tick](../systems/hollowing.js) sweeps the loaded
+roster and persists through `savePlayers`. Flip it off in
+`data/hollowing_config.json` to bring normal drain and 6-hour regen back.
+
 ### Rewards
 LUCONS · XP · **Title: Veilwatcher**
 
@@ -393,6 +408,38 @@ reusable while the branching stays rich.
 3. The choice resolves, the outcome is narrated, and the path either continues or
    ends.
 
+### Investigation cooldown + backlash
+
+Investigation is rate-limited so the rewarding paths cannot be spammed, and
+spamming it is punished. Each successful resolve stamps a cooldown on the player
+(`lastInvestigateAt`); a resolve attempted before that cooldown lapses is
+rejected and counted as a **near-miss scare** — a small aura/HP dip and a warning
+that the dark is noticing the rhythm. A few fast resolves in a row trigger a hard
+**backlash strike**: a large aura/HP hit, a random shard taken from the player's
+vault, and a **hard lockout** that bars further investigation for a fixed window.
+
+The relevant config fields (all in `data/hollowing_config.json`, defaulting as
+shown):
+
+- `investigationCooldownMs` — the per-resolve pacing window. Default **60000** (1
+  minute). A resolve inside this window is a near-miss scare when the backlash
+  layer is on.
+- `investigationBacklashCoolMs` — an optional *extra* soft window on top of the
+  cooldown. Default **0** (the cooldown is the window).
+- `investigationBacklashMaxScares` — near-misses before a strike. Default **2**.
+- `investigationBacklashLockMs` — hard lockout after a strike. Default **600000**
+  (10 minutes).
+- `investigationBacklashAura` — aura taken on a strike. Default **30**.
+- `investigationBacklashHp` — HP taken on a strike. Default **15**.
+- `investigationBacklashStrikeShards` — shards taken on a strike. Default **1**.
+- `investigationBacklashScareShards` — shards taken on a near-miss scare.
+  Default **0** (off).
+
+A patient player who lets the cooldown lapse between resolves is never punished.
+The backlash only fires on top of rapid, repeated resolves. The whole layer is
+switchable: set `investigationBacklashCoolMs` to `null` (or drop it from the
+config) and the cooldown reverts to a bare throttle with no punish ladder.
+
 ### The eight nodes
 
 | Chapter | Node | The choice that matters |
@@ -408,11 +455,35 @@ reusable while the branching stays rich.
 
 ### Three kinds of outcome
 - **🍀 LUCKY** — lucons, aura, Rift Fragments, Hollow Essence, Ancient Seals.
-- **🩸 DEVASTATING** — you lose lucons, aura or HP, and the tale records a *scar*.
-  Some devastating paths are also the **most revealing** — you learn something on
-  the way down.
+- **🩸 DEVASTATING** — you lose lucons, aura, HP **or shards** (rolled, never
+  fixed — see *The gamble* below), and the tale records a *scar*. Some devastating
+  paths are also the **most revealing** — you learn something on the way down.
 - **📜 REVEALING** — surfaces one of **8 story fragments**, stored on the player
   (`tale.revealed`) and shown back to them in every node they visit.
+
+### The gamble — investigating costs you
+Investigation is **not safe**, and it is not predictable. Every devastating path
+rolls its cost from a **range**, so two players who make the same choice lose
+different amounts, and the same player loses differently on a second run.
+
+- **Lucons** — rolled from a range (e.g. 400–1200, 600–1800, up to 500–1500).
+- **Aura** — rolled, 10–60 per bad path.
+- **HP** — rolled, 10–70. Never lethal: HP clamps at 1.
+- **💎 Shards** — the sharpest edge. A devastating path can reach into the
+  player's **species vault** and *take a shard you actually own*. `loseShards`
+  picks from the vault at random, removes one, and deletes the key when it hits
+  zero — exactly like `systems/shards.js`. A player with an empty vault is told
+  so (*"nothing left to take"*) rather than promised a loss that never lands.
+- **The catastrophe** — on top of the rolled cost, each devastating choice has a
+  `catastropheChance` (default **30%**) of going *much* worse: lucons, aura and HP
+  are multiplied by `multiplier` (default **2.25×**) and shard theft scales with
+  it too. The narrated line is 💀 *It goes badly wrong.*
+
+Risky nodes **warn the player before they tap** — a node with any devastating
+choice carries *"⚠️ Some of these paths cost you — lucons, aura, health, even
+shards. None of them are safe."* Rewards, by contrast, are **fixed** — only the
+cost is gambled. The whole system is switchable: set `risk.enabled: false` and no
+path can catastrophically escalate (the base loss still stands).
 
 ### Linked to the mini-tasks
 Choices can complete a **limited task** directly. First to finish is written into

@@ -41,6 +41,7 @@ const REQUIRED_EXPORTS = [
   "loadConfig", "saveConfig", "loadState", "saveState",
   "isEnabled", "isActive", "activeChapter", "chapterLadder", "chapterUnlockMs", "dueBeats",
   "huntEnergyMultipliers", "applyRegenModifier", "applyDrainModifier",
+  "huntEnergyBurstEnabled", "burstHuntEnergy",
   "isMoraAvailable", "filterAvailableMora", "missingMoraNames",
   "recordProgress", "totalProgress", "dueMilestones", "claimLimitedTask", "chronicleFor",
   "ensureChoice", "recordTemptation",
@@ -111,6 +112,20 @@ check("applyDrainModifier floors", H.applyDrainModifier(45, { drain: 0.5 }) === 
 check("applyDrainModifier never negative", H.applyDrainModifier(-9, { drain: 2 }) === 0);
 check("modifiers default safely on garbage",
   H.applyRegenModifier(10, null) === 10 && H.applyDrainModifier(10, null) === 10);
+
+// TEMPORARY hunt-energy burst
+check("burst is ON by default", H.DEFAULT_CONFIG.huntEnergyBurst === true);
+check("burst helper reads the toggle",
+  H.huntEnergyBurstEnabled({ huntEnergyBurst: true }) === true &&
+  H.huntEnergyBurstEnabled({ huntEnergyBurst: false }) === false &&
+  H.huntEnergyBurstEnabled({}) === false);
+const bump = { huntEnergy: 10, maxHuntEnergy: 200 };
+check("burstHuntEnergy tops the gauge to max",
+  H.burstHuntEnergy(bump) === true && bump.huntEnergy === 200 && bump.maxHuntEnergy === 200);
+check("burstHuntEnergy is idempotent", H.burstHuntEnergy(bump) === false);
+check("burstHuntEnergy survives a junk player", H.burstHuntEnergy(null) === false);
+const bump2 = { huntEnergy: 0, maxHuntEnergy: 100 };
+check("burstHuntEnergy respects the real max", H.burstHuntEnergy(bump2) && bump2.huntEnergy === 100);
 
 // ══════════════════════════════════════════════════════════════
 // D. MORA ACTIVITY
@@ -310,6 +325,34 @@ section("J. scheduler");
   check("milestones don't re-fire", res4.fired === 0);
   check("configure redirects state file", fs.existsSync(path.join(dir, "hollowing.json")));
 
+  // TEMPORARY hunt-energy burst — one world tick tops the whole roster.
+  const bPlayers = {
+    "a@s.whatsapp.net":    { huntEnergy: 0,   maxHuntEnergy: 200 },
+    "b@s.whatsapp.net":    { huntEnergy: 50,  maxHuntEnergy: 100 },
+    "full@s.whatsapp.net": { huntEnergy: 200, maxHuntEnergy: 200 },
+  };
+  let saved = 0;
+  const bres = await H.tick(fakeSock([]), ["g@g.us"], {
+    now: clock + 101 * H.HOUR_MS, players: bPlayers, savePlayers: () => saved++,
+  });
+  check("burst tops the whole roster to max",
+    bPlayers["a@s.whatsapp.net"].huntEnergy === 200 && bPlayers["b@s.whatsapp.net"].huntEnergy === 100);
+  check("burst leaves an already-full hunter alone", bPlayers["full@s.whatsapp.net"].huntEnergy === 200);
+  check("burst reports how many it moved", bres.burst === 2, String(bres.burst));
+  check("burst persists via savePlayers", saved === 1, String(saved));
+
+  // and it must switch off cleanly
+  fs.writeFileSync(path.join(dir, "hollowing_config.json"), JSON.stringify({
+    enabled: true, huntEnergyBurst: false,
+    startDate: new Date(base + 20 * H.DAY_MS).toISOString(),
+    endDate:   new Date(base + 31 * H.DAY_MS).toISOString(),
+  }, null, 2));
+  const offPlayers = { "a@s.whatsapp.net": { huntEnergy: 0, maxHuntEnergy: 200 } };
+  const ores = await H.tick(fakeSock([]), ["g@g.us"], {
+    now: clock + 101 * H.HOUR_MS, players: offPlayers, savePlayers: () => saved++,
+  });
+  check("burst off = nobody topped", ores.burst === 0 && offPlayers["a@s.whatsapp.net"].huntEnergy === 0);
+
   // ════════════════════════════════════════════════════════════
   // L. STORY TREE
   // ════════════════════════════════════════════════════════════
@@ -362,6 +405,29 @@ section("J. scheduler");
   check("path ends cleanly", H.taleOf(pl).node === null && !!H.taleOf(pl).ending);
   check("unknown verb rejected", H.resolveChoice(cfg, st2, pl, "signs-crystal", "nonsense").ok === false);
 
+  // the cooldown is configurable and defaults to 1 minute
+  check("cooldown default is now 1 minute", cfg.investigationCooldownMs === 60000);
+  check("backlash layer defaults on", cfg.investigationBacklashCoolMs === 0);
+  check("backlash max scares defaults to 2", cfg.investigationBacklashMaxScares === 2);
+  check("backlash lockout defaults to 10 minutes", cfg.investigationBacklashLockMs === 600000);
+  check("backlash strike defaults to 30 aura / 15 hp / 1 shard",
+    cfg.investigationBacklashAura === 30 && cfg.investigationBacklashHp === 15 && cfg.investigationBacklashStrikeShards === 1);
+
+  // a player who resolves too soon is hit by the backlash scare ladder, not a
+  // bare throttle — spammers feel the pressure immediately.
+  const st2b = JSON.parse(JSON.stringify(H.EMPTY_STATE));
+  const plb = { lucons: 2000, aura: 30, playerHp: 120, playerMaxHp: 120, eventChoices: { hollowing: {} } };
+  const now = Date.now();
+  plb.eventChoices.hollowing.lastInvestigateAt = now - 1000;
+  const rScare = H.resolveChoice(cfg, st2b, plb, "signs-crystal", "investigate", { playerId: "x@s", playerName: "X", now: now + 6000 });
+  check("just-past cooldown is a backlash-scare", rScare.ok === false && rScare.reason === "backlash-scare");
+  check("scare charges a little aura/hp", plb.aura < 30 && plb.playerHp < 120);
+  check("scare return names the cooldown window", Number.isFinite(rScare.backlashCooldownMs) && rScare.backlashCooldownMs >= cfg.investigationCooldownMs);
+  check("scare return names the lockout", Number.isFinite(rScare.backlashLockMs) && rScare.backlashLockMs >= cfg.investigationBacklashLockMs);
+  const rLapse = H.resolveChoice(cfg, st2b, plb, "signs-crystal", "investigate", { playerId: "x@s", playerName: "X", now: now + 200000 });
+  check("past cooldown is allowed again", rLapse.ok === true && rLapse.outcome === "lucky");
+  check("new cooldown stamped after lapse", Number(plb.eventChoices.hollowing.lastInvestigateAt) > 0);
+
   const st3 = JSON.parse(JSON.stringify(H.EMPTY_STATE));
   const pl2 = { lucons: 0, aura: 0, playerHp: 50, playerMaxHp: 50, eventChoices: {} };
   const r3 = H.resolveChoice(cfg, st3, pl2, "signs-crystal", "retreat", { playerId: "b@s", playerName: "Bex" });
@@ -379,6 +445,11 @@ section("J. scheduler");
   const pl3 = { lucons: 0, aura: 0, eventChoices: {} };
   const r6 = H.resolveChoice(cfg, st3, pl3, "hollow-whisper-deal", "retreat", { playerId: "c@s", playerName: "Cy" });
   check("refusing records the refusal", r6.ok && r6.reveal === "frag-4" && pl3.eventChoices.hollowing.temptationAccepted === false);
+
+  // cooldown is configurable, not a fixed number in the code
+  const cfgZero = { ...cfg, investigationCooldownMs: 0 };
+  const r0 = H.resolveChoice(cfgZero, JSON.parse(JSON.stringify(H.EMPTY_STATE)), { lucons: 1, aura: 1, eventChoices: {} }, "signs-crystal", "investigate", { playerId: "z@s", playerName: "Z" });
+  check("zero cooldown disables the throttle", r0.ok === true && r0.outcome === "lucky");
 
   // ════════════════════════════════════════════════════════════
   // M. HOLLOW MUSTER (group mechanic)
@@ -496,6 +567,90 @@ section("J. scheduler");
   check("wildbattle feeds the world progress bar", wbSrc2.includes('recordProgress(hState, "hollowMoraDefeated"'));
   check("wildbattle carries isHollow on battle state", /isHollow,/.test(wbSrc2));
 
+  // ════════════════════════════════════════════════════════════
+  // Q. THE GAMBLE — rolled losses, catastrophe, shard theft
+  // ════════════════════════════════════════════════════════════
+  section("Q. the gamble");
+  // deterministic rng: consume the given values, then repeat the last
+  const seq = (vals) => { let i = 0; return () => (i < vals.length ? vals[i++] : vals[vals.length - 1]); };
+
+  check("risk config present", !!cfg.risk && cfg.risk.enabled === true);
+  check("rollAmount range hits its minimum", H.rollAmount([400, 1200], () => 0) === 400);
+  check("rollAmount range reaches its maximum", H.rollAmount([400, 1200], () => 0.999999) === 1200);
+  check("rollAmount passes fixed values through", H.rollAmount(350, () => 0.5) === 350);
+  check("rollAmount treats garbage as zero", H.rollAmount("abc", () => 0.5) === 0);
+  check("rollAmount reversed range returns min", H.rollAmount([50, 10], () => 0.5) === 50);
+  check("resolveBag rolls every key", (() => { const b = H.resolveBag({ a: [10, 20], b: 5 }, () => 0); return b.a === 10 && b.b === 5; })());
+
+  check("vaultSize sums the vault", H.vaultSize({ shards: { a: 2, b: 3 } }) === 5);
+  check("vaultSize tolerates a missing vault", H.vaultSize({}) === 0);
+  check("shardLabel strips the corrupted prefix", H.shardLabel("corrupted:vex") === "Vex");
+  check("shardLabel title-cases keys", H.shardLabel("thornel") === "Thornel");
+  const vp = { shards: { thornel: 2, nylon: 1 } };
+  check("loseShards removes the requested count", H.loseShards(vp, 2, () => 0).length === 2 && H.vaultSize(vp) === 1);
+  check("loseShards cannot overdraw the vault", H.loseShards(vp, 99, () => 0).length === 1 && H.vaultSize(vp) === 0);
+  check("loseShards on an empty vault is safe", H.loseShards({ shards: {} }, 3, () => 0).length === 0);
+  check("loseShards deletes emptied keys", !("thornel" in (H.loseShards({ shards: { thornel: 1 } }, 1, () => 0), { shards: {} }.shards)));
+
+  // every shipped devastating path must actually cost something real
+  const devChoices = [];
+  for (const n of Object.values(cfg.storyTree.nodes)) for (const c of n.choices || []) if (c.outcome === "devastating") devChoices.push(c);
+  check("there are devastating paths to test", devChoices.length >= 5, String(devChoices.length));
+  check("every devastating path loses lucons", devChoices.every(c => c.loss && c.loss.lucons != null));
+  check("every devastating path takes a shard", devChoices.every(c => Number(c.loss && c.loss.shards) >= 1));
+  check("every devastating loss is gambled (ranged)",
+    devChoices.every(c => c.loss && Object.values(c.loss).some(v => Array.isArray(v))));
+
+  // catastrophic roll: the take-loss rolls lucons/aura/hp (shards is fixed, no
+  // roll), then the risk roll is forced to 0.
+  const pk = { lucons: 5000, aura: 100, playerHp: 200, playerMaxHp: 200, shards: { thornel: 5 }, eventChoices: {} };
+  const rk = H.resolveChoice(cfg, JSON.parse(JSON.stringify(H.EMPTY_STATE)), pk, "signs-crystal", "take",
+    { playerId: "k@s", playerName: "K", rng: seq([0.5, 0.5, 0.5, 0]) });
+  check("catastrophe triggers on a low risk roll", rk.catastrophe === true && !!rk.riskLine);
+  const lcLost = 5000 - pk.lucons;
+  const mult = Number(cfg.risk.multiplier);
+  check("catastrophe multiplies the lucon loss",
+    lcLost >= Math.floor(400 * mult) && lcLost <= Math.floor(1200 * mult), `${lcLost} vs ${mult}x`);
+  check("catastrophe multiplies the shard loss", H.vaultSize(pk) === 5 - Math.max(1, Math.round(1 * mult)), String(H.vaultSize(pk)));
+  check("catastrophe is announced to the player", /goes badly wrong/i.test(rk.riskLine));
+  check("catastrophe is surfaced in the outcome lines",
+    /goes badly wrong/i.test(H.renderNode(cfg, cfg.storyTree.nodes["signs-crystal"], { revealed: [] }) + rk.riskLine));
+
+  // a high roll must NOT escalate, and must stay inside the declared band
+  const pn = { lucons: 5000, aura: 100, playerHp: 200, playerMaxHp: 200, shards: { thornel: 5 }, eventChoices: {} };
+  const rn = H.resolveChoice(cfg, JSON.parse(JSON.stringify(H.EMPTY_STATE)), pn, "signs-crystal", "take",
+    { playerId: "n@s", playerName: "N", rng: seq([0.99, 0.99, 0.99, 0.99, 0.99]) });
+  check("a high roll avoids catastrophe", rn.catastrophe === false && rn.riskLine === null);
+  const lcLostN = 5000 - pn.lucons;
+  check("ordinary loss stays inside the declared range", lcLostN >= 400 && lcLostN <= 1200, String(lcLostN));
+  check("shard loss is reported to the player", rn.lost.some(l => /shard/i.test(l)));
+  check("the shard really leaves the vault", H.vaultSize(pn) === 4, String(H.vaultSize(pn)));
+
+  // an empty vault must never crash or promise a loss that cannot happen
+  const pe = { lucons: 100, aura: 0, playerHp: 50, playerMaxHp: 50, shards: {}, eventChoices: {} };
+  const re = H.resolveChoice(cfg, JSON.parse(JSON.stringify(H.EMPTY_STATE)), pe, "signs-crystal", "take",
+    { playerId: "e@s", playerName: "E", rng: seq([0, 0, 0, 0, 0.99]) });
+  check("an empty vault is handled gracefully", re.ok === true && re.lost.some(l => /vault was empty/i.test(l)));
+  check("losses never push lucons negative", pe.lucons >= 0 && pe.playerHp >= 1, `lc=${pe.lucons} hp=${pe.playerHp}`);
+
+  // the risk system must be switchable off entirely
+  const cfgNoRisk = { ...cfg, risk: { ...cfg.risk, enabled: false } };
+  const pd = { lucons: 5000, aura: 100, playerHp: 200, playerMaxHp: 200, shards: { thornel: 5 }, eventChoices: {} };
+  const rd = H.resolveChoice(cfgNoRisk, JSON.parse(JSON.stringify(H.EMPTY_STATE)), pd, "signs-crystal", "take",
+    { playerId: "d@s", playerName: "D", rng: seq([0, 0, 0, 0, 0]) });
+  check("risk disabled = no catastrophe even on a zero roll", rd.catastrophe === false);
+  check("risk disabled still costs the base loss", 5000 - pd.lucons >= 400);
+
+  // the player is warned before they tap
+  const warnNode = H.renderNode(cfg, cfg.storyTree.nodes["signs-crystal"], { revealed: [] });
+  check("risky nodes warn that paths cost you", /cost you/i.test(warnNode) && /shards/i.test(warnNode));
+  const safeNode = H.renderNode(cfg, { title: "Calm", text: "nothing here", choices: [{ verb: "retreat", outcome: "neutral" }] }, { revealed: [] });
+  check("safe nodes carry no warning", !/cost you/i.test(safeNode));
+
+  check("doc documents the gamble and shard loss",
+    /shard/i.test(fs.readFileSync(path.join(ROOT, "events", "the-hollowing.md"), "utf8")) &&
+    /gamble/i.test(fs.readFileSync(path.join(ROOT, "events", "the-hollowing.md"), "utf8")));
+
   H.resetPaths();
   try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
 
@@ -516,6 +671,15 @@ section("J. scheduler");
   check("hunting reads huntEnergyMultipliers", huntingSrc.includes("huntEnergyMultipliers"));
   check("hunting applies regen modifier", huntingSrc.includes("applyRegenModifier"));
   check("hunting applies drain modifier", huntingSrc.includes("applyDrainModifier"));
+  check("hunting honours the burst toggle", huntingSrc.includes("huntEnergyBurstEnabled"));
+  check("hunting burst block tops the gauge to max",
+    /huntEnergyBurstEnabled\(\)[\s\S]{0,200}player\.huntEnergy\s*=\s*maxE/.test(huntingSrc));
+  check("hunting reads the active recharge cadence",
+    /huntEnergyActiveRechargeNow\(\)/.test(huntingSrc));
+  check("hunting active recharge clamps to max",
+    /player\.huntEnergy\s*=\s*Math\.min\(maxE/.test(huntingSrc));
+  check("index passes savePlayers into the event loop",
+    indexSrc.includes("startHollowingLoop(sock, eventGroups, { savePlayers })"));
 
   check("registry lists .hollowing", /name:\s*"hollowing"/.test(regSrc));
   check("registry keeps the events subcat", regSrc.includes('subcat: "events"'));
@@ -523,12 +687,15 @@ section("J. scheduler");
   check("index routes hollow-* verbs generically", indexSrc.includes('command.startsWith("hollow-")'));
   check("index routes .muster", indexSrc.includes('command === "muster"'));
   check("registry lists .investigate and .muster", /name:\s*"investigate"/.test(regSrc) && /name:\s*"muster"/.test(regSrc));
+  check("doc documents the cooldown", /cooldown/i.test(docSrc) && /investigationCooldownMs/i.test(docSrc));
   check("doc documents the story tree", /story tree/i.test(docSrc));
   check("doc documents the three layers", /three layers|audience/i.test(docSrc));
   check("doc documents the muster + group reward",
     /hollow muster/i.test(docSrc) && /everyone who answered is rewarded/i.test(docSrc));
   check("doc documents the state model", /Event State Model/i.test(docSrc) && /Global State/i.test(docSrc));
   check("doc documents the FIELD REPORT", /FIELD REPORT/i.test(docSrc));
+  check("doc documents the hunt-energy burst",
+    /hunt-energy burst/i.test(docSrc) && /huntEnergyBurst/.test(docSrc));
 
   check("events doc exists", docSrc.length > 500);
   check("events doc separates LIVE/UPCOMING/PLANNED",
