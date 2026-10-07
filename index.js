@@ -1218,6 +1218,7 @@ function loadSettings() {
       factionsEnabled: true,
       groupSpawnsEnabled: true,
     },
+    shardsGroups: { enabled: true, allowed: [] },
   };
 
   const s = loadJSON(SETTINGS_FILE, defaults);
@@ -1306,6 +1307,18 @@ function denyMoraCreationGroup(sock, chatId, msg) {
   return sock.sendMessage(chatId, {
     text: "🧪 Mora creation is unavailable in this group.\nVisit an allowed Lumora Labs location or contact the Architect.",
   }, { quoted: msg });
+}
+
+// Per-chat gate for shard swaps (.sgive). Mirrors the faction/marketplace group-gate
+// shape already in index.js: enabled flag + allow-list; empty allow-list = every chat,
+// DMs always allowed.
+function isShardGiveAllowed(chatId, settings) {
+  const sg = (settings && settings.shardsGroups) || { enabled: true, allowed: [] };
+  if (sg.enabled === false) return false;
+  if (!isGroupJid(chatId)) return true; // DMs always allowed
+  const allowed = Array.isArray(sg.allowed) ? sg.allowed : [];
+  if (allowed.length === 0) return true; // empty = all groups
+  return allowed.includes(chatId);
 }
 // (old mark/blessing expiration helper removed — replaced by pro.js tier system)
 
@@ -3814,6 +3827,15 @@ if (command === "uptime") {
       }
       if (command === "destroy") {
         return shardSystem.cmdDestroy(ctx, chatId, senderId, msg, args);
+      }
+      if (command === "sgive" || command === "shard-give" || command === "give-shard") {
+        return shardSystem.cmdGive(ctx, chatId, senderId, msg, args, {
+          needsAllowGive: (chatId, senderId, targetJid) => isShardGiveAllowed(chatId, settings),
+          getMentionedJids,
+          getRepliedJid,
+          toUserJidFromArg,
+          normJid,
+        });
       }
       if (command === "quests") {
         return questSystem.cmdQuests(ctx, chatId, senderId, msg);
