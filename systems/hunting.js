@@ -270,8 +270,43 @@ function regenHuntEnergy(player) {
   player.maxHuntEnergy = maxE;
   if (typeof player.huntEnergy !== "number") player.huntEnergy = maxE;
 
+  // NOTE: `now`/`last` must be declared BEFORE the fast-refill blocks below.
+  // They previously sat after them, which put `now` in the temporal dead zone —
+  // reading it threw ReferenceError, and the bare catch swallowed the error, so
+  // the fast refill silently never ran at all. Keep these two lines first.
   const now  = Date.now();
   const last = Number(player.lastHuntRefill || 0);
+
+  // THE HOLLOWING — temporary "burst": while enabled, the gauge is held at max
+  // (see systems/hollowing.js: huntEnergyBurst). Pure toggle; off = normal play.
+  try {
+    if (require("./hollowing").huntEnergyBurstEnabled()) {
+      player.huntEnergy     = maxE;
+      player.lastHuntRefill = now;
+      return;
+    }
+  } catch (e) { console.log("[hunting] burst toggle:", e?.message || e); }
+
+  // Active cadence: while the event is live, the gauge refills every few minutes
+  // instead of every 6 hours. Catches up over EVERY elapsed interval, so a player
+  // who was away an hour gets the full hour of refills rather than a single one.
+  try {
+    const recharge = require("./hollowing").huntEnergyActiveRechargeNow();
+    if (recharge && Number(recharge.intervalMs) > 0 && last && player.huntEnergy < maxE) {
+      const elapsed = now - last;
+      if (elapsed >= Number(recharge.intervalMs)) {
+        const ticks  = Math.floor(elapsed / Number(recharge.intervalMs));
+        const amount = ticks * Math.max(0, Number(recharge.amount) || 0);
+        player.huntEnergy = Math.min(maxE, Number(player.huntEnergy || 0) + amount);
+        // Full gauge → reset the clock. Otherwise advance by whole intervals only,
+        // so partial progress toward the next refill is preserved.
+        player.lastHuntRefill = player.huntEnergy >= maxE
+          ? now
+          : last + ticks * Number(recharge.intervalMs);
+        return;
+      }
+    }
+  } catch (e) { console.log("[hunting] active regen:", e?.message || e); }
 
   // First-time setup — just stamp it, don't grant a free tick
   if (!last) {
@@ -1273,7 +1308,12 @@ async function cmdHunt(ctx, chatId, senderId, msg) {
       await sock.sendMessage(chatId, { text: introText.trim() }, { quoted: msg });
     }
 
-    return getWildBattleSystem().startWildBattle(ctx, chatId, senderId, msg, encounter.wild);
+    // The ground rides along so the encounter scene is drawn in the right place.
+    return getWildBattleSystem().startWildBattle(ctx, chatId, senderId, msg, {
+      ...encounter.wild,
+      groundId:   ground?.id   || null,
+      groundName: ground?.name || null,
+    });
   }
 
   // ── TRACKS ──────────────────────────────────────────────
@@ -1492,7 +1532,11 @@ async function cmdTrack(ctx, chatId, senderId, msg) {
       }, { quoted: msg });
     }
 
-    return getWildBattleSystem().startWildBattle(ctx, chatId, senderId, msg, encounter.wild);
+    return getWildBattleSystem().startWildBattle(ctx, chatId, senderId, msg, {
+      ...encounter.wild,
+      groundId:   ground?.id   || null,
+      groundName: ground?.name || null,
+    });
   }
 
   saveHuntState(state);
@@ -1786,4 +1830,7 @@ module.exports = {
   cmdBounty,       // .bounty
   cmdAssemble,     // .assemble
   cmdLastTerrain,  // .lastterrain
+
+  // Hunt energy internals used by tests / external probing
+  regenHuntEnergy,
 };

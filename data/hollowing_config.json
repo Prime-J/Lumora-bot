@@ -6,6 +6,9 @@
   "minBeatSpacingHours": 4,
   "eventModifiers": {
     "huntEnergyRegenMultiplier": 2.0,
-    "huntEnergyDrainMultiplier": 0.5
-  }
+    "huntEnergyDrainMultiplier": 0.5,
+    "huntEnergyActiveRefillIntervalMs": 180000,
+    "huntEnergyActiveRefillAmount": 50
+  },
+  "huntEnergyBurst": true
 }
