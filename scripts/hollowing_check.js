@@ -651,6 +651,64 @@ section("J. scheduler");
     /shard/i.test(fs.readFileSync(path.join(ROOT, "events", "the-hollowing.md"), "utf8")) &&
     /gamble/i.test(fs.readFileSync(path.join(ROOT, "events", "the-hollowing.md"), "utf8")));
 
+  // ── chapter catch-up after a gap ───────────────────────────────
+  // The bot can be offline when a chapter unlocks. On the next boot it must
+  // announce EVERY missed chapter, in order, so the story keeps no hole — and
+  // it must never fire a late "the event has begun" ping that names Chapter I.
+  section("J2. chapter catch-up after a gap");
+  const gapDir = fs.mkdtempSync(path.join(os.tmpdir(), "hollowing-gap-"));
+  H.configure({ dir: gapDir });
+  const gapBase = Date.parse("2026-10-05T00:00:00Z");
+  fs.writeFileSync(path.join(gapDir, "hollowing_config.json"), JSON.stringify({
+    enabled: true,
+    startDate: new Date(gapBase + 20 * H.DAY_MS).toISOString(),  // finale Oct 25
+    endDate:   new Date(gapBase + 31 * H.DAY_MS).toISOString(),
+  }, null, 2));
+
+  // Cold boot two weeks late: Chapters I and II unlocked while the bot was down
+  // and were never announced. Chapter III is the live one.
+  const gapNow  = Date.parse("2026-10-19T00:00:00Z");
+  const gapRecs = [];
+  const gapRes  = await H.tick(fakeSock(gapRecs), ["g@g.us"], { now: gapNow, players: {} });
+  const gapState = H.loadState();
+  const headlines = gapRecs.map(r => r.payload.text || "");
+  check("missed chapters are announced on boot", gapRes.fired === 3, String(gapRes.fired));
+  check("one headline per missed chapter",
+    headlines.length === 3 && headlines.every(t => /THE HOLLOWING — CHAPTER/i.test(t)),
+    String(headlines.length));
+  check("missed chapters land in story order",
+    /CHAPTER I:/i.test(headlines[0] || "") && /CHAPTER II:/i.test(headlines[1] || "") &&
+    /CHAPTER III:/i.test(headlines[2] || ""),
+    headlines.map(t => (t.match(/CHAPTER [IV]+/) || ["?"])[0]).join(" -> "));
+  check("the whole catch-up is chronicled in order",
+    (gapState.chronicle || []).map(e => e.id).join(",") === "chapter-signs,chapter-hollow,chapter-veil",
+    (gapState.chronicle || []).map(e => e.id).join(","));
+  check("no late opening ping is sent mid-event",
+    !(gapState.chronicle || []).some(e => e.id === "opening") && !!gapState.openedAt);
+  check("the catch-up resets the beat spacing clock",
+    Number(gapState.lastBeatAt) === gapNow, String(gapState.lastBeatAt));
+  check("activeChapter agrees with the headline that landed last",
+    H.activeChapter(H.loadConfig(), gapNow)?.id === "veil");
+
+  // A further restart must be silent — the once-only latch is persisted.
+  const gapRecs2 = [];
+  const gapRes2  = await H.tick(fakeSock(gapRecs2), ["g@g.us"], { now: gapNow + 60 * 1000, players: {} });
+  check("the catch-up never repeats after a restart",
+    gapRes2.fired === 0 && gapRecs2.length === 0, String(gapRes2.fired));
+
+  // A player-facing restart: the tale read back from state is still the right one.
+  delete require.cache[require.resolve(path.join(ROOT, "systems", "hollowing.js"))];
+  const H2 = require(path.join(ROOT, "systems", "hollowing.js"));
+  H2.configure({ dir: gapDir });
+  check("a fresh process still resolves the current chapter from disk",
+    H2.activeChapter(H2.loadConfig(), gapNow)?.id === "veil",
+    String(H2.activeChapter(H2.loadConfig(), gapNow)?.id));
+  check("a fresh process still sees the announced chapters",
+    Object.keys(H2.loadState().announcedChapters || {}).sort().join(",") === "hollow,signs,veil");
+
+  H.resetPaths();
+  try { fs.rmSync(gapDir, { recursive: true, force: true }); } catch {}
+
   H.resetPaths();
   try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
 

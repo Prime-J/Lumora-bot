@@ -970,31 +970,41 @@ async function tick(sock, groups, opts = {}) {
   const botJid = sock?.user?.id || null;   // never @ the bot itself
   let fired = 0, dms = 0;
 
-  // 0) THE OPENING PING — once, on the first live tick. It brings the Chapter I
-  //    headline forward into itself so the launch is a single clear ping.
+  if (!state.announcedChapters) state.announcedChapters = {};
+
+  // 0) THE OPENING PING — once, and ONLY while the event is still on its first
+  //    chapter. It brings the Chapter I headline forward into itself so the
+  //    launch is a single clear ping. If the bot first comes online mid-event
+  //    (Chapter II+), the ping is suppressed: its text names Chapter I, which
+  //    would be a lie. openedAt is still stamped so it can never fire late.
+  const firstChapter = (config.chapters || [])[0] || null;
+  const currentChapter = activeChapter(config, now);
   if (isActive(config, now) && !state.openedAt && config.opening?.text) {
     state.openedAt = now;
     state.lastBeatAt = now;
-    const ch0 = activeChapter(config, now);
-    if (ch0) {
-      if (!state.announcedChapters) state.announcedChapters = {};
-      state.announcedChapters[ch0.id] = now;
-      appendChronicle(state, { id: `chapter-${ch0.id}`, chapterId: ch0.id, audience: "world", text: chapterAnnouncement(ch0) }, now);
+    if (currentChapter && firstChapter && currentChapter.id === firstChapter.id) {
+      state.announcedChapters[currentChapter.id] = now;
+      appendChronicle(state, { id: `chapter-${currentChapter.id}`, chapterId: currentChapter.id, audience: "world", text: chapterAnnouncement(currentChapter) }, now);
+      await broadcast(sock, groups, config.opening.text, botJid);
+      appendChronicle(state, { id: "opening", audience: "world", text: config.opening.text }, now);
+      fired++;
     }
-    await broadcast(sock, groups, config.opening.text, botJid);
-    appendChronicle(state, { id: "opening", audience: "world", text: config.opening.text }, now);
-    fired++;
   }
 
-  // 1) New chapter headline (once per chapter). It lands ALONE and resets the
-  //    spacing clock, so the first clue never shares its breath with it.
-  const ch = activeChapter(config, now);
-  if (ch && !(state.announcedChapters || {})[ch.id]) {
-    if (!state.announcedChapters) state.announcedChapters = {};
-    state.announcedChapters[ch.id] = now;
+  // 1) NEW CHAPTER HEADLINES — every chapter that has unlocked and was never
+  //    announced, oldest first. In normal running that is one headline at a
+  //    time. After a gap (the bot was offline across a chapter boundary) it
+  //    catches up in order instead of silently skipping what players missed.
+  //    Each still lands alone and resets the spacing clock, so the first clue
+  //    never shares its breath with a headline.
+  for (const c of config.chapters || []) {
+    const unlocksAt = chapterUnlockMs(config, c);
+    if (unlocksAt == null || now < unlocksAt) continue;
+    if (state.announcedChapters[c.id]) continue;
+    state.announcedChapters[c.id] = now;
     state.lastBeatAt = now;
-    await broadcast(sock, groups, chapterAnnouncement(ch), botJid);
-    appendChronicle(state, { id: `chapter-${ch.id}`, chapterId: ch.id, audience: "world", text: chapterAnnouncement(ch) }, now);
+    await broadcast(sock, groups, chapterAnnouncement(c), botJid);
+    appendChronicle(state, { id: `chapter-${c.id}`, chapterId: c.id, audience: "world", text: chapterAnnouncement(c) }, now);
     fired++;
   }
 
