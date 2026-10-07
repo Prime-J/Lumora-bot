@@ -345,6 +345,7 @@ const corruptionSystem = require("./systems/corruption");
 const battleSystem = require("./systems/battle");
 const huntingSystem = require("./systems/hunting");
 const wildBattleSystem = require("./systems/wildbattle");
+const messageGate = require("./systems/messageGate");
 const economySystem = require("./systems/economy");
 const transferSystem = require("./systems/transfer");
 const healSystem = require("./systems/heal");
@@ -2492,21 +2493,18 @@ sock.ev.removeAllListeners("messages.upsert");
       // IGNORE OFFLINE / OLD MESSAGES
       // Hard gate against the post-relink replay flood: after a fresh QR link
       // (or reconnect), WhatsApp can surface old group messages as 'notify'.
-      // Drop anything that predates this process by 30s+, or that is older
-      // than 5 minutes outright (offline/history replays).
+      // Judged against BOOT, never against raw age — see systems/messageGate.js.
+      // An age cap looks harmless but silently ate real traffic: a message keeps
+      // the timestamp the sender gave it, so a slow reconnect, or a group whose
+      // sender key went stale after the restart (Baileys retries decryption
+      // before it ever emits the message), hands us a live message that already
+      // looks minutes old. That is what left the bot answering fresh groups
+      // while staying mute in the stale ones.
       // ============================
       const msgTimestamp = toUnixSeconds(msg.messageTimestamp);
-      const msgAgeSec = msgTimestamp ? Math.floor(Date.now() / 1000) - msgTimestamp : 0;
-      const bootAgeSec = Math.floor(Date.now() / 1000) - BOT_START_TIME;
-      if (msgTimestamp && (msgTimestamp < BOT_START_TIME - 60 || msgAgeSec > 120)) {
-        console.log(`[msg] dropped stale message (age ${msgAgeSec}s, jid ${msg.key.remoteJid})`);
-        return;
-      }
-      // No usable timestamp: always drop.
-      // Real WhatsApp messages always carry a timestamp. An unstamped message
-      // is replay noise from history sync or stale sender keys.
-      if (!msgTimestamp) {
-        console.log(`[msg] dropped unstamped message (jid ${msg.key.remoteJid})`);
+      const replay = messageGate.replayVerdict({ timestamp: msgTimestamp, bootTimeSec: BOT_START_TIME });
+      if (replay) {
+        console.log(`[msg] dropped ${replay.reason} message (age ${replay.ageSec}s, jid ${msg.key.remoteJid})`);
         return;
       }
 
